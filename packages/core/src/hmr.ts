@@ -1,6 +1,6 @@
 // The HMR runtime (`@gable/core/hmr`). Dev only: importing it installs the core's dev hooks, so an app that
 // never imports it (every production build) carries none of this. No semver promise.
-import { hooks, type ComponentBegin, type DevHooks, type InjectorOps, type Region, type ServiceBegin, type Swap } from "./dev-hooks.js";
+import { hooks, type ComponentBegin, type DevHooks, type InjectorOps, type Region, type RouterOps, type ServiceBegin, type Swap } from "./dev-hooks.js";
 import { registerComponentStyles } from "./component.js";
 import { reportError } from "./errors.js";
 import type { Scope } from "./scope.js";
@@ -83,9 +83,18 @@ function register(entryId: string, Class: Cls): Entry {
   return entry;
 }
 
+// --- route configs ---------------------------------------------------------
+
+/** A route config is an exported array of objects that each have a string `path`. */
+const isRouteConfig = (value: unknown): value is unknown[] => Array.isArray(value) && value.length > 0 && value.every((r) => r && typeof r === "object" && typeof (r as { path?: unknown }).path === "string");
+/** The config currently live for an exported route array, by export id. */
+const routeConfigs = new Map<string, unknown[]>();
+const routers = new Set<RouterOps>();
+
 /** Registers every class a module exports (call at first evaluation). A class already registered under its id is left alone. */
 export function registerModule(url: string, namespace: Record<string, unknown>): void {
   for (const [name, value] of Object.entries(namespace)) {
+    if (isRouteConfig(value) && !routeConfigs.has(`${moduleId(url)}#${name}`)) routeConfigs.set(`${moduleId(url)}#${name}`, value);
     if (isClass(value) && !entries.has(`${moduleId(url)}#${name}`)) register(`${moduleId(url)}#${name}`, value);
   }
 }
@@ -163,6 +172,10 @@ const impl: DevHooks = {
   canon,
   strict: () => building > 0,
   region: (scope, region) => void regions.set(scope, region),
+  router(ops) {
+    routers.add(ops);
+    ops.scope?.onDispose(() => routers.delete(ops));
+  },
   injectorCreated: (injector, ops) => void injectors.set(injector, ops),
   injected(value) {
     if (value && typeof value === "object") frames.at(-1)?.add(value);
@@ -297,6 +310,40 @@ interface Staged {
   mode: HmrMode | undefined;
 }
 
+interface ConfigUpdate {
+  id: string;
+  next: unknown[];
+  routers: RouterOps[];
+}
+
+/** Which live routers run the config an updated module re-exports. With no earlier registration, a lone router under `roots` is adopted. */
+function routeUpdates(updates: ModuleUpdate[], roots?: object[]): ConfigUpdate[] {
+  const scopes = roots?.map((r) => ((r as { scope?: Scope }).scope ?? r) as Scope);
+  const out: ConfigUpdate[] = [];
+  for (const u of updates) {
+    for (const [name, next] of Object.entries(u.exports)) {
+      if (!isRouteConfig(next)) continue;
+      const id = `${moduleId(u.url)}#${name}`;
+      const live = [...routers].filter((r) => !scopes || (r.scope && scopes.some((s) => within(r.scope, s))));
+      const current = routeConfigs.get(id);
+      let targets = current ? live.filter((r) => r.routes() === current) : live.length === 1 ? live : [];
+      if (!current && targets.length === 1) routeConfigs.set(id, targets[0]!.routes() as unknown[]);
+      targets = targets.filter((r) => r.routes() !== next);
+      if (targets.length > 0) out.push({ id, next, routers: targets });
+    }
+  }
+  return out;
+}
+
+/** Hands each edited config to its routers, which re-match it against their URL (asynchronously; a mismatch is reported and the old config kept). */
+function applyRoutes(configs: ConfigUpdate[]): void {
+  for (const { id, next, routers: targets } of configs) {
+    void Promise.all(targets.map((r) => r.replaceRoutes(next))).then((adopted) => {
+      if (adopted.every(Boolean)) routeConfigs.set(id, next);
+    });
+  }
+}
+
 const MODES = new Set(["reset", "reload", "ignore"]);
 
 /** The rec nearest the root: where failures that belong to no instance are reported. */
@@ -363,7 +410,11 @@ export function applyUpdate(updates: ModuleUpdate[], failures: unknown[] = [], r
       dropAliases();
       return { status: "reload", errors: [] };
     }
-    if (staged.length === 0) return { status: "unchanged", errors: [] };
+    const configs = routeUpdates(updates, roots);
+    if (staged.length === 0) {
+      applyRoutes(configs);
+      return { status: configs.length > 0 ? "applied" : "unchanged", errors: [] };
+    }
 
     const undoPatches = staged.map((s) => patch(s.entry, s.next, s.def, s.meta));
     const kinds = new Map<Function, Staged>(staged.map((s) => [s.entry.canonical, s]));
@@ -459,7 +510,8 @@ export function applyUpdate(updates: ModuleUpdate[], failures: unknown[] = [], r
       if (!s.entry.canonical.meta) continue;
       for (const r of records) if (r.kind === "component" && r.Class === s.entry.canonical && r.renderer) registerComponentStyles(r.Class as any, r.renderer);
     }
-    return { status: staged.some((s) => s.kind !== "none") ? "applied" : "unchanged", errors: [] };
+    applyRoutes(configs);
+    return { status: staged.some((s) => s.kind !== "none") || configs.length > 0 ? "applied" : "unchanged", errors: [] };
   });
 }
 

@@ -57,6 +57,15 @@ export interface ServiceBegin extends Construction {
   done(info: ServiceInfo): void;
 }
 
+/** What the runtime needs of a live Router to apply an edited route config. */
+export interface RouterOps {
+  scope: Scope | null;
+  /** The route config the router currently runs. */
+  routes(): readonly unknown[];
+  /** Re-matches `next` against the current URL and, if it still matches, adopts it. Resolves true when adopted; a mismatch is reported and resolves false. */
+  replaceRoutes(next: readonly unknown[]): Promise<boolean>;
+}
+
 export interface DevHooks {
   /** Maps a class from a re-evaluated module to its canonical class. */
   canon<T>(token: T): T;
@@ -67,6 +76,7 @@ export interface DevHooks {
   /** `inject()` returned `value` to whatever is being constructed. */
   injected(value: unknown): void;
   injectorCreated(injector: object, ops: InjectorOps): void;
+  router(ops: RouterOps): void;
   region(scope: Scope, region: Region): void;
   /** True while the runtime builds replacements: setup failures must throw, not be reported. */
   strict(): boolean;
