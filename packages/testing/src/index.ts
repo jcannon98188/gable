@@ -133,7 +133,7 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
   const defer: DeferHandle[] = [];
   hookCleanup();
   const injector = createTestInjector([{ provide: DEFER_BLOCKS, useValue: defer }, { provide: ErrorHandler, useClass: Collector }, { provide: COMPONENT_OVERRIDES, useValue: new Map(options.overrides ?? []) }, ...(options.providers ?? [])]);
-  const mounted: MountedComponent<T, TestNode> = instantiate(Component, { renderer, parent: container, injector });
+  const mounted = instantiate(Component, { renderer, parent: container, injector });
   let destroyed = false;
   const unclaimed = () => {
     const fresh = reports.filter((r) => !r.surfaced);
