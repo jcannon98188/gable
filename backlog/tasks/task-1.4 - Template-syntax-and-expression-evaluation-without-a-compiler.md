@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@jason'
 created_date: '2026-11-05 04:20'
-updated_date: '2026-11-05 04:46'
+updated_date: '2026-11-05 04:53'
 labels:
   - 'wayfinder:grilling'
 dependencies: []
@@ -36,5 +36,15 @@ Resolved with the user.
 **Bindings**: `[prop]`, `[attr.x]`, `[class.x]`, `[style.x]`, `(event)="handler($event)"`, `[(model)]="sig"`, `#ref`. Attribute directives exist (selector-matched, in `meta.imports`, can inject their host). No structural directives.
 **Pipes**: instantiated per binding in an injection context; pure by default (memoized), opt out with `static pure = false`. Built-in `async` pipe is always available (no import): binds Observables and Promises directly (`user$ | async`, `@if (user$ | async; as user)`), subscribes on bind, unsubscribes on destroy, resubscribes if the Observable changes, yields `undefined` before first emission (`async:initial` supplies a starting value), errors go to the app error handler. It uses the same observable-to-signal bridge as the interop API, so emissions ride the coalesced flush.
 **`@defer` is in v0**: with `@placeholder`, `@loading`, `@error`. Core triggers `when <expr>`, `on idle`, `on timer(ms)`; renderer-specific triggers (`on viewport`, `on interaction`, `on hover` for DOM) are supplied by the renderer. Deferrable dependencies are explicit: `lazy(() => import('./chart.js'), 'Chart')` in `meta.imports`, usable only inside `@defer` (otherwise a dev-time error, also reported by the language service).
+---
+
+created: 2026-11-05 04:53
+---
+Amendment (user): outside event bindings, templates contain no function calls except signal reads. This supersedes "calls with reference or literal args" in the expression rules above.
+
+**Allowed in value expressions** (bindings, interpolation, control-flow conditions, `@for` sources): property reads (`a.b`, `a?.b`), zero-argument signal reads (`count()`), literals, `!`, `??`, and pipes (pipe arguments are literals/references). No method calls, no calls with arguments.
+**Event bindings** `(event)="handler(arg)"` may still call handlers; arguments are references, literals or `$event`.
+**Where computed values live**: enhanced view models, i.e. computed signals that already include the derived value (e.g. a computed list of rows carrying `isSelected`, `label`), instead of fetching values through methods in the template.
+**Language service role**: diagnostics flag a disallowed call or operator in a value expression and offer quick-fix refactors that extract a computed signal (view-model field) on the component and replace the expression with its read. This is a v0 language-service requirement, not just an interpreter restriction.
 ---
 <!-- COMMENTS:END -->

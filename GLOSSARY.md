@@ -59,3 +59,7 @@ _Avoid_: Filter, formatter
 **Deferred block**:
 A template block (`@defer`) whose content, and any lazily imported components inside it, loads when a trigger fires.
 _Avoid_: Lazy block, suspense
+
+**View model**:
+The computed signals a Component exposes so its Template only reads values and never derives them. Derived values are included in the view model rather than fetched through method calls.
+_Avoid_: Presenter, getter
