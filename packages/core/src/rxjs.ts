@@ -1,6 +1,6 @@
 // `@gable/core/rxjs`: the RxJS side of Gable. This is the only entry that
 // imports RxJS (a peer dependency); the signal core and templates never do.
-import { Observable, Subject, Subscription, asyncScheduler, type SchedulerAction, type SchedulerLike } from "rxjs";
+import { Observable, Subscription, asyncScheduler, type SchedulerAction, type SchedulerLike } from "rxjs";
 import { effect, runAfterFlush, type ReadonlySignal } from "./signals.js";
 import { createScope, currentScope, runInScope } from "./scope.js";
 
@@ -62,16 +62,4 @@ export const renderScheduler: SchedulerLike = {
   },
 };
 
-/** An Observable of events with an `emit` method; the field factory for a component's outputs. */
-export interface OutputEmitter<T> extends Observable<T> {
-  emit(value: T): void;
-}
-
-/** Declares an output: `changed = output<number>()`. Completes when its owning scope is destroyed. */
-export function output<T = void>(): OutputEmitter<T> {
-  const subject = new Subject<T>();
-  const emitter = subject.asObservable() as OutputEmitter<T>;
-  emitter.emit = (value) => subject.next(value);
-  currentScope()?.onDispose(() => subject.complete());
-  return emitter;
-}
+export { output, OutputEmitter } from "./output.js";

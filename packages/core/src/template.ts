@@ -323,7 +323,7 @@ function parseConditionHeader(header: string): [Expr, string | undefined] {
   return [parseExpression(cond!), alias];
 }
 
-function addAttribute(el: ElementNode, name: string, value: string): void {
+export function addAttribute(el: ElementNode, name: string, value: string): void {
   if (name.startsWith("[(") && name.endsWith(")]")) {
     el.models.push({ name: name.slice(2, -2), expr: parseExpression(value) });
   } else if (name.startsWith("[") && name.endsWith("]")) {

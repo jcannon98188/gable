@@ -23,8 +23,10 @@ export interface Renderer<N = unknown> {
   // Events. Returns an unsubscribe function.
   listen(node: N, name: string, handler: (event: unknown) => void): () => void;
 
-  /** Registers scoped CSS; returns the scoping token stamped on elements. Re-registering an id replaces the CSS. */
-  registerStyles?(componentId: string, css: string): string;
+  /** Registers CSS; returns the scoping token to stamp on elements (empty when `scoped` is false). Re-registering an id replaces the CSS. */
+  registerStyles?(componentId: string, css: string, options?: { scoped?: boolean }): string;
+  /** Resolves the opaque `target` given to `bootstrap` (DOM: a selector or element) to the node the root adopts as its host. */
+  resolveTarget?(target: unknown): N;
   /** Renderer-specific `@defer` triggers; returns a dispose function. */
   observeTrigger?(name: string, args: unknown[], placeholder: N | undefined, fire: () => void): () => void;
   /** Optional DOM-state preservation around a view rebuild (HMR). */

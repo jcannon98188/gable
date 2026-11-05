@@ -1,7 +1,14 @@
 import { computed, effect, signal, untracked, type WritableSignal } from "./signals.js";
 import type { Renderer } from "./renderer.js";
-import { createEnv, evaluate, readModel, runHandler, writeModel, type Env, type Expr } from "./expression.js";
+import { createEnv, evaluate, readModel, runHandler, writeModel, type Env, type Expr, type HandlerExpr } from "./expression.js";
 import { createScope, currentScope, runInScope, type Scope } from "./scope.js";
+import { DEV } from "./di.js";
+import { inputOf } from "./input.js";
+import { OutputEmitter } from "./output.js";
+import { prepare, type ComponentClass } from "./component.js";
+import { parseSelector, matchesNode } from "./select.js";
+import { viewOf, type Content } from "./view-context.js";
+import { registerEntry, withContentTarget } from "./query.js";
 import type { ElementNode, ForNode, IfNode, SwitchNode, TemplateNode } from "./template.js";
 
 /** The live top-level nodes of a built piece of template (blocks change theirs over time). */
@@ -57,14 +64,14 @@ function buildText<N>(parts: Array<string | Expr>, renderer: Renderer<N>, env: E
   return () => [text];
 }
 
-function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, parent: N, before: N | null): Part<N> {
-  const el = renderer.createElement(node.tag, parent);
-  const scope = currentScope();
-  for (const { name, value } of node.attrs) renderer.setAttribute(el, name, value);
-  renderer.insert(parent, el, before);
-  for (const ref of node.refs) env.locals.set(ref, () => el);
+type Bindings = Pick<ElementNode, "attrs" | "bindings" | "models" | "events">;
 
-  for (const { kind, name, expr } of node.bindings) {
+/** Applies attributes, bindings, two-way models and event listeners to `el`, all owned by the current scope. */
+export function applyBindings<N>(el: N, spec: Bindings, renderer: Renderer<N>, env: Env): void {
+  const scope = currentScope();
+  for (const { name, value } of spec.attrs) renderer.setAttribute(el, name, value);
+
+  for (const { kind, name, expr } of spec.bindings) {
     effect(() => {
       const value = evaluate(expr, env);
       switch (kind) {
@@ -80,26 +87,95 @@ function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, par
     });
   }
 
-  function listen(name: string, handler: (event: unknown) => void): void {
-    const off = renderer.listen(el, name, handler);
-    scope?.onDispose(off);
-  }
-
-  for (const { name, expr } of node.models) {
+  for (const { name, expr } of spec.models) {
     effect(() => renderer.setProperty(el, name, readModel(expr, env)));
     // The renderer decides what produces `<name>Change` (e.g. an input event on a native input).
-    listen(`${name}Change`, (event) => writeModel(expr, env, event));
+    scope?.onDispose(renderer.listen(el, `${name}Change`, (event) => writeModel(expr, env, event)));
   }
 
-  for (const { name, handler } of node.events) {
-    listen(name, (event) => {
-      const local: Env = { instance: env.instance, locals: new Map([["$event", () => event]]), parent: env };
-      untracked(() => runHandler(handler, local));
-    });
+  for (const { name, handler } of spec.events) scope?.onDispose(renderer.listen(el, name, eventHandler(handler, env)));
+}
+
+function eventHandler(handler: HandlerExpr, env: Env): (event: unknown) => void {
+  return (event) => {
+    const local: Env = { instance: env.instance, locals: new Map([["$event", () => event]]), parent: env };
+    untracked(() => runHandler(handler, local));
+  };
+}
+
+function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, parent: N, before: N | null): Part<N> {
+  if (node.tag === "slot") return buildSlot(node, renderer, env, parent, before);
+  const el = renderer.createElement(node.tag, parent);
+  const scope = currentScope();
+  const view = viewOf(env);
+  const matches = (view?.imports ?? []).filter((Class) => matchesNode(parseSelector(Class.meta.selector), node));
+  if (DEV && matches.length === 0 && node.tag.includes("-")) {
+    throw new Error(
+      `Unknown element <${node.tag}>. Add its component to meta.imports of the component whose template uses it.`,
+    );
+  }
+  if (view?.scopeToken) renderer.setAttribute(el, view.scopeToken, "");
+  renderer.insert(parent, el, before);
+  for (const ref of node.refs) env.locals.set(ref, () => el);
+
+  const projects = matches.some((Class) => Class.meta.template);
+  const content = projects ? partitionContent(node.children, env) : null;
+  const comps = matches.map((Class) => prepare(Class, { renderer, host: el, parentScope: scope, injector: view?.injector ?? null, content }));
+  for (const comp of comps) registerEntry(view?.queries, { instance: comp.instance, node: el, refs: node.refs }, scope);
+  if (node.refs.length > 0) registerEntry(view?.queries, { node: el, refs: node.refs }, scope);
+  const rest: Bindings = { attrs: node.attrs, bindings: [], models: [], events: [] };
+  const inputFor = (name: string) => comps.map((c) => inputOf(c.instance, name)).find((h) => h);
+  const subscribe = <T,>(source: { subscribe(next: (v: T) => void): { unsubscribe(): void } }, next: (v: T) => void) => {
+    const sub = source.subscribe(next);
+    scope?.onDispose(() => sub.unsubscribe());
+  };
+
+  for (const { name, value } of node.attrs) inputFor(name)?.set(value);
+  for (const binding of node.bindings) {
+    const target = binding.kind === "prop" ? inputFor(binding.name) : undefined;
+    if (target) effect(() => target.set(evaluate(binding.expr, env)));
+    else rest.bindings.push(binding);
+  }
+  for (const model of node.models) {
+    const target = inputFor(model.name);
+    if (!target) rest.models.push(model);
+    else {
+      effect(() => target.set(readModel(model.expr, env)));
+      if (target.changes) subscribe(target.changes, (v) => writeModel(model.expr, env, v));
+    }
+  }
+  for (const event of node.events) {
+    const out = comps.map((c) => (c.instance as Record<string, unknown>)[event.name]).find((o) => o instanceof OutputEmitter);
+    if (out) subscribe(out as OutputEmitter<unknown>, eventHandler(event.handler, env));
+    else rest.events.push(event);
   }
 
-  buildNodes(node.children, renderer, env, el, null);
+  applyBindings(el, rest, renderer, env);
+  for (const comp of comps) comp.render();
+  if (!projects) buildNodes(node.children, renderer, env, el, null);
   return () => [el];
+}
+
+/** Splits a component element's children into named slots (`slot="name"`) and the default slot. */
+function partitionContent(children: TemplateNode[], env: Env): Content {
+  const slots = new Map<string, TemplateNode[]>();
+  for (const child of children) {
+    const name = (child.type === "element" && child.attrs.find((a) => a.name === "slot")?.value) || "";
+    slots.set(name, [...(slots.get(name) ?? []), child]);
+  }
+  return { env, slots };
+}
+
+/** `<slot>` renders what the parent projected, built in the parent's Env, else its own fallback children. */
+function buildSlot<N>(node: ElementNode, renderer: Renderer<N>, env: Env, parent: N, before: N | null): Part<N> {
+  const view = viewOf(env);
+  const name = node.attrs.find((a) => a.name === "name")?.value ?? "";
+  const projected = view?.content?.slots.get(name);
+  const parts =
+    projected && view?.content
+      ? withContentTarget(view.queries, () => buildNodes(projected, renderer, view.content!.env, parent, before))
+      : buildNodes(node.children, renderer, env, parent, before);
+  return () => flatten(parts);
 }
 
 // --- control flow ----------------------------------------------------------
@@ -251,14 +327,19 @@ function buildFor<N>(node: ForNode, renderer: Renderer<N>, env: Env, parent: N, 
         if (row.pos > maxPos) maxPos = row.pos;
         else moved.add(key);
       });
+      // Create new rows first-to-last so anything registered while building (queries) is in order.
+      const created = new Set<unknown>();
+      keys.forEach((key, i) => {
+        if (rows.has(key)) return;
+        rows.set(key, makeRow(items[i], i, anchor));
+        created.add(key);
+      });
+      // Then place rows last-to-first: moved and new rows go before their successor.
       let nextBefore: N = anchor;
       for (let i = keys.length - 1; i >= 0; i--) {
         const key = keys[i];
-        let row = rows.get(key);
-        if (!row) {
-          row = makeRow(items[i], i, nextBefore);
-          rows.set(key, row);
-        } else if (moved.has(key)) {
+        const row = rows.get(key)!;
+        if (moved.has(key) || created.has(key)) {
           for (const n of flatten(row.parts)) renderer.insert(parent, n, nextBefore);
         }
         nextBefore = flatten(row.parts)[0] ?? nextBefore;
