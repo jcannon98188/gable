@@ -9,3 +9,4 @@ export { instantiate } from "./component.js";
 export type { MountedComponent } from "./component.js";
 export { whenFlushed, flushSync } from "./signals.js";
 export { reportError } from "./errors.js";
+export { INJECTOR } from "./di.js";

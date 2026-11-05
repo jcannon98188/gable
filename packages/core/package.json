@@ -23,6 +23,10 @@
     "./tooling": {
       "types": "./dist/tooling.d.ts",
       "import": "./dist/tooling.js"
+    },
+    "./http": {
+      "types": "./dist/http.d.ts",
+      "import": "./dist/http.js"
     }
   },
   "files": [

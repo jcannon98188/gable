@@ -1,6 +1,8 @@
 import { DEFER_BLOCKS, instantiate, whenFlushed, type DeferHandle, type MountedComponent } from "@gable/core/internal";
 import { ErrorHandler, type ComponentClass, type ErrorContext, type Provider } from "@gable/core";
-import { createTestInjector } from "./injector.js";
+import { createTestInjector, httpTesting } from "./injector.js";
+import { HttpBackend } from "@gable/core/http";
+import { HttpTestingBackend } from "./http.js";
 import type { Renderer } from "@gable/core/renderer";
 import { createTestRenderer, createTestRoot, query, queryAll, serialize, textContent, type TestNode } from "./renderer.js";
 
@@ -27,6 +29,8 @@ export interface Fixture<T extends object> {
   readonly root: TestNode;
   /** Every live `@defer` block, in creation order: drive each with `trigger()`, read its `state`, await `settle()`. */
   readonly defer: readonly DeferHandle[];
+  /** The recording HttpBackend: `expectOne`, `expectNone`, `match`, `verify`. `destroy()` verifies it. */
+  readonly http: HttpTestingBackend;
   query(selector: string): TestNode | null;
   queryAll(selector: string): TestNode[];
   /** Concatenated text of the host's subtree. */
@@ -43,6 +47,7 @@ export interface Fixture<T extends object> {
   claimErrors(): ErrorReport[];
   /** Fires an event on a node as if the renderer had emitted it (calls its listeners). */
   dispatch(target: TestNode, name: string, event?: unknown): void;
+  /** Tears the fixture down; throws if an HTTP request is still unmatched. */
   destroy(): void;
 }
 
@@ -63,6 +68,9 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
     instance: mounted.instance,
     root: mounted.host,
     defer,
+    get http() {
+      return httpTesting(injector);
+    },
     query: (selector) => query(mounted.host, selector),
     queryAll: (selector) => queryAll(mounted.host, selector),
     text: () => textContent(mounted.host),
@@ -79,9 +87,18 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
       for (const handler of [...(target.listeners[name] ?? [])]) handler(event);
     },
     destroy() {
+      if (destroyed) return;
       destroyed = true;
-      mounted.destroy();
+      try {
+        const backend = injector.get(HttpBackend, { optional: true });
+        if (backend instanceof HttpTestingBackend) backend.verify();
+      } finally {
+        mounted.destroy();
+      }
     },
   };
 }
 export { createTestInjector } from "./injector.js";
+export { HttpTestingBackend, TestRequest } from "./http.js";
+export type { RequestMatch } from "./http.js";
+export { httpTesting } from "./injector.js";
