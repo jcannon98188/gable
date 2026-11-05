@@ -4,11 +4,12 @@ import { createEnv, evaluate, readModel, runHandler, writeModel, type Env, type 
 import { createScope, currentScope, runInScope, type Scope } from "./scope.js";
 import { FAILED, guard, guarded } from "./errors.js";
 import { DEV } from "./di.js";
+import { hooks } from "./dev-hooks.js";
 import { inputOf } from "./input.js";
 import { OutputEmitter } from "./output.js";
 import { prepare, type ComponentClass } from "./component.js";
 import { parseSelector, matchesNode } from "./select.js";
-import { viewOf, type Content } from "./view-context.js";
+import { viewOf, type Content, type ViewContext } from "./view-context.js";
 import { registerEntry, withContentTarget } from "./query.js";
 import { buildDefer } from "./defer.js";
 import type { ElementNode, ForNode, IfNode, SwitchNode, TemplateNode } from "./template.js";
@@ -23,7 +24,13 @@ export function flatten<N>(parts: Part<N>[]): N[] {
 /** Builds template nodes into `parent`, before `before` (or at the end), and returns their live parts. */
 export function buildNodes<N>(nodes: TemplateNode[], renderer: Renderer<N>, env: Env, parent: N, before: N | null): Part<N>[] {
   const parts: Part<N>[] = [];
-  for (const node of nodes) parts.push(buildNode(node, renderer, env, parent, before));
+  try {
+    for (const node of nodes) parts.push(buildNode(node, renderer, env, parent, before));
+  } catch (error) {
+    // Dev: a failed rebuild must leave nothing half-built behind.
+    if (DEV) for (const part of parts) for (const node of part()) renderer.remove(node);
+    throw error;
+  }
   return parts;
 }
 
@@ -120,8 +127,6 @@ function eventHandler(handler: HandlerExpr, env: Env, scope: Scope | null, name:
 
 function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, parent: N, before: N | null): Part<N> {
   if (node.tag === "slot") return buildSlot(node, renderer, env, parent, before);
-  const el = renderer.createElement(node.tag, parent);
-  const scope = currentScope();
   const view = viewOf(env);
   const matches = (view?.imports ?? []).filter((Class) => matchesNode(parseSelector(Class.meta.selector), node));
   if (DEV && matches.length === 0 && node.tag.includes("-")) {
@@ -130,58 +135,116 @@ function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, par
         ((view?.lazies.length ?? 0) > 0 ? `; lazy() entries (${view!.lazies.map((l) => l.name).join(", ")}) can only be used inside @defer.` : "."),
     );
   }
+  const dispatch = (before: N | null): Part<N> => buildElementOf(node, renderer, env, parent, before, view, matches);
+  if (!(DEV && hooks.current && matches.length > 0)) return dispatch(before);
+  return replaceable(renderer, dispatch, before);
+}
+
+/** Dev: an element hosting components lives in its own scope so a hot update can re-create it in place. */
+function replaceable<N>(renderer: Renderer<N>, build: (before: N | null) => Part<N>, before: N | null): Part<N> {
+  const outer = currentScope();
+  let scope = createScope(outer);
+  let part = runInScope(scope, () => build(before));
+  const region = {
+    build() {
+      const next = createScope(outer);
+      // The replacement goes in just before the live element; commit removes the old one.
+      let nextPart: Part<N>;
+      try {
+        nextPart = runInScope(next, () => build(part()[0] ?? null));
+      } catch (error) {
+        next.dispose();
+        throw error;
+      }
+      hooks.current?.region(next, region);
+      return {
+        commit() {
+          const old = { scope, part };
+          scope = next;
+          part = nextPart;
+          old.scope.dispose();
+          for (const node of old.part()) renderer.remove(node);
+        },
+        abort() {
+          next.dispose();
+          for (const node of nextPart()) renderer.remove(node);
+        },
+      };
+    },
+  };
+  hooks.current!.region(scope, region);
+  return () => part();
+}
+
+function buildElementOf<N>(
+  node: ElementNode,
+  renderer: Renderer<N>,
+  env: Env,
+  parent: N,
+  before: N | null,
+  view: ViewContext | undefined,
+  matches: ComponentClass<any>[],
+): Part<N> {
+  const el = renderer.createElement(node.tag, parent);
+  const scope = currentScope();
   if (view?.scopeToken) renderer.setAttribute(el, view.scopeToken, "");
   renderer.insert(parent, el, before);
-  for (const ref of node.refs) env.locals.set(ref, () => el);
+  try {
+    for (const ref of node.refs) env.locals.set(ref, () => el);
 
-  const projects = matches.some((Class) => Class.meta.template);
-  const content = projects ? partitionContent(node.children, env) : null;
-  const comps = matches
-    .map((Class) => prepare(Class, { renderer, host: el, parentScope: scope, injector: view?.injector ?? null, content }))
-    .filter((comp) => !comp.failed);
-  for (const comp of comps) registerEntry(view?.queries, { instance: comp.instance, node: el, refs: node.refs }, scope);
-  if (node.refs.length > 0) registerEntry(view?.queries, { node: el, refs: node.refs }, scope);
-  const rest: Bindings = { attrs: node.attrs, bindings: [], models: [], events: [] };
-  const inputFor = (name: string) => comps.map((c) => inputOf(c.instance, name)).find((h) => h);
-  const subscribe = <T,>(source: { subscribe(next: (v: T) => void): { unsubscribe(): void } }, next: (v: T) => void) => {
-    const sub = source.subscribe(next);
-    scope?.onDispose(() => sub.unsubscribe());
-  };
+    const projects = matches.some((Class) => Class.meta.template);
+    const content = projects ? partitionContent(node.children, env) : null;
+    const comps = matches
+      .map((Class) => prepare(Class, { renderer, host: el, parentScope: scope, injector: view?.injector ?? null, content }))
+      .filter((comp) => !comp.failed);
+    for (const comp of comps) registerEntry(view?.queries, { instance: comp.instance, node: el, refs: node.refs }, scope);
+    if (node.refs.length > 0) registerEntry(view?.queries, { node: el, refs: node.refs }, scope);
+    const rest: Bindings = { attrs: node.attrs, bindings: [], models: [], events: [] };
+    const inputFor = (name: string) => comps.map((c) => inputOf(c.instance, name)).find((h) => h);
+    const subscribe = <T,>(source: { subscribe(next: (v: T) => void): { unsubscribe(): void } }, next: (v: T) => void) => {
+      const sub = source.subscribe(next);
+      scope?.onDispose(() => sub.unsubscribe());
+    };
 
-  for (const { name, value } of node.attrs) inputFor(name)?.set(value);
-  for (const binding of node.bindings) {
-    const target = binding.kind === "prop" ? inputFor(binding.name) : undefined;
-    if (target) {
-      const safe = guard(scope, `input:${binding.name}`);
-      effect(() => {
-        const value = safe(() => evaluate(binding.expr, env));
-        if (value !== FAILED) target.set(value);
-      });
+    for (const { name, value } of node.attrs) inputFor(name)?.set(value);
+    for (const binding of node.bindings) {
+      const target = binding.kind === "prop" ? inputFor(binding.name) : undefined;
+      if (target) {
+        const safe = guard(scope, `input:${binding.name}`);
+        effect(() => {
+          const value = safe(() => evaluate(binding.expr, env));
+          if (value !== FAILED) target.set(value);
+        });
+      }
+      else rest.bindings.push(binding);
     }
-    else rest.bindings.push(binding);
-  }
-  for (const model of node.models) {
-    const target = inputFor(model.name);
-    if (!target) rest.models.push(model);
-    else {
-      const safe = guard(scope, `model:${model.name}`);
-      effect(() => {
-        const value = safe(() => readModel(model.expr, env));
-        if (value !== FAILED) target.set(value);
-      });
-      if (target.changes) subscribe(target.changes, (v) => guarded(scope, "event", () => writeModel(model.expr, env, v), `${model.name}Change`));
+    for (const model of node.models) {
+      const target = inputFor(model.name);
+      if (!target) rest.models.push(model);
+      else {
+        const safe = guard(scope, `model:${model.name}`);
+        effect(() => {
+          const value = safe(() => readModel(model.expr, env));
+          if (value !== FAILED) target.set(value);
+        });
+        if (target.changes) subscribe(target.changes, (v) => guarded(scope, "event", () => writeModel(model.expr, env, v), `${model.name}Change`));
+      }
     }
-  }
-  for (const event of node.events) {
-    const out = comps.map((c) => (c.instance as Record<string, unknown>)[event.name]).find((o) => o instanceof OutputEmitter);
-    if (out) subscribe(out as OutputEmitter<unknown>, eventHandler(event.handler, env, scope, event.name));
-    else rest.events.push(event);
-  }
+    for (const event of node.events) {
+      const out = comps.map((c) => (c.instance as Record<string, unknown>)[event.name]).find((o) => o instanceof OutputEmitter);
+      if (out) subscribe(out as OutputEmitter<unknown>, eventHandler(event.handler, env, scope, event.name));
+      else rest.events.push(event);
+    }
 
-  applyBindings(el, rest, renderer, env);
-  for (const comp of comps) comp.render();
-  if (!projects) buildNodes(node.children, renderer, env, el, null);
-  return () => [el];
+    applyBindings(el, rest, renderer, env);
+    for (const comp of comps) comp.render();
+    if (!projects) buildNodes(node.children, renderer, env, el, null);
+    return () => [el];
+    return () => [el];
+  } catch (error) {
+    if (DEV) renderer.remove(el);
+    throw error;
+  }
 }
 
 /** Splits a component element's children into named slots (`slot="name"`) and the default slot. */

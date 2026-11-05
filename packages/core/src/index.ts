@@ -14,4 +14,5 @@ export { viewChild, viewChildren, contentChild, contentChildren } from "./query.
 export { createComponent, bootstrap, RENDERER } from "./app.js";
 export type { ComponentRef, CreateComponentOptions, BootstrapOptions, InputValues } from "./app.js";
 export { ErrorHandler } from "./errors.js";
+export { hotState } from "./hot-state.js";
 export type { ErrorContext, ErrorSource } from "./errors.js";

@@ -1,7 +1,9 @@
 import { reportError } from "./errors.js";
 import { createScope, runInScope, type Scope } from "./scope.js";
+import { untracked } from "./signals.js";
 import type { Renderer } from "./renderer.js";
-import { assertNoConstructor, createInjector, type Injector, type Provider } from "./di.js";
+import { DEV, assertNoConstructor, createInjector, type Injector, type Provider } from "./di.js";
+import { hooks, type Region, type Swap } from "./dev-hooks.js";
 import { createEnv } from "./expression.js";
 import { addAttribute, parseTemplate, type ElementNode, type TemplateResult } from "./template.js";
 import { applyBindings, buildNodes } from "./view.js";
@@ -74,7 +76,7 @@ function hostSpec(Class: ComponentClass<any>): ElementNode {
 const registeredStyles = new WeakMap<object, Map<string, { css: string; token: string }>>();
 
 /** Registers a component's CSS with the renderer (once per id and CSS) and returns its scoping token, or null. */
-function registerComponentStyles(Class: ComponentClass<any>, renderer: Renderer<any>): string | null {
+export function registerComponentStyles(Class: ComponentClass<any>, renderer: Renderer<any>): string | null {
   const { styles, encapsulation, id } = Class.meta;
   const css = typeof styles === "string" ? styles : styles?.join("\n");
   if (!css || !renderer.registerStyles) return null;
@@ -103,16 +105,17 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
   const { renderer, host } = options;
   const scope = createScope(options.parentScope);
   assertNoConstructor(Class);
-  const { template, providers, imports } = Class.meta;
+  const { providers, imports } = Class.meta;
   const scopeToken = registerComponentStyles(Class, renderer);
   const own = providers ? (options.injector ?? createInjector()).createChild(providers, { host: true }) : options.injector;
   if (own && providers) scope.onDispose(() => own.destroy());
   scope.owner = { component: Class, injector: own ?? undefined };
+  const dev = DEV ? hooks.current?.component(Class, own) : undefined;
   try {
     return setUp();
   } catch (error) {
     scope.dispose();
-    if (options.onSetupError === "throw") throw error;
+    if (options.onSetupError === "throw" || (DEV && hooks.current?.strict())) throw error;
     reportError(error, "setup", scope);
     return { instance: {} as T, host, scope, render() {}, clear() {}, failed: true };
   }
@@ -121,7 +124,8 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
     return runInScope(scope, () => {
     // Field initialisers run owned by `scope`, in the component injector context.
     const queries = createQueryHost();
-    const instance = declareQueries(queries, () => (own ? own.run(() => runInScope(scope, () => new Class())) : new Class()));
+    const make = (): T => (dev ? (dev.construct() as T) : new Class());
+    const instance = declareQueries(queries, () => (own ? own.run(() => runInScope(scope, make)) : make()));
     for (const out of describeFields(instance, Class.name)) scope.onDispose(() => completeOutput(out));
     const env = createEnv(instance);
     env.view = {
@@ -130,19 +134,62 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
     if (scopeToken) renderer.setAttribute(host, scopeToken, "");
     applyBindings(host, hostSpec(Class), renderer, env);
     let parts: Array<() => N[]> = [];
-    return {
+    // Dev: the view lives in its own scope so a hot update can rebuild it without touching Setup.
+    let viewScope: Scope | null = null;
+    const build = (into: Scope) =>
+      runInScope(into, () => withContentTarget(null, () => buildNodes(parseTemplate(Class.meta.template!), renderer, env, host, null)));
+    const prepared: PreparedComponent<T, N> = {
       instance,
       host,
       scope,
       render() {
-        if (template) parts = runInScope(scope, () => withContentTarget(null, () => buildNodes(parseTemplate(template), renderer, env, host, null)));
+        if (!Class.meta.template) return;
+        if (DEV) viewScope = createScope(scope);
+        parts = build(viewScope ?? scope);
       },
       clear() {
         for (const part of parts) for (const node of part()) renderer.remove(node);
         parts = [];
+        viewScope?.dispose();
+        viewScope = null;
       },
       failed: false,
     };
+    if (dev) {
+      dev.done({
+        instance,
+        host,
+        scope,
+        renderer,
+        injector: own,
+        buildView(): Swap {
+          env.view!.imports = (Class.meta.imports ?? []).filter((e): e is ComponentClass<any> => !isLazy(e));
+          env.view!.lazies = (Class.meta.imports ?? []).filter(isLazy);
+          const old = { parts, viewScope };
+          const next = createScope(scope);
+          let nextParts: Array<() => N[]>;
+          try {
+            nextParts = build(next);
+          } catch (error) {
+            next.dispose();
+            throw error;
+          }
+          return {
+            commit() {
+              parts = nextParts;
+              viewScope = next;
+              old.viewScope?.dispose();
+              for (const part of old.parts) for (const node of part()) renderer.remove(node);
+            },
+            abort() {
+              next.dispose();
+              for (const part of nextParts) for (const node of part()) renderer.remove(node);
+            },
+          };
+        },
+      });
+    }
+    return prepared;
     });
   }
 }
@@ -182,14 +229,55 @@ export function instantiate<T extends object, N>(Class: ComponentClass<T>, optio
   }
   for (const [name, value] of Object.entries(options.inputs ?? {})) setInput(prepared.instance, name, value);
   prepared.render();
-  return {
+  const mounted: MountedComponent<T, N> & PreparedComponent<T, N> = {
     ...prepared,
     destroy() {
-      prepared.scope.dispose();
-      if (adopted) prepared.clear();
+      mounted.scope.dispose();
+      if (adopted) mounted.clear();
       else renderer.remove(host);
     },
   };
+  if (DEV && hooks.current) {
+    // Dev: a hot update re-sets-up a root beside the old one on the same host, then retires the old.
+    const region: Region = {
+      build(): Swap {
+        const old = mounted.instance;
+        const next = prepare(Class, { renderer, host, parentScope: options.parentScope ?? null, injector: options.injector ?? null, onSetupError: "throw" });
+        try {
+          for (const [name, value] of Object.entries(old)) {
+            const from = inputOf(old, name);
+            const to = inputOf(next.instance, name);
+            if (!from || !to) continue;
+            try {
+              to.set(untracked(value as () => unknown));
+            } catch {
+              // an unset required input stays unset
+            }
+          }
+          next.render();
+        } catch (error) {
+          next.scope.dispose();
+          next.clear();
+          throw error;
+        }
+        hooks.current?.region(next.scope, region);
+        return {
+          commit() {
+            const { scope, clear } = mounted;
+            Object.assign(mounted, { instance: next.instance, scope: next.scope, clear: next.clear, render: next.render });
+            scope.dispose();
+            clear();
+          },
+          abort() {
+            next.scope.dispose();
+            next.clear();
+          },
+        };
+      },
+    };
+    hooks.current.region(prepared.scope, region);
+  }
+  return mounted;
 }
 
 
