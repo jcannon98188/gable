@@ -2,7 +2,8 @@
 // It is structurally typed against Observable/Promise and never imports RxJS,
 // so signals and templates stay RxJS-free (RxJS is only a peer dependency of
 // the `@gable/core/rxjs` entry).
-import { signal, reportError, type ReadonlySignal } from "./signals.js";
+import { signal, type ReadonlySignal } from "./signals.js";
+import { reportError } from "./errors.js";
 import { currentScope, type Scope } from "./scope.js";
 
 export interface Unsubscribable {
@@ -24,15 +25,15 @@ export function isStream(value: unknown): value is StreamSource<unknown> {
 }
 
 /**
- * Feeds every emission of `source` to `next`. Errors go to the app error path.
+ * Feeds every emission of `source` to `next`. Errors go to the ErrorHandler as `subscription`, attributed to `scope`.
  * Promises are single-emission Observables. Returns an idempotent teardown.
  */
-export function connect<T>(source: StreamSource<T>, next: (value: T) => void): () => void {
+export function connect<T>(source: StreamSource<T>, next: (value: T) => void, scope: Scope | null = currentScope()): () => void {
   let closed = false;
   if (typeof (source as Subscribable<T>).subscribe === "function") {
     const sub = (source as Subscribable<T>).subscribe({
       next: (value) => !closed && next(value),
-      error: (error) => !closed && reportError(error),
+      error: (error) => !closed && reportError(error, "subscription", scope),
       complete: () => {},
     });
     return () => {
@@ -42,7 +43,7 @@ export function connect<T>(source: StreamSource<T>, next: (value: T) => void): (
   }
   (source as PromiseLike<T>).then(
     (value) => !closed && next(value),
-    (error) => !closed && reportError(error),
+    (error) => !closed && reportError(error, "subscription", scope),
   );
   return () => {
     closed = true;
@@ -67,7 +68,7 @@ export function toSignal<T>(source: StreamSource<T>, options: ToSignalOptions<T>
     throw new Error("toSignal() must be called during setup (a component or service field initialiser). Pass { scope } or { manual: true } to call it elsewhere.");
   }
   const state = signal<T | undefined>(options.initialValue);
-  const stop = connect(source, (value) => state.set(value));
+  const stop = connect(source, (value) => state.set(value), owner);
   owner?.onDispose(stop);
   return () => state();
 }

@@ -1,3 +1,4 @@
+import { reportError } from "./errors.js";
 import { createScope, runInScope, type Scope } from "./scope.js";
 import type { Renderer } from "./renderer.js";
 import { assertNoConstructor, createInjector, type Injector, type Provider } from "./di.js";
@@ -53,6 +54,8 @@ export interface PreparedComponent<T extends object, N> {
   render(): void;
   /** Removes the nodes `render` created (for a host the component does not own). */
   clear(): void;
+  /** True when Setup threw: the scope is disposed, `instance` is an empty object and `render` does nothing. */
+  readonly failed: boolean;
 }
 
 const hostSpecs = new WeakMap<object, ElementNode>();
@@ -90,6 +93,8 @@ export interface PrepareOptions<N> {
   injector: Injector | null;
   /** Template the parent projects into this component's slots. */
   content?: Content | null;
+  /** What a Setup failure does: `report` it and carry on with an empty host (children), or `throw` it (roots). */
+  onSetupError?: "report" | "throw";
 }
 
 /** Runs a component's Setup (field initialisers) in its injection context and wires `meta.host`. */
@@ -101,7 +106,18 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
   const scopeToken = registerComponentStyles(Class, renderer);
   const own = providers ? (options.injector ?? createInjector()).createChild(providers, { host: true }) : options.injector;
   if (own && providers) scope.onDispose(() => own.destroy());
-  return runInScope(scope, () => {
+  scope.owner = { component: Class, injector: own ?? undefined };
+  try {
+    return setUp();
+  } catch (error) {
+    scope.dispose();
+    if (options.onSetupError === "throw") throw error;
+    reportError(error, "setup", scope);
+    return { instance: {} as T, host, scope, render() {}, clear() {}, failed: true };
+  }
+
+  function setUp(): PreparedComponent<T, N> {
+    return runInScope(scope, () => {
     // Field initialisers run owned by `scope`, in the component injector context.
     const queries = createQueryHost();
     const instance = declareQueries(queries, () => (own ? own.run(() => runInScope(scope, () => new Class())) : new Class()));
@@ -122,8 +138,10 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
         for (const part of parts) for (const node of part()) renderer.remove(node);
         parts = [];
       },
+      failed: false,
     };
-  });
+    });
+  }
 }
 
 /** Applies the selector's classes and attributes to a host element the component was given or created. */
@@ -152,7 +170,13 @@ export function instantiate<T extends object, N>(Class: ComponentClass<T>, optio
   const host = options.host ?? renderer.createElement(parseSelector(Class.meta.selector).tag ?? "div", options.parent ?? null);
   stampSelector(Class, renderer, host);
   if (!adopted && options.parent !== undefined) renderer.insert(options.parent, host);
-  const prepared = prepare(Class, { renderer, host, parentScope: options.parentScope ?? null, injector: options.injector ?? null });
+  let prepared: PreparedComponent<T, N>;
+  try {
+    prepared = prepare(Class, { renderer, host, parentScope: options.parentScope ?? null, injector: options.injector ?? null, onSetupError: "throw" });
+  } catch (error) {
+    if (!adopted) renderer.remove(host);
+    throw error;
+  }
   for (const [name, value] of Object.entries(options.inputs ?? {})) setInput(prepared.instance, name, value);
   prepared.render();
   return {

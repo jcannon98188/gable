@@ -38,7 +38,15 @@ describe("expression language", () => {
     ["Math", /Unknown name "Math".*no globals/],
     ["window.location", /Unknown name "window"/],
   ])("rejects %s with a clear error", (expression, message) => {
-    expect(() => mountTemplate(tpl(`<p>{{ ${expression} }}</p>`), { a: 1, b: 2, c: 3, items: [], fmt: () => "" })).toThrow(message);
+    // Syntax errors throw while the template compiles; unknown names are binding errors reported at evaluation.
+    let seen: string;
+    try {
+      const f = mountTemplate(tpl(`<p>{{ ${expression} }}</p>`), { a: 1, b: 2, c: 3, items: [], fmt: () => "" });
+      seen = String(f.claimErrors()[0]?.error);
+    } catch (error) {
+      seen = String(error);
+    }
+    expect(seen).toMatch(message);
   });
 
   it("rejects disallowed expressions in bindings and conditions too", () => {

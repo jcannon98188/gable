@@ -1,16 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { BehaviorSubject, Subject, observeOn } from "rxjs";
 import { html, signal } from "@gable/core";
 import { output, renderScheduler, toObservable, toSignal } from "@gable/core/rxjs";
-import { setEffectErrorReporter } from "@gable/core/internal";
 import { mount } from "@gable/testing";
 
-let errors: unknown[];
-beforeEach(() => {
-  errors = [];
-  setEffectErrorReporter((e) => errors.push(e));
-});
-afterEach(() => setEffectErrorReporter((e) => console.error(e)));
 
 describe("toSignal", () => {
   it("delivers emissions to the view within one coalesced flush", async () => {
@@ -63,8 +56,8 @@ describe("toSignal", () => {
     const f = mount(C);
     subject.next(5);
     subject.error(new Error("boom"));
-    await f.flush();
-    expect(errors).toEqual([new Error("boom")]);
+    await expect(f.flush()).rejects.toThrow("boom");
+    expect(f.claimErrors().map((r) => [r.error, r.context.source])).toEqual([[new Error("boom"), "subscription"]]);
     expect(f.text()).toBe("5");
     expect(f.instance.n()).toBe(5);
   });
@@ -80,7 +73,7 @@ describe("toSignal", () => {
     subject.complete();
     await f.flush();
     expect(f.text()).toBe("7");
-    expect(errors).toEqual([]);
+    expect(f.claimErrors()).toEqual([]);
   });
 
   it("treats a Promise as a single-emission Observable", async () => {
@@ -99,9 +92,9 @@ describe("toSignal", () => {
       static meta = { selector: "app-c", template: html`<p></p>` };
       n = toSignal(Promise.reject(new Error("no")));
     }
-    mount(C);
+    const f = mount(C);
     await new Promise((r) => setTimeout(r));
-    expect(errors).toEqual([new Error("no")]);
+    expect(f.claimErrors().map((r) => r.error)).toEqual([new Error("no")]);
   });
 
   it("throws outside a scope unless { manual } is given", () => {
@@ -274,8 +267,8 @@ describe("Observables and Promises bound directly in templates", () => {
     const f = mount(C);
     subject.next("ok");
     subject.error(new Error("bad"));
-    await f.flush();
-    expect(errors).toEqual([new Error("bad")]);
+    await expect(f.flush()).rejects.toThrow("bad");
+    expect(f.claimErrors().map((r) => r.error)).toEqual([new Error("bad")]);
     expect(f.text()).toBe("[ok]");
   });
 });

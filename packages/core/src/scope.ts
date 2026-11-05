@@ -1,5 +1,7 @@
 /** Ownership tree: disposing a scope disposes its children and runs its cleanups. */
 export interface Scope {
+  /** Who owns this scope, for error attribution; unset means "same as the parent". */
+  owner: ScopeOwner | undefined;
   readonly parent: Scope | null;
   /** Distance from the root scope; the scheduler runs shallower scopes first. */
   readonly depth: number;
@@ -8,9 +10,26 @@ export interface Scope {
   dispose(): void;
 }
 
+export interface ScopeOwner {
+  component?: Function;
+  injector?: object;
+}
+
+/** The nearest owner information at or above `scope`. */
+export function ownerOf(scope: Scope | null): { component?: Function; injector?: object } {
+  let component: Function | undefined;
+  let injector: object | undefined;
+  for (let s = scope; s && (!component || !injector); s = s.parent) {
+    component ??= s.owner?.component;
+    injector ??= s.owner?.injector;
+  }
+  return { component, injector };
+}
+
 class ScopeImpl implements Scope {
   readonly depth: number;
   disposed = false;
+  owner: ScopeOwner | undefined;
   #cleanups: Array<() => void> = [];
   #children = new Set<ScopeImpl>();
 

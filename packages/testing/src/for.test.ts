@@ -85,7 +85,8 @@ describe("@for", () => {
       static meta = { selector: "app-dup", template: html`@for (n of ns(); track n) {<i>{{ n }}</i>}` };
       ns = signal([1, 1]);
     }
-    expect(() => mount(Dup)).toThrow(/duplicate key/);
+    const f = mount(Dup);
+    expect(f.claimErrors().map((r) => [String(r.error), r.context.source])).toEqual([[expect.stringMatching(/duplicate key/), "binding"]]);
   });
 
   it("rejects @for without track", () => {

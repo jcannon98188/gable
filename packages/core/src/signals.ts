@@ -1,4 +1,5 @@
 import { Signal } from "signal-polyfill";
+import { reportError } from "./errors.js";
 import { currentScope, createScope, runInScope, type Scope } from "./scope.js";
 
 // The TC39 polyfill is an implementation detail: it is imported only here and
@@ -58,19 +59,10 @@ function schedule(): void {
   scheduled ??= Promise.resolve().then(flushNow);
 }
 
-/** The app error path. Error handling proper arrives with a later ticket; effects and bridges already report here. */
-let reporter: (error: unknown) => void = (error) => console.error(error);
-export function setEffectErrorReporter(fn: (error: unknown) => void): void {
-  reporter = fn;
-}
-export function reportError(error: unknown): void {
-  reporter(error);
-}
-
-const afterFlush: Array<() => void> = [];
+const afterFlush: Array<{ task: () => void; scope: Scope | null }> = [];
 /** Queues work to run inside the next render flush, after its effects (schedules a flush if none is pending). */
-export function runAfterFlush(task: () => void): void {
-  afterFlush.push(task);
+export function runAfterFlush(task: () => void, scope: Scope | null = currentScope()): void {
+  afterFlush.push({ task, scope });
   schedule();
 }
 
@@ -85,12 +77,12 @@ function flushNow(): void {
       .sort((a, b) => a.scope.depth - b.scope.depth || a.seq - b.seq);
     watcher.watch(); // re-arm notifications
     if (pending.length === 0) {
-      const task = afterFlush.shift();
-      if (!task) break;
+      const next = afterFlush.shift();
+      if (!next) break;
       try {
-        task();
+        next.task();
       } catch (error) {
-        reportError(error);
+        reportError(error, "subscription", next.scope);
       }
       continue;
     }
@@ -99,7 +91,7 @@ function flushNow(): void {
       try {
         node.computed.get();
       } catch (error) {
-        reportError(error);
+        reportError(error, "effect", node.scope);
       }
     }
   }
@@ -132,6 +124,10 @@ export function effect(fn: () => void): void {
     watcher.unwatch(computedNode);
     nodes.delete(computedNode);
   });
-  computedNode.get(); // initial run is synchronous and may throw to the creator
+  try {
+    computedNode.get(); // the initial run is synchronous
+  } catch (error) {
+    reportError(error, "effect", scope); // reported; the effect stays alive for its next dependency change
+  }
   watcher.watch(computedNode);
 }

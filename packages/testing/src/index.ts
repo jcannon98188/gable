@@ -1,10 +1,16 @@
 import { instantiate, whenFlushed, type MountedComponent } from "@gable/core/internal";
-import type { ComponentClass, Provider } from "@gable/core";
+import { ErrorHandler, type ComponentClass, type ErrorContext, type Provider } from "@gable/core";
 import { createTestInjector } from "./injector.js";
 import type { Renderer } from "@gable/core/renderer";
 import { createTestRenderer, createTestRoot, query, queryAll, serialize, textContent, type TestNode } from "./renderer.js";
 
 export type { TestNode } from "./renderer.js";
+
+/** One failure delivered to the ErrorHandler. */
+export interface ErrorReport {
+  error: unknown;
+  context: ErrorContext;
+}
 
 export interface MountOptions {
   /** Defaults to the in-memory test renderer. */
@@ -24,8 +30,14 @@ export interface Fixture<T extends object> {
   text(): string;
   /** Stable pretty-printed markup of the host's subtree (empty once destroyed). */
   html(): string;
-  /** Resolves after the next scheduled flush has applied pending updates. */
+  /**
+   * Resolves after the next scheduled flush has applied pending updates. Rejects
+   * with any error reported since the last flush that a test has not claimed
+   * (the first error itself, or an AggregateError for several).
+   */
   flush(): Promise<void>;
+  /** Takes the collected error reports, so the test expects them and flush no longer fails on them. */
+  claimErrors(): ErrorReport[];
   /** Fires an event on a node as if the renderer had emitted it (calls its listeners). */
   dispatch(target: TestNode, name: string, event?: unknown): void;
   destroy(): void;
@@ -34,7 +46,14 @@ export interface Fixture<T extends object> {
 export function mount<T extends object>(Component: ComponentClass<T>, options: MountOptions = {}): Fixture<T> {
   const renderer = options.renderer ?? createTestRenderer();
   const container = createTestRoot();
-  const mounted: MountedComponent<T, TestNode> = instantiate(Component, { renderer, parent: container, injector: createTestInjector(options.providers) });
+  const reports: Array<ErrorReport & { surfaced: boolean }> = [];
+  class Collector extends ErrorHandler {
+    override handleError(error: unknown, context: ErrorContext): void {
+      reports.push({ error, context, surfaced: false });
+    }
+  }
+  const injector = createTestInjector([{ provide: ErrorHandler, useClass: Collector }, ...(options.providers ?? [])]);
+  const mounted: MountedComponent<T, TestNode> = instantiate(Component, { renderer, parent: container, injector });
   let destroyed = false;
   return {
     instance: mounted.instance,
@@ -43,7 +62,14 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
     queryAll: (selector) => queryAll(mounted.host, selector),
     text: () => textContent(mounted.host),
     html: () => (destroyed ? "" : serialize(mounted.host)),
-    flush: () => whenFlushed(),
+    flush: async () => {
+      await whenFlushed();
+      const fresh = reports.filter((r) => !r.surfaced);
+      for (const r of fresh) r.surfaced = true;
+      if (fresh.length === 1) throw fresh[0]!.error;
+      if (fresh.length > 1) throw new AggregateError(fresh.map((r) => r.error), `${fresh.length} unclaimed errors were reported`);
+    },
+    claimErrors: () => reports.splice(0).map(({ error, context }) => ({ error, context })),
     dispatch: (target, name, event) => {
       for (const handler of [...(target.listeners[name] ?? [])]) handler(event);
     },
