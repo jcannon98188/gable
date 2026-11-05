@@ -9,6 +9,7 @@ import { prepare, type ComponentClass } from "./component.js";
 import { parseSelector, matchesNode } from "./select.js";
 import { viewOf, type Content } from "./view-context.js";
 import { registerEntry, withContentTarget } from "./query.js";
+import { buildDefer } from "./defer.js";
 import type { ElementNode, ForNode, IfNode, SwitchNode, TemplateNode } from "./template.js";
 
 /** The live top-level nodes of a built piece of template (blocks change theirs over time). */
@@ -37,6 +38,8 @@ function buildNode<N>(node: TemplateNode, renderer: Renderer<N>, env: Env, paren
       return buildFor(node, renderer, env, parent, before);
     case "switch":
       return buildSwitch(node, renderer, env, parent, before);
+    case "defer":
+      return buildDefer(node, renderer, env, parent, before);
     case "let": {
       env.locals.set(node.name, computed(() => evaluate(node.expr, env)));
       return () => [];
@@ -111,7 +114,8 @@ function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, par
   const matches = (view?.imports ?? []).filter((Class) => matchesNode(parseSelector(Class.meta.selector), node));
   if (DEV && matches.length === 0 && node.tag.includes("-")) {
     throw new Error(
-      `Unknown element <${node.tag}>. Add its component to meta.imports of the component whose template uses it.`,
+      `Unknown element <${node.tag}>. Add its component to meta.imports of the component whose template uses it` +
+        ((view?.lazies.length ?? 0) > 0 ? `; lazy() entries (${view!.lazies.map((l) => l.name).join(", ")}) can only be used inside @defer.` : "."),
     );
   }
   if (view?.scopeToken) renderer.setAttribute(el, view.scopeToken, "");
@@ -181,7 +185,7 @@ function buildSlot<N>(node: ElementNode, renderer: Renderer<N>, env: Env, parent
 // --- control flow ----------------------------------------------------------
 
 /** A region that swaps between alternative bodies, each built in its own scope. */
-function createSwitcher<N>(renderer: Renderer<N>, parent: N, before: N | null) {
+export function createSwitcher<N>(renderer: Renderer<N>, parent: N, before: N | null) {
   const anchor = renderer.createAnchor();
   renderer.insert(parent, anchor, before);
   const outer = currentScope();

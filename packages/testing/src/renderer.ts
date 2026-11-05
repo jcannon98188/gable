@@ -33,12 +33,14 @@ function detach(node: TestNode): void {
 /** The test renderer, with the CSS it was asked to register (by component id) exposed for assertions. */
 export interface TestRenderer extends Renderer<TestNode> {
   readonly styles: Map<string, string>;
+  readonly name: string;
 }
 
 /** The in-memory renderer: an inspectable node tree, no DOM. */
 export function createTestRenderer(): TestRenderer {
   const styles = new Map<string, string>();
   return {
+    name: "test",
     styles,
     createElement: (tag) => makeNode("element", tag),
     createText: (text) => makeNode("text", undefined, text),

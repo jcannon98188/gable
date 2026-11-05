@@ -2,12 +2,15 @@ import type { Env } from "./expression.js";
 import type { Injector } from "./di.js";
 import type { QueryHost } from "./query.js";
 import type { TemplateNode } from "./template.js";
+import type { LazyEntry } from "./lazy.js";
 import type { ComponentClass } from "./component.js";
 
 /** Per-component facts that nested template building needs; found by walking the Env chain. */
 export interface ViewContext {
   /** The `meta.imports` of the component whose template is being built. */
   imports: readonly ComponentClass<any>[];
+  /** The `lazy()` entries of `meta.imports`: loaded only by an `@defer` block, whose content then sees the loaded components. */
+  lazies: readonly LazyEntry[];
   /** The injector of that component (its own child injector when it has `meta.providers`). */
   injector: Injector | null;
   /** Queries this component declared. */

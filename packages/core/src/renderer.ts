@@ -4,6 +4,10 @@
  * scheduling; a renderer owns nodes, and the meaning of tags and properties.
  */
 export interface Renderer<N = unknown> {
+  /** Shown in errors, e.g. an unknown `@defer` trigger. */
+  readonly name?: string;
+  /** The `@defer` triggers `observeTrigger` understands; any other name is a dev-time error naming this renderer. */
+  readonly triggers?: readonly string[];
   // Create. `parent` is context only (e.g. SVG/MathML namespace); it does not insert.
   createElement(tag: string, parent: N | null): N;
   createText(text: string): N;

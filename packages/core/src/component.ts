@@ -8,6 +8,7 @@ import { describeFields, inputOf } from "./input.js";
 import { completeOutput } from "./output.js";
 import { parseSelector } from "./select.js";
 import { createQueryHost, declareQueries, withContentTarget } from "./query.js";
+import { isLazy, type LazyEntry } from "./lazy.js";
 import type { Content } from "./view-context.js";
 
 /** Static component metadata. */
@@ -15,8 +16,8 @@ export interface ComponentMeta {
   selector: string;
   /** Absent on an attribute directive: it decorates a matching element and renders nothing of its own. */
   template?: TemplateResult;
-  /** Components and attribute directives this template may use. */
-  imports?: readonly ComponentClass<any>[];
+  /** Components and attribute directives this template may use, plus `lazy()` entries (only inside `@defer`). */
+  imports?: readonly (ComponentClass<any> | LazyEntry)[];
   /** Creates a child injector for this component and its descendants. */
   providers?: Provider[];
   /**
@@ -107,7 +108,9 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
     const instance = declareQueries(queries, () => (own ? own.run(() => runInScope(scope, () => new Class())) : new Class()));
     for (const out of describeFields(instance, Class.name)) scope.onDispose(() => completeOutput(out));
     const env = createEnv(instance);
-    env.view = { imports: imports ?? [], injector: own, queries, content: options.content ?? null, scopeToken };
+    env.view = {
+      imports: (imports ?? []).filter((e): e is ComponentClass<any> => !isLazy(e)),
+      lazies: (imports ?? []).filter(isLazy), injector: own, queries, content: options.content ?? null, scopeToken };
     if (scopeToken) renderer.setAttribute(host, scopeToken, "");
     applyBindings(host, hostSpec(Class), renderer, env);
     let parts: Array<() => N[]> = [];
