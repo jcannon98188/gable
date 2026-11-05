@@ -63,14 +63,10 @@ describe("@if / @else", () => {
   });
 
   it("tears down the old branch's effects", async () => {
-    let seen = 0;
     class Torn {
       static meta = { selector: "app-torn", template: html`@if (on()) {<p>{{ count() }}</p>}` };
       on = signal(true);
       count = signal(0);
-      track() {
-        seen++;
-      }
     }
     const f = mount(Torn);
     const p = f.query("p")!;
@@ -79,7 +75,6 @@ describe("@if / @else", () => {
     f.instance.count.set(9);
     await f.flush();
     expect(p.children[0]!.text).toBe("0");
-    expect(seen).toBe(0);
   });
 });
 
