@@ -2,3 +2,5 @@
 // so the editor, `gable-check` and the runtime agree on what an expression is.
 export { parseExpression, parseHandler } from "./expression.js";
 export type { Expr, HandlerExpr } from "./expression.js";
+// Template scanning primitives, shared so the editor tooling splits templates exactly as the runtime does.
+export { VOID, BLOCK_START, indexOfTopLevel } from "./template.js";

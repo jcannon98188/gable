@@ -10,8 +10,16 @@ export interface Unsubscribable {
   unsubscribe(): void;
 }
 
-/** The slice of an RxJS Observable the bridge needs. */
+/**
+ * The slice of an RxJS Observable the bridge needs. It is typed with the plain
+ * callback form so that T is inferred from an Observable's own (overloaded)
+ * `subscribe`; the runtime passes an observer object, see `connect`.
+ */
 export interface Subscribable<T> {
+  subscribe(next: (value: T) => void): Unsubscribable;
+}
+
+interface ObserverSubscribable<T> {
   subscribe(observer: { next: (value: T) => void; error: (error: unknown) => void; complete: () => void }): Unsubscribable;
 }
 
@@ -31,7 +39,7 @@ export function isStream(value: unknown): value is StreamSource<unknown> {
 export function connect<T>(source: StreamSource<T>, next: (value: T) => void, scope: Scope | null = currentScope()): () => void {
   let closed = false;
   if (typeof (source as Subscribable<T>).subscribe === "function") {
-    const sub = (source as Subscribable<T>).subscribe({
+    const sub = (source as unknown as ObserverSubscribable<T>).subscribe({
       next: (value) => !closed && next(value),
       error: (error) => !closed && reportError(error, "subscription", scope),
       complete: () => {},

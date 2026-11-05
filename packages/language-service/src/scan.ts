@@ -3,6 +3,8 @@
 // has no use for. Expression grammar is NOT handled here: every expression is
 // returned as a `Src` and validated by @gable/core/tooling's parser.
 
+import { BLOCK_START, VOID, indexOfTopLevel } from "@gable/core/tooling";
+
 /** An expression's trimmed text and its absolute offset in the source file. */
 export interface Src {
   text: string;
@@ -11,6 +13,9 @@ export interface Src {
 export type ExprKind = "value" | "handler" | "model";
 export interface Expression extends Src {
   kind: ExprKind;
+  /** The binding's name without brackets or parentheses (`value` in `[(value)]`), and its offset. */
+  name: string;
+  nameStart: number;
 }
 
 export interface ElementNode {
@@ -58,9 +63,7 @@ export class ScanError extends Error {
   }
 }
 
-const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);
 const ATTR = /\s*([^\s=>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))?/dy;
-const BLOCK_START = /^@(?:if|else|for|empty|switch|case|default|let|defer|placeholder|loading|error)\b/;
 const IDENT = "[A-Za-z_$][\\w$]*";
 
 /** Scans `text` (the template body, `${}` holes blanked) whose first character sits at `base` in the file. */
@@ -73,28 +76,12 @@ function src(text: string, start: number): Src {
   return { text: text.trim(), start: start + lead };
 }
 
-function topLevelIndex(source: string, char: string, from = 0): number {
-  let depth = 0;
-  let quote = "";
-  for (let p = from; p < source.length; p++) {
-    const c = source[p]!;
-    if (quote) {
-      if (c === "\\") p++;
-      else if (c === quote) quote = "";
-    } else if (c === "'" || c === '"') quote = c;
-    else if (c === "(") depth++;
-    else if (c === ")") depth--;
-    else if (c === char && depth === 0) return p;
-  }
-  return -1;
-}
-
 /** Splits at top-level `char`, keeping each piece's offset into `source`. */
 function splitTopLevel(source: string, char: string): Array<{ text: string; at: number }> {
   const out: Array<{ text: string; at: number }> = [];
   let from = 0;
   for (;;) {
-    const i = topLevelIndex(source, char, from);
+    const i = indexOfTopLevel(source, char, from);
     if (i === -1) return [...out, { text: source.slice(from), at: from }];
     out.push({ text: source.slice(from, i), at: from });
     from = i + 1;
@@ -232,7 +219,7 @@ class Scanner {
     this.i += name.length + 1;
     switch (name) {
       case "let": {
-        const end = topLevelIndex(s, ";", this.i);
+        const end = indexOfTopLevel(s, ";", this.i);
         if (end === -1) this.err("@let must end with ;", blockAt, 4);
         const body = s.slice(this.i, end);
         const m = new RegExp(`^(\\s*(${IDENT})\\s*=)([\\s\\S]*)$`).exec(body);
@@ -339,10 +326,15 @@ class Scanner {
       const valueRange = m.indices![2] ?? m.indices![3];
       const value = m[2] ?? m[3] ?? "";
       const valueAt = valueRange ? valueRange[0] : p;
-      const expr = (kind: ExprKind): Expression => ({ kind, ...src(value, this.base + valueAt) });
-      if (name.startsWith("[(") && name.endsWith(")]")) el.expressions.push(expr("model"));
-      else if (name.startsWith("[") && name.endsWith("]")) el.expressions.push(expr("value"));
-      else if (name.startsWith("(") && name.endsWith(")")) el.expressions.push(expr("handler"));
+      const expr = (kind: ExprKind, open: number): Expression => ({
+        kind,
+        name: name.slice(open, name.length - open),
+        nameStart: this.base + nameAt + open,
+        ...src(value, this.base + valueAt),
+      });
+      if (name.startsWith("[(") && name.endsWith(")]")) el.expressions.push(expr("model", 2));
+      else if (name.startsWith("[") && name.endsWith("]")) el.expressions.push(expr("value", 1));
+      else if (name.startsWith("(") && name.endsWith(")")) el.expressions.push(expr("handler", 1));
       else if (name.startsWith("#")) el.refs.push(name.slice(1));
       else if (name.startsWith("*")) this.err(`Structural directives ("${name}") do not exist; use @if or @for blocks.`, nameAt, name.length);
       else if (value.includes("{{")) this.err(`Interpolation in attribute "${name}" is not supported; use [attr.${name}] or [${name}].`, valueAt, value.length);
