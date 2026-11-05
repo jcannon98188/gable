@@ -71,7 +71,7 @@ export function bootstrap<T extends object, N = unknown>(Root: ComponentClass<T>
     if (!renderer.resolveTarget) throw new Error("This renderer cannot resolve the target passed to bootstrap(): it has no resolveTarget operation.");
     host = renderer.resolveTarget(options.target);
   }
-  const injector = createInjector([{ provide: RENDERER, useValue: renderer }, ...(options.providers ?? [])]);
+  const injector = createInjector([{ provide: RENDERER, useValue: renderer }, ...(renderer.providers ?? []), ...(options.providers ?? [])]);
   const ref = createComponent(Root, { renderer, injector, host });
   return {
     get instance() {

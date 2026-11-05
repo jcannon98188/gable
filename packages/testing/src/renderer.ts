@@ -201,3 +201,6 @@ export function serialize(node: TestNode, indent = ""): string {
 export function createTestRoot(): TestNode {
   return makeNode("element", "#root");
 }
+
+export { defineRendererConformance } from "./conformance.js";
+export type { RendererHarness, TestApi } from "./conformance.js";
