@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PROTOTYPE (throwaway): gable HMR — does "re-setup with state transfer" feel right?</title>
+<style>
+  :root { --accent:#5b3df5; --ink:#1d1d24; --mute:#6b6b78; --line:#e4e4ec; --bg:#fafafc; --ok:#1a7f4b; --bad:#b3261e; }
+  * { box-sizing: border-box; }
+  body { font: 15px/1.5 system-ui, sans-serif; color: var(--ink); background: var(--bg); margin: 0; padding: 32px; max-width: 1180px; margin-inline: auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--mute); margin: 0 0 10px; }
+  .proto { display:inline-block; background:#fff3cd; border:1px solid #e6cf73; padding:2px 8px; border-radius:4px; font-size:12px; margin-bottom:10px; }
+  .intro { color: var(--mute); max-width: 860px; margin-bottom: 24px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:16px; }
+  .inst { border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:10px; }
+  .inst.fresh { border-color: var(--accent); background:#f5f2ff; }
+  .inst .head { display:flex; justify-content:space-between; font-weight:600; }
+  .inst .meta { color:var(--mute); font-size:12px; }
+  .view { margin:6px 0; padding:6px 8px; background:#f1f1f6; border-radius:6px; font-family: ui-monospace, monospace; }
+  .fields { font-family: ui-monospace, monospace; font-size:12.5px; color:#333; }
+  button { font: inherit; font-size:13.5px; padding:5px 10px; border:1px solid var(--line); background:#fff; border-radius:6px; cursor:pointer; margin:0 6px 6px 0; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color:#fff; border-color: var(--accent); }
+  button.step { text-align:left; }
+  button.done { opacity:.45; }
+  button.next { border-color: var(--accent); box-shadow: 0 0 0 2px #d9d0ff; }
+  .tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .tabs button { margin:0; }
+  .tabs button.active { background: var(--accent); color:#fff; border-color:var(--accent); }
+  pre { margin:0; font: 12.5px/1.45 ui-monospace, monospace; white-space: pre-wrap; }
+  .src { background:#16161d; color:#e8e8f0; padding:10px 12px; border-radius:8px; margin-bottom:8px; }
+  .src .t { color:#9d8cff; font-weight:600; }
+  .report { border-left:3px solid var(--accent); padding-left:12px; }
+  .report.rolled { border-color: var(--bad); }
+  .report li { margin: 2px 0; }
+  .tag { font-size:11px; padding:1px 6px; border-radius:4px; background:#ece8ff; color:var(--accent); }
+  .tag.bad { background:#fde8e6; color:var(--bad); }
+  .tag.ok { background:#e2f5ea; color:var(--ok); }
+  .desc { color:var(--mute); margin-bottom:10px; }
+</style>
+</head>
+<body>
+<span class="proto">PROTOTYPE — throwaway. Answers TASK-1.9; nothing here is production code.</span>
+<h1>Edit a running app without losing what you typed</h1>
+<p class="intro"><b>The question:</b> gable's hot-reload plan says that when you edit a component or service, the framework builds a <i>new</i> copy, carries the old copy's data across <i>by field name and kind</i>, throws the old copy away, and rebuilds the view. A service edit also refreshes everything that uses that service. All edits in one save are applied together or not at all. Does that behave the way you would expect when you push awkward edits through it? Press the buttons on the right to "edit the source"; the left shows the live app and what the framework did.</p>
+
+<div class="grid">
+<div>
+  <div class="card"><h2>The running app</h2><div id="app"></div></div>
+  <div class="card"><h2>What the framework just did</h2><div id="report" class="report"></div></div>
+  <div class="card"><h2>Current source code (simplified)</h2><div id="source"></div></div>
+</div>
+<div>
+  <div class="card">
+    <h2>Free play: edit the source</h2>
+    <div id="edits"></div>
+    <button onclick="resetDemo()">↺ Start the demo over</button>
+  </div>
+  <div class="card">
+    <h2>Guided walkthroughs</h2>
+    <div class="tabs" id="tabs"></div>
+    <div class="desc" id="scenarioDesc"></div>
+    <div id="steps"></div>
+  </div>
+</div>
+</div>
+
+<!-- ============ PORTABLE LOGIC MODULE (no DOM) ============ -->
+<script id="logic">
+// A "definition" is the source of a class: its fields (in setup order), methods, template, style, optional hmr mode.
+// field kinds: signal (writable state), data (plain value), computed (expr over other fields), inject (a service by id).
+// A "world" is plain data: definitions + live instances. Everything is cloned per transaction, so rollback is free.
+
+const field = (name, kind, extra = {}) => ({ name, kind, ...extra });
+
+function initialDefs() {
+  return {
+    Cart: { id: 'Cart', kind: 'service', fields: [field('items', 'signal', { init: 0 })],
+            methods: { add: 'items = items + 1' }, template: '', style: '', hmr: null },
+    Counter: { id: 'Counter', kind: 'component',
+               fields: [field('count', 'signal', { init: 0 }), field('double', 'computed', { expr: 'count * 2' })],
+               methods: { increment: 'count = count + 1' },
+               template: 'Count: {{count}} · double: {{double}}', style: '.counter { color: black }', hmr: null },
+    Badge: { id: 'Badge', kind: 'component',
+             fields: [field('label', 'data', { init: 'Cart' }), field('cart', 'inject', { service: 'Cart' })],
+             methods: { addToCart: 'cart.add()' },
+             template: '{{label}}: {{cart.items}} item(s)', style: '', hmr: null },
+  };
+}
+
+function createWorld() {
+  const w = { defs: initialDefs(), instances: {}, tx: 0 };
+  setupInstance(w, 'Cart', 'Cart', null, false);
+  setupInstance(w, 'Counter#1', 'Counter', null, false);
+  setupInstance(w, 'Badge#header', 'Badge', null, false);
+  setupInstance(w, 'Badge#sidebar', 'Badge', null, false);
+  return w;
+}
+
+// ---- scope: lets method bodies and expressions read/write fields by bare name ----
+function scopeOf(w, inst) {
+  return new Proxy({}, {
+    has: (_, k) => typeof k === 'string' && k !== 'Math',
+    get: (_, k) => {
+      if (k === Symbol.unscopables) return undefined;
+      const f = inst.fields[k];
+      const m = w.defs[inst.defId].methods[k];
+      if (!f && m) return () => run(w, inst, m);
+      if (!f) throw new ReferenceError(k + ' is not defined');
+      if (f.kind === 'computed') return run(w, inst, 'return ' + f.expr);
+      if (f.kind === 'inject') return scopeOf(w, w.instances[f.service]);
+      return f.value;
+    },
+    set: (_, k, v) => {
+      const f = inst.fields[k];
+      if (!f || (f.kind !== 'signal' && f.kind !== 'data')) throw new ReferenceError('cannot assign ' + String(k));
+      f.value = v; return true;
+    },
+  });
+}
+function run(w, inst, body) { return new Function('s', 'with (s) { ' + body + ' }')(scopeOf(w, inst)); }
+
+// ---- setup: field initialisers only. `prev` is the old instance whose state we transfer. ----
+function setupInstance(w, slot, defId, prev, reset) {
+  const def = w.defs[defId];
+  const inst = { slot, defId, gen: prev ? prev.gen + 1 : 1, builds: 1, fields: {}, notes: [] };
+  for (const f of def.fields) {
+    const old = prev && !reset ? prev.fields[f.name] : null;
+    if (f.kind === 'signal' || f.kind === 'data') {
+      if (old && old.kind === f.kind) { inst.fields[f.name] = { kind: f.kind, value: old.value }; inst.notes.push('kept ' + f.name + '=' + JSON.stringify(old.value)); }
+      else { inst.fields[f.name] = { kind: f.kind, value: f.init }; inst.notes.push((prev ? 'new ' : 'init ') + f.name + '=' + JSON.stringify(f.init) + (old ? ' (kind changed, old value dropped)' : '')); }
+    } else if (f.kind === 'computed') inst.fields[f.name] = { kind: 'computed', expr: f.expr };
+    else if (f.kind === 'inject') inst.fields[f.name] = { kind: 'inject', service: f.service };
+  }
+  if (prev) for (const n of Object.keys(prev.fields)) {
+    const o = prev.fields[n];
+    if (!inst.fields[n] && (o.kind === 'signal' || o.kind === 'data')) inst.notes.push('DROPPED ' + n + '=' + JSON.stringify(o.value) + ' (field removed or renamed)');
+  }
+  w.instances[slot] = inst;
+  return inst;
+}
+
+function render(w, inst) {
+  const def = w.defs[inst.defId];
+  return def.template.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, e) => {
+    try { return String(run(w, inst, 'return ' + e)); } catch (err) { return '⚠ ' + err.message; }
+  });
+}
+
+function invoke(w, slot, method) {
+  const inst = w.instances[slot];
+  run(w, inst, w.defs[inst.defId].methods[method]);   // methods always come from the canonical (patched-in-place) definition
+}
+
+const sig = d => JSON.stringify(d.fields);
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+// ---- the transaction: stage, classify, apply, or roll back ----
+// edits: [{ defId, def, throws? }]. Returns { world, report }. On failure `world` is the untouched input.
+function applyTransaction(world, edits) {
+  const w = structuredClone(world); w.tx++;
+  const lines = [];
+  for (const e of edits) if (e.throws) return { world, report: { rolledBack: true, lines: ['Re-evaluating the module for ' + e.defId + ' threw: ' + e.throws, 'Nothing was applied. The app is exactly as it was. The overlay would show the error.'] } };
+
+  const kinds = {};
+  for (const e of edits) {
+    const old = w.defs[e.defId], neu = e.def;
+    const reset = neu.hmr === 'reset';
+    let c = 'none';
+    if (sig(old) !== sig(neu) || (reset && !same({ ...old, hmr: 0 }, { ...neu, hmr: 0 }))) c = 'resetup';
+    else if (old.template !== neu.template) c = 'view';
+    else if (!same(old.methods, neu.methods) || old.style !== neu.style) c = 'patch';
+    kinds[e.defId] = c;
+    w.defs[e.defId] = neu;
+    lines.push(e.defId + ': ' + ({ resetup: 'fields changed → re-setup with state transfer' + (reset ? ' (hmr=reset: NO transfer)' : ''), view: 'template changed → rebuild view, same instance', patch: 'methods/style only → patched in place, nothing rebuilt', none: 'no effective change' })[c]);
+  }
+
+  // cascade: anything that injected a re-set-up service is re-set-up too, transitively
+  const todo = new Set(Object.values(w.instances).filter(i => kinds[i.defId] === 'resetup').map(i => i.slot));
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const i of Object.values(w.instances)) {
+      if (todo.has(i.slot)) continue;
+      const deps = Object.values(i.fields).filter(f => f.kind === 'inject').map(f => f.service);
+      if (deps.some(s => todo.has(s))) { todo.add(i.slot); grew = true; lines.push(i.slot + ': injects a re-set-up service → cascaded re-setup'); }
+    }
+  }
+
+  const rebuilt = new Set();
+  const ordered = [...todo].sort((a, b) => (w.defs[w.instances[a].defId].kind === 'service' ? 0 : 1) - (w.defs[w.instances[b].defId].kind === 'service' ? 0 : 1));
+  for (const slot of ordered) {
+    const prev = w.instances[slot];
+    const reset = w.defs[prev.defId].hmr === 'reset' && kinds[prev.defId] === 'resetup';
+    const inst = setupInstance(w, slot, prev.defId, prev, reset);
+    rebuilt.add(slot);
+    lines.push(slot + ': old scope disposed → generation ' + inst.gen + '. ' + inst.notes.join('; '));
+  }
+  for (const i of Object.values(w.instances)) if (kinds[i.defId] === 'view' && !todo.has(i.slot)) { i.builds++; rebuilt.add(i.slot); lines.push(i.slot + ': view rebuilt, instance and state untouched'); }
+  for (const slot of todo) if (w.defs[w.instances[slot].defId].kind === 'component') { /* builds incremented once via fresh instance */ }
+  for (const i of Object.values(w.instances)) if (!rebuilt.has(i.slot)) lines.push(i.slot + ': untouched');
+  w.lastRebuilt = [...rebuilt];
+  return { world: w, report: { rolledBack: false, lines } };
+}
+
+const dispatch = { fieldSig: sig };
+</script>
+
+<!-- ============ THROWAWAY PAGE SHELL ============ -->
+<script>
+let world, report, scenarioIdx = 0, stepIdx = 0;
+const clone = x => JSON.parse(JSON.stringify(x));
+
+// Each edit is a toggle producing the full new definition(s); "B" side flips back.
+const EDITS = [
+  { id: 'tpl', label: 'Reword the Counter template', desc: 'Only the template text changes.',
+    make: d => { const n = clone(d.Counter); n.template = n.template.startsWith('Count:') ? 'The count is {{count}} (doubled: {{double}})' : 'Count: {{count}} · double: {{double}}'; return [{ defId: 'Counter', def: n }]; } },
+  { id: 'comp', label: 'Change “double” into “triple”', desc: 'A computed field’s formula changes.',
+    make: d => { const n = clone(d.Counter); const f = n.fields.find(x => x.name === 'double' || x.name === 'triple'); if (f.name === 'double') { f.name = 'triple'; f.expr = 'count * 3'; n.template = n.template.replace('double', 'triple').replace('{{double}}', '{{triple}}'); } else { f.name = 'double'; f.expr = 'count * 2'; n.template = n.template.replace('triple', 'double').replace('{{triple}}', '{{double}}'); } return [{ defId: 'Counter', def: n }]; } },
+  { id: 'meth', label: 'Make increment add 5', desc: 'Only a method body changes.',
+    make: d => { const n = clone(d.Counter); const c = Object.keys(n.fields.find(f => f.kind === 'signal') ? { x: 1 } : {}) && n.fields.find(f => f.kind === 'signal').name; const by = n.methods.increment.includes('+ 5') ? 1 : 5; n.methods.increment = c + ' = ' + c + ' + ' + by; return [{ defId: 'Counter', def: n }]; } },
+  { id: 'style', label: 'Change the Counter style', desc: 'Only CSS changes.',
+    make: d => { const n = clone(d.Counter); n.style = n.style.includes('black') ? '.counter { color: red }' : '.counter { color: black }'; return [{ defId: 'Counter', def: n }]; } },
+  { id: 'rename', label: 'Rename “count” to “clicks”', desc: 'Same idea, different field name. The framework has no way to know.',
+    make: d => { const n = clone(d.Counter); const toClicks = n.fields[0].name === 'count'; const [a, b] = toClicks ? ['count', 'clicks'] : ['clicks', 'count']; n.fields[0].name = b; n.fields[1].expr = n.fields[1].expr.replace(a, b); n.methods.increment = n.methods.increment.split(a).join(b); n.template = n.template.replace('{{' + a + '}}', '{{' + b + '}}'); return [{ defId: 'Counter', def: n }]; } },
+  { id: 'newf', label: 'Add / remove a “step” field on Counter', desc: 'A brand-new field appears (or disappears).',
+    make: d => { const n = clone(d.Counter); const i = n.fields.findIndex(f => f.name === 'step'); if (i >= 0) n.fields.splice(i, 1); else n.fields.push({ name: 'step', kind: 'signal', init: 1 }); return [{ defId: 'Counter', def: n }]; } },
+  { id: 'kind', label: 'Turn “count” from a signal into plain data', desc: 'Same name, different kind.',
+    make: d => { const n = clone(d.Counter); const f = n.fields[0]; f.kind = f.kind === 'signal' ? 'data' : 'signal'; return [{ defId: 'Counter', def: n }]; } },
+  { id: 'svc', label: 'Edit the Cart service (add / remove a “coupon” field)', desc: 'A service changes; its users should follow.',
+    make: d => { const n = clone(d.Cart); const i = n.fields.findIndex(f => f.name === 'coupon'); if (i >= 0) n.fields.splice(i, 1); else n.fields.push({ name: 'coupon', kind: 'data', init: 'NONE' }); return [{ defId: 'Cart', def: n }]; } },
+  { id: 'batch', label: 'Save two files at once: Cart service + Badge template', desc: 'One save, two changed modules, one transaction.',
+    make: d => { const c = clone(d.Cart), b = clone(d.Badge); const i = c.fields.findIndex(f => f.name === 'vat'); if (i >= 0) c.fields.splice(i, 1); else c.fields.push({ name: 'vat', kind: 'signal', init: 20 }); b.template = b.template.startsWith('{{label}}') ? '🛒 {{cart.items}} in {{label}}' : '{{label}}: {{cart.items}} item(s)'; return [{ defId: 'Cart', def: c }, { defId: 'Badge', def: b }]; } },
+  { id: 'reset', label: 'Toggle  static hmr = "reset"  on Counter', desc: 'Opts the class out of state transfer (only matters on the next field-changing edit).',
+    make: d => { const n = clone(d.Counter); n.hmr = n.hmr === 'reset' ? null : 'reset'; return [{ defId: 'Counter', def: n }]; } },
+  { id: 'bad', label: 'Save a broken file (syntax error)', desc: 'The module fails to evaluate.',
+    make: d => [{ defId: 'Counter', def: clone(d.Counter), throws: 'SyntaxError: Unexpected token ")"' }] },
+];
+
+const ACTIONS = [
+  { label: 'Counter: +1 (increment)', run: () => doInvoke('Counter#1', 'increment') },
+  { label: 'Header badge: add to cart', run: () => doInvoke('Badge#header', 'addToCart') },
+];
+
+function doInvoke(slot, m) { try { invoke(world, slot, m); report = { rolledBack: false, lines: ['You clicked ' + slot + '.' + m + '(). The instance is whatever is live right now.'] }; world.lastRebuilt = []; } catch (e) { report = { rolledBack: true, lines: [slot + '.' + m + ' threw: ' + e.message] }; } draw(); }
+function doEdit(id) { const e = EDITS.find(x => x.id === id); const r = applyTransaction(world, e.make(world.defs)); world = r.world; report = r.report; if (r.report.rolledBack) world.lastRebuilt = []; draw(); }
+function resetDemo() { world = createWorld(); world.lastRebuilt = []; report = { rolledBack: false, lines: ['Fresh app mounted.'] }; draw(); }
+
+const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+function draw() {
+  const fresh = new Set(world.lastRebuilt || []);
+  document.getElementById('app').innerHTML = Object.values(world.instances).map(i => {
+    const def = world.defs[i.defId];
+    const vals = Object.entries(i.fields).map(([n, f]) => f.kind === 'computed' ? n + ' = ' + (() => { try { return run(world, i, 'return ' + f.expr); } catch (e) { return '⚠'; } })() + '  (computed)' : f.kind === 'inject' ? n + ' → ' + f.service : n + ' = ' + JSON.stringify(f.value) + '  (' + f.kind + ')').join('\n');
+    const btns = Object.keys(def.methods).map(m => '<button onclick="doInvoke(\'' + i.slot + '\',\'' + m + '\')">' + i.defId + '.' + m + '()</button>').join('');
+    return '<div class="inst' + (fresh.has(i.slot) ? ' fresh' : '') + '"><div class="head"><span>' + esc(i.slot) + ' <span class="tag">' + def.kind + '</span>' + (def.hmr ? ' <span class="tag">hmr=' + def.hmr + '</span>' : '') + '</span><span class="meta">instance generation ' + i.gen + ' · view built ' + i.builds + '×</span></div>' +
+      (def.kind === 'component' ? '<div class="view">' + esc(render(world, i)) + '</div>' : '') + '<pre class="fields">' + esc(vals) + '</pre><div style="margin-top:6px">' + btns + '</div></div>';
+  }).join('') + '<div class="meta">Highlighted = rebuilt by the last edit. "generation" goes up when a new instance replaced the old one; it stays put when the same instance was kept.</div>';
+
+  document.getElementById('report').className = 'report' + (report.rolledBack ? ' rolled' : '');
+  document.getElementById('report').innerHTML = (report.rolledBack ? '<span class="tag bad">rolled back / error</span>' : '<span class="tag ok">transaction ' + world.tx + '</span>') + '<ul>' + report.lines.map(l => '<li>' + esc(l) + '</li>').join('') + '</ul>';
+
+  document.getElementById('source').innerHTML = Object.values(world.defs).map(d => '<div class="src"><pre><span class="t">' + d.kind + ' ' + d.id + '</span>' + (d.hmr ? '  static hmr = "' + d.hmr + '"' : '') + '\n' +
+    d.fields.map(f => '  ' + f.name + ' = ' + ({ signal: 'signal(' + JSON.stringify(f.init) + ')', data: JSON.stringify(f.init), computed: 'computed(() => ' + f.expr + ')', inject: 'inject(' + f.service + ')' })[f.kind]).join('\n') + '\n' +
+    Object.entries(d.methods).map(([k, v]) => '  ' + k + '() { ' + v + ' }').join('\n') + (d.template ? '\n  template: ' + d.template : '') + (d.style ? '\n  style: ' + d.style : '') + '</pre></div>').join('');
+}
+
+// ----- guided walkthroughs: a step is { label, run } -----
+const A = i => ({ label: ACTIONS[i].label, run: ACTIONS[i].run });
+const E = id => ({ label: 'Edit: ' + EDITS.find(e => e.id === id).label, run: () => doEdit(id) });
+const SCENARIOS = [
+  { name: '1 · Template edit', desc: 'Click +1 three times, then reword the template. Watch: the count stays 3, the instance generation does not change (same instance), but the view is rebuilt.', steps: [A(0), A(0), A(0), E('tpl')] },
+  { name: '2 · Computed edit', desc: 'Click +1 three times, then change double→triple. Watch: count stays 3 (carried across), a NEW instance (generation 2) exists, and the computed field already shows 9. The old instance’s scope is disposed.', steps: [A(0), A(0), A(0), E('comp')] },
+  { name: '3 · Method-only edit', desc: 'Click +1 twice, make increment add 5, click +1. Watch: nothing is rebuilt by the edit, yet the new body is used immediately by the live instance.', steps: [A(0), A(0), E('meth'), A(0)] },
+  { name: '4 · Rename loses data', desc: 'Click +1 three times, then rename count→clicks. Watch: the value 3 is reported as DROPPED and the new field starts at 0. This is the documented cost of having no compiler signature. Then rename back: you get 0, not 3.', steps: [A(0), A(0), A(0), E('rename'), E('rename')] },
+  { name: '5 · Kind change', desc: 'Click +1 twice, then turn count from a signal into plain data. Watch: same name but different kind, so it is NOT transferred. Is that what you would want?', steps: [A(0), A(0), E('kind')] },
+  { name: '6 · Service cascade', desc: 'Add two items to the cart, then edit the Cart service. Watch: Cart is re-set-up with items preserved, BOTH badges cascade to new instances (they injected it), and Counter is untouched. Without the cascade the badges would point at a dead service.', steps: [A(1), A(1), E('svc')] },
+  { name: '7 · One save, two files', desc: 'Edit Cart and Badge together. Watch: each Badge is rebuilt exactly once even though it changed twice over (its own template AND the service it injects).', steps: [A(1), E('batch')] },
+  { name: '8 · Broken file', desc: 'Click +1 twice, then save a syntax error. Watch: nothing changes at all, and the report says why. Then make a good edit and see it still works.', steps: [A(0), A(0), E('bad'), E('tpl')] },
+  { name: '9 · Opt out with reset', desc: 'Click +1 three times, turn on static hmr = "reset", then make a field-changing edit (double→triple). Watch: a new instance but count is back to 0.', steps: [A(0), A(0), A(0), E('reset'), E('comp')] },
+];
+
+function drawScenarios() {
+  document.getElementById('tabs').innerHTML = SCENARIOS.map((s, i) => '<button class="' + (i === scenarioIdx ? 'active' : '') + '" onclick="pickScenario(' + i + ')">' + s.name + '</button>').join('');
+  const s = SCENARIOS[scenarioIdx];
+  document.getElementById('scenarioDesc').textContent = s.desc;
+  document.getElementById('steps').innerHTML = s.steps.map((st, i) => '<div><button class="step ' + (i < stepIdx ? 'done' : i === stepIdx ? 'next' : '') + '" onclick="doStep(' + i + ')">' + (i + 1) + '. ' + esc(st.label) + '</button></div>').join('');
+}
+function pickScenario(i) { scenarioIdx = i; stepIdx = 0; resetDemo(); drawScenarios(); }
+function doStep(i) { if (i !== stepIdx) return; SCENARIOS[scenarioIdx].steps[i].run(); stepIdx++; drawScenarios(); }
+
+document.getElementById('edits').innerHTML = ACTIONS.map((a, i) => '<button class="primary" onclick="ACTIONS[' + i + '].run()">' + a.label + '</button>').join('') + '<hr style="border:0;border-top:1px solid var(--line)">' +
+  EDITS.map(e => '<div><button onclick="doEdit(\'' + e.id + '\')">' + esc(e.label) + '</button> <span class="meta">' + esc(e.desc) + '</span></div>').join('');
+pickScenario(0);
+</script>
+</body>
+</html>
