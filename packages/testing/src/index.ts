@@ -67,7 +67,7 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
   }
   const defer: DeferHandle[] = [];
   const injector = createTestInjector([{ provide: DEFER_BLOCKS, useValue: defer }, { provide: ErrorHandler, useClass: Collector }, ...(options.providers ?? [])]);
-  const mounted: MountedComponent<T, TestNode> = instantiate(Component, { renderer, parent: container, injector });
+  const mounted = instantiate(Component, { renderer, parent: container, injector });
   let destroyed = false;
   const moduleUrl = `gable-test://fixture-${++fixtures}`;
   return {
