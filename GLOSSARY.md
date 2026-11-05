@@ -112,3 +112,27 @@ _Avoid_: Validators config, form definition
 **Field error**:
 A plain object with a `kind` and optional extra data, produced by a validator. Display text is not part of forms.
 _Avoid_: Error message, validation result
+
+**Error handler**:
+The single Token every runtime failure is reported to, together with where it happened and which Component owned it. Reporting never crashes the app; failures are soft and the affected part keeps its last good state or renders nothing.
+_Avoid_: Exception handler, error boundary, global catch
+
+**Interceptor**:
+A function run in the injection context that sits between an HTTP request and the network backend: it receives an immutable request and a `next`, and may change the request, the response or the outcome. Interceptors layer by injector depth. Unrelated to a Guard, which decides navigation.
+_Avoid_: Middleware, HTTP filter
+
+**HTTP backend**:
+The Token that actually sends an HTTP request, with `fetch` as its default. Interceptors wrap it; the test harness replaces it with a recording fake.
+_Avoid_: Transport, adapter
+
+**Fixture**:
+The handle a test gets from mounting a Component or app: the instance, the rendered node tree, ways to query and interact with it, and control over flushing. Torn down automatically after the test.
+_Avoid_: Test bed, wrapper, harness (the harness is the whole testing package)
+
+**Entry point**:
+A subpath of a package that users import from on its own (such as the router, forms or HTTP client of the core package), so unused features are left out of a bundle and everything still ships under one version. Optional features are entry points, not separate packages.
+_Avoid_: Sub-package, plugin, module
+
+**Lockstep release**:
+All Gable npm packages share one version number and are published together, so any set of Gable packages at the same version is guaranteed to work together.
+_Avoid_: Fixed versioning, synchronized release

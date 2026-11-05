@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@jason'
 created_date: '2026-11-05 06:13'
-updated_date: '2026-11-05 06:25'
+updated_date: '2026-11-05 06:58'
 labels:
   - 'wayfinder:grilling'
 dependencies: []
@@ -45,5 +45,10 @@ Resolved with the user (grilled; every recommendation accepted).
 **HMR**: a `form` field is its own state-transfer kind: model value, touched flags and dirty baseline carry over by path; the schema is re-read from new code and re-run; removed paths drop, new paths start fresh; array rows keep state by key.
 **Language service rules added**: `[field]` bound to a non-field; field/control value type mismatch; model key named `state`; uncalled signal read such as `state.errors`; `@for` over `rows()` without `track row.state.key`; custom control with no recognised members.
 **Out of v0**: template-driven forms, a form builder DSL, schema-from-JSON/dynamic generation, built-in i18n of error messages, file inputs, wizard/multi-step orchestration.
+---
+
+created: 2026-11-05 06:58
+---
+From Public package layout and versioning: forms ships as the @gable/core/forms entry point.
 ---
 <!-- COMMENTS:END -->

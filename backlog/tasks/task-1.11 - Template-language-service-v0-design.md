@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@jason'
 created_date: '2026-11-05 04:20'
-updated_date: '2026-11-05 06:25'
+updated_date: '2026-11-05 07:02'
 labels:
   - 'wayfinder:grilling'
 dependencies:
@@ -80,5 +80,10 @@ Resolved with the user.
 created: 2026-11-05 06:25
 ---
 Amendment from Forms: Forms adds language service rules: [field] bound to a non-field; field/control value type mismatch; model key named state; uncalled signal read like state.errors; @for over rows() without track row.state.key; custom control with no recognised members (value model plus optional disabled/readonly/invalid/errors inputs and touched output). Forms metadata comes from types.
+---
+
+created: 2026-11-05 07:02
+---
+From Project scaffolding and starter template: the DOM renderer package is @gable/renderer-dom, so the default tsconfig renderer option is @gable/renderer-dom, not @gable/dom.
 ---
 <!-- COMMENTS:END -->

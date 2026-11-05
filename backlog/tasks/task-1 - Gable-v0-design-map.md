@@ -1,10 +1,10 @@
 ---
 id: TASK-1
 title: Gable v0 design map
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-05 04:19'
-updated_date: '2026-11-05 06:25'
+updated_date: '2026-11-05 13:47'
 labels:
   - 'wayfinder:map'
 dependencies: []
@@ -38,14 +38,26 @@ Consult GLOSSARY.md. No framework-specific compiler (ngc/Ivy style): TypeScript 
 - [Template language service v0 design](backlog/tasks/task-1.11%20-%20Template-language-service-v0-design.md): one analyzer core (parser, type-check blocks, one rule catalogue, formatter) behind a tsserver plugin, `gable-check` CLI, `gable-vscode` extension and thin Prettier plugin; metadata derived from types and `meta.imports`, renderer metadata via a tsconfig `renderer` option; always strict with per-rule severity; quick fixes extract computed view-model signals; TextMate injection grammar for highlighting; opinionated formatter exposed as a pure `formatTemplate` plus a template-only CLI, so any formatter can integrate.
 
 - [Forms](backlog/tasks/task-1.15%20-%20Forms.md): separate optional entry point; model-first `form(model, schema)` where every node is a fine-grained WritableSignal (`form()`, `form.email()`, `[(model)]="form.email"`), model canonical; per-field state under a reserved `state` namespace; error objects `{ kind, ... }`; schema-function validation with typed paths; async validation as RxJS in/out; `submit(action)`; renderer-shipped `[field]` directive and structural custom-control convention; HMR transfers value, touched and baseline by path.
+- [Error handling](backlog/tasks/task-1.13%20-%20Error-handling.md): root `ErrorHandler` Token (default logs and swallows) receiving `{ source, component?, injector }` contexts attributed via owning scope; no boundaries in v0; effects, events and bindings fail soft (report, keep going or last value); setup failure disposes scope and renders an empty host; overlay and Sentry-style tools decorate the one Token; test harness rethrows reports so tests fail by default.
+- [HTTP client](backlog/tasks/task-1.16%20-%20HTTP-client.md): small optional `@gable/http` entry point; `Http` class returning cold Observables (abort on unsubscribe), function interceptors layered by injector depth, typed `HttpError` that flows to the `ErrorHandler`, swappable `HttpBackend` Token (default `fetch`) with a recording test fake; no caching, retry, progress or typed endpoints in v0.
+
+- [Testing story](backlog/tasks/task-1.17%20-%20Testing-story.md): dev-only `@gable/testing` (harness plus test renderer), runner-agnostic with Vitest first-class; `mount`/`mountApp`/`createTestInjector` return a Fixture with CSS-subset queries, `html()` snapshots and user-level helpers; explicit `flush`/`settle`/`flushSync` and `advance(ms)` on the runner's fake timers; collected errors fail tests unless claimed; HTTP fake by default (`http: 'network'` for MSW); component `overrides`, `fixture.defer`, `hotReplace`.
+
+- [Escape hatches for HMR](backlog/tasks/task-1.18%20-%20Escape-hatches-for-HMR.md): `static hmr` and a module `export const hmr` take `reset`/`reload`/`ignore` (class overrides module); `hotState(import.meta, key, init)` keeps module-level state across edits (old value wins, dev-only registry); language service validates and suppresses the top-level-signal warning for `hotState`; no global switch (use Vite `server.hmr: false`).
+
+- [HMR spike: swap a component and keep signal state](backlog/tasks/task-1.9%20-%20HMR-spike-swap-a-component-and-keep-signal-state.md): simulated prototype confirmed the HMR runtime model (re-setup with state transfer, service cascade, atomic rollback, rename/kind-change data loss accepted); no spec changes. Prototype on branch `prototype/hmr-spike`; not validated against real Vite.
+
+- [Public package layout and versioning](backlog/tasks/task-1.14%20-%20Public-package-layout-and-versioning.md): one `@gable/core` with entry points (router, forms, http, renderer, hmr) plus `renderer-dom`, `testing`, `vite`, `language-service`, `prettier-plugin`; lockstep 0.x releases; pinned polyfill dependency, RxJS peer, same-minor core peers; 1.0 gated on gable stability; ESM-only.
+
+- [Project scaffolding and starter template](backlog/tasks/task-1.19%20-%20Project-scaffolding-and-starter-template.md): `create-gable` copies one template (Vite, TypeScript, Tailwind v4, Vitest, Prettier, sample Counter app) with the language service fully wired and versions pinned to the lockstep release; CI scaffolds it as an integration test; Getting started and manual-setup docs; DOM renderer is `@gable/renderer-dom` everywhere.
 
 ## Not yet specified
 
-- Project scaffolding (Tailwind v4 is the default; Vite + `@gable/vite`); waits on the package layout
-
-- Devtools and error overlay; waits on error handling
+- Devtools and error overlay UI (the hook is decided: decorate `ErrorHandler`)
+- Error boundaries (`@try`/`@catch`-style fallback rendering); the Token and attribution are the seam
 - Performance targets
 - Template language service extras: rename, find references, semantic tokens, a dprint WASM plugin
+- HTTP extras: response caching and dedup, SSE/WebSocket Observables, a typed-endpoint layer (see [HTTP client](backlog/tasks/task-1.16%20-%20HTTP-client.md))
 - Router extras: scroll restoration, route preloading, named outlets and auxiliary routes, resolvers, typed route links
 
 ## Out of scope
@@ -56,3 +68,12 @@ Consult GLOSSARY.md. No framework-specific compiler (ngc/Ivy style): TypeScript 
 - A CLI with schematics
 - A component library
 <!-- SECTION:DESCRIPTION:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-11-05 13:47
+---
+Closed: every child decision ticket is Done, and the user reports the product has been built from the resulting spec.
+---
+<!-- COMMENTS:END -->
