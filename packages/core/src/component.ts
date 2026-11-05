@@ -1,7 +1,7 @@
 import { reportError } from "./errors.js";
 import { createScope, runInScope, type Scope } from "./scope.js";
 import type { Renderer } from "./renderer.js";
-import { assertNoConstructor, createInjector, type Injector, type Provider } from "./di.js";
+import { InjectionToken, assertNoConstructor, createInjector, type Injector, type Provider } from "./di.js";
 import { createEnv } from "./expression.js";
 import { addAttribute, parseTemplate, type ElementNode, type TemplateResult } from "./template.js";
 import { applyBindings, buildNodes } from "./view.js";
@@ -98,6 +98,22 @@ export interface PrepareOptions<N> {
   onSetupError?: "report" | "throw";
 }
 
+/**
+ * Test hook (dev only): replaces `meta.imports` entries (a component or a `lazy()` entry) for one injector tree.
+ * A replacement must declare the selector of what it replaces.
+ */
+export const COMPONENT_OVERRIDES = new InjectionToken<ReadonlyMap<ComponentClass<any> | LazyEntry, ComponentClass<any> | LazyEntry>>("ComponentOverrides");
+
+function applyOverrides(injector: Injector | null, imports: readonly (ComponentClass<any> | LazyEntry)[]): (ComponentClass<any> | LazyEntry)[] {
+  const map = injector?.get(COMPONENT_OVERRIDES, { optional: true });
+  if (!map) return [...imports];
+  return imports.map((entry) => {
+    const next = map.get(entry);
+    if (!next) return entry;
+    return isLazy(entry) && !isLazy(next) ? { kind: "lazy", name: entry.name, load: async () => next } satisfies LazyEntry : next;
+  });
+}
+
 /** Runs a component's Setup (field initialisers) in its injection context and wires `meta.host`. */
 export function prepare<T extends object, N>(Class: ComponentClass<T>, options: PrepareOptions<N>): PreparedComponent<T, N> {
   const { renderer, host } = options;
@@ -125,8 +141,8 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
     for (const out of describeFields(instance, Class.name)) scope.onDispose(() => completeOutput(out));
     const env = createEnv(instance);
     env.view = {
-      imports: (imports ?? []).filter((e): e is ComponentClass<any> => !isLazy(e)),
-      lazies: (imports ?? []).filter(isLazy), injector: own, queries, content: options.content ?? null, scopeToken };
+      imports: applyOverrides(own, imports ?? []).filter((e): e is ComponentClass<any> => !isLazy(e)),
+      lazies: applyOverrides(own, imports ?? []).filter(isLazy), injector: own, queries, content: options.content ?? null, scopeToken };
     if (scopeToken) renderer.setAttribute(host, scopeToken, "");
     applyBindings(host, hostSpec(Class), renderer, env);
     let parts: Array<() => N[]> = [];

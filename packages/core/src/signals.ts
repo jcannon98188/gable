@@ -103,6 +103,11 @@ export function whenFlushed(): Promise<void> {
   return scheduled ?? Promise.resolve();
 }
 
+/** Whether a flush is scheduled but has not yet run. */
+export function hasPendingFlush(): boolean {
+  return scheduled !== null;
+}
+
 /** Runs any pending effects synchronously. */
 export function flushSync(): void {
   if (scheduled) flushNow();
