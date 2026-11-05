@@ -9,3 +9,5 @@ export { output, OutputEmitter } from "./output.js";
 export { InjectionToken, inject, createInjector } from "./di.js";
 export type { Injector, InjectOptions, Provider, Token, Type } from "./di.js";
 export { viewChild, viewChildren, contentChild, contentChildren } from "./query.js";
+export { createComponent, bootstrap, RENDERER } from "./app.js";
+export type { ComponentRef, CreateComponentOptions, BootstrapOptions, InputValues } from "./app.js";

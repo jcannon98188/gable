@@ -14,6 +14,8 @@ export interface ViewContext {
   queries: QueryHost;
   /** Template the parent projected into this component's slots, with the parent's Env to evaluate it in. */
   content: Content | null;
+  /** Scoping token to stamp on every element this component's template creates. */
+  scopeToken: string | null;
 }
 
 export interface Content {

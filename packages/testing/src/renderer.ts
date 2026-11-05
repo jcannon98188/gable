@@ -30,9 +30,16 @@ function detach(node: TestNode): void {
   parents.delete(node);
 }
 
+/** The test renderer, with the CSS it was asked to register (by component id) exposed for assertions. */
+export interface TestRenderer extends Renderer<TestNode> {
+  readonly styles: Map<string, string>;
+}
+
 /** The in-memory renderer: an inspectable node tree, no DOM. */
-export function createTestRenderer(): Renderer<TestNode> {
+export function createTestRenderer(): TestRenderer {
+  const styles = new Map<string, string>();
   return {
+    styles,
     createElement: (tag) => makeNode("element", tag),
     createText: (text) => makeNode("text", undefined, text),
     createAnchor: () => makeNode("anchor"),
@@ -71,7 +78,14 @@ export function createTestRenderer(): Renderer<TestNode> {
         if (i >= 0) list!.splice(i, 1);
       };
     },
-    registerStyles: (componentId) => `g-${componentId}`,
+    registerStyles(componentId, css, options) {
+      styles.set(componentId, css);
+      return options?.scoped === false ? "" : `g-${componentId}`;
+    },
+    resolveTarget(target) {
+      if (typeof target === "object" && target !== null && "kind" in target) return target as TestNode;
+      throw new Error(`The test renderer cannot resolve the target ${String(target)}: pass a node from createTestRoot().`);
+    },
   };
 }
 

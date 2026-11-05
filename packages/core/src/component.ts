@@ -24,6 +24,12 @@ export interface ComponentMeta {
    * `role: 'button'`, `'[class.active]': 'isActive()'`, `'(click)': 'toggle()'`.
    */
   host?: Record<string, string>;
+  /** CSS for this component. Scoped to it unless `encapsulation` is `'none'`. */
+  styles?: string | readonly string[];
+  /** Defaults to `'scoped'`; the renderer owns the mechanism. */
+  encapsulation?: "scoped" | "none";
+  /** Stable id for style registration (HMR replaces styles by id). Defaults to the class name. */
+  id?: string;
 }
 
 /** A component is a plain class with `static meta`. No base class, no constructor. */
@@ -45,6 +51,8 @@ export interface PreparedComponent<T extends object, N> {
   readonly scope: Scope;
   /** Builds the component's template into its host. */
   render(): void;
+  /** Removes the nodes `render` created (for a host the component does not own). */
+  clear(): void;
 }
 
 const hostSpecs = new WeakMap<object, ElementNode>();
@@ -57,6 +65,21 @@ function hostSpec(Class: ComponentClass<any>): ElementNode {
     hostSpecs.set(Class, spec);
   }
   return spec;
+}
+
+const registeredStyles = new WeakMap<object, Map<string, { css: string; token: string }>>();
+
+/** Registers a component's CSS with the renderer (once per id and CSS) and returns its scoping token, or null. */
+function registerComponentStyles(Class: ComponentClass<any>, renderer: Renderer<any>): string | null {
+  const { styles, encapsulation, id } = Class.meta;
+  const css = typeof styles === "string" ? styles : styles?.join("\n");
+  if (!css || !renderer.registerStyles) return null;
+  const key = id ?? Class.name;
+  let byId = registeredStyles.get(renderer);
+  if (!byId) registeredStyles.set(renderer, (byId = new Map()));
+  let entry = byId.get(key);
+  if (entry?.css !== css) byId.set(key, (entry = { css, token: renderer.registerStyles(key, css, { scoped: encapsulation !== "none" }) }));
+  return entry.token || null;
 }
 
 export interface PrepareOptions<N> {
@@ -75,6 +98,7 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
   const scope = createScope(options.parentScope);
   assertNoConstructor(Class);
   const { template, providers, imports } = Class.meta;
+  const scopeToken = registerComponentStyles(Class, renderer);
   const own = providers ? (options.injector ?? createInjector()).createChild(providers, { host: true }) : options.injector;
   if (own && providers) scope.onDispose(() => own.destroy());
   return runInScope(scope, () => {
@@ -83,14 +107,20 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
     const instance = declareQueries(queries, () => (own ? own.run(() => new Class()) : new Class()));
     for (const out of describeFields(instance, Class.name)) scope.onDispose(() => completeOutput(out));
     const env = createEnv(instance);
-    env.view = { imports: imports ?? [], injector: own, queries, content: options.content ?? null };
+    env.view = { imports: imports ?? [], injector: own, queries, content: options.content ?? null, scopeToken };
+    if (scopeToken) renderer.setAttribute(host, scopeToken, "");
     applyBindings(host, hostSpec(Class), renderer, env);
+    let parts: Array<() => N[]> = [];
     return {
       instance,
       host,
       scope,
       render() {
-        if (template) runInScope(scope, () => withContentTarget(null, () => buildNodes(parseTemplate(template), renderer, env, host, null)));
+        if (template) parts = runInScope(scope, () => withContentTarget(null, () => buildNodes(parseTemplate(template), renderer, env, host, null)));
+      },
+      clear() {
+        for (const part of parts) for (const node of part()) renderer.remove(node);
+        parts = [];
       },
     };
   });
@@ -129,7 +159,8 @@ export function instantiate<T extends object, N>(Class: ComponentClass<T>, optio
     ...prepared,
     destroy() {
       prepared.scope.dispose();
-      if (!adopted) renderer.remove(host);
+      if (adopted) prepared.clear();
+      else renderer.remove(host);
     },
   };
 }

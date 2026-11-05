@@ -114,6 +114,7 @@ function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, par
       `Unknown element <${node.tag}>. Add its component to meta.imports of the component whose template uses it.`,
     );
   }
+  if (view?.scopeToken) renderer.setAttribute(el, view.scopeToken, "");
   renderer.insert(parent, el, before);
   for (const ref of node.refs) env.locals.set(ref, () => el);
 
