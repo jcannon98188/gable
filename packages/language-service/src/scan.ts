@@ -11,6 +11,9 @@ export interface Src {
 export type ExprKind = "value" | "handler" | "model";
 export interface Expression extends Src {
   kind: ExprKind;
+  /** The binding's name without brackets or parentheses (`value` in `[(value)]`), and its offset. */
+  name: string;
+  nameStart: number;
 }
 
 export interface ElementNode {
@@ -339,10 +342,15 @@ class Scanner {
       const valueRange = m.indices![2] ?? m.indices![3];
       const value = m[2] ?? m[3] ?? "";
       const valueAt = valueRange ? valueRange[0] : p;
-      const expr = (kind: ExprKind): Expression => ({ kind, ...src(value, this.base + valueAt) });
-      if (name.startsWith("[(") && name.endsWith(")]")) el.expressions.push(expr("model"));
-      else if (name.startsWith("[") && name.endsWith("]")) el.expressions.push(expr("value"));
-      else if (name.startsWith("(") && name.endsWith(")")) el.expressions.push(expr("handler"));
+      const expr = (kind: ExprKind, open: number): Expression => ({
+        kind,
+        name: name.slice(open, name.length - open),
+        nameStart: this.base + nameAt + open,
+        ...src(value, this.base + valueAt),
+      });
+      if (name.startsWith("[(") && name.endsWith(")]")) el.expressions.push(expr("model", 2));
+      else if (name.startsWith("[") && name.endsWith("]")) el.expressions.push(expr("value", 1));
+      else if (name.startsWith("(") && name.endsWith(")")) el.expressions.push(expr("handler", 1));
       else if (name.startsWith("#")) el.refs.push(name.slice(1));
       else if (name.startsWith("*")) this.err(`Structural directives ("${name}") do not exist; use @if or @for blocks.`, nameAt, name.length);
       else if (value.includes("{{")) this.err(`Interpolation in attribute "${name}" is not supported; use [attr.${name}] or [${name}].`, valueAt, value.length);

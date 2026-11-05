@@ -115,4 +115,40 @@ describe("gable-check", () => {
       expect(err).toMatch(/loud/);
     });
   });
+
+  describe("event and two-way rules", () => {
+    it("passes typed events, outputs, native models and component models", async () => {
+      const { code, diagnostics } = await check("events-pass");
+      expect(diagnostics).toEqual([]);
+      expect(code).toBe(0);
+    });
+
+    const expectations: Array<[rule: string, snippet: string, into: number]> = [
+      ["unknown-event", "(clck)", 1],
+      ["type-mismatch", "onKey($event)", 6],
+      ["unknown-event", "(pickd)", 1],
+      ["type-mismatch", "onText($event)", 7],
+      ["model-type-mismatch", '[(value)]="num" />', 11],
+      ["model-type-mismatch", '"num"></x-child>', 1],
+    ];
+
+    it("reports exactly the bad bindings", async () => {
+      const { code, diagnostics } = await check("events-fail");
+      expect(code).toBe(1);
+      expect(diagnostics).toHaveLength(expectations.length);
+    });
+
+    it.each(expectations)("%s at %s", async (rule, snippet, into) => {
+      const { diagnostics } = await check("events-fail");
+      const at = where("events-fail", snippet, into);
+      expect(diagnostics.find((d) => d.rule === rule && d.line === at.line && d.column === at.column), JSON.stringify(diagnostics, null, 1)).toBeDefined();
+    });
+
+    it("suggests the closest name for an unknown event", async () => {
+      const { diagnostics } = await check("events-fail");
+      const messages = diagnostics.filter((d) => d.rule === "unknown-event").map((d) => d.message);
+      expect(messages[0]).toMatch(/Did you mean "click"\?/);
+      expect(messages[1]).toMatch(/Did you mean "picked"\?/);
+    });
+  });
 });

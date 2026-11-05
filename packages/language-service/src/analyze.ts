@@ -2,7 +2,7 @@ import path from "node:path";
 import ts from "@typescript/typescript6";
 import { parseExpression, parseHandler } from "@gable/core/tooling";
 import { readConfig, type AnalyzerConfig, type RuleId, type Severity } from "./config.js";
-import { emit, type Emitted, type Group, type Ref, type TemplateModel } from "./emit.js";
+import { emit, type Emitted, type EventSite, type Group, type Ref, type TemplateModel } from "./emit.js";
 import { scanTemplate, ScanError, type ExprKind, type Src } from "./scan.js";
 
 export interface Diagnostic {
@@ -63,8 +63,10 @@ function analyze(rootNames: string[], options: ts.CompilerOptions, config: Analy
   const raw: RawDiagnostic[] = [];
   const base = programWith(new Map());
   const files = new Map<string, FileState>();
+  const components = new Map<string, ComponentInfo>();
   for (const sf of base.getSourceFiles()) {
     if (sf.isDeclarationFile || !rootNames.some((r) => norm(r) === norm(sf.fileName))) continue;
+    for (const c of findComponents(sf)) components.set(c.selector, c);
     const models = findTemplates(sf, config.templateTag, (start, length, message) =>
       raw.push({ file: sf.fileName, start, length, rule: "template-syntax", message }),
     );
@@ -94,7 +96,7 @@ function analyze(rootNames: string[], options: ts.CompilerOptions, config: Analy
     const overlay = new Map<string, string>();
     const emitted = new Map<string, Emitted>();
     for (const [file, state] of files) {
-      const result = emit(state.models, state.observed, validator(state), state.sf.text.length);
+      const result = emit(state.models, state.observed, validator(state), state.sf.text.length, (tag) => componentType(components.get(tag), state.sf.fileName));
       emitted.set(file, result);
       overlay.set(file, state.sf.text + result.text);
     }
@@ -107,7 +109,11 @@ function analyze(rootNames: string[], options: ts.CompilerOptions, config: Analy
   const checker = program.getTypeChecker();
   for (const [file, state] of files) {
     const sf = program.getSourceFile(state.sf.fileName)!;
-    for (const ref of first.emitted.get(file)!.refs) {
+    const emitted = first.emitted.get(file)!;
+    checkEvents(emitted, sf, checker, (site, message) =>
+      raw.push({ file: state.sf.fileName, start: site.nameStart, length: Math.max(1, site.name.length), rule: "unknown-event", message }),
+    );
+    for (const ref of emitted.refs) {
       classifyRef(ref, sf, checker, state.observed, (rule, message) =>
         raw.push({ file: state.sf.fileName, start: ref.srcStart, length: ref.srcEnd - ref.srcStart, rule, message }),
       );
@@ -278,6 +284,103 @@ function mapDiagnostic(d: ts.Diagnostic, groups: Group[], file: string): RawDiag
   const part = group.parts.find((p) => p.src !== undefined && at >= p.gen && at < p.gen + p.text.length);
   const start = part ? part.src! + (at - part.gen) : group.srcStart;
   const length = part ? Math.min(d.length ?? 1, part.text.length - (at - part.gen)) : Math.max(1, group.srcEnd - group.srcStart);
-  const rule: RuleId = UNKNOWN_MEMBER.has(d.code) ? "unknown-member" : group.kind === "model" ? "model-not-writable" : "type-mismatch";
-  return { file, start, length, rule, message: ts.flattenDiagnosticMessageText(d.messageText, "\n") };
+  const message = ts.flattenDiagnosticMessageText(d.messageText, "\n");
+  const rule: RuleId = UNKNOWN_MEMBER.has(d.code)
+    ? "unknown-member"
+    : group.kind === "model"
+      ? message.includes("Property 'set' is missing")
+        ? "model-not-writable"
+        : "model-type-mismatch"
+      : "type-mismatch";
+  return { file, start, length, rule, message };
+}
+
+// --- components and events -----------------------------------------------------
+
+interface ComponentInfo {
+  selector: string;
+  className: string;
+  fileName: string;
+  exported: boolean;
+}
+
+/** Classes whose `static meta` has a literal `selector`. */
+function findComponents(sf: ts.SourceFile): ComponentInfo[] {
+  const out: ComponentInfo[] = [];
+  const visit = (node: ts.Node): void => {
+    if (ts.isClassDeclaration(node) && node.name) {
+      for (const member of node.members) {
+        if (!ts.isPropertyDeclaration(member) || !member.initializer || !ts.isIdentifier(member.name) || member.name.text !== "meta") continue;
+        if (!member.modifiers?.some((m) => m.kind === ts.SyntaxKind.StaticKeyword)) continue;
+        const meta = unwrap(member.initializer);
+        if (!ts.isObjectLiteralExpression(meta)) continue;
+        for (const prop of meta.properties) {
+          if (!ts.isPropertyAssignment(prop) || !ts.isIdentifier(prop.name) || prop.name.text !== "selector" || !ts.isStringLiteralLike(prop.initializer)) continue;
+          const exported = !!node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+          out.push({ selector: prop.initializer.text, className: node.name.text, fileName: sf.fileName, exported });
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  return out;
+}
+
+/** How generated code in `fromFile` can name the component class, or undefined when it cannot. */
+function componentType(info: ComponentInfo | undefined, fromFile: string): string | undefined {
+  if (!info) return undefined;
+  if (norm(info.fileName) === norm(fromFile)) return info.className;
+  if (!info.exported) return undefined;
+  let rel = norm(path.relative(path.dirname(fromFile), info.fileName)).replace(/[.][cm]?tsx?$/, "");
+  if (!rel.startsWith(".")) rel = "./" + rel;
+  return `import(${JSON.stringify(rel)}).${info.className}`;
+}
+
+function probeType(sf: ts.SourceFile, checker: ts.TypeChecker, probe: { gen: number }): ts.Type | undefined {
+  const id = findIdentifier(sf, probe.gen + "declare const ".length);
+  return id ? checker.getTypeAtLocation(id) : undefined;
+}
+
+/** Event names must be DOM events of the element or outputs of the component; near misses get a suggestion. */
+function checkEvents(emitted: Emitted, sf: ts.SourceFile, checker: ts.TypeChecker, report: (site: EventSite, message: string) => void): void {
+  const tagMap = probeType(sf, checker, emitted.tags);
+  const nativeTags = new Set(tagMap?.getProperties().map((p) => p.name));
+  for (const site of emitted.events) {
+    const dom = probeType(sf, checker, site.dom);
+    if (!dom) continue;
+    const names = new Set(dom.getProperties().map((p) => p.name));
+    if (site.component) {
+      const type = probeType(sf, checker, site.component);
+      if (!type) continue;
+      for (const p of type.getProperties()) {
+        const member = checker.getTypeOfSymbol(p);
+        if (isObservableLike(checker, member) && !isSignal(checker, member)) names.add(p.name);
+      }
+    } else if (!nativeTags.has(site.tag)) continue;
+    if (names.has(site.name)) continue;
+    const hint = closest(site.name, [...names]);
+    report(site, `Unknown event "${site.name}" on <${site.tag}>${hint ? `. Did you mean "${hint}"?` : ""}`);
+  }
+}
+
+function distance(a: string, b: string): number {
+  let row = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const next = [i];
+    for (let j = 1; j <= b.length; j++) next[j] = Math.min(row[j]! + 1, next[j - 1]! + 1, row[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1));
+    row = next;
+  }
+  return row[b.length]!;
+}
+
+/** The candidate nearest to `name`, when it is near enough to be a plausible typo. */
+function closest(name: string, candidates: string[]): string | undefined {
+  let best: string | undefined;
+  let bestDistance = Math.max(2, Math.floor(name.length / 3)) + 1;
+  for (const c of candidates) {
+    const d = distance(name.toLowerCase(), c.toLowerCase());
+    if (d < bestDistance) [best, bestDistance] = [c, d];
+  }
+  return best;
 }

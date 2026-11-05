@@ -37,7 +37,24 @@ export interface Ref {
   srcEnd: number;
 }
 
-export type Item = string | Group;
+/** A declaration emitted only so the checker can be asked about its type. */
+export interface Probe {
+  text: string;
+  gen: number;
+}
+
+/** An `(event)` binding whose name is validated against the element's DOM events and the component's outputs. */
+export interface EventSite {
+  name: string;
+  nameStart: number;
+  tag: string;
+  /** The DOM event map of the element. */
+  dom: Probe;
+  /** The component instance type, when the tag is a known component. */
+  component?: Probe;
+}
+
+export type Item = string | Group | Probe;
 
 export interface TemplateModel {
   className: string;
@@ -51,12 +68,20 @@ export interface Emitted {
   text: string;
   groups: Group[];
   refs: Ref[];
+  events: EventSite[];
+  /** The map of known element tags (a probe), for telling native tags from custom ones. */
+  tags: Probe;
 }
 
 const HELPERS = `
 declare function __rd<T>(v: T): T extends import("rxjs").Observable<infer U> ? U | undefined : T extends PromiseLike<infer U> ? U | undefined : T;
 declare function __iter<T>(v: Iterable<T> | ArrayLike<T>): Iterable<T>;
-declare function __w<T>(v: { (): T; set(value: T): void }): void;
+declare function __w<P>(v: { (): P; set(value: P): void }): void;
+type __El<T extends string> = T extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[T] : HTMLElement;
+type __EvMap<E> = E extends HTMLBodyElement ? HTMLBodyElementEventMap : E extends HTMLMediaElement ? HTMLMediaElementEventMap : HTMLElementEventMap;
+type __Out<T> = T extends import("rxjs").Observable<infer U> ? U : any;
+type __Ev<C, E, N extends string> = N extends keyof C ? __Out<C[N]> : N extends keyof __EvMap<E> ? __EvMap<E>[N] : any;
+type __Prop<C, E, N extends string> = N extends keyof C ? (C[N] extends { (): infer T } ? T : any) : N extends keyof E ? E[N] : any;
 `;
 
 const LITERALS = new Set(["true", "false", "null", "undefined"]);
@@ -74,11 +99,21 @@ export function emit(
   observed: ReadonlySet<number>,
   isValid: (e: Src, kind: ExprKind) => boolean,
   originalLength: number,
+  /** The TypeScript type reference for the component class a tag selects, if the tag is a component. */
+  componentType: (tag: string) => string | undefined = () => undefined,
 ): Emitted {
   const items: Item[] = [HELPERS];
   const groups: Group[] = [];
   const refs: Ref[] = [];
+  const events: EventSite[] = [];
   const push = (s: string) => items.push(s);
+  const probe = (text: string): Probe => {
+    const p: Probe = { text, gen: 0 };
+    items.push(p);
+    return p;
+  };
+  const tags = probe("declare const __tags: HTMLElementTagNameMap;\n");
+  const instanceType = (tag: string) => componentType(tag) ?? "{}";
 
   function expression(e: Src, kind: Group["kind"], locals: ReadonlySet<string>, open: string, close: string): void {
     if (kind !== "hole" && !isValid(e, kind as ExprKind)) return;
@@ -143,16 +178,22 @@ export function emit(
           break;
         case "element": {
           for (const name of node.refs) {
-            push(`const ${name}: any = undefined;\n`);
+            push(`const ${name}: __El<${JSON.stringify(node.tag)}> = undefined as any;\n`);
             locals.add(name);
           }
           for (const e of node.expressions) {
+            const tag = JSON.stringify(node.tag);
             if (e.kind === "handler") {
               const inner = new Set(locals).add("$event");
-              push("{ const $event: any = undefined; ");
+              const n = events.length;
+              const dom = probe(`declare const __evd_${n}: __EvMap<__El<${tag}>>;\n`);
+              const comp = componentType(node.tag);
+              const component = comp ? probe(`declare const __evc_${n}: ${comp};\n`) : undefined;
+              events.push({ name: e.name, nameStart: e.nameStart, tag: node.tag, dom, component });
+              push(`{ const $event: __Ev<${instanceType(node.tag)}, __El<${tag}>, ${JSON.stringify(e.name)}> = undefined as any; `);
               expression(e, "handler", inner, "", ";");
               push(" }\n");
-            } else if (e.kind === "model") expression(e, "model", locals, "__w(", ");\n");
+            } else if (e.kind === "model") expression(e, "model", locals, `__w<__Prop<${instanceType(node.tag)}, __El<${tag}>, ${JSON.stringify(e.name)}>>(`, ");\n");
             else expression(e, "value", locals, "void (", ");\n");
           }
           push("{\n");
@@ -233,7 +274,10 @@ export function emit(
   };
   for (const item of items) {
     if (typeof item === "string") place(item);
-    else {
+    else if (!("parts" in item)) {
+      item.gen = offset;
+      place(item.text);
+    } else {
       item.genStart = offset;
       for (const part of item.parts) {
         part.gen = offset;
@@ -242,5 +286,5 @@ export function emit(
       item.genEnd = offset;
     }
   }
-  return { text, groups, refs };
+  return { text, groups, refs, events, tags };
 }

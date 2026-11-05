@@ -12,6 +12,8 @@ export const RULES = {
   "call-non-signal": "error",
   "call-observable": "error",
   "model-not-writable": "error",
+  "model-type-mismatch": "error",
+  "unknown-event": "error",
 } as const satisfies Record<string, Severity>;
 
 export type RuleId = keyof typeof RULES;
