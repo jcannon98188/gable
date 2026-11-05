@@ -6,9 +6,7 @@ describe("bindings", () => {
   class View {
     static meta = {
       selector: "app-view",
-      template: html`<div [attr.data-id]="id()" [class.active]="active()" [style.color]="color()" [title]="user.name" [hidden]="!visible()">
-        {{ user?.name ?? 'anonymous' }}
-      </div>`,
+      template: html`<div [attr.data-id]="id()" [class.active]="active()" [style.color]="color()" [title]="user.name" [hidden]="!visible()">{{ user?.name ?? 'anonymous' }}</div>`,
     };
     id = signal<string | null>("a1");
     active = signal(true);

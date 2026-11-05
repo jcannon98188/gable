@@ -245,6 +245,13 @@ export function runHandler(handler: HandlerExpr, env: Env): void {
   fn!.apply(self, handler.args.map((a) => evaluate(a, env)));
 }
 
+/** Reads the current value of a signal reference (two-way binding). */
+export function readModel(expr: Expr, env: Env): unknown {
+  const target = evaluate(expr, env);
+  if (typeof target !== "function") throw new TypeError("[(model)] must be bound to a writable signal");
+  return (target as () => unknown)();
+}
+
 /** Writes `value` through a writable signal reference (two-way binding). */
 export function writeModel(expr: Expr, env: Env, value: unknown): void {
   const target = evaluate(expr, env) as { set?: (v: unknown) => void } | null;
