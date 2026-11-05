@@ -39,3 +39,15 @@ _Avoid_: LSP, compiler plugin
 **Renderer**:
 The pluggable layer that turns a Component's Template into output on a target platform. The DOM renderer is one renderer; a future native renderer (gable.native) is another.
 _Avoid_: Platform, backend, view engine
+
+**Injector**:
+A node in the single injector tree (root app, then route, then component) that resolves Tokens to instances through Providers.
+_Avoid_: Container, module
+
+**Token**:
+The key a dependency is requested by: a class or an `InjectionToken`.
+_Avoid_: Key, service identifier
+
+**Host**:
+The renderer-provided output node a Component mounts into, matched in templates by selector. Not a custom element.
+_Avoid_: Element, mount point
