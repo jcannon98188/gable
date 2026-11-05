@@ -55,7 +55,7 @@ export function instantiate<T extends object, N>(
   const hostSpec = parseSelector(selector);
   return runInScope(scope, () => {
     // Field initialisers run owned by `scope`, in the component injector context.
-    const instance = own ? own.run(() => new Class()) : new Class();
+    const instance = own ? own.run(() => runInScope(scope, () => new Class())) : new Class();
     const host = renderer.createElement(hostSpec.tag, parent);
     for (const [name, value] of hostSpec.attrs) renderer.setAttribute(host, name, value);
     for (const name of hostSpec.classes) renderer.setClass(host, name, true);

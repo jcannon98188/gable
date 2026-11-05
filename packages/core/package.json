@@ -12,6 +12,10 @@
       "types": "./dist/renderer.d.ts",
       "import": "./dist/renderer.js"
     },
+    "./rxjs": {
+      "types": "./dist/rxjs.d.ts",
+      "import": "./dist/rxjs.js"
+    },
     "./internal": {
       "types": "./dist/internal.d.ts",
       "import": "./dist/internal.js"

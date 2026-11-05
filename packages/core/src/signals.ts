@@ -58,10 +58,20 @@ function schedule(): void {
   scheduled ??= Promise.resolve().then(flushNow);
 }
 
-/** Reports an error thrown by an effect during a flush. Error handling proper arrives with a later ticket. */
-let reportError: (error: unknown) => void = (error) => console.error(error);
+/** The app error path. Error handling proper arrives with a later ticket; effects and bridges already report here. */
+let reporter: (error: unknown) => void = (error) => console.error(error);
 export function setEffectErrorReporter(fn: (error: unknown) => void): void {
-  reportError = fn;
+  reporter = fn;
+}
+export function reportError(error: unknown): void {
+  reporter(error);
+}
+
+const afterFlush: Array<() => void> = [];
+/** Queues work to run inside the next render flush, after its effects (schedules a flush if none is pending). */
+export function runAfterFlush(task: () => void): void {
+  afterFlush.push(task);
+  schedule();
 }
 
 function flushNow(): void {
@@ -74,7 +84,16 @@ function flushNow(): void {
       .filter((n): n is EffectNode => n !== undefined)
       .sort((a, b) => a.scope.depth - b.scope.depth || a.seq - b.seq);
     watcher.watch(); // re-arm notifications
-    if (pending.length === 0) break;
+    if (pending.length === 0) {
+      const task = afterFlush.shift();
+      if (!task) break;
+      try {
+        task();
+      } catch (error) {
+        reportError(error);
+      }
+      continue;
+    }
     for (const node of pending) {
       if (node.scope.disposed) continue;
       try {
