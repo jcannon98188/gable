@@ -33,6 +33,10 @@
     "./http": {
       "types": "./dist/http.d.ts",
       "import": "./dist/http.js"
+    },
+    "./forms": {
+      "types": "./dist/forms.d.ts",
+      "import": "./dist/forms.js"
     }
   },
   "files": [
