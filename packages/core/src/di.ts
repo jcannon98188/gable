@@ -90,6 +90,7 @@ class InjectorImpl implements Injector {
   ) {
     this.root = parent ? parent.root : this;
     this.scope = createScope(parent ? parent.scope : null);
+    this.scope.owner = { injector: this };
     if (parent) parent.#children.add(this);
     for (const p of providers) this.#register(p);
   }

@@ -88,7 +88,8 @@ describe("composition: imports, inputs, outputs, models", () => {
     class Parent {
       static meta = { selector: "app-parent", imports: [Needy], template: html`<app-needy></app-needy>` };
     }
-    expect(() => mount(Parent)).toThrow(/required input "name"/i);
+    const f = mount(Parent);
+    expect(String(f.claimErrors()[0]?.error)).toMatch(/required input "name"/i);
   });
 
   it("throws a clear dev-time error for an element that is not imported", () => {

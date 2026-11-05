@@ -2,6 +2,7 @@ import { computed, effect, signal, untracked, type WritableSignal } from "./sign
 import type { Renderer } from "./renderer.js";
 import { createEnv, evaluate, readModel, runHandler, writeModel, type Env, type Expr, type HandlerExpr } from "./expression.js";
 import { createScope, currentScope, runInScope, type Scope } from "./scope.js";
+import { FAILED, guard, guarded } from "./errors.js";
 import { DEV } from "./di.js";
 import { inputOf } from "./input.js";
 import { OutputEmitter } from "./output.js";
@@ -49,16 +50,20 @@ function buildText<N>(parts: Array<string | Expr>, renderer: Renderer<N>, env: E
   const text = renderer.createText(dynamic ? "" : (parts as string[]).join(""));
   renderer.insert(parent, text, before);
   if (dynamic) {
+    const safe = guard(currentScope(), "text");
     effect(() => {
-      let out = "";
-      for (const part of parts) {
-        if (typeof part === "string") out += part;
-        else {
-          const v = evaluate(part, env);
-          out += v == null ? "" : String(v);
+      const out = safe(() => {
+        let out = "";
+        for (const part of parts) {
+          if (typeof part === "string") out += part;
+          else {
+            const v = evaluate(part, env);
+            out += v == null ? "" : String(v);
+          }
         }
-      }
-      renderer.setText(text, out);
+        return out;
+      });
+      if (out !== FAILED) renderer.setText(text, out);
     });
   }
   return () => [text];
@@ -72,8 +77,10 @@ export function applyBindings<N>(el: N, spec: Bindings, renderer: Renderer<N>, e
   for (const { name, value } of spec.attrs) renderer.setAttribute(el, name, value);
 
   for (const { kind, name, expr } of spec.bindings) {
+    const safe = guard(scope, `${kind}:${name}`);
     effect(() => {
-      const value = evaluate(expr, env);
+      const value = safe(() => evaluate(expr, env));
+      if (value === FAILED) return;
       switch (kind) {
         case "prop":
           return renderer.setProperty(el, name, value);
@@ -88,18 +95,23 @@ export function applyBindings<N>(el: N, spec: Bindings, renderer: Renderer<N>, e
   }
 
   for (const { name, expr } of spec.models) {
-    effect(() => renderer.setProperty(el, name, readModel(expr, env)));
+    const safe = guard(scope, `model:${name}`);
+    effect(() => {
+      const value = safe(() => readModel(expr, env));
+      if (value !== FAILED) renderer.setProperty(el, name, value);
+    });
     // The renderer decides what produces `<name>Change` (e.g. an input event on a native input).
-    scope?.onDispose(renderer.listen(el, `${name}Change`, (event) => writeModel(expr, env, event)));
+    scope?.onDispose(renderer.listen(el, `${name}Change`, (event) => guarded(scope, "event", () => writeModel(expr, env, event), `${name}Change`)));
   }
 
-  for (const { name, handler } of spec.events) scope?.onDispose(renderer.listen(el, name, eventHandler(handler, env)));
+  for (const { name, handler } of spec.events) scope?.onDispose(renderer.listen(el, name, eventHandler(handler, env, scope, name)));
 }
 
-function eventHandler(handler: HandlerExpr, env: Env): (event: unknown) => void {
+/** A listener that reports its errors (and its returned Promise's rejection) as `event` instead of throwing. */
+function eventHandler(handler: HandlerExpr, env: Env, scope: Scope | null, name: string): (event: unknown) => void {
   return (event) => {
     const local: Env = { instance: env.instance, locals: new Map([["$event", () => event]]), parent: env };
-    untracked(() => runHandler(handler, local));
+    guarded(scope, "event", () => untracked(() => runHandler(handler, local)), name);
   };
 }
 
@@ -120,7 +132,9 @@ function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, par
 
   const projects = matches.some((Class) => Class.meta.template);
   const content = projects ? partitionContent(node.children, env) : null;
-  const comps = matches.map((Class) => prepare(Class, { renderer, host: el, parentScope: scope, injector: view?.injector ?? null, content }));
+  const comps = matches
+    .map((Class) => prepare(Class, { renderer, host: el, parentScope: scope, injector: view?.injector ?? null, content }))
+    .filter((comp) => !comp.failed);
   for (const comp of comps) registerEntry(view?.queries, { instance: comp.instance, node: el, refs: node.refs }, scope);
   if (node.refs.length > 0) registerEntry(view?.queries, { node: el, refs: node.refs }, scope);
   const rest: Bindings = { attrs: node.attrs, bindings: [], models: [], events: [] };
@@ -133,20 +147,30 @@ function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, par
   for (const { name, value } of node.attrs) inputFor(name)?.set(value);
   for (const binding of node.bindings) {
     const target = binding.kind === "prop" ? inputFor(binding.name) : undefined;
-    if (target) effect(() => target.set(evaluate(binding.expr, env)));
+    if (target) {
+      const safe = guard(scope, `input:${binding.name}`);
+      effect(() => {
+        const value = safe(() => evaluate(binding.expr, env));
+        if (value !== FAILED) target.set(value);
+      });
+    }
     else rest.bindings.push(binding);
   }
   for (const model of node.models) {
     const target = inputFor(model.name);
     if (!target) rest.models.push(model);
     else {
-      effect(() => target.set(readModel(model.expr, env)));
-      if (target.changes) subscribe(target.changes, (v) => writeModel(model.expr, env, v));
+      const safe = guard(scope, `model:${model.name}`);
+      effect(() => {
+        const value = safe(() => readModel(model.expr, env));
+        if (value !== FAILED) target.set(value);
+      });
+      if (target.changes) subscribe(target.changes, (v) => guarded(scope, "event", () => writeModel(model.expr, env, v), `${model.name}Change`));
     }
   }
   for (const event of node.events) {
     const out = comps.map((c) => (c.instance as Record<string, unknown>)[event.name]).find((o) => o instanceof OutputEmitter);
-    if (out) subscribe(out as OutputEmitter<unknown>, eventHandler(event.handler, env));
+    if (out) subscribe(out as OutputEmitter<unknown>, eventHandler(event.handler, env, scope, event.name));
     else rest.events.push(event);
   }
 
@@ -208,14 +232,20 @@ function buildIf<N>(node: IfNode, renderer: Renderer<N>, env: Env, parent: N, be
   const view = createSwitcher(renderer, parent, before);
   const alias = signal<unknown>(undefined);
   let shown = -2;
+  const safe = guard(currentScope(), "@if");
   effect(() => {
-    let index = -1;
-    let value: unknown;
-    for (let i = 0; i < node.branches.length && index < 0; i++) {
-      const cond = node.branches[i]!.cond;
-      value = cond ? evaluate(cond, env) : true;
-      if (value) index = i;
-    }
+    const picked = safe(() => {
+      let index = -1;
+      let value: unknown;
+      for (let i = 0; i < node.branches.length && index < 0; i++) {
+        const cond = node.branches[i]!.cond;
+        value = cond ? evaluate(cond, env) : true;
+        if (value) index = i;
+      }
+      return { index, value };
+    });
+    if (picked === FAILED) return;
+    const { index, value } = picked;
     alias.set(value);
     if (index === shown) return;
     shown = index;
@@ -235,10 +265,16 @@ function buildIf<N>(node: IfNode, renderer: Renderer<N>, env: Env, parent: N, be
 function buildSwitch<N>(node: SwitchNode, renderer: Renderer<N>, env: Env, parent: N, before: N | null): Part<N> {
   const view = createSwitcher(renderer, parent, before);
   let shown = -2;
+  const safe = guard(currentScope(), "@switch");
   effect(() => {
-    const value = evaluate(node.expr, env);
-    let index = node.cases.findIndex((c) => c.expr !== null && evaluate(c.expr, env) === value);
-    if (index < 0) index = node.cases.findIndex((c) => c.expr === null);
+    const found = safe(() => {
+      const value = evaluate(node.expr, env);
+      let index = node.cases.findIndex((c) => c.expr !== null && evaluate(c.expr, env) === value);
+      if (index < 0) index = node.cases.findIndex((c) => c.expr === null);
+      return index;
+    });
+    if (found === FAILED) return;
+    const index = found;
     if (index === shown) return;
     shown = index;
     const chosen = node.cases[index];
@@ -292,23 +328,29 @@ function buildFor<N>(node: ForNode, renderer: Renderer<N>, env: Env, parent: N, 
     return { scope, item: itemSig, index: indexSig, parts, pos: index };
   };
 
+  const safe = guard(outer, "@for");
   effect(() => {
-    const raw = evaluate(node.source, env);
-    if (raw != null && typeof (raw as Iterable<unknown>)[Symbol.iterator] !== "function") {
-      throw new TypeError("@for source must be an array or other iterable");
-    }
-    const items = raw == null ? [] : Array.from(raw as Iterable<unknown>);
-    const keys = items.map((item, i) => {
-      const trackEnv = createEnv(env.instance, env);
-      trackEnv.locals.set(node.item, () => item);
-      trackEnv.locals.set("$index", () => i);
-      return evaluate(node.track, trackEnv);
+    const computed = safe(() => {
+      const raw = evaluate(node.source, env);
+      if (raw != null && typeof (raw as Iterable<unknown>)[Symbol.iterator] !== "function") {
+        throw new TypeError("@for source must be an array or other iterable");
+      }
+      const items = raw == null ? [] : Array.from(raw as Iterable<unknown>);
+      const keys = items.map((item, i) => {
+        const trackEnv = createEnv(env.instance, env);
+        trackEnv.locals.set(node.item, () => item);
+        trackEnv.locals.set("$index", () => i);
+        return evaluate(node.track, trackEnv);
+      });
+      const seen = new Set<unknown>();
+      for (const key of keys) {
+        if (seen.has(key)) throw new Error(`@for track expression produced the duplicate key ${String(key)}; track keys must be unique.`);
+        seen.add(key);
+      }
+      return { items, keys, seen };
     });
-    const seen = new Set<unknown>();
-    for (const key of keys) {
-      if (seen.has(key)) throw new Error(`@for track expression produced the duplicate key ${String(key)}; track keys must be unique.`);
-      seen.add(key);
-    }
+    if (computed === FAILED) return;
+    const { items, keys, seen } = computed;
     untracked(() => {
       for (const [key, row] of rows) {
         if (seen.has(key)) continue;

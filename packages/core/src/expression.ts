@@ -281,9 +281,9 @@ function resolveCallee(callee: Expr, optionalCall: boolean, env: Env): [Fn | und
 }
 
 /** Runs an event handler with arguments evaluated in `env`. */
-export function runHandler(handler: HandlerExpr, env: Env): void {
+export function runHandler(handler: HandlerExpr, env: Env): unknown {
   const [fn, self] = resolveCallee(handler.callee, false, env);
-  fn!.apply(self, handler.args.map((a) => evaluate(a, env)));
+  return fn!.apply(self, handler.args.map((a) => evaluate(a, env)));
 }
 
 /** Reads the current value of a signal reference (two-way binding). */
