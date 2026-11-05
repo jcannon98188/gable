@@ -22,6 +22,10 @@ export interface RendererHarness<N> {
   property(node: N, name: string): unknown;
   /** Delivers an event to the node's listeners, as the platform would. */
   fire(node: N, name: string): void;
+  /** Simulates the user editing a control: typing a string, choosing an option, or (boolean) checking or unchecking. Needed for the `fieldControl` suite. */
+  edit?(node: N, value: string | boolean): void;
+  /** Simulates the control losing focus. Needed for the `fieldControl` suite. */
+  blur?(node: N): void;
 }
 
 /** The slice of a test runner the suite needs; pass vitest's `describe`, `it` and `expect`. */
@@ -125,6 +129,108 @@ export function defineRendererConformance<N>(api: TestApi, harness: RendererHarn
         off();
         h.fire(el, "click");
         expect(seen).toHaveLength(1);
+      });
+    });
+
+    describe("form controls (fieldControl)", () => {
+      const setup = (tag: string, attrs: Record<string, string> = {}) => {
+        const { renderer: r, root } = h.create();
+        const el = r.createElement(tag, root);
+        for (const [k, v] of Object.entries(attrs)) r.setAttribute(el, k, v);
+        r.insert(root, el);
+        const control = r.fieldControl!(el);
+        const values: unknown[] = [];
+        let touched = 0;
+        const off = control.listen({ value: (v) => values.push(v), touched: () => touched++ });
+        return { r, root, el, control, values, off, touchedCount: () => touched };
+      };
+      const supported = () => {
+        const { renderer } = h.create();
+        return renderer.fieldControl !== undefined && h.edit !== undefined && h.blur !== undefined;
+      };
+
+      it("maps a text input's value both ways", () => {
+        if (!supported()) return;
+        const { el, control, values } = setup("input", { type: "text" });
+        control.write("hi");
+        expect(h.property(el, "value")).toBe("hi");
+        control.write(null);
+        expect(h.property(el, "value")).toBe("");
+        h.edit!(el, "yo");
+        expect(values).toEqual(["yo"]);
+      });
+
+      it("maps number inputs to number | null", () => {
+        if (!supported()) return;
+        const { el, control, values } = setup("input", { type: "number" });
+        control.write(5);
+        expect(String(h.property(el, "value"))).toBe("5");
+        control.write(null);
+        expect(h.property(el, "value")).toBe("");
+        h.edit!(el, "42");
+        h.edit!(el, "");
+        expect(values).toEqual([42, null]);
+      });
+
+      it("maps checkboxes to booleans", () => {
+        if (!supported()) return;
+        const { el, control, values } = setup("input", { type: "checkbox" });
+        control.write(true);
+        expect(h.property(el, "checked")).toBe(true);
+        control.write(false);
+        expect(h.property(el, "checked")).toBe(false);
+        h.edit!(el, true);
+        h.edit!(el, false);
+        expect(values).toEqual([true, false]);
+      });
+
+      it("maps radios to their option value", () => {
+        if (!supported()) return;
+        const { el, control, values } = setup("input", { type: "radio", value: "b" });
+        control.write("b");
+        expect(h.property(el, "checked")).toBe(true);
+        control.write("a");
+        expect(h.property(el, "checked")).toBe(false);
+        h.edit!(el, true);
+        expect(values).toEqual(["b"]);
+      });
+
+      it("maps a select to the chosen option's value", () => {
+        if (!supported()) return;
+        const { r, el, control, values } = setup("select");
+        for (const v of ["a", "b"]) {
+          const option = r.createElement("option", el);
+          r.setAttribute(option, "value", v);
+          r.insert(el, option);
+        }
+        control.write("b");
+        expect(h.property(el, "value")).toBe("b");
+        h.edit!(el, "a");
+        expect(values).toEqual(["a"]);
+      });
+
+      it("reports touched on blur and applies disabled, readonly and invalid", () => {
+        if (!supported()) return;
+        const { el, control, touchedCount } = setup("input", { type: "text" });
+        h.blur!(el);
+        expect(touchedCount()).toBe(1);
+        control.setState({ disabled: true, readonly: true, invalid: true });
+        expect(h.property(el, "disabled")).toBe(true);
+        expect(h.property(el, "readOnly")).toBe(true);
+        expect(h.attribute(el, "aria-invalid")).toBe("true");
+        control.setState({ disabled: false, readonly: false, invalid: false });
+        expect(h.property(el, "disabled")).toBe(false);
+        expect(h.attribute(el, "aria-invalid")).toBeNull();
+      });
+
+      it("stops reporting after unsubscribe", () => {
+        if (!supported()) return;
+        const { el, values, off, touchedCount } = setup("input", { type: "text" });
+        off();
+        h.edit!(el, "x");
+        h.blur!(el);
+        expect(values).toEqual([]);
+        expect(touchedCount()).toBe(0);
       });
     });
 

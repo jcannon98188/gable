@@ -81,6 +81,13 @@ export interface Fixture<T extends object> {
   hotReplace(...updates: Array<Function | Record<string, unknown> | Error>): HotResult;
   /** Fires an event on a node as if the renderer had emitted it (calls its listeners). */
   dispatch(target: TestNode, name: string, event?: unknown): void;
+  /**
+   * Edits a form control as a user would: a string types text or chooses an option, a boolean checks or unchecks
+   * (a radio is chosen with `true`). Sets the control's property, then fires its `input` or `change` event.
+   */
+  fill(target: TestNode, value: string | boolean): void;
+  /** The control loses focus (a `[field]` marks its field touched). */
+  blur(target: TestNode): void;
   /** Destroys the component, then fails with any unmatched HTTP request or error report the test never expected. Safe to call twice. */
   destroy(): void;
   [Symbol.dispose](): void;
@@ -202,6 +209,14 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
     dispatch: (target, name, event) => {
       for (const handler of [...(target.listeners[name] ?? [])]) handler(event);
     },
+    fill: (target, value) => {
+      const type = String(target.attrs.type ?? target.props.type ?? "text");
+      const toggles = target.tag === "input" && (type === "checkbox" || type === "radio");
+      if (typeof value === "boolean") target.props.checked = value;
+      else target.props.value = value;
+      fixture.dispatch(target, toggles || target.tag === "select" ? "change" : "input");
+    },
+    blur: (target) => fixture.dispatch(target, "blur"),
     destroy() {
       if (!destroyed) {
         destroyed = true;

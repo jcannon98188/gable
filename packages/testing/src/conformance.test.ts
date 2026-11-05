@@ -18,5 +18,17 @@ defineRendererConformance<TestNode>(
     style: (n, name) => n.styles[name] ?? "",
     property: (n, name) => n.props[name],
     fire: (n, name) => n.listeners[name]?.slice().forEach((l) => l({})),
+    edit(n, value) {
+      const kind = String(n.attrs.type ?? "text");
+      const fire = (name: string) => n.listeners[name]?.slice().forEach((l) => l({}));
+      if (typeof value === "boolean") {
+        n.props.checked = value;
+        fire("change");
+      } else {
+        n.props.value = value;
+        fire(n.tag === "select" || kind === "checkbox" || kind === "radio" ? "change" : "input");
+      }
+    },
+    blur: (n) => n.listeners.blur?.slice().forEach((l) => l({})),
   },
 );

@@ -80,6 +80,42 @@ export function createTestRenderer(): TestRenderer {
         if (i >= 0) list!.splice(i, 1);
       };
     },
+    fieldControl(node) {
+      const type = () => String(node.attrs.type ?? node.props.type ?? "text");
+      const tag = node.tag;
+      const checkable = () => tag === "input" && (type() === "checkbox" || type() === "radio");
+      const optionValue = () => String(node.attrs.value ?? node.props.value ?? "");
+      const self = this;
+      return {
+        write(value) {
+          if (tag === "input" && type() === "checkbox") node.props.checked = !!value;
+          else if (tag === "input" && type() === "radio") node.props.checked = value != null && optionValue() === String(value);
+          else node.props.value = value == null ? "" : String(value);
+        },
+        setState({ disabled, readonly, invalid }) {
+          node.props.disabled = disabled;
+          node.props.readOnly = readonly;
+          if (invalid) node.attrs["aria-invalid"] = "true";
+          else delete node.attrs["aria-invalid"];
+        },
+        listen({ value, touched }) {
+          const event = checkable() || tag === "select" ? "change" : "input";
+          const onValue = () => {
+            if (checkable()) {
+              if (type() === "radio") {
+                if (node.props.checked) value(optionValue());
+              } else value(!!node.props.checked);
+            } else if (tag === "input" && (type() === "number" || type() === "range")) {
+              const text = String(node.props.value ?? "");
+              const n = text === "" ? Number.NaN : Number(text);
+              value(Number.isNaN(n) ? null : n);
+            } else value(node.props.value ?? "");
+          };
+          const offs = [self.listen(node, event, onValue), self.listen(node, "blur", () => touched())];
+          return () => offs.forEach((off) => off());
+        },
+      };
+    },
     registerStyles(componentId, css, options) {
       styles.set(componentId, css);
       return options?.scoped === false ? "" : `g-${componentId}`;
@@ -124,7 +160,7 @@ function parseSelector(selector: string): Compound[] {
 
 /** Classes from the `class` attribute and from `setClass`. */
 function classList(node: TestNode): string[] {
-  return [...(node.attrs.class ? node.attrs.class.split(/s+/) : []), ...node.classes];
+  return [...(node.attrs.class ? node.attrs.class.split(/\s+/) : []), ...node.classes];
 }
 
 function matchesCompound(node: TestNode, c: Compound): boolean {
