@@ -1,15 +1,17 @@
+import { formStateOf } from "./forms.js";
 import { inputOf } from "./input.js";
 import { OutputEmitter } from "./output.js";
 import { untracked } from "./signals.js";
 
 // Dev only. State transfer between two instances of (versions of) the same class, by field name and kind.
 
-export type FieldKind = "signal" | "model" | "input" | "output" | "computed" | "stream" | "service" | "data";
+export type FieldKind = "signal" | "model" | "input" | "output" | "computed" | "stream" | "service" | "data" | "form";
 
 export function kindOf(instance: object, name: string, isService: (value: object) => boolean): FieldKind {
   const value = (instance as Record<string, unknown>)[name];
   if (typeof value === "function") {
     const handle = inputOf(instance, name);
+    if (formStateOf(value)) return "form";
     if (handle) return handle.changes ? "model" : "input";
     const sig = value as { set?: unknown; update?: unknown };
     return typeof sig.set === "function" && typeof sig.update === "function" ? "signal" : "computed";
@@ -33,7 +35,11 @@ export function transferState(from: object, to: object, isService: (value: objec
     try {
       if (kind === "signal") (target as { set(v: unknown): void }).set(untracked(old as () => unknown));
       else if (kind === "model") inputOf(to, name)!.set(untracked(old as () => unknown));
-      else if (kind === "data") (to as Record<string, unknown>)[name] = old;
+      else if (kind === "form") {
+        // Model first, so rows exist; then what a form keeps beside its model. The new schema is already running.
+        (target as { set(v: unknown): void }).set(untracked(old as () => unknown));
+        formStateOf(target)!.restore(formStateOf(old)!.capture());
+      } else if (kind === "data") (to as Record<string, unknown>)[name] = old;
     } catch {
       // a field that cannot take the old value keeps its new initial value
     }
