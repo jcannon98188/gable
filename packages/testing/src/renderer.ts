@@ -1,4 +1,8 @@
 import type { Renderer } from "@gable/core/renderer";
+import { createTestPlatform, type TestPlatform } from "./platform.js";
+
+export { createTestPlatform } from "./platform.js";
+export type { TestPlatform } from "./platform.js";
 
 /** A node of the in-memory test renderer. Plain, read-only-by-convention data. */
 export interface TestNode {
@@ -34,14 +38,19 @@ function detach(node: TestNode): void {
 export interface TestRenderer extends Renderer<TestNode> {
   readonly styles: Map<string, string>;
   readonly name: string;
+  /** The in-memory Location, History and Title this renderer provides to `bootstrap`. */
+  readonly platform: TestPlatform;
 }
 
 /** The in-memory renderer: an inspectable node tree, no DOM. */
-export function createTestRenderer(): TestRenderer {
+export function createTestRenderer(options: { url?: string } = {}): TestRenderer {
   const styles = new Map<string, string>();
+  const platform = createTestPlatform(options.url);
   return {
     name: "test",
     styles,
+    platform,
+    providers: platform.providers,
     createElement: (tag) => makeNode("element", tag),
     createText: (text) => makeNode("text", undefined, text),
     createAnchor: () => makeNode("anchor"),

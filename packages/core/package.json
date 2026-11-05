@@ -37,6 +37,10 @@
     "./forms": {
       "types": "./dist/forms.d.ts",
       "import": "./dist/forms.js"
+    },
+    "./router": {
+      "types": "./dist/router.d.ts",
+      "import": "./dist/router.js"
     }
   },
   "files": [

@@ -112,8 +112,16 @@ function applyOverrides(injector: Injector | null, imports: readonly (ComponentC
   return imports.map((entry) => {
     const next = map.get(entry);
     if (!next) return entry;
-    return isLazy(entry) && !isLazy(next) ? { kind: "lazy", name: entry.name, load: async () => next } satisfies LazyEntry : next;
+    return isLazy(entry) && !isLazy(next) ? { kind: "lazy", name: entry.name, load: async () => next, loadExport: async () => next } satisfies LazyEntry : next;
   });
+}
+
+let hostContext: { renderer: Renderer<any>; host: unknown } | null = null;
+
+/** Internal seam (router outlet and link directives): the renderer and host node of the component whose Setup is running. */
+export function injectHost<N = unknown>(): { renderer: Renderer<N>; host: N } {
+  if (!hostContext) throw new Error("injectHost() called outside a component Setup.");
+  return hostContext as { renderer: Renderer<N>; host: N };
 }
 
 /** Runs a component's Setup (field initialisers) in its injection context and wires `meta.host`. */
@@ -140,7 +148,15 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
     return runInScope(scope, () => {
     // Field initialisers run owned by `scope`, in the component injector context.
     const queries = createQueryHost();
-    const make = (): T => (dev ? (dev.construct() as T) : new Class());
+    const make = (): T => {
+      const previous = hostContext;
+      hostContext = { renderer, host };
+      try {
+        return dev ? (dev.construct() as T) : new Class();
+      } finally {
+        hostContext = previous;
+      }
+    };
     const instance = declareQueries(queries, () => (own ? own.run(() => runInScope(scope, make)) : make()));
     for (const out of describeFields(instance, Class.name)) scope.onDispose(() => completeOutput(out));
     const env = createEnv(instance);
@@ -227,6 +243,8 @@ export interface InstantiateOptions<N> {
   injector?: Injector | null;
   /** Initial input values. */
   inputs?: Record<string, unknown>;
+  /** Skip initial inputs the component does not declare instead of failing (the router feeds params this way). */
+  lenientInputs?: boolean;
 }
 
 /** Instantiates a component as a root against a renderer; the seam beneath `createComponent`, `bootstrap` and `mount`. */
@@ -243,7 +261,10 @@ export function instantiate<T extends object, N>(Class: ComponentClass<T>, optio
     if (!adopted) renderer.remove(host);
     throw error;
   }
-  for (const [name, value] of Object.entries(options.inputs ?? {})) setInput(prepared.instance, name, value);
+  for (const [name, value] of Object.entries(options.inputs ?? {})) {
+    if (options.lenientInputs && !inputOf(prepared.instance, name)) continue;
+    setInput(prepared.instance, name, value);
+  }
   prepared.render();
   const mounted: MountedComponent<T, N> & PreparedComponent<T, N> = {
     ...prepared,
