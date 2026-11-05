@@ -53,6 +53,6 @@ describe("tsconfig fail-fast", () => {
       "tsconfig.app.json": `{ "extends": "./base/tsconfig.base.json" }`,
       "base/tsconfig.base.json": `{ "compilerOptions": { "useDefineForClassFields": false } }`,
     });
-    await expect(resolve(root, "build")).rejects.toThrow(/base[\/]tsconfig\.base\.json.*useDefineForClassFields/s);
+    await expect(resolve(root, "build")).rejects.toThrow(/base[\\/]tsconfig\.base\.json: "useDefineForClassFields"/);
   });
 });

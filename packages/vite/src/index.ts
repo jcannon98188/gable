@@ -42,7 +42,7 @@ export function gable(): Plugin {
       checkTsconfig(config.root, config.tsconfig);
     },
     transform: {
-      order: "post",
+      
       handler(code, id) {
         if (this.environment.mode !== "dev" || this.environment.config.consumer !== "client") return;
         const file = id.split("?")[0]!;
