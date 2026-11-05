@@ -1,3 +1,7 @@
+import type { Provider } from "./di.js";
+
+export { Location, History, Title } from "./platform.js";
+
 /**
  * The Renderer contract: a small set of synchronous operations over opaque
  * node handles. The core owns templates, bindings, control flow and
@@ -8,6 +12,8 @@ export interface Renderer<N = unknown> {
   readonly name?: string;
   /** The `@defer` triggers `observeTrigger` understands; any other name is a dev-time error naming this renderer. */
   readonly triggers?: readonly string[];
+  /** Platform services (Location, History, Title, ...) this renderer ships; `bootstrap` adds them to the root injector, before the app's own providers. */
+  readonly providers?: readonly Provider[];
   // Create. `parent` is context only (e.g. SVG/MathML namespace); it does not insert.
   createElement(tag: string, parent: N | null): N;
   createText(text: string): N;

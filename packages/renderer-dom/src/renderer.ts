@@ -1,6 +1,7 @@
-import type { Renderer } from "@gable/core/renderer";
+import { History, Location, Title, type Renderer } from "@gable/core/renderer";
 import { controlBinding } from "./controls.js";
 import { DEV } from "./dev.js";
+import { createDomPlatform, type PlatformOptions } from "./platform.js";
 import { scopeCss } from "./scope-css.js";
 import { isKnownTag, type Namespace } from "./tags.js";
 import { DOM_TRIGGERS, observeDomTrigger } from "./triggers.js";
@@ -13,7 +14,7 @@ export interface DomRenderer extends Renderer<Node> {
   readonly triggers: readonly string[];
 }
 
-export interface DomRendererOptions {
+export interface DomRendererOptions extends PlatformOptions {
   /** The document to create nodes in. Defaults to the global `document`, read when first needed. */
   document?: Document;
 }
@@ -53,10 +54,18 @@ const kebab = (name: string) => (name.startsWith("--") ? name : name.replace(/[A
 export function createDomRenderer(options: DomRendererOptions = {}): DomRenderer {
   const doc = () => options.document ?? document;
   const sheets = new Map<string, HTMLStyleElement>();
+  // Built when first injected, so creating the renderer needs no browser globals.
+  let platform: ReturnType<typeof createDomPlatform> | undefined;
+  const services = () => (platform ??= createDomPlatform(options));
 
   return {
     name: "dom",
     triggers: DOM_TRIGGERS,
+    providers: [
+      { provide: Location, useFactory: () => services().location },
+      { provide: History, useFactory: () => services().history },
+      { provide: Title, useFactory: () => services().title },
+    ],
 
     createElement(tag, parent) {
       const ns = namespaceFor(tag, parent);
@@ -137,3 +146,6 @@ export function createDomRenderer(options: DomRendererOptions = {}): DomRenderer
     observeTrigger: (name, args, placeholder, fire) => observeDomTrigger(name, args, placeholder, fire),
   };
 }
+
+/** The DOM platform in one entry: the renderer plus Location, History and Title providers. Use as `bootstrap(Root, { renderer: dom(), target: '#app' })`. */
+export const dom = createDomRenderer;
