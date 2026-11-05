@@ -522,19 +522,24 @@ export interface HotHost {
   invalidate(message?: string): void;
 }
 
-let pending: Array<{ update: ModuleUpdate; hot?: HotHost }> = [];
+let pending: Array<{ update?: ModuleUpdate; hot?: HotHost }> = [];
 
 /**
  * The self-accept callback of a module that exports classes: `import.meta.hot?.accept(m => update(import.meta.url, m, import.meta.hot))`.
  * Callbacks of one Vite batch arrive in the same tick; they are applied together as one transaction.
  */
-export function update(url: string, namespace: Record<string, unknown>, hot?: HotHost): void {
-  pending.push({ update: { url, exports: namespace }, hot });
+export function update(url: string, namespace: Record<string, unknown> | undefined, hot?: HotHost): void {
+  // Vite passes `undefined` when re-importing the module failed: the batch rolls back and reports it.
+  pending.push({ update: namespace ? { url, exports: namespace } : undefined, hot });
   if (pending.length > 1) return;
   queueMicrotask(() => {
     const batch = pending;
     pending = [];
-    const result = applyUpdate(batch.map((p) => p.update));
+    const failed = batch.filter((p) => !p.update);
+    const result = applyUpdate(
+      batch.flatMap((p) => (p.update ? [p.update] : [])),
+      failed.map(() => new Error("A module failed to re-evaluate during a hot update")),
+    );
     if (result.status === "reload") {
       const hot = batch.find((p) => p.hot)?.hot;
       if (hot) hot.invalidate("Gable cannot hot-update this change");

@@ -72,18 +72,19 @@ export async function runGuard(injector: Injector, fn: (...args: any[]) => Guard
 }
 
 /** First match wins: static, `:param` and trailing `**` segments, depth first with backtracking. */
-export async function matchRoutes(routes: readonly Route[], segments: readonly string[], ctx: MatchContext): Promise<Match[] | null> {
+export async function matchRoutes(routes: readonly Route[], segments: readonly string[], ctx: MatchContext): Promise<Match[] | Redirect | null> {
   for (const route of routes) {
-    let allowed = true;
-    for (const guard of route.canMatch ?? []) {
-      if ((await ctx.guard(guard, segments)) !== true) {
-        allowed = false;
-        break;
-      }
-    }
-    if (!allowed) continue;
     const taken = consume(route.path, segments);
     if (!taken) continue;
+    let allowed = true;
+    for (const guard of route.canMatch ?? []) {
+      const verdict = await ctx.guard(guard, segments);
+      if (verdict === true) continue;
+      if (verdict !== false) return verdict; // a redirect ends matching
+      allowed = false;
+      break;
+    }
+    if (!allowed) continue;
     const { count, params } = taken;
     const rest = segments.slice(count);
     const match: Match = { route, params };
@@ -94,7 +95,7 @@ export async function matchRoutes(routes: readonly Route[], segments: readonly s
     const children = await ctx.children(route);
     if (children) {
       const below = await matchRoutes(children, rest, ctx);
-      if (below) return [match, ...below];
+      if (below) return Array.isArray(below) ? [match, ...below] : below;
       if (rest.length === 0 && route.component) return [match];
     } else if (rest.length === 0) return [match];
   }

@@ -43,6 +43,13 @@ const TOKEN =
 
 const OPERATOR_HINT = "Templates cannot compute: move derived values into a computed signal and read it.";
 
+const ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r" };
+
+/** Decodes the escapes a string literal may carry: newline, tab, return and 4-digit unicode escapes; any other escaped character stands for itself. */
+function unescape(text: string): string {
+  return text.replace(/\\(?:u([0-9a-fA-F]{4})|(.))/g, (_, hex?: string, ch?: string) => (hex ? String.fromCharCode(parseInt(hex, 16)) : (ESCAPES[ch!] ?? ch!)));
+}
+
 function tokenize(source: string): Token[] {
   const tokens: Token[] = [];
   TOKEN.lastIndex = 0;
@@ -52,7 +59,7 @@ function tokenize(source: string): Token[] {
     if (!m) throw new Error(`Invalid expression "${source}" at ${TOKEN.lastIndex}`);
     if (m[1] !== undefined) tokens.push({ kind: "id", text: m[1] });
     else if (m[2] !== undefined) tokens.push({ kind: "num", text: m[2] });
-    else if (m[3] !== undefined || m[4] !== undefined) tokens.push({ kind: "str", text: (m[3] ?? m[4])!.replace(/\\(.)/g, "$1") });
+    else if (m[3] !== undefined || m[4] !== undefined) tokens.push({ kind: "str", text: unescape((m[3] ?? m[4])!) });
     else if (m[5] !== undefined) tokens.push({ kind: "punct", text: m[5] });
     else tokens.push({ kind: "op", text: m[6]! });
   }

@@ -17,7 +17,7 @@ export function acceptLine(file: string): string {
     `import * as __gableHmr from "@gable/core/hmr";`,
     `if (import.meta.hot) {`,
     `  __gableHmr.register(import.meta.url, __gableSelf);`,
-    `  import.meta.hot.accept((m) => { if (m) __gableHmr.update(import.meta.url, m, import.meta.hot); });`,
+    `  import.meta.hot.accept((m) => { __gableHmr.update(import.meta.url, m, import.meta.hot); });`,
     `}`,
   ].join("\n");
 }

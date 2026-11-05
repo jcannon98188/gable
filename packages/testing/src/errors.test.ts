@@ -199,3 +199,28 @@ describe("the ErrorHandler Token", () => {
     void inject;
   });
 });
+
+describe("runaway effects", () => {
+  it("a write loop between effects is cut off and reported instead of hanging", async () => {
+    class Ping {
+      static meta = { selector: "app-ping", template: html`x` };
+      a = signal(0);
+      b = signal(0);
+      _1 = effect(() => this.b.set(this.a() + 1));
+      _2 = effect(() => this.a.set(this.b() + 1));
+    }
+    const f = mount(Ping);
+    f.instance.a.set(100);
+    await expect(f.flush()).rejects.toThrow(/did not settle/);
+    expect(f.claimErrors()[0]!.context.source).toBe("effect");
+  }, 5000);
+});
+
+describe("string literals in template expressions", () => {
+  it("decode escapes", () => {
+    class Lit {
+      static meta = { selector: "app-lit", template: html`{{ 'a\nb\tc\\d\'e\u0041' }}|{{ "q\\"r" }}` };
+    }
+    expect(mount(Lit).text()).toBe("a\nb\tc\d'eA|q\"r");
+  });
+});

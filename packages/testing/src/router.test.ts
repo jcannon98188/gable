@@ -244,6 +244,29 @@ describe("guards", () => {
     expect(app.text()).toBe("Home");
   });
 
+  it("canMatch runs only for routes whose path matched", async () => {
+    const asked: string[] = [];
+    const routes: Route[] = [
+      { path: "", component: Home },
+      { path: "other", component: About, canMatch: [() => (asked.push("other"), true)] },
+      { path: "page", component: About, canMatch: [() => (asked.push("page"), true)] },
+    ];
+    const app = mountApp(Root, { routes, url: "/page" });
+    await app.settle();
+    expect(asked).toEqual(["page"]);
+  });
+
+  it("canMatch may redirect, as other guards do", async () => {
+    const routes: Route[] = [
+      { path: "", component: Home },
+      { path: "old", component: About, canMatch: [() => redirect("/")] },
+    ];
+    const app = mountApp(Root, { routes });
+    await app.settle();
+    expect(await app.navigate("/old")).toEqual({ status: "success", url: "/" });
+    expect(app.text()).toBe("Home");
+  });
+
   it("canDeactivate receives the leaving component and can veto", async () => {
     let allow = false;
     const seen: unknown[] = [];

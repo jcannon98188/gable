@@ -66,9 +66,13 @@ export function runAfterFlush(task: () => void, scope: Scope | null = currentSco
   schedule();
 }
 
+/** Most rounds one flush runs before it concludes that effects keep re-arming each other. */
+const MAX_FLUSH_ROUNDS = 1000;
+
 function flushNow(): void {
   // Effects may write signals and so re-arm the watcher: loop until quiet.
   // Parents run before children; ties run in creation order.
+  let rounds = 0;
   for (;;) {
     const pending = watcher
       .getPending()
@@ -76,6 +80,10 @@ function flushNow(): void {
       .filter((n): n is EffectNode => n !== undefined)
       .sort((a, b) => a.scope.depth - b.scope.depth || a.seq - b.seq);
     watcher.watch(); // re-arm notifications
+    if (pending.length > 0 && ++rounds > MAX_FLUSH_ROUNDS) {
+      reportError(new Error(`Effects did not settle after ${MAX_FLUSH_ROUNDS} rounds: an effect loop keeps writing signals the others read.`), "effect", pending[0]!.scope);
+      break;
+    }
     if (pending.length === 0) {
       const next = afterFlush.shift();
       if (!next) break;

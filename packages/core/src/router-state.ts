@@ -154,7 +154,7 @@ export class Router {
     const keepOld = (error: unknown): false => (reportError(error, "hmr", this.#scope, parsed.url), false);
     try {
       const match = await matchRoutes(next, parsed.segments, { children: (route) => this.#children(route), guard: async () => true });
-      if (!match || match[match.length - 1]!.route.redirectTo !== undefined) {
+      if (!Array.isArray(match) || match[match.length - 1]!.route.redirectTo !== undefined) {
         return keepOld(new Error(`The edited route config no longer matches "${parsed.url}"; keeping the previous route config.`));
       }
       await this.#loadComponents(match.map((m) => m.route));
@@ -201,6 +201,7 @@ export class Router {
         guard: (fn, ...args) => runGuard(this.#injector, fn, args),
       });
       if (stale()) return cancel("superseded");
+      if (match && !Array.isArray(match)) return await redirectTo(match.redirect);
       if (!match) throw new Error(`No route matches "${url}".`);
       const leaf = match[match.length - 1]!;
       if (leaf.route.redirectTo !== undefined) return await redirectTo(substitute(leaf.route.redirectTo, merge(match)));

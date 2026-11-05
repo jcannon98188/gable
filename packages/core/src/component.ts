@@ -63,14 +63,16 @@ export interface PreparedComponent<T extends object, N> {
   readonly failed: boolean;
 }
 
-const hostSpecs = new WeakMap<object, ElementNode>();
+const hostSpecs = new WeakMap<object, { host: unknown; spec: ElementNode }>();
 
 function hostSpec(Class: ComponentClass<any>): ElementNode {
-  let spec = hostSpecs.get(Class);
+  const cached = hostSpecs.get(Class);
+  // Keyed by the `meta.host` object too: a hot update swaps `meta` on the canonical class.
+  let spec = cached && cached.host === Class.meta.host ? cached.spec : undefined;
   if (!spec) {
     spec = { type: "element", tag: "", attrs: [], bindings: [], events: [], models: [], refs: [], children: [] };
     for (const [key, value] of Object.entries(Class.meta.host ?? {})) addAttribute(spec, key, value);
-    hostSpecs.set(Class, spec);
+    hostSpecs.set(Class, { host: Class.meta.host, spec });
   }
   return spec;
 }
