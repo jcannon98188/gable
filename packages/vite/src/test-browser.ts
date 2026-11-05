@@ -37,7 +37,13 @@ export async function openPage(): Promise<Page> {
   );
   const close = () => {
     child.kill();
-    setTimeout(() => rmSync(dir, { recursive: true, force: true, maxRetries: 5 }), 500).unref();
+    setTimeout(() => {
+      try {
+        rmSync(dir, { recursive: true, force: true, maxRetries: 5 });
+      } catch {
+        // best-effort cleanup; Windows may still hold the profile dir
+      }
+    }, 500).unref();
   };
   try {
     let port = "";

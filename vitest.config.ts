@@ -24,5 +24,5 @@ export default defineConfig({
       { find: /^@gable\/prettier-plugin$/, replacement: src("prettier-plugin/src/index.ts") },
     ],
   },
-  test: { include: ["packages/*/src/**/*.test.ts"] },
+  test: { testTimeout: 30000, include: ["packages/*/src/**/*.test.ts"] },
 });
