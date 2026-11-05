@@ -17,6 +17,9 @@ export class InjectionToken<T> {
   }
 }
 
+/** Resolves to the injector that asked: lets a service learn which layer it was created in. */
+export const INJECTOR = new InjectionToken<Injector>("Injector");
+
 export type Token<T> = Type<T> | InjectionToken<T>;
 
 export type Provider =
@@ -137,6 +140,7 @@ class InjectorImpl implements Injector {
 
   get<T>(token: Token<T>, options: InjectOptions = {}): T | null {
     if (this.destroyed) throw new Error("Injector has been destroyed.");
+    if (token === INJECTOR) return this as unknown as T;
     let at: InjectorImpl | null = options.skipSelf ? this.parent : this;
     let stopped = false;
     while (at) {

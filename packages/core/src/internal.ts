@@ -9,3 +9,4 @@ export { instantiate, COMPONENT_OVERRIDES } from "./component.js";
 export type { MountedComponent } from "./component.js";
 export { whenFlushed, flushSync, hasPendingFlush } from "./signals.js";
 export { reportError } from "./errors.js";
+export { INJECTOR } from "./di.js";

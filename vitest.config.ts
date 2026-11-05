@@ -11,6 +11,7 @@ export default defineConfig({
       { find: /^@gable\/core$/, replacement: src("core/src/index.ts") },
       { find: /^@gable\/core\/renderer$/, replacement: src("core/src/renderer.ts") },
       { find: /^@gable\/core\/rxjs$/, replacement: src("core/src/rxjs.ts") },
+      { find: /^@gable\/core\/http$/, replacement: src("core/src/http.ts") },
       { find: /^@gable\/core\/tooling$/, replacement: src("core/src/tooling.ts") },
       { find: /^@gable\/core\/internal$/, replacement: src("core/src/internal.ts") },
       { find: /^@gable\/testing$/, replacement: src("testing/src/index.ts") },
