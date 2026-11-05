@@ -1,0 +1,27 @@
+{
+  "name": "create-gable",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "npm create gable: copies the Gable starter template into a new project directory.",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "create-gable": "./dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "template"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "sync-docs": "node scripts/sync-docs.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0"
+  }
+}

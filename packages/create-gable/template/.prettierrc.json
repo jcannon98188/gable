@@ -1,0 +1,4 @@
+{
+  "plugins": ["@gable/prettier-plugin"],
+  "printWidth": 100
+}
