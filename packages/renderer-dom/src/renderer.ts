@@ -120,6 +120,47 @@ export function createDomRenderer(options: DomRendererOptions = {}): DomRenderer
       return () => node.removeEventListener(domEvent, listener);
     },
 
+    fieldControl(node) {
+      const el = node as HTMLInputElement;
+      const type = () => (el.localName === "input" ? el.type : el.localName);
+      const checkable = () => type() === "checkbox" || type() === "radio";
+      const numeric = () => type() === "number" || type() === "range";
+      return {
+        write(value) {
+          if (type() === "checkbox") el.checked = !!value;
+          else if (type() === "radio") el.checked = value != null && el.value === String(value);
+          else if (numeric()) {
+            if (value == null) el.value = "";
+            else if (el.valueAsNumber !== value) el.value = String(value);
+          } else {
+            const text = value == null ? "" : String(value);
+            if (el.value !== text) el.value = text;
+          }
+        },
+        setState({ disabled, readonly, invalid }) {
+          el.disabled = disabled;
+          if (el.localName !== "select") el.readOnly = readonly;
+          if (invalid) el.setAttribute("aria-invalid", "true");
+          else el.removeAttribute("aria-invalid");
+        },
+        listen({ value, touched }) {
+          const onValue = () => {
+            if (type() === "radio") {
+              if (el.checked) value(el.value);
+            } else value(controlBinding(el)!.read(el));
+          };
+          const event = checkable() || el.localName === "select" ? "change" : "input";
+          const onBlur = () => touched();
+          el.addEventListener(event, onValue);
+          el.addEventListener("blur", onBlur);
+          return () => {
+            el.removeEventListener(event, onValue);
+            el.removeEventListener("blur", onBlur);
+          };
+        },
+      };
+    },
+
     registerStyles(componentId, css, { scoped = true } = {}) {
       const token = scoped ? `g-${componentId.replace(/[^\w-]/g, "_")}` : "";
       let el = sheets.get(componentId);

@@ -12,6 +12,7 @@ import { parseSelector, matchesNode } from "./select.js";
 import { viewOf, type Content, type ViewContext } from "./view-context.js";
 import { registerEntry, withContentTarget } from "./query.js";
 import { buildDefer } from "./defer.js";
+import { bindCustomField, bindNativeField, isCustomControl } from "./field-binding.js";
 import type { ElementNode, ForNode, IfNode, SwitchNode, TemplateNode } from "./template.js";
 
 /** The live top-level nodes of a built piece of template (blocks change theirs over time). */
@@ -207,7 +208,12 @@ function buildElementOf<N>(
     };
 
     for (const { name, value } of node.attrs) inputFor(name)?.set(value);
+    let field: Expr | undefined;
     for (const binding of node.bindings) {
+      if (binding.kind === "prop" && binding.name === "field") {
+        field = binding.expr;
+        continue;
+      }
       const target = binding.kind === "prop" ? inputFor(binding.name) : undefined;
       if (target) {
         const safe = guard(scope, `input:${binding.name}`);
@@ -237,9 +243,12 @@ function buildElementOf<N>(
     }
 
     applyBindings(el, rest, renderer, env);
+    const custom = field && isCustomControl(comps.map((c) => c.instance));
+    if (field && custom) bindCustomField(comps.map((c) => c.instance), field, env);
     for (const comp of comps) comp.render();
     if (!projects) buildNodes(node.children, renderer, env, el, null);
-    return () => [el];
+    // A native control is bound last so that its options (<select>) exist when the value is written.
+    if (field && !custom) bindNativeField(el, field, renderer, env);
     return () => [el];
   } catch (error) {
     if (DEV) renderer.remove(el);

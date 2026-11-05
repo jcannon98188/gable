@@ -7,6 +7,16 @@ export { Location, History, Title } from "./platform.js";
  * node handles. The core owns templates, bindings, control flow and
  * scheduling; a renderer owns nodes, and the meaning of tags and properties.
  */
+/** What a form field's control looks like to the core: the renderer maps values by control type and reports user edits. */
+export interface FieldControl {
+  /** Shows the field's value in the control (a no-op when it already shows it). */
+  write(value: unknown): void;
+  /** Applies disabled and readonly, and marks the control invalid (aria-invalid on the DOM). */
+  setState(state: { disabled: boolean; readonly: boolean; invalid: boolean }): void;
+  /** `value` receives the control's mapped value after user edits; `touched` fires on the first blur. Returns an unsubscribe. */
+  listen(handlers: { value(value: unknown): void; touched(): void }): () => void;
+}
+
 export interface Renderer<N = unknown> {
   /** Shown in errors, e.g. an unknown `@defer` trigger. */
   readonly name?: string;
@@ -39,6 +49,8 @@ export interface Renderer<N = unknown> {
   resolveTarget?(target: unknown): N;
   /** Renderer-specific `@defer` triggers; returns a dispose function. */
   observeTrigger?(name: string, args: unknown[], placeholder: N | undefined, fire: () => void): () => void;
+  /** Controls for the `[field]` directive on a native node. Absent: `[field]` on a native element is an error naming this renderer. */
+  fieldControl?(node: N): FieldControl;
   /** Optional DOM-state preservation around a view rebuild (HMR). */
   captureViewState?(rootNodes: N[]): unknown;
   restoreViewState?(newRootNodes: N[], token: unknown): void;
