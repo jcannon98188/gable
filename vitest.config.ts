@@ -15,6 +15,8 @@ export default defineConfig({
       { find: /^@gable\/core\/internal$/, replacement: src("core/src/internal.ts") },
       { find: /^@gable\/testing$/, replacement: src("testing/src/index.ts") },
       { find: /^@gable\/testing\/renderer$/, replacement: src("testing/src/renderer.ts") },
+      { find: /^@gable\/template-format$/, replacement: src("template-format/src/index.ts") },
+      { find: /^@gable\/prettier-plugin$/, replacement: src("prettier-plugin/src/index.ts") },
     ],
   },
   test: { include: ["packages/*/src/**/*.test.ts"] },
