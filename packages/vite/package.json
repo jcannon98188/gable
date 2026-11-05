@@ -1,6 +1,7 @@
 {
   "name": "@gable/vite",
   "version": "0.0.0",
+  "license": "MIT",
   "type": "module",
   "description": "The Gable Vite plugin: dev-only HMR accept lines, forced native class fields, fail-fast tsconfig checks.",
   "sideEffects": false,

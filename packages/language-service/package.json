@@ -1,6 +1,7 @@
 {
   "name": "@gable/language-service",
   "version": "0.0.0",
+  "license": "MIT",
   "type": "module",
   "description": "Gable template analyzer: type-checks html templates against component classes. Ships the tsserver plugin (main) and the gable-check CLI.",
   "sideEffects": false,
