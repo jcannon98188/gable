@@ -2,7 +2,9 @@
   "name": "gable-monorepo",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "test": "vitest run",
@@ -11,7 +13,8 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
-    "typescript": "^5.6.0",
-    "vitest": "^3.0.0"
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0",
+    "rxjs": "^7.8.2"
   }
 }

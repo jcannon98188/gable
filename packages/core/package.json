@@ -25,5 +25,8 @@
   },
   "dependencies": {
     "signal-polyfill": "0.2.2"
+  },
+  "peerDependencies": {
+    "rxjs": "^7.8.2"
   }
 }
