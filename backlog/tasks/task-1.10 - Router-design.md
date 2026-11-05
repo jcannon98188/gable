@@ -4,6 +4,7 @@ title: Router design
 status: To Do
 assignee: []
 created_date: '2026-11-05 04:20'
+updated_date: '2026-11-05 04:46'
 labels:
   - 'wayfinder:grilling'
 dependencies:
@@ -20,3 +21,12 @@ ordinal: 11000
 
 What is the router model: route config shape, lazy loading, route state exposed as signals and observables, and how router state survives HMR?
 <!-- SECTION:DESCRIPTION:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-11-05 04:46
+---
+From Template syntax: @defer lazy-loads components via explicit lazy(() => import(...)); route-level lazy loading should share that loader mechanism.
+---
+<!-- COMMENTS:END -->

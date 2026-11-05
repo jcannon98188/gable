@@ -4,7 +4,7 @@ title: Renderer abstraction
 status: To Do
 assignee: []
 created_date: '2026-11-05 04:20'
-updated_date: '2026-11-05 04:34'
+updated_date: '2026-11-05 04:46'
 labels:
   - 'wayfinder:grilling'
 dependencies:
@@ -28,5 +28,10 @@ The DOM renderer must be one renderer among several, opening the way for a futur
 created: 2026-11-05 04:34
 ---
 From Component model and hierarchical DI: bootstrap(Root, { renderer, providers }) takes the renderer as an argument; hosts are renderer-provided (createComponent({ host })); style scoping and host bindings are renderer-owned; HMR needs a renderer operation to re-run a view against the same instance.
+---
+
+created: 2026-11-05 04:46
+---
+From Template syntax: the renderer supplies @defer triggers beyond when/idle/timer (DOM: viewport, interaction, hover) and any template node/namespace handling.
 ---
 <!-- COMMENTS:END -->

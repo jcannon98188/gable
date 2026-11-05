@@ -51,3 +51,11 @@ _Avoid_: Key, service identifier
 **Host**:
 The renderer-provided output node a Component mounts into, matched in templates by selector. Not a custom element.
 _Avoid_: Element, mount point
+
+**Pipe**:
+A template-only formatting function applied with `|`, instantiated per binding. Pure unless it opts out.
+_Avoid_: Filter, formatter
+
+**Deferred block**:
+A template block (`@defer`) whose content, and any lazily imported components inside it, loads when a trigger fires.
+_Avoid_: Lazy block, suspense

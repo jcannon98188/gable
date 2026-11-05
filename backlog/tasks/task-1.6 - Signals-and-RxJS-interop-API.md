@@ -4,7 +4,7 @@ title: Signals and RxJS interop API
 status: To Do
 assignee: []
 created_date: '2026-11-05 04:20'
-updated_date: '2026-11-05 04:34'
+updated_date: '2026-11-05 04:46'
 labels:
   - 'wayfinder:grilling'
 dependencies:
@@ -27,5 +27,10 @@ What is the exact interop surface: signal/observable bridges, direct binding of 
 created: 2026-11-05 04:34
 ---
 From Component model and hierarchical DI: scheduling must cover RxJS. Observable emissions reaching templates/effects go through this bridge into signal writes (same coalesced microtask flush), and gable exports an RxJS SchedulerLike (renderScheduler) aligned with the render flush. output() is also an Observable.
+---
+
+created: 2026-11-05 04:46
+---
+From Template syntax: the built-in async pipe (Observables and Promises, always available) is a template-level user of this bridge; emissions must schedule through the one coalesced flush.
 ---
 <!-- COMMENTS:END -->
