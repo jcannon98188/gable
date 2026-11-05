@@ -238,4 +238,5 @@ export function fixesFor(diagnostics: Diagnostic[], file: string, start: number,
   return out;
 }
 
-const sameFile = (a: string, b: string) => a.replace(/\/g, "/").toLowerCase() === b.replace(/\/g, "/").toLowerCase();
+const normPath = (p: string) => p.split("\\").join("/").toLowerCase();
+const sameFile = (a: string, b: string) => normPath(a) === normPath(b);

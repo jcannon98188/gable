@@ -1,7 +1,8 @@
 import type { Renderer } from "./renderer.js";
 import type { Env } from "./expression.js";
 import { evaluate } from "./expression.js";
-import { effect, reportError, untracked, whenFlushed } from "./signals.js";
+import { reportError } from "./errors.js";
+import { effect, untracked, whenFlushed } from "./signals.js";
 import { currentScope } from "./scope.js";
 import { DEV, InjectionToken } from "./di.js";
 import { viewOf } from "./view-context.js";
@@ -73,7 +74,7 @@ export function buildDefer<N>(node: DeferNode, renderer: Renderer<N>, env: Env, 
       },
       (error) => {
         if (scope?.disposed) return;
-        if (!node.error) reportError(error);
+        if (!node.error) reportError(error, "lazy", scope ?? null);
         untracked(() => show("error", node.error));
       },
     );
