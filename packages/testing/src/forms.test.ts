@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { computed, html, signal } from "@gable/core";
-import { form, email, max, maxLength, min, minLength, pattern, required, requiredTrue, validate, apply, applyWhen, disabled, each, type Path } from "@gable/core/forms";
+import { form, email, max, maxLength, min, minLength, pattern, required, requiredTrue, validate, apply, applyWhen, disabled, type Path } from "@gable/core/forms";
 import { mount } from "@gable/testing";
 
 /** A component whose only job is to own a form, so tests go through the Fixture. */
@@ -214,5 +214,3 @@ describe("composition and conditional state", () => {
     expect(f.state.valid()).toBe(true);
   });
 });
-void vi;
-void each;

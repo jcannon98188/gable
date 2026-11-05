@@ -653,7 +653,8 @@ function arrayMembers(self: Node, init: NodeInit, read: ReadonlySignal<unknown>,
     // Keep the key list in step with a structural change before the model changes.
     seeded ||= (seed(), true);
   };
-  define("rows", rows);
+  const fields = computed(() => rows().map((r) => r.field));
+  define("rows", fields);
   define("push", (item: unknown) => {
     assertModelKeys(item, "", false);
     settleOrder();
