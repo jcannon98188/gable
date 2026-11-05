@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@jason'
 created_date: '2026-11-05 04:20'
-updated_date: '2026-11-05 04:34'
+updated_date: '2026-11-05 04:58'
 labels:
   - 'wayfinder:grilling'
 dependencies: []
@@ -42,5 +42,10 @@ Resolved with the user.
 **Bootstrap**: `bootstrap(Root, { renderer, providers })`; renderer is an argument, never a global.
 
 Left in the fog: error handling, testing utilities, devtools.
+---
+
+created: 2026-11-05 04:58
+---
+Amendment from Template syntax (user): pipes no longer exist, so meta.imports lists components, attribute directives and lazy() entries only.
 ---
 <!-- COMMENTS:END -->

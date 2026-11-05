@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@jason'
 created_date: '2026-11-05 04:20'
-updated_date: '2026-11-05 04:53'
+updated_date: '2026-11-05 04:58'
 labels:
   - 'wayfinder:grilling'
 dependencies: []
@@ -46,5 +46,16 @@ Amendment (user): outside event bindings, templates contain no function calls ex
 **Event bindings** `(event)="handler(arg)"` may still call handlers; arguments are references, literals or `$event`.
 **Where computed values live**: enhanced view models, i.e. computed signals that already include the derived value (e.g. a computed list of rows carrying `isSelected`, `label`), instead of fetching values through methods in the template.
 **Language service role**: diagnostics flag a disallowed call or operator in a value expression and offer quick-fix refactors that extract a computed signal (view-model field) on the component and replace the expression with its read. This is a v0 language-service requirement, not just an interpreter restriction.
+---
+
+created: 2026-11-05 04:58
+---
+Amendment 2 (user): pipes are removed entirely, and Observables/Promises bind directly. This supersedes the Pipes section, the built-in `async` pipe, and the "pipes" entries in the allowed-expression list above.
+
+**No pipes**: no `|` syntax, no pipe classes, no pipe entries in `meta.imports`. Formatting lives in computed signals calling plain functions (`dateLabel = computed(() => fmtDate(this.date()))`): declarative and unit-testable without a template.
+**Value expressions** are now: property reads, zero-argument signal reads, literals, `!`, `??`. (Event bindings may still call handlers; `lazy()`/`@defer` unchanged.)
+**Direct Observable and Promise binding**: a bare reference to an Observable or Promise (no call, no pipe) subscribes at bind time and yields the latest value. Signals keep call syntax (`count()`). E.g. `{{ user$ }}`, `@if (user$; as user) {...}`, `@for (item of items$; track item.id)`. A property path through a bare reference reads off the latest value (`user$.name`); before the first emission the whole path evaluates to `undefined` without throwing (`?.` semantics at every step). The language service types it as `T | undefined`.
+**Initial values and lifecycle**: `undefined` until first emission; authors use `startWith(...)`, a `BehaviorSubject`, or `user$ ?? fallback`. No `async:initial`. Subscribes when the binding is created, unsubscribes on destroy, resubscribes if the reference yields a different Observable. Errors go to the app error handler; a completed Observable keeps its last value. Uses the observable-to-signal bridge from the interop API, so emissions ride the coalesced flush.
+**Promises**: like an Observable emitting once: `undefined` until resolved, then the value; rejection goes to the error handler.
 ---
 <!-- COMMENTS:END -->

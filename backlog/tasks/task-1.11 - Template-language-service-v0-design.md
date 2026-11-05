@@ -4,7 +4,7 @@ title: Template language service v0 design
 status: To Do
 assignee: []
 created_date: '2026-11-05 04:20'
-updated_date: '2026-11-05 04:53'
+updated_date: '2026-11-05 04:58'
 labels:
   - 'wayfinder:grilling'
 dependencies:
@@ -33,5 +33,10 @@ From Template syntax: the language service reuses gable's expression parser. Exp
 created: 2026-11-05 04:53
 ---
 Amendment from Template syntax (user): value expressions allow only property reads, zero-arg signal reads, literals, !, ??, pipes; no method calls. The language service must diagnose violations and provide quick-fix refactors that extract a computed signal (an enhanced view model) onto the component and rewrite the template to read it. Event-binding handler calls remain allowed.
+---
+
+created: 2026-11-05 04:58
+---
+Amendment from Template syntax (user): no pipes, no async pipe. Bare Observable/Promise references in value expressions unwrap to T | undefined with ?. path semantics; the language service must type them that way and offer a quick fix to extract formatting/derived values into computed view-model signals. Value expressions: property reads, zero-arg signal reads, literals, !, ??.
 ---
 <!-- COMMENTS:END -->

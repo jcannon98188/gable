@@ -4,7 +4,7 @@ title: Signals and RxJS interop API
 status: To Do
 assignee: []
 created_date: '2026-11-05 04:20'
-updated_date: '2026-11-05 04:46'
+updated_date: '2026-11-05 04:58'
 labels:
   - 'wayfinder:grilling'
 dependencies:
@@ -32,5 +32,10 @@ From Component model and hierarchical DI: scheduling must cover RxJS. Observable
 created: 2026-11-05 04:46
 ---
 From Template syntax: the built-in async pipe (Observables and Promises, always available) is a template-level user of this bridge; emissions must schedule through the one coalesced flush.
+---
+
+created: 2026-11-05 04:58
+---
+Amendment from Template syntax (user): there is no async pipe. Templates bind bare Observable/Promise references directly; the runtime subscribes via this bridge, yields undefined until first emission, applies ?. semantics through property paths, unsubscribes on destroy, resubscribes when the reference changes, sends errors to the app error handler, and keeps the last value after completion. Promises behave as a single-emission Observable.
 ---
 <!-- COMMENTS:END -->
