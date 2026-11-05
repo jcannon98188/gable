@@ -49,3 +49,40 @@ export function inCallee(id: ts.Node): boolean {
   return false;
 }
 
+
+export function hasModifier(node: ts.Node, kind: ts.SyntaxKind): boolean {
+  return ts.canHaveModifiers(node) && !!ts.getModifiers(node)?.some((m) => m.kind === kind);
+}
+
+/** The object literal of a class's `static meta = { ... }`, when it has one. */
+export function metaObject(cls: ts.ClassDeclaration): ts.ObjectLiteralExpression | undefined {
+  for (const member of cls.members) {
+    if (!ts.isPropertyDeclaration(member) || !member.initializer || !ts.isIdentifier(member.name) || member.name.text !== "meta") continue;
+    if (!hasModifier(member, ts.SyntaxKind.StaticKeyword)) continue;
+    const meta = unwrap(member.initializer);
+    if (ts.isObjectLiteralExpression(meta)) return meta;
+  }
+  return undefined;
+}
+
+/** The initializer of a property of an object literal (`selector`, `imports`, ...). */
+export function metaProperty(meta: ts.ObjectLiteralExpression, name: string): ts.Expression | undefined {
+  for (const prop of meta.properties) {
+    if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name) && prop.name.text === name) return prop.initializer;
+  }
+  return undefined;
+}
+
+/** A component class's literal `selector`, when it has one. */
+export function literalSelector(cls: ts.ClassDeclaration): string | undefined {
+  const meta = metaObject(cls);
+  const selector = meta && metaProperty(meta, "selector");
+  return selector && ts.isStringLiteralLike(selector) ? selector.text : undefined;
+}
+
+/** Follows import aliases to the class declaration a name refers to. */
+export function classOf(checker: ts.TypeChecker, node: ts.Node): ts.ClassDeclaration | undefined {
+  let symbol = checker.getSymbolAtLocation(node);
+  if (symbol && symbol.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
+  return symbol?.declarations?.find(ts.isClassDeclaration);
+}

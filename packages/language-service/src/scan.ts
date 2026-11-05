@@ -10,7 +10,7 @@ export interface Src {
   text: string;
   start: number;
 }
-export type ExprKind = "value" | "handler" | "model";
+export type ExprKind = "value" | "handler" | "model" | "field";
 export interface Expression extends Src {
   kind: ExprKind;
   /** The binding's name without brackets or parentheses (`value` in `[(value)]`), and its offset. */
@@ -18,9 +18,18 @@ export interface Expression extends Src {
   nameStart: number;
 }
 
+/** A plain (non-binding) attribute: name, offset of the name, and value when it has one. */
+export interface StaticAttr {
+  name: string;
+  nameStart: number;
+  value?: string;
+}
 export interface ElementNode {
   type: "element";
   tag: string;
+  /** Offset of the tag name (after the `<`). */
+  tagStart: number;
+  attrs: StaticAttr[];
   expressions: Expression[];
   refs: string[];
   children: TNode[];
@@ -42,6 +51,14 @@ export interface SwitchNode {
   expr: Src;
   cases: Array<{ expr: Src | null; children: TNode[] }>;
 }
+export interface DeferNode {
+  type: "defer";
+  when: Src | null;
+  children: TNode[];
+  placeholder?: TNode[];
+  loading?: TNode[];
+  error?: TNode[];
+}
 export interface LetNode {
   type: "let";
   name: string;
@@ -51,7 +68,7 @@ export interface TextNode {
   type: "text";
   exprs: Src[];
 }
-export type TNode = ElementNode | IfNode | ForNode | SwitchNode | LetNode | TextNode;
+export type TNode = ElementNode | IfNode | ForNode | SwitchNode | DeferNode | LetNode | TextNode;
 
 export class ScanError extends Error {
   constructor(
@@ -290,8 +307,28 @@ class Scanner {
           else this.err("@switch may only contain @case and @default blocks");
         }
       }
-      case "defer":
-        return this.err("@defer is not supported yet", blockAt, 6);
+      case "defer": {
+        this.skipSpace();
+        const header = s[this.i] === "(" ? this.readHeader("defer") : { text: "", at: this.i };
+        let when: Src | null = null;
+        for (const part of splitTopLevel(header.text, ";")) {
+          const clause = part.text.trim();
+          if (clause === "") continue;
+          const w = /^(\s*when\s)([\s\S]*)$/.exec(part.text);
+          if (w) {
+            if (when) this.err("@defer allows one `when` condition", blockAt, 6);
+            when = src(w[2]!, this.base + header.at + part.at + w[1]!.length);
+          } else if (!/^on\s/.test(clause)) this.err(`@defer header clauses must start with "when" or "on", got "${clause}"`, header.at, header.text.length);
+        }
+        const node: DeferNode = { type: "defer", when, children: this.readBody("defer") };
+        for (;;) {
+          const section = (["placeholder", "loading", "error"] as const).find((x) => this.eat(x));
+          if (!section) break;
+          if (node[section]) this.err(`@defer has more than one @${section} block`, this.i - section.length - 1, section.length + 1);
+          node[section] = this.readBody(section);
+        }
+        return node;
+      }
       default:
         return this.err(`Unexpected @${name} in template (it must follow an @if, @for or @switch block)`, blockAt, name.length + 1);
     }
@@ -302,7 +339,7 @@ class Scanner {
     const nameMatch = /^<([A-Za-z][\w-]*)/.exec(s.slice(lt));
     if (!nameMatch) this.err(`Unexpected "<" in template`, lt);
     const tag = nameMatch[1]!;
-    const el: ElementNode = { type: "element", tag, expressions: [], refs: [], children: [] };
+    const el: ElementNode = { type: "element", tag, tagStart: this.base + lt + 1, attrs: [], expressions: [], refs: [], children: [] };
     let p = lt + nameMatch[0].length;
     let selfClosing = false;
     for (;;) {
@@ -333,11 +370,13 @@ class Scanner {
         ...src(value, this.base + valueAt),
       });
       if (name.startsWith("[(") && name.endsWith(")]")) el.expressions.push(expr("model", 2));
+      else if (name === "[field]") el.expressions.push(expr("field", 1));
       else if (name.startsWith("[") && name.endsWith("]")) el.expressions.push(expr("value", 1));
       else if (name.startsWith("(") && name.endsWith(")")) el.expressions.push(expr("handler", 1));
       else if (name.startsWith("#")) el.refs.push(name.slice(1));
       else if (name.startsWith("*")) this.err(`Structural directives ("${name}") do not exist; use @if or @for blocks.`, nameAt, name.length);
       else if (value.includes("{{")) this.err(`Interpolation in attribute "${name}" is not supported; use [attr.${name}] or [${name}].`, valueAt, value.length);
+      else el.attrs.push({ name, nameStart: this.base + nameAt, value: valueRange || m[2] !== undefined || m[3] !== undefined ? value : undefined });
     }
     this.i = p;
     if (!selfClosing && !VOID.has(tag)) el.children = this.parseChildren("element", tag);

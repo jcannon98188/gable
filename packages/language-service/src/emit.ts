@@ -5,6 +5,7 @@
 // and un-exported classes, and original offsets are unchanged. Every emitted
 // character that came from the template is recorded as a mapped `Part`.
 
+import type ts from "@typescript/typescript6";
 import type { ExprKind, Src, TNode } from "./scan.js";
 
 /** A run of generated text; `src` is the template offset it was copied from, when it was copied. */
@@ -76,6 +77,8 @@ export interface Site {
 
 export interface TemplateModel {
   className: string;
+  /** The class whose `static meta` holds this template. */
+  classNode: ts.ClassDeclaration;
   /** Where quick fixes insert new class members (end of the last member, so field initializers run after the fields they read), and that line's indentation. */
   insertAt: number;
   indent: string;
@@ -270,6 +273,16 @@ export function emit(
           if (node.empty) {
             push("{\n");
             nodes(node.empty, locals);
+            push("}\n");
+          }
+          break;
+        }
+        case "defer": {
+          if (node.when) expression(node.when, "value", locals, "void (", ");\n");
+          for (const body of [node.children, node.placeholder, node.loading, node.error]) {
+            if (!body) continue;
+            push("{\n");
+            nodes(body, locals);
             push("}\n");
           }
           break;

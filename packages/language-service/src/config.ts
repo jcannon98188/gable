@@ -14,6 +14,7 @@ export const RULES = {
   "model-not-writable": "error",
   "model-type-mismatch": "error",
   "unknown-event": "error",
+  "lazy-outside-defer": "error",
 } as const satisfies Record<string, Severity>;
 
 export type RuleId = keyof typeof RULES;

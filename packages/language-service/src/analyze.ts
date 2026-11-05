@@ -5,6 +5,7 @@ import { readConfig, type AnalyzerConfig, type RuleId, type Severity } from "./c
 import { emit, type Emitted, type EventSite, type Group, type Ref, type TemplateModel } from "./emit.js";
 import { findIdentifier, inCallee, isObservableLike, isSignal, unwrap } from "./typeutil.js";
 import { callSignalFix, extractFix, type Fix, type FixEnv } from "./fixes.js";
+import { templateRules } from "./file-rules.js";
 import { scanTemplate, ScanError, type ExprKind, type Src } from "./scan.js";
 
 export interface Diagnostic {
@@ -90,12 +91,15 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
   const base = programWith(new Map());
   const files = new Map<string, FileState>();
   const components = new Map<string, ComponentInfo>();
+  const sources = new Map<string, ts.SourceFile>();
   for (const sf of base.getSourceFiles()) {
     if (sf.isDeclarationFile || !rootNames.some((r) => norm(r) === norm(sf.fileName))) continue;
+    sources.set(norm(sf.fileName), sf);
     for (const c of findComponents(sf)) components.set(c.selector, c);
     const models = findTemplates(sf, config.templateTag, (start, length, message) =>
       raw.push({ file: sf.fileName, start, length, rule: "template-syntax", message }),
     );
+    for (const model of models) templateRules(model, base.getTypeChecker(), (start, length, rule, message) => raw.push({ file: sf.fileName, start, length, rule, message }));
     if (models.length) files.set(norm(sf.fileName), { sf, models, observed: new Set(), syntax: new Map() });
   }
 
@@ -196,7 +200,7 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
     const key = `${d.file}:${d.start}:${d.rule}`;
     if (severity === "off" || seen.has(key)) continue;
     seen.add(key);
-    const sf = files.get(norm(d.file))!.sf;
+    const sf = sources.get(norm(d.file))!;
     const { line, character } = sf.getLineAndCharacterOfPosition(d.start);
     out.push({ ...d, severity, line: line + 1, column: character + 1 });
   }
@@ -226,7 +230,7 @@ function findTemplates(sf: ts.SourceFile, tag: string, onError: OnError): Templa
           if (!ts.isTaggedTemplateExpression(value) || !ts.isIdentifier(value.tag) || value.tag.text !== tag) continue;
           const lineStart = sf.getLineStarts()[sf.getLineAndCharacterOfPosition(member.getStart(sf)).line]!;
           const indent = /^[ \t]*/.exec(sf.text.slice(lineStart))![0];
-          const model = scanLiteral(sf, node.name.text, { insertAt: node.members[node.members.length - 1]!.end, indent }, value.template, onError);
+          const model = scanLiteral(sf, node, { insertAt: node.members[node.members.length - 1]!.end, indent }, value.template, onError);
           if (model) models.push(model);
         }
       }
@@ -238,7 +242,7 @@ function findTemplates(sf: ts.SourceFile, tag: string, onError: OnError): Templa
 }
 
 /** `${}` holes are blanked out of the scanned text (never parsed inside) and returned as plain TS expressions. */
-function scanLiteral(sf: ts.SourceFile, className: string, placement: { insertAt: number; indent: string }, literal: ts.TemplateLiteral, onError: OnError): TemplateModel | undefined {
+function scanLiteral(sf: ts.SourceFile, classNode: ts.ClassDeclaration, placement: { insertAt: number; indent: string }, literal: ts.TemplateLiteral, onError: OnError): TemplateModel | undefined {
   const bodyStart = literal.getStart(sf) + 1;
   const holes: Src[] = [];
   let text = sf.text.slice(bodyStart, literal.end - 1);
@@ -254,7 +258,7 @@ function scanLiteral(sf: ts.SourceFile, className: string, placement: { insertAt
     }
   }
   try {
-    return { className, tree: scanTemplate(text, bodyStart), holes, ...placement };
+    return { className: classNode.name!.text, classNode, tree: scanTemplate(text, bodyStart), holes, ...placement };
   } catch (err) {
     if (!(err instanceof ScanError)) throw err;
     onError(err.start, err.length, err.message);
