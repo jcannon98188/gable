@@ -6,7 +6,7 @@ import ts from "@typescript/typescript6";
 import type { RuleId } from "./config.js";
 import type { TemplateModel } from "./emit.js";
 import type { ElementNode, TNode } from "./scan.js";
-import { classOf, literalSelector, metaObject, metaProperty, unwrap } from "./typeutil.js";
+import { literalSelector, metaObject, metaProperty, unwrap } from "./typeutil.js";
 
 export type Report = (start: number, length: number, rule: RuleId, message: string) => void;
 

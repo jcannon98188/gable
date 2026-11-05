@@ -15,6 +15,10 @@ export const RULES = {
   "model-type-mismatch": "error",
   "unknown-event": "error",
   "lazy-outside-defer": "error",
+  "constructor-in-class": "error",
+  "module-level-state": "warn",
+  "class-fragment": "warn",
+  "class-fields-config": "error",
 } as const satisfies Record<string, Severity>;
 
 export type RuleId = keyof typeof RULES;

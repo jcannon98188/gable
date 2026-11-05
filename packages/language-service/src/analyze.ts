@@ -6,6 +6,7 @@ import { emit, type Emitted, type EventSite, type Group, type Ref, type Template
 import { findIdentifier, inCallee, isObservableLike, isSignal, unwrap } from "./typeutil.js";
 import { callSignalFix, extractFix, type Fix, type FixEnv } from "./fixes.js";
 import { templateRules } from "./file-rules.js";
+import { projectRules, sourceRules } from "./source-rules.js";
 import { scanTemplate, ScanError, type ExprKind, type Src } from "./scan.js";
 
 export interface Diagnostic {
@@ -90,11 +91,13 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
   const raw: RawDiagnostic[] = [];
   const base = programWith(new Map());
   const files = new Map<string, FileState>();
+  projectRules(options, (file, start, length, rule, message) => raw.push({ file, start, length, rule, message }));
   const components = new Map<string, ComponentInfo>();
   const sources = new Map<string, ts.SourceFile>();
   for (const sf of base.getSourceFiles()) {
     if (sf.isDeclarationFile || !rootNames.some((r) => norm(r) === norm(sf.fileName))) continue;
     sources.set(norm(sf.fileName), sf);
+    sourceRules(sf, base.getTypeChecker(), config.templateTag, (start, length, rule, message) => raw.push({ file: sf.fileName, start, length, rule, message }));
     for (const c of findComponents(sf)) components.set(c.selector, c);
     const models = findTemplates(sf, config.templateTag, (start, length, message) =>
       raw.push({ file: sf.fileName, start, length, rule: "template-syntax", message }),
@@ -200,7 +203,7 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
     const key = `${d.file}:${d.start}:${d.rule}`;
     if (severity === "off" || seen.has(key)) continue;
     seen.add(key);
-    const sf = sources.get(norm(d.file))!;
+    const sf = sources.get(norm(d.file)) ?? configFile(d.file);
     const { line, character } = sf.getLineAndCharacterOfPosition(d.start);
     out.push({ ...d, severity, line: line + 1, column: character + 1 });
   }
@@ -410,4 +413,12 @@ function closest(name: string, candidates: string[]): string | undefined {
     if (d < bestDistance) [best, bestDistance] = [c, d];
   }
   return best;
+}
+
+const configFiles = new Map<string, ts.SourceFile>();
+/** A non-source file (the tsconfig) that diagnostics can point into. */
+function configFile(file: string): ts.SourceFile {
+  let sf = configFiles.get(file);
+  if (!sf) configFiles.set(file, (sf = ts.createSourceFile(file, ts.sys.readFile(file) ?? "", ts.ScriptTarget.Latest)));
+  return sf;
 }

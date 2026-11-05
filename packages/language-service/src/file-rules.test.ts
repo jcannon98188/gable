@@ -20,3 +20,80 @@ describe("lazy() outside @defer", () => {
     expect(diagnostics[0]!.message).toMatch(/Chart/);
   });
 });
+
+const found = (diagnostics: Array<{ rule: string; line: number; column: number; severity: string }>) => diagnostics.map((d) => [d.rule, d.line, d.column, d.severity]);
+
+describe("constructors in components and services", () => {
+  it("passes classes without constructors, and constructors on plain classes", async () => {
+    expect((await check("ctor-pass")).diagnostics).toEqual([]);
+  });
+
+  it("flags a constructor in a component and in a service, not in a plain class", async () => {
+    const { code, diagnostics } = await check("ctor-fail");
+    const a = where("ctor-fail", "constructor() {\n    this.n");
+    const b = where("ctor-fail", "constructor() {}");
+    expect(found(diagnostics)).toEqual([
+      ["constructor-in-class", a.line, a.column, "error"],
+      ["constructor-in-class", b.line, b.column, "error"],
+    ]);
+    expect(code).toBe(1);
+  });
+});
+
+describe("module-level signals and subjects", () => {
+  it("passes state kept in hotState, local state and plain constants", async () => {
+    const { diagnostics, code } = await check("state-pass");
+    expect(diagnostics).toEqual([]);
+    expect(code).toBe(0);
+  });
+
+  it("warns on a module-level signal, computed and subject, and says to use hotState", async () => {
+    const { code, diagnostics } = await check("state-fail");
+    expect(found(diagnostics)).toEqual(
+      ["count = signal", "doubled = computed", "events = new Subject", "latest = new BehaviorSubject"].map((s) => {
+        const at = where("state-fail", s);
+        return ["module-level-state", at.line, at.column, "warn"];
+      }),
+    );
+    expect(diagnostics[0]!.message).toMatch(/hotState/);
+    expect(code).toBe(0);
+  });
+});
+
+describe("non-literal Tailwind class fragments", () => {
+  it("passes literal class names, bindings and holes standing alone", async () => {
+    expect((await check("fragment-pass")).diagnostics).toEqual([]);
+  });
+
+  it("warns on a hole glued to class text and on string concatenation in [class]", async () => {
+    const { diagnostics } = await check("fragment-fail");
+    const first = where("fragment-fail", "${color}-500\"></div>");
+    const plus = where("fragment-fail", "+ hue()");
+    const last = where("fragment-fail", "${color}-500 p-2");
+    expect(found(diagnostics.filter((d) => d.rule === "class-fragment"))).toEqual([
+      ["class-fragment", first.line, first.column, "warn"],
+      ["class-fragment", plus.line, plus.column, "warn"],
+      ["class-fragment", last.line, last.column, "warn"],
+    ]);
+  });
+});
+
+describe("tsconfig settings that break native class fields", () => {
+  it("is quiet for the fixture default (ES2022 with useDefineForClassFields)", async () => {
+    expect((await check("ctor-pass")).diagnostics.filter((d) => d.rule === "class-fields-config")).toEqual([]);
+  });
+
+  it("flags useDefineForClassFields: false in the tsconfig", async () => {
+    const { code, diagnostics } = await check("classfields-define");
+    const at = where("classfields-define", '"useDefineForClassFields"', 0, "../tsconfig.json");
+    expect(found(diagnostics)).toEqual([["class-fields-config", at.line, at.column, "error"]]);
+    expect(diagnostics[0]!.file).toMatch(/tsconfig\.json$/);
+    expect(code).toBe(1);
+  });
+
+  it("flags a target below ES2022 when class fields are not forced on", async () => {
+    const { diagnostics } = await check("classfields-target");
+    const at = where("classfields-target", '"target"', 0, "../tsconfig.json");
+    expect(found(diagnostics)).toEqual([["class-fields-config", at.line, at.column, "error"]]);
+  });
+});

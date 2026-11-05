@@ -27,7 +27,7 @@ async function run(name: string) {
 
 /** 1-based line and column of the first occurrence of `snippet` (plus `into` characters) in a fixture source file. */
 export function where(name: string, snippet: string, into = 0, file = "app.ts") {
-  const text = readFileSync(`${fixture(name)}/src/${file}`, "utf8");
+  const text = readFileSync(file.startsWith("../") ? `${fixture(name)}/${file.slice(3)}` : `${fixture(name)}/src/${file}`, "utf8");
   const at = text.indexOf(snippet);
   expect(at, `${snippet} in fixture`).toBeGreaterThanOrEqual(0);
   const before = text.slice(0, at + into).split("\n");
