@@ -119,3 +119,33 @@ describe("router link rules", () => {
     expect(code).toBe(1);
   });
 });
+
+describe("forms rules", () => {
+  it("passes native and custom controls bound to matching fields, state reads and rows tracked by key", async () => {
+    const { code, diagnostics } = await check("forms-pass");
+    expect(diagnostics).toEqual([]);
+    expect(code).toBe(0);
+  });
+
+  it("reports each forms mistake once, at the offending template text", async () => {
+    const { code, diagnostics } = await check("forms-fail");
+    const at = (snippet: string, into = 0) => where("forms-fail", snippet, into);
+    const expected: Array<[string, { line: number; column: number }, string]> = [
+      ["field-not-a-field", at("notAField\" />"), "error"],
+      ["field-value-mismatch", at("f.age\" />"), "error"],
+      ["field-value-mismatch", at("f.name\" />"), "error"],
+      ["field-value-mismatch", at("f.name\"></x-rating>"), "error"],
+      ["custom-control-members", at("x-plain [field]"), "error"],
+      ["bare-signal", at("{{ f.name.state.errors }}", "{{ f.name.state.".length), "error"],
+      ["rows-track-key", at("row.label()) {"), "warn"],
+      ["model-key-state", at("state: \"open\""), "error"],
+    ];
+    expect(found(diagnostics)).toEqual(expected.map(([rule, p, severity]) => [rule, p.line, p.column, severity]));
+    expect(code).toBe(1);
+  });
+
+  it("names the fix for an uncalled state read", async () => {
+    const { diagnostics } = await check("forms-fail");
+    expect(diagnostics.find((d) => d.rule === "bare-signal")!.message).toMatch(/f\.name\.state\.errors\(\)/);
+  });
+});

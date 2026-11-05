@@ -86,3 +86,16 @@ export function classOf(checker: ts.TypeChecker, node: ts.Node): ts.ClassDeclara
   if (symbol && symbol.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
   return symbol?.declarations?.find(ts.isClassDeclaration);
 }
+
+/** A form field: a writable signal with a `state` namespace (see @gable/core/forms). */
+export function isFieldType(checker: ts.TypeChecker, type: ts.Type): boolean {
+  const t = checker.getNonNullableType(type);
+  const state = t.getProperty("state");
+  return !!t.getProperty("set") && !!state && !!checker.getTypeOfSymbol(state).getProperty("markTouched");
+}
+
+/** A custom control by convention: a `value` member that is a model signal. */
+export function hasValueModel(checker: ts.TypeChecker, type: ts.Type): boolean {
+  const value = type.getProperty("value");
+  return !!value && !!checker.getTypeOfSymbol(value).getProperty("changes") && isSignal(checker, checker.getTypeOfSymbol(value));
+}

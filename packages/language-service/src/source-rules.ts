@@ -30,6 +30,7 @@ export function sourceRules(sf: ts.SourceFile, checker: ts.TypeChecker, template
       }
     }
     if (ts.isTaggedTemplateExpression(node) && ts.isIdentifier(node.tag) && node.tag.text === templateTag) classFragments(sf, node.template, report);
+    if (ts.isCallExpression(node)) reservedStateKey(sf, checker, node, report);
     ts.forEachChild(node, visit);
   };
   visit(sf);
@@ -112,4 +113,34 @@ export function projectRules(options: ts.CompilerOptions, report: (file: string,
     const { start, length } = at("target");
     report(file, start, length, "class-fields-config", "target is below ES2022, so class fields are compiled down: use ES2022 or newer, or set useDefineForClassFields to true");
   }
+}
+
+/** `form(model)` where the model has a key called `state`, which the form reserves for per-field state. */
+function reservedStateKey(sf: ts.SourceFile, checker: ts.TypeChecker, call: ts.CallExpression, report: Report): void {
+  if (!ts.isIdentifier(call.expression) || call.expression.text !== "form" || !call.arguments[0]) return;
+  let symbol = checker.getSymbolAtLocation(call.expression);
+  if (symbol && symbol.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
+  if (!symbol?.declarations?.some((d) => /forms/.test(d.getSourceFile().fileName))) return;
+  const argument = call.arguments[0];
+  const read = checker.getTypeAtLocation(argument).getCallSignatures()[0];
+  if (!read) return;
+  const seen = new Set<ts.Type>();
+  const visit = (type: ts.Type, depth: number): void => {
+    if (seen.has(type) || depth > 6 || !(type.flags & ts.TypeFlags.Object) || type.getCallSignatures().length) return;
+    seen.add(type);
+    if (type.symbol?.name === "Array") {
+      const [element] = checker.getTypeArguments(type as ts.TypeReference);
+      if (element) visit(element, depth + 1);
+      return;
+    }
+    if (type.symbol?.declarations?.some((d) => d.getSourceFile().hasNoDefaultLib)) return;
+    for (const prop of type.getProperties()) {
+      if (prop.name === "state") {
+        const decl = prop.declarations?.find((d) => d.getSourceFile() === sf);
+        const at = (decl && ts.getNameOfDeclaration(decl)) ?? argument;
+        report(at.getStart(sf), Math.max(1, at.getWidth(sf)), "model-key-state", 'A form model cannot have a key named "state": form fields keep their state (errors, touched, ...) under that name, e.g. form.email.state.errors()');
+      } else visit(checker.getTypeOfSymbol(prop), depth + 1);
+    }
+  };
+  visit(read.getReturnType(), 0);
 }

@@ -3,7 +3,7 @@ import ts from "@typescript/typescript6";
 import { parseExpression, parseHandler } from "@gable/core/tooling";
 import { readConfig, type AnalyzerConfig, type RuleId, type Severity } from "./config.js";
 import { emit, type Emitted, type EventSite, type Group, type Ref, type TemplateModel } from "./emit.js";
-import { findIdentifier, inCallee, isObservableLike, isSignal, unwrap } from "./typeutil.js";
+import { findIdentifier, hasValueModel, inCallee, isFieldType, isObservableLike, isSignal, unwrap } from "./typeutil.js";
 import { callSignalFix, extractFix, type Fix, type FixEnv } from "./fixes.js";
 import { templateRules } from "./file-rules.js";
 import { projectRules, sourceRules } from "./source-rules.js";
@@ -146,6 +146,18 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
     checkEvents(emitted, sf, checker, (site, message) =>
       raw.push({ file: state.sf.fileName, start: site.nameStart, length: Math.max(1, site.name.length), rule: "unknown-event", message }),
     );
+    for (const c of emitted.controls) {
+      const type = probeType(sf, checker, c.component);
+      if (type && !hasValueModel(checker, type)) {
+        raw.push({ file: state.sf.fileName, start: c.tagStart, length: c.tag.length, rule: "custom-control-members", message: `<${c.tag}> is bound with [field] but has no value = model<T>(): a custom control needs a value model (plus optional disabled, readonly, invalid, errors inputs and a touched output)` });
+      }
+    }
+    for (const loop of emitted.rowLoops) {
+      const type = probeType(sf, checker, loop.probe);
+      if (type && isFieldType(checker, type) && loop.track.text.replace(/\s/g, "") !== `${loop.item}.state.key`) {
+        raw.push({ file: state.sf.fileName, start: loop.track.start, length: loop.track.text.length, rule: "rows-track-key", message: `Rows are keyed by state.key so their state follows them: track ${loop.item}.state.key` });
+      }
+    }
     for (const ref of emitted.refs) {
       classifyRef(ref, sf, checker, state.observed, (rule, message) =>
         raw.push({ file: state.sf.fileName, start: ref.srcStart, length: ref.srcEnd - ref.srcStart, rule, message }),
@@ -170,6 +182,12 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
     for (const [start, { problem, length }] of state.syntax) {
       if (problem !== null) raw.push({ file: state.sf.fileName, start, length, rule: "expression-syntax", message: problem });
     }
+  }
+
+  // A value mismatch on something that is not a field at all is just noise.
+  for (let i = raw.length - 1; i >= 0; i--) {
+    const d = raw[i]!;
+    if (d.rule === "field-value-mismatch" && raw.some((o) => o.file === d.file && o.start === d.start && (o.rule === "field-not-a-field" || o.rule === "unknown-member"))) raw.splice(i, 1);
   }
 
   // Quick fixes, now that types are known.
@@ -297,7 +315,9 @@ function classifyRef(ref: Ref, sf: ts.SourceFile, checker: ts.TypeChecker, obser
     }
     return;
   }
-  if (kind === "model" && ref.srcEnd === ref.group.srcEnd) return;
+  if ((kind === "model" || kind === "field") && ref.srcEnd === ref.group.srcEnd) return;
+  // A path into a form field (f.name.state) passes through signals on purpose.
+  if (ts.isPropertyAccessExpression(step.parent) && step.parent.expression === step && isFieldType(checker, type)) return;
   if (isSignal(checker, type)) report("bare-signal", `"${shown}" is a signal; call it: ${shown}()`);
   else if (isObservableLike(checker, type)) observed.add(ref.ordinal);
 }

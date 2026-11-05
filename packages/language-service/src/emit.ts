@@ -7,7 +7,7 @@
 
 import type ts from "@typescript/typescript6";
 import type { RuleId } from "./config.js";
-import type { ExprKind, Src, TNode } from "./scan.js";
+import type { ElementNode, ExprKind, Src, TNode } from "./scan.js";
 
 /** A run of generated text; `src` is the template offset it was copied from, when it was copied. */
 export interface Part {
@@ -58,6 +58,20 @@ export interface EventSite {
   component?: Probe;
 }
 
+/** An element with `[field]` whose component must expose a `value` model. */
+export interface ControlSite {
+  tag: string;
+  tagStart: number;
+  component: Probe;
+}
+
+/** A `@for` over `rows()`: the item's type tells whether it is a form row, and the track expression whether it is keyed. */
+export interface RowLoop {
+  track: Src;
+  item: string;
+  probe: Probe;
+}
+
 export type Item = string | Group | Probe;
 
 /** The `@for` a value expression sits inside. */
@@ -97,12 +111,17 @@ export interface Emitted {
   refs: Ref[];
   events: EventSite[];
   sites: Site[];
+  controls: ControlSite[];
+  rowLoops: RowLoop[];
   /** The map of known element tags (a probe), for telling native tags from custom ones. */
   tags: Probe;
 }
 
 const HELPERS = `
 declare function __rd<T>(v: T): T extends import("rxjs").Observable<infer U> ? U | undefined : T extends PromiseLike<infer U> ? U | undefined : T;
+declare function __isf(f: { (): unknown; set(v: never): void; state: { markTouched(): void } }): void;
+declare function __fld<C>(f: { (): C }): void;
+type __Val<S> = S extends { (): infer T } ? T : any;
 declare function __link(v: string | readonly unknown[]): void;
 declare function __iter<T>(v: Iterable<T> | ArrayLike<T> | null | undefined): Iterable<T>;
 declare function __w<P>(v: { (): P; set(value: P): void }): void;
@@ -136,6 +155,8 @@ export function emit(
   const refs: Ref[] = [];
   const events: EventSite[] = [];
   const sites: Site[] = [];
+  const controls: ControlSite[] = [];
+  const rowLoops: RowLoop[] = [];
   let model!: TemplateModel;
   let loop: LoopInfo | undefined;
   const push = (s: string) => items.push(s);
@@ -146,6 +167,16 @@ export function emit(
   };
   const tags = probe("declare const __tags: HTMLElementTagNameMap;\n");
   const instanceType = (tag: string) => componentType(tag) ?? "{}";
+  /** What a `[field]` writes into and reads from this element: native controls by type, custom ones by their `value` model. */
+  const controlType = (node: ElementNode): string => {
+    const comp = componentType(node.tag);
+    if (comp) return `__Val<${comp} extends { value: infer V } ? V : any>`;
+    const type = node.attrs.find((a) => a.name === "type")?.value;
+    if (node.tag === "input" && (type === "number" || type === "range")) return "number | null | undefined";
+    if (node.tag === "input" && type === "checkbox") return "boolean";
+    if (node.tag === "textarea" || (node.tag === "input" && type !== "radio")) return "string | null | undefined";
+    return "unknown";
+  };
 
   function expression(e: Src, kind: Group["kind"], locals: ReadonlySet<string>, open: string, close: string, extractable = true, rule?: RuleId): void {
     if (kind === "value" && extractable) sites.push({ expr: e, locals, loop, model });
@@ -226,6 +257,11 @@ export function emit(
               push(`{ const $event: __Ev<${instanceType(node.tag)}, __El<${tag}>, ${JSON.stringify(e.name)}> = undefined as any; `);
               expression(e, "handler", inner, "", ";");
               push(" }\n");
+            } else if (e.kind === "field") {
+              expression(e, "field", locals, "__isf(", ");\n", false, "field-not-a-field");
+              expression(e, "field", locals, `__fld<${controlType(node)}>(`, ");\n", false, "field-value-mismatch");
+              const comp = componentType(node.tag);
+              if (comp) controls.push({ tag: node.tag, tagStart: node.tagStart, component: probe(`declare const __cc_${controls.length}: ${comp};\n`) });
             } else if (e.kind === "model") expression(e, "model", locals, `__w<__Prop<${instanceType(node.tag)}, __El<${tag}>, ${JSON.stringify(e.name)}>>(`, ");\n");
             else if (e.name === "routerLink") expression(e, "value", locals, "__link(", ");\n", true, "router-link-type");
             else expression(e, "value", locals, "void (", ");\n");
@@ -270,6 +306,9 @@ export function emit(
           expression(node.source, "value", locals, `for (const ${node.item} of __iter(`, ")) {\n");
           const info: LoopInfo = { item: node.item, source: node.source, track: node.track, sourceRef: refs[first] };
           push("const $index: number = 0, $count: number = 0; const $first: boolean = false, $last: boolean = false, $even: boolean = false, $odd: boolean = false;\n");
+          if (/(^|\.)rows\(\)$/.test(node.source.text)) {
+            rowLoops.push({ track: node.track, item: node.item, probe: probe(`declare const __rl_${rowLoops.length}: typeof ${node.item};\n`) });
+          }
           expression(node.track, "value", inner, "void (", ");\n", false);
           loop = info;
           nodes(node.children, inner);
@@ -336,5 +375,5 @@ export function emit(
       item.genEnd = offset;
     }
   }
-  return { text, groups, refs, events, sites, tags };
+  return { text, groups, refs, events, sites, controls, rowLoops, tags };
 }

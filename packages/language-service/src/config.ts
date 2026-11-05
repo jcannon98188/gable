@@ -21,6 +21,11 @@ export const RULES = {
   "class-fields-config": "error",
   "router-link-import": "error",
   "router-link-type": "error",
+  "field-not-a-field": "error",
+  "field-value-mismatch": "error",
+  "model-key-state": "error",
+  "rows-track-key": "warn",
+  "custom-control-members": "error",
 } as const satisfies Record<string, Severity>;
 
 export type RuleId = keyof typeof RULES;
