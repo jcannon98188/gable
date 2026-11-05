@@ -6,10 +6,11 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --if-present -w packages/core -w packages/template-format -w packages/language-service -w packages/prettier-plugin -w packages/testing",
+    "build": "npm run build --if-present -w packages/core -w packages/template-format -w packages/language-service -w packages/prettier-plugin -w packages/testing -w packages/vscode",
     "test": "vitest run",
     "changeset": "changeset",
-    "version-packages": "changeset version"
+    "version-packages": "changeset version",
+    "package": "npm run package -w packages/vscode"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",

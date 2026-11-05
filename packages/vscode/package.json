@@ -1,0 +1,51 @@
+{
+  "name": "gable-vscode",
+  "displayName": "Gable",
+  "description": "Template type-checking, completions and highlighting for Gable html templates.",
+  "version": "0.0.0",
+  "private": true,
+  "publisher": "gable",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "gable": {
+    "languageService": "0.x"
+  },
+  "contributes": {
+    "typescriptServerPlugins": [
+      {
+        "name": "gable-vscode-plugin",
+        "enableForWorkspaceTypeScriptVersions": true
+      }
+    ],
+    "grammars": [
+      {
+        "scopeName": "gable-template.injection",
+        "path": "./syntaxes/gable-template.injection.json",
+        "injectTo": [
+          "source.ts",
+          "source.tsx"
+        ],
+        "embeddedLanguages": {
+          "meta.embedded.expression.gable": "typescript"
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "package": "node build.mjs --package"
+  },
+  "devDependencies": {
+    "@gable/language-service": "0.0.0",
+    "@vscode/vsce": "^4.1.0",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.3.2",
+    "yauzl": "^3.4.0"
+  }
+}

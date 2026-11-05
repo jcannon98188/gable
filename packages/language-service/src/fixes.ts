@@ -6,6 +6,7 @@
 // source is a plain signal read. Anything else is reported without a fix.
 
 import ts from "@typescript/typescript6";
+import type { Diagnostic } from "./analyze.js";
 import type { Site } from "./emit.js";
 import { findIdentifier, isObservableLike, isSignal } from "./typeutil.js";
 
@@ -213,3 +214,28 @@ export function applyEdits(texts: Map<string, string>, fixes: Fix[]): Map<string
   }
   return out;
 }
+
+/** An editor code fix in the diagnostic's own file. */
+export interface EditorFix {
+  description: string;
+  edits: Array<{ start: number; length: number; newText: string }>;
+}
+
+/** Fixes for the diagnostics that overlap the range `[start, end]`: the analyzer's own fixes plus spelling suggestions. */
+export function fixesFor(diagnostics: Diagnostic[], file: string, start: number, end: number): EditorFix[] {
+  const out: EditorFix[] = [];
+  for (const d of diagnostics) {
+    if (d.start > end || d.start + d.length < start) continue;
+    for (const fix of d.fixes ?? []) {
+      const edits = fix.edits.filter((e) => sameFile(e.file, file));
+      if (edits.length === fix.edits.length) out.push({ description: fix.title, edits });
+    }
+    if (d.rule === "unknown-member") {
+      const suggestion = /Did you mean '([^']+)'/.exec(d.message)?.[1];
+      if (suggestion) out.push({ description: `Change spelling to '${suggestion}'`, edits: [{ start: d.start, length: d.length, newText: suggestion }] });
+    }
+  }
+  return out;
+}
+
+const sameFile = (a: string, b: string) => a.replace(/\/g, "/").toLowerCase() === b.replace(/\/g, "/").toLowerCase();

@@ -42,10 +42,22 @@ export function analyzeProject(project: string): AnalysisResult {
   const { config, errors } = readConfig(parsed.options);
   const configErrors = [...parsed.errors.map((e) => ts.flattenDiagnosticMessageText(e.messageText, "\n")), ...errors];
   if (configErrors.length) return { diagnostics: [], configErrors };
-  return { diagnostics: analyze(parsed.fileNames, parsed.options, config), configErrors: [] };
+  return { diagnostics: analyzeSources(parsed.fileNames, parsed.options, config).diagnostics, configErrors: [] };
 }
 
-const norm = (f: string) => f.replace(/\\/g, "/");
+/** Everything the editor layer needs to answer position queries about one analysis run. */
+export interface Analysis {
+  diagnostics: Diagnostic[];
+  options: ts.CompilerOptions;
+  rootNames: string[];
+  defaultLib?: string;
+  /** Source text per file, after overrides, with the type-check blocks appended for files holding templates. */
+  overlay: Map<string, string>;
+  /** Files that hold templates, with their generated type-check blocks. */
+  files: Map<string, { sf: ts.SourceFile; emitted: Emitted }>;
+}
+
+export const norm = (f: string) => f.replace(/\\/g, "/");
 
 interface FileState {
   sf: ts.SourceFile;
@@ -56,9 +68,16 @@ interface FileState {
   syntax: Map<number, { problem: string | null; length: number }>;
 }
 
-function analyze(rootNames: string[], options: ts.CompilerOptions, config: AnalyzerConfig): Diagnostic[] {
-  const programWith = (overlay: Map<string, string>, old?: ts.Program): ts.Program => {
+/** Analyzes the given files; `overrides` (normalized path -> text) replaces on-disk text, e.g. unsaved editor buffers. */
+export function analyzeSources(rootNames: string[], options: ts.CompilerOptions, config: AnalyzerConfig, overrides: ReadonlyMap<string, string> = new Map(), defaultLib?: string): Analysis {
+  const programWith = (generated: Map<string, string>, old?: ts.Program): ts.Program => {
+    const overlay = new Map([...overrides, ...generated]);
     const host = ts.createCompilerHost(options, true);
+    // A host that bundles its own compiler (the editor plugin) points at the lib files it should check against.
+    if (defaultLib) {
+      host.getDefaultLibFileName = () => defaultLib;
+      host.getDefaultLibLocation = () => path.dirname(defaultLib);
+    }
     const getSourceFile = host.getSourceFile.bind(host);
     host.getSourceFile = (fileName, languageVersionOrOptions, ...rest) => {
       const text = overlay.get(norm(fileName));
@@ -181,7 +200,10 @@ function analyze(rootNames: string[], options: ts.CompilerOptions, config: Analy
     const { line, character } = sf.getLineAndCharacterOfPosition(d.start);
     out.push({ ...d, severity, line: line + 1, column: character + 1 });
   }
-  return out;
+  const overlay = new Map([...overrides, ...final.overlay]);
+  const analyzed = new Map<string, { sf: ts.SourceFile; emitted: Emitted }>();
+  for (const [file, state] of files) analyzed.set(file, { sf: state.sf, emitted: final.emitted.get(file)! });
+  return { diagnostics: out, options, rootNames, overlay, files: analyzed, defaultLib };
 }
 
 // --- finding templates ------------------------------------------------------
