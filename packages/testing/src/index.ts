@@ -1,5 +1,6 @@
 import { COMPONENT_OVERRIDES, DEFER_BLOCKS, flushSync, hasPendingFlush, instantiate, whenFlushed, type DeferHandle, type MountedComponent } from "@gable/core/internal";
 import { ErrorHandler, type ComponentClass, type ErrorContext, type ErrorSource, type LazyEntry, type Provider } from "@gable/core";
+import { applyUpdate, type HotResult } from "@gable/core/hmr";
 import { createTestInjector, httpTesting } from "./injector.js";
 import { HttpBackend } from "@gable/core/http";
 import { HttpTestingBackend } from "./http.js";
@@ -8,6 +9,7 @@ import { createTestRenderer, createTestRoot, query, queryAll, serialize, textCon
 
 export type { TestNode } from "./renderer.js";
 export type { DeferHandle as DeferBlock, DeferState } from "@gable/core/internal";
+export type { HotResult } from "@gable/core/hmr";
 
 /** One failure delivered to the ErrorHandler. */
 export interface ErrorReport {
@@ -71,6 +73,12 @@ export interface Fixture<T extends object> {
   readonly errors: ErrorExpectations;
   /** Same as `errors.expect()`. */
   claimErrors(): ErrorReport[];
+  /**
+   * Replays a hot update through the real HMR path (dev only). Each argument is a new version of a class (matched
+   * to the live class of the same name), a module namespace object (`{ Counter, hmr: 'reset' }`), or an `Error`
+   * standing for a module that failed to evaluate. All arguments form one transaction.
+   */
+  hotReplace(...updates: Array<Function | Record<string, unknown> | Error>): HotResult;
   /** Fires an event on a node as if the renderer had emitted it (calls its listeners). */
   dispatch(target: TestNode, name: string, event?: unknown): void;
   /** Destroys the component, then fails with any unmatched HTTP request or error report the test never expected. Safe to call twice. */
@@ -111,6 +119,7 @@ function defaultAdvance(ms: number): void | Promise<void> {
 const tick = async () => {
   for (let i = 0; i < 8; i++) await Promise.resolve();
 };
+let fixtures = 0;
 
 export function mount<T extends object>(Component: ComponentClass<T>, options: MountOptions = {}): Fixture<T> {
   const renderer = options.renderer ?? createTestRenderer();
@@ -151,8 +160,11 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
     }
     unclaimed();
   };
+  const moduleUrl = `gable-test://fixture-${++fixtures}`;
   const fixture: Fixture<T> = {
-    instance: mounted.instance,
+    get instance() {
+      return mounted.instance;
+    },
     root: mounted.host,
     defer,
     get http() {
@@ -177,6 +189,16 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
     },
     errors: { expect: expectErrors },
     claimErrors: () => expectErrors(),
+    hotReplace(...updates) {
+      const exports: Record<string, unknown> = {};
+      const failures: unknown[] = [];
+      for (const u of updates) {
+        if (u instanceof Error) failures.push(u);
+        else if (typeof u === "function") exports[u.name] = u;
+        else Object.assign(exports, u);
+      }
+      return applyUpdate([{ url: moduleUrl, exports }], failures, [mounted.scope, injector]);
+    },
     dispatch: (target, name, event) => {
       for (const handler of [...(target.listeners[name] ?? [])]) handler(event);
     },

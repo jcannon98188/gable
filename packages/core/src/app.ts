@@ -44,7 +44,10 @@ export function createComponent<T extends object, N = unknown>(Class: ComponentC
     inputs: options.inputs as Record<string, unknown> | undefined,
   });
   return {
-    instance: mounted.instance,
+    // A getter: a hot update can replace a root's instance.
+    get instance() {
+      return mounted.instance;
+    },
     host: mounted.host,
     setInput: (name, value) => setInput(mounted.instance, name as string, value),
     destroy: mounted.destroy,
@@ -71,7 +74,11 @@ export function bootstrap<T extends object, N = unknown>(Root: ComponentClass<T>
   const injector = createInjector([{ provide: RENDERER, useValue: renderer }, ...(options.providers ?? [])]);
   const ref = createComponent(Root, { renderer, injector, host });
   return {
-    ...ref,
+    get instance() {
+      return ref.instance;
+    },
+    host: ref.host,
+    setInput: ref.setInput,
     destroy() {
       ref.destroy();
       injector.destroy();

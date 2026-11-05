@@ -2,7 +2,9 @@
   "name": "@gable/core",
   "version": "0.0.0",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/hmr.js"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -15,6 +17,10 @@
     "./rxjs": {
       "types": "./dist/rxjs.d.ts",
       "import": "./dist/rxjs.js"
+    },
+    "./hmr": {
+      "types": "./dist/hmr.d.ts",
+      "import": "./dist/hmr.js"
     },
     "./internal": {
       "types": "./dist/internal.d.ts",

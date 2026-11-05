@@ -1,4 +1,5 @@
 import { createScope, runInScope, type Scope } from "./scope.js";
+import { hooks } from "./dev-hooks.js";
 
 /** Dev-only checks are gated on this so bundlers can drop them (`define: { __GABLE_DEV__: false }`). */
 declare const __GABLE_DEV__: boolean | undefined;
@@ -55,6 +56,8 @@ interface Entry {
   resolved: boolean;
   value: unknown;
   make: () => unknown;
+  /** Dev only: the value was built from a class. */
+  tracked?: boolean;
 }
 
 let current: InjectorImpl | null = null;
@@ -96,9 +99,20 @@ class InjectorImpl implements Injector {
     this.scope.owner = { injector: this };
     if (parent) parent.#children.add(this);
     for (const p of providers) this.#register(p);
+    if (DEV && hooks.current) {
+      hooks.current.injectorCreated(this, {
+        entries: () => [...this.#records].filter(([, r]) => r.resolved && r.tracked).map(([t, r]) => [t, r.value]),
+        value: (token) => this.#records.get(token as Token<unknown>)?.value,
+        build: (token) => this.#records.get(token as Token<unknown>)!.make(),
+        install: (token, value) => {
+          this.#records.get(token as Token<unknown>)!.value = value;
+        },
+      });
+    }
   }
 
   #register(provider: Provider): void {
+    if (DEV && hooks.current) provider = canonProvider(provider);
     const rec = (provide: Token<unknown>, make: () => unknown) =>
       { this.#records.set(provide, { resolving: false, resolved: false, value: undefined, make }); };
     if (typeof provider === "function") return rec(provider, () => this.#construct(provider));
@@ -121,7 +135,13 @@ class InjectorImpl implements Injector {
 
   #construct(Class: Type<unknown>): unknown {
     assertNoConstructor(Class);
-    return this.#inContext(() => new (Class as unknown as new () => unknown)());
+    const dev = DEV ? hooks.current?.service(Class, this) : undefined;
+    if (!dev) return this.#inContext(() => new (Class as unknown as new () => unknown)());
+    // Dev: each instance gets its own scope, so a hot update can dispose just its effects.
+    const scope = createScope(this.scope);
+    const instance = this.#inContext(() => runInScope(scope, () => dev.construct()));
+    dev.done({ instance, scope, injector: this });
+    return instance;
   }
 
   #resolveHere(token: Token<unknown>, rec: Entry): unknown {
@@ -131,6 +151,10 @@ class InjectorImpl implements Injector {
       try {
         rec.value = rec.make();
         rec.resolved = true;
+        if (DEV && hooks.current) {
+          rec.tracked = true;
+          hooks.current.resolved(token, rec.value, this);
+        }
       } finally {
         rec.resolving = false;
       }
@@ -141,6 +165,7 @@ class InjectorImpl implements Injector {
   get<T>(token: Token<T>, options: InjectOptions = {}): T | null {
     if (this.destroyed) throw new Error("Injector has been destroyed.");
     if (token === INJECTOR) return this as unknown as T;
+    if (DEV && hooks.current) token = hooks.current.canon(token);
     let at: InjectorImpl | null = options.skipSelf ? this.parent : this;
     let stopped = false;
     while (at) {
@@ -190,6 +215,17 @@ export function inject<T>(token: Token<T>, options: InjectOptions & { optional: 
 export function inject<T>(token: Token<T>, options?: InjectOptions): T;
 export function inject<T>(token: Token<T>, options?: InjectOptions): T | null {
   if (!current) throw new Error(`inject(${name(token)}) called outside an injection context.`);
-  return current.get(token, options);
+  const value = current.get(token, options);
+  if (DEV) hooks.current?.injected(value);
+  return value;
+}
+
+function canonProvider(provider: Provider): Provider {
+  const canon = hooks.current!.canon;
+  if (typeof provider === "function") return canon(provider);
+  const out = { ...provider, provide: canon(provider.provide) } as Record<string, unknown>;
+  if ("useClass" in provider) out.useClass = canon(provider.useClass);
+  if ("useExisting" in provider) out.useExisting = canon(provider.useExisting);
+  return out as unknown as Provider;
 }
 
