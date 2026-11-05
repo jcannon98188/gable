@@ -3,6 +3,10 @@
 // reads (`count()`), literals, `!` and `??`. Event handlers additionally allow
 // one call whose arguments are value expressions (references, literals, `$event`).
 
+import { connect, isStream } from "./bridge.js";
+import { signal, untracked } from "./signals.js";
+import { currentScope, type Scope } from "./scope.js";
+
 export type Expr =
   | { type: "literal"; value: string | number | boolean | null | undefined }
   | { type: "name"; name: string }
@@ -192,13 +196,47 @@ function lookup(env: Env, name: string): unknown {
   );
 }
 
+interface StreamBinding {
+  source: unknown;
+  read: () => unknown;
+  stop: () => void;
+}
+const streamBindings = new WeakMap<Scope, Map<Expr, StreamBinding>>();
+
+/**
+ * A bare Observable or Promise reference binds directly: it reads as its latest
+ * value (undefined before the first emission). The subscription is owned by the
+ * evaluating scope, kept across re-evaluations, and swapped when the reference
+ * changes. Outside a scope (event handlers) the reference passes through as is.
+ */
+function unwrap(expr: Expr, value: unknown): unknown {
+  if (!isStream(value)) return value;
+  const scope = currentScope();
+  if (!scope) return value;
+  let bindings = streamBindings.get(scope);
+  if (!bindings) streamBindings.set(scope, (bindings = new Map()));
+  let binding = bindings.get(expr);
+  if (binding?.source === value) return binding.read();
+  if (binding) binding.stop();
+  else {
+    const entry = (binding = { source: value, read: () => undefined, stop: () => {} });
+    scope.onDispose(() => entry.stop());
+    bindings.set(expr, binding);
+  }
+  const state = signal<unknown>(undefined);
+  binding.source = value;
+  binding.read = () => state();
+  binding.stop = untracked(() => connect(value, (v) => state.set(v)));
+  return binding.read();
+}
+
 /** Evaluates against an environment; reads signals by calling them. */
 export function evaluate(expr: Expr, env: Env): unknown {
   switch (expr.type) {
     case "literal":
       return expr.value;
     case "name":
-      return lookup(env, expr.name);
+      return unwrap(expr, lookup(env, expr.name));
     case "not":
       return !evaluate(expr.operand, env);
     case "coalesce":
@@ -209,7 +247,7 @@ export function evaluate(expr: Expr, env: Env): unknown {
         if (expr.optional) return undefined;
         throw new TypeError(`Cannot read "${expr.property}" of ${object}`);
       }
-      return object[expr.property];
+      return unwrap(expr, object[expr.property]);
     }
     case "call": {
       const [fn, self] = resolveCallee(expr.callee, expr.optional, env);
