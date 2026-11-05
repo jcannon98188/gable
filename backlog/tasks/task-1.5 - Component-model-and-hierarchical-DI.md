@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@jason'
 created_date: '2026-11-05 04:20'
-updated_date: '2026-11-05 04:58'
+updated_date: '2026-11-05 05:28'
 labels:
   - 'wayfinder:grilling'
 dependencies: []
@@ -47,5 +47,10 @@ Left in the fog: error handling, testing utilities, devtools.
 created: 2026-11-05 04:58
 ---
 Amendment from Template syntax (user): pipes no longer exist, so meta.imports lists components, attribute directives and lazy() entries only.
+---
+
+created: 2026-11-05 05:28
+---
+Amendment from HMR runtime (user): component and service classes have no constructors. Setup is field initialisers only, which makes it safe to re-run on a hot update (re-setup with state transfer). The language service flags constructors.
 ---
 <!-- COMMENTS:END -->

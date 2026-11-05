@@ -40,6 +40,14 @@ _Avoid_: LSP, compiler plugin
 The pluggable layer that turns a Component's Template into output on a target platform. The DOM renderer is one renderer; a future native renderer (gable.native) is another.
 _Avoid_: Platform, backend, view engine
 
+**Platform services**:
+Capabilities a target platform supplies through injection alongside its Renderer, such as location and history for the router. The core and router depend only on abstract Tokens; each platform provides the implementations.
+_Avoid_: Platform APIs, environment
+
+**Test renderer**:
+An in-memory Renderer that builds an inspectable node tree with no DOM. It is the reference implementation of the Renderer contract and the way Components are unit-tested.
+_Avoid_: Mock renderer, fake DOM, jsdom
+
 **Injector**:
 A node in the single injector tree (root app, then route, then component) that resolves Tokens to instances through Providers.
 _Avoid_: Container, module
@@ -60,3 +68,47 @@ _Avoid_: Lazy block, suspense
 **View model**:
 The computed signals a Component exposes so its Template only reads values and never derives them. Derived values are included in the view model rather than fetched through method calls.
 _Avoid_: Presenter, getter
+
+**Setup**:
+The field initialisers of a Component or service class: the only place its state and reactions are created. Classes have no constructors, so setup is declarative and safe to run again.
+_Avoid_: Constructor logic, init
+
+**State transfer**:
+Carrying an instance's current state into its replacement during a hot update: values of matching fields are copied by name and kind, new fields start fresh, removed fields are dropped.
+_Avoid_: Hydration, restore
+
+**Route**:
+A node in the router's configuration that maps a URL path to a Component, and may nest child Routes and provide its own Providers (which create a route Injector).
+_Avoid_: Page, screen, view
+
+**Outlet**:
+The place in a Component's Template where the Component of the next nested Route is mounted.
+_Avoid_: Router view, slot (slots are for content projection)
+
+**Guard**:
+A function run in a Route's injection context that decides whether navigation may proceed, cancel, or redirect.
+_Avoid_: Interceptor, middleware
+
+**Type-check block**:
+A generated, never-run piece of TypeScript that represents one Template's expressions and scope so the real type checker can check them. Tooling only; it exists in the Template language service and is never emitted.
+_Avoid_: Shadow code, template compile output
+
+**Rule**:
+A named diagnostic of the Template language service with a stable id and a severity (`off`, `warn` or `error`). Template rules check template content; file rules check the surrounding TypeScript.
+_Avoid_: Lint, check
+
+**Form**:
+A signal over a data object, whose properties are themselves Fields. The data object is the single source of truth; Fields are derived views of it.
+_Avoid_: Control group, form group
+
+**Field**:
+A node of a Form: a writable signal of one part of the data, carrying its own state (errors, touched, dirty, pending, disabled) and, where the data is an object or array, child Fields.
+_Avoid_: Control, form control, input
+
+**Schema**:
+The declaration of a Form's Rules, conditional state and async checks, written against typed paths into the data. Schemas compose.
+_Avoid_: Validators config, form definition
+
+**Field error**:
+A plain object with a `kind` and optional extra data, produced by a validator. Display text is not part of forms.
+_Avoid_: Error message, validation result
