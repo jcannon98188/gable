@@ -75,7 +75,7 @@ export interface Emitted {
 
 const HELPERS = `
 declare function __rd<T>(v: T): T extends import("rxjs").Observable<infer U> ? U | undefined : T extends PromiseLike<infer U> ? U | undefined : T;
-declare function __iter<T>(v: Iterable<T> | ArrayLike<T>): Iterable<T>;
+declare function __iter<T>(v: Iterable<T> | ArrayLike<T> | null | undefined): Iterable<T>;
 declare function __w<P>(v: { (): P; set(value: P): void }): void;
 type __El<T extends string> = T extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[T] : HTMLElement;
 type __EvMap<E> = E extends HTMLBodyElement ? HTMLBodyElementEventMap : E extends HTMLMediaElement ? HTMLMediaElementEventMap : HTMLElementEventMap;

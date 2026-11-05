@@ -151,4 +151,54 @@ describe("gable-check", () => {
       expect(messages[1]).toMatch(/Did you mean "picked"\?/);
     });
   });
+
+  describe.each([
+    [
+      "scope typing for loops, lets, aliases and refs",
+      "scope",
+      [
+        ["unknown-member", "row.nam", 4],
+        ["unknown-member", "{{ $index }}</p>\n      }\n      <p>{{ row", 3],
+        ["unknown-member", "{{ row.id }}", 3],
+        ["unknown-member", "{{ later }}", 3],
+        ["unknown-member", "{{ m }}", 3],
+        ["type-mismatch", "focus(pane)", 6],
+      ],
+    ],
+    [
+      "Observable and Promise typing as value or undefined",
+      "observed",
+      [
+        ["unknown-member", "user$.nam", 6],
+        ["unknown-member", "later.vlue", 6],
+        ["call-observable", "user$()", 0],
+        ["call-observable", "later()", 0],
+        ["model-not-writable", '"user$"', 1],
+        ["type-mismatch", "take(user$.name)", 5],
+      ],
+    ],
+  ] as const)("%s", (_title, prefix, expectations) => {
+    it("passes a project that uses them correctly", async () => {
+      const { code, diagnostics } = await check(`${prefix}-pass`);
+      expect(diagnostics).toEqual([]);
+      expect(code).toBe(0);
+    });
+
+    it("reports exactly the bad expressions", async () => {
+      const { code, diagnostics } = await check(`${prefix}-fail`);
+      expect(code).toBe(1);
+      expect(diagnostics).toHaveLength(expectations.length);
+    });
+
+    it.each(expectations)("%s at %j", async (rule, snippet, into) => {
+      const { diagnostics } = await check(`${prefix}-fail`);
+      const at = where(`${prefix}-fail`, snippet, into);
+      expect(diagnostics.find((d) => d.rule === rule && d.line === at.line && d.column === at.column), JSON.stringify(diagnostics, null, 1)).toBeDefined();
+    });
+  });
+
+  it("suggests the nearest member for a misspelled name", async () => {
+    const { diagnostics } = await check("scope-fail");
+    expect(diagnostics.find((d) => d.message.includes("'nam'"))!.message).toMatch(/Did you mean 'name'\?/);
+  });
 });

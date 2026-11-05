@@ -250,16 +250,31 @@ function isObservableLike(checker: ts.TypeChecker, type: ts.Type): boolean {
   return callable("subscribe") || callable("then");
 }
 
+/** True when `id` is part of the callee of some call (the handler's method path), not of its arguments. */
+function inCallee(id: ts.Node): boolean {
+  for (let node: ts.Node = id; node.parent && !ts.isBlock(node.parent) && !ts.isSourceFile(node.parent); node = node.parent) {
+    if (ts.isCallExpression(node.parent) && node.parent.expression === node) return true;
+  }
+  return false;
+}
+
 function classifyRef(ref: Ref, sf: ts.SourceFile, checker: ts.TypeChecker, observed: Set<number>, report: (rule: RuleId, message: string) => void): void {
   const kind = ref.group.kind;
-  if (kind === "hole" || kind === "handler") return;
+  if (kind === "hole") return;
   const id = findIdentifier(sf, ref.part.gen);
   if (!id) return;
+  const inHandler = kind === "handler";
+  if (inHandler && inCallee(id)) return;
   const step = ts.isPropertyAccessExpression(id.parent) && id.parent.name === id ? id.parent : id;
   const type = checker.getTypeAtLocation(step);
   if (type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown)) return;
   const shown = step.getText(sf).replace(/^__c\./, "");
   const called = ts.isCallExpression(step.parent) && step.parent.expression === step;
+  // Handler arguments are plain value positions: only Observable/Promise unwrapping applies there.
+  if (inHandler) {
+    if (!called && isObservableLike(checker, type)) observed.add(ref.ordinal);
+    return;
+  }
   if (called) {
     if (isSignal(checker, type)) return;
     if (isObservableLike(checker, type)) {
@@ -281,9 +296,11 @@ function mapDiagnostic(d: ts.Diagnostic, groups: Group[], file: string): RawDiag
   const at = d.start!;
   const group = groups.find((g) => at >= g.genStart && at < g.genEnd);
   if (!group) return undefined;
-  const part = group.parts.find((p) => p.src !== undefined && at >= p.gen && at < p.gen + p.text.length);
-  const start = part ? part.src! + (at - part.gen) : group.srcStart;
-  const length = part ? Math.min(d.length ?? 1, part.text.length - (at - part.gen)) : Math.max(1, group.srcEnd - group.srcStart);
+  // An error on scaffolding (`__c.`, `__rd(`) is reported at the next piece of template text.
+  const part = group.parts.find((p) => p.src !== undefined && at >= p.gen && at < p.gen + p.text.length) ?? group.parts.find((p) => p.src !== undefined && p.gen >= at);
+  const into = part && at >= part.gen ? at - part.gen : 0;
+  const start = part ? part.src! + into : group.srcStart;
+  const length = part ? Math.max(1, Math.min(d.length ?? 1, part.text.length - into)) : Math.max(1, group.srcEnd - group.srcStart);
   const message = ts.flattenDiagnosticMessageText(d.messageText, "\n");
   const rule: RuleId = UNKNOWN_MEMBER.has(d.code)
     ? "unknown-member"
