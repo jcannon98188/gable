@@ -38,7 +38,7 @@ export function transferState(from: object, to: object, isService: (value: objec
       else if (kind === "form") {
         // Model first, so rows exist; then what a form keeps beside its model. The new schema is already running.
         (target as { set(v: unknown): void }).set(untracked(old as () => unknown));
-        formStateOf(target)!.restore(formStateOf(old)!.capture());
+        formStateOf(target as object)!.restore(formStateOf(old as object)!.capture());
       } else if (kind === "data") (to as Record<string, unknown>)[name] = old;
     } catch {
       // a field that cannot take the old value keeps its new initial value

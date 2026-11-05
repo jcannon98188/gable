@@ -83,7 +83,7 @@ export function restoreViewState(roots: Node[], state: ViewState): void {
     const node = at(entry.path);
     if (!node || !isElement(node) || ancestry(node, roots[entry.path[0]!]) !== entry.name) continue;
     if (isText(node)) {
-      if (entry.checked !== undefined) node.checked = entry.checked;
+      if (entry.checked !== undefined) (node as HTMLInputElement).checked = entry.checked;
       else if (entry.value !== undefined && node.value !== entry.value) node.value = entry.value;
     } else if (entry.selected && node.localName === "select") {
       [...(node as unknown as HTMLSelectElement).options].forEach((o, i) => (o.selected = entry.selected!.includes(i)));
