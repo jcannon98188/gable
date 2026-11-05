@@ -3,7 +3,7 @@
 // vsce never packs a top-level node_modules except through `dependencies`, and tsserver finds
 // a contributed plugin by name in node_modules. So the extension is staged in a scratch
 // directory where the bundled plugin is installed as a real dependency, then packed from there.
-import { execFileSync } from "node:child_process";
+import { execSync } from "node:child_process";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -34,7 +34,7 @@ export async function packageExtension(outDir) {
     cpSync(path.join(root, "syntaxes"), path.join(stage, "syntaxes"), { recursive: true });
     writeFileSync(path.join(stage, ".vscodeignore"), "plugin/**\n");
     await buildPluginPackage(path.join(stage, "plugin"));
-    execFileSync("npm", ["install", "--omit=dev", "--install-links", "--no-audit", "--no-fund", "--package-lock=false"], { cwd: stage, stdio: "inherit", shell: true });
+    execSync("npm install --omit=dev --install-links --no-audit --no-fund --package-lock=false", { cwd: stage, stdio: "inherit" });
     mkdirSync(outDir, { recursive: true });
     const packagePath = path.join(outDir, `${manifest.name}-${manifest.version}.vsix`);
     await createVSIX({ cwd: stage, packagePath, allowMissingRepository: true, skipLicense: true });
