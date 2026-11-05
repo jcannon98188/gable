@@ -10,6 +10,7 @@ export default defineConfig({
     alias: [
       { find: /^@gable\/core$/, replacement: src("core/src/index.ts") },
       { find: /^@gable\/core\/renderer$/, replacement: src("core/src/renderer.ts") },
+      { find: /^@gable\/core\/tooling$/, replacement: src("core/src/tooling.ts") },
       { find: /^@gable\/core\/internal$/, replacement: src("core/src/internal.ts") },
       { find: /^@gable\/testing$/, replacement: src("testing/src/index.ts") },
       { find: /^@gable\/testing\/renderer$/, replacement: src("testing/src/renderer.ts") },

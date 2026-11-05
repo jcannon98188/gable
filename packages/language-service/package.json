@@ -1,0 +1,29 @@
+{
+  "name": "@gable/language-service",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Gable template analyzer: type-checks html templates against component classes. Ships the gable-check CLI.",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "gable-check": "./dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@gable/core": "0.0.0",
+    "@typescript/typescript6": "^6.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0"
+  }
+}

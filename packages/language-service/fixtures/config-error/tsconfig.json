@@ -1,0 +1,5 @@
+{
+  "extends": "../tsconfig.fixture.json",
+  "compilerOptions": { "plugins": [{ "name": "@gable/language-service", "rules": { "no-such-rule": "warn", "bare-signal": "loud" } }] },
+  "include": ["src"]
+}
