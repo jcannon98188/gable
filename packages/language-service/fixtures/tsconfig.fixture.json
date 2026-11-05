@@ -9,6 +9,8 @@
     "noEmit": true,
     "skipLibCheck": true,
     "types": [],
-    "paths": { "@gable/core": ["../../core/src/index.ts"], "@gable/core/rxjs": ["../../core/src/rxjs.ts"] }
+    "paths": { "@gable/core": ["../../core/src/index.ts"], "@gable/core/rxjs": ["../../core/src/rxjs.ts"],
+      "@gable/core/forms": ["../../core/src/forms.ts"],
+      "@gable/core/router": ["../../core/src/router.ts"] }
   }
 }

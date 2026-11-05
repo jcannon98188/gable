@@ -97,3 +97,25 @@ describe("tsconfig settings that break native class fields", () => {
     expect(found(diagnostics)).toEqual([["class-fields-config", at.line, at.column, "error"]]);
   });
 });
+
+describe("router link rules", () => {
+  it("passes imported routerLink and routerLinkActive, a string-typed binding, and plain anchors", async () => {
+    const { code, diagnostics } = await check("router-pass");
+    expect(diagnostics).toEqual([]);
+    expect(code).toBe(0);
+  });
+
+  it("flags links whose directive is not imported and a routerLink bound to a non-string", async () => {
+    const { code, diagnostics } = await check("router-fail");
+    const active = where("router-fail", "routerLinkActive=");
+    const count = where("router-fail", "count()\">");
+    const bare = where("router-fail", "[routerLink]=\"'/x'\"", 1);
+    expect(found(diagnostics)).toEqual([
+      ["router-link-import", active.line, active.column, "error"],
+      ["router-link-type", count.line, count.column, "error"],
+      ["router-link-import", bare.line, bare.column, "error"],
+    ]);
+    expect(diagnostics[0]!.message).toMatch(/RouterLinkActive/);
+    expect(code).toBe(1);
+  });
+});

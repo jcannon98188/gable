@@ -317,7 +317,9 @@ function mapDiagnostic(d: ts.Diagnostic, groups: Group[], file: string): RawDiag
   const message = ts.flattenDiagnosticMessageText(d.messageText, "\n");
   const rule: RuleId = UNKNOWN_MEMBER.has(d.code)
     ? "unknown-member"
-    : group.kind === "model"
+    : group.rule
+      ? group.rule
+      : group.kind === "model"
       ? message.includes("Property 'set' is missing")
         ? "model-not-writable"
         : "model-type-mismatch"

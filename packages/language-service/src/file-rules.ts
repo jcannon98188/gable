@@ -65,7 +65,32 @@ function lazyEntries(cls: ts.ClassDeclaration, checker: ts.TypeChecker): Array<{
   return out;
 }
 
+/** Whether the class's `meta.imports` lists a component or directive with this literal selector. */
+function importsSelector(cls: ts.ClassDeclaration, checker: ts.TypeChecker, selector: string): boolean {
+  return importEntries(cls).some((entry) => {
+    let symbol = checker.getSymbolAtLocation(entry);
+    if (symbol && symbol.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
+    const decl = symbol?.declarations?.find(ts.isClassDeclaration);
+    return !!decl && literalSelector(decl) === selector;
+  });
+}
+
+const LINK_DIRECTIVES = ["routerLink", "routerLinkActive"];
+
 export function templateRules(model: TemplateModel, checker: ts.TypeChecker, report: Report): void {
+  const imported = new Map<string, boolean>();
+  walkElements(model.tree, (el) => {
+    const uses = [...el.attrs.map((a) => ({ name: a.name, at: a.nameStart })), ...el.expressions.filter((x) => x.kind === "value").map((x) => ({ name: x.name, at: x.nameStart }))];
+    for (const { name, at } of uses) {
+      if (!LINK_DIRECTIVES.includes(name)) continue;
+      const selector = `[${name}]`;
+      if (!imported.has(selector)) imported.set(selector, importsSelector(model.classNode, checker, selector));
+      if (!imported.get(selector)) {
+        const cls = name[0]!.toUpperCase() + name.slice(1);
+        report(at, name.length, "router-link-import", `${name} is not imported in ${model.className}: add ${cls} (from @gable/core/router) to meta.imports`);
+      }
+    }
+  });
   const lazies = lazyEntries(model.classNode, checker);
   if (lazies.length) {
     walkElements(model.tree, (el, inDefer) => {

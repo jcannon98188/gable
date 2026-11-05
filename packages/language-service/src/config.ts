@@ -19,6 +19,8 @@ export const RULES = {
   "module-level-state": "warn",
   "class-fragment": "warn",
   "class-fields-config": "error",
+  "router-link-import": "error",
+  "router-link-type": "error",
 } as const satisfies Record<string, Severity>;
 
 export type RuleId = keyof typeof RULES;

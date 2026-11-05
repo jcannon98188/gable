@@ -6,6 +6,7 @@
 // character that came from the template is recorded as a mapped `Part`.
 
 import type ts from "@typescript/typescript6";
+import type { RuleId } from "./config.js";
 import type { ExprKind, Src, TNode } from "./scan.js";
 
 /** A run of generated text; `src` is the template offset it was copied from, when it was copied. */
@@ -18,6 +19,8 @@ export interface Part {
 
 export interface Group {
   kind: ExprKind | "hole";
+  /** The rule a type error in this group is reported as, when it is not the generic one. */
+  rule?: RuleId;
   parts: Part[];
   srcStart: number;
   srcEnd: number;
@@ -100,6 +103,7 @@ export interface Emitted {
 
 const HELPERS = `
 declare function __rd<T>(v: T): T extends import("rxjs").Observable<infer U> ? U | undefined : T extends PromiseLike<infer U> ? U | undefined : T;
+declare function __link(v: string | readonly unknown[]): void;
 declare function __iter<T>(v: Iterable<T> | ArrayLike<T> | null | undefined): Iterable<T>;
 declare function __w<P>(v: { (): P; set(value: P): void }): void;
 type __El<T extends string> = T extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[T] : HTMLElement;
@@ -143,10 +147,10 @@ export function emit(
   const tags = probe("declare const __tags: HTMLElementTagNameMap;\n");
   const instanceType = (tag: string) => componentType(tag) ?? "{}";
 
-  function expression(e: Src, kind: Group["kind"], locals: ReadonlySet<string>, open: string, close: string, extractable = true): void {
+  function expression(e: Src, kind: Group["kind"], locals: ReadonlySet<string>, open: string, close: string, extractable = true, rule?: RuleId): void {
     if (kind === "value" && extractable) sites.push({ expr: e, locals, loop, model });
     if (kind !== "hole" && !isValid(e, kind as ExprKind)) return;
-    const group: Group = { kind, parts: [], srcStart: e.start, srcEnd: e.start + e.text.length, refs: [], genStart: 0, genEnd: 0 };
+    const group: Group = { kind, rule, parts: [], srcStart: e.start, srcEnd: e.start + e.text.length, refs: [], genStart: 0, genEnd: 0 };
     const add = (text: string, src?: number): Part => {
       const part: Part = { text, src, gen: 0 };
       group.parts.push(part);
@@ -223,6 +227,7 @@ export function emit(
               expression(e, "handler", inner, "", ";");
               push(" }\n");
             } else if (e.kind === "model") expression(e, "model", locals, `__w<__Prop<${instanceType(node.tag)}, __El<${tag}>, ${JSON.stringify(e.name)}>>(`, ");\n");
+            else if (e.name === "routerLink") expression(e, "value", locals, "__link(", ");\n", true, "router-link-type");
             else expression(e, "value", locals, "void (", ");\n");
           }
           push("{\n");
