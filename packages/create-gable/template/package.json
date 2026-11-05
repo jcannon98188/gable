@@ -1,0 +1,31 @@
+{
+  "name": "{{name}}",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "check": "tsc --noEmit && gable-check",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@gable/core": "~{{version}}",
+    "@gable/renderer-dom": "~{{version}}",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@gable/language-service": "~{{version}}",
+    "@gable/prettier-plugin": "~{{version}}",
+    "@gable/testing": "~{{version}}",
+    "@gable/vite": "~{{version}}",
+    "@tailwindcss/vite": "^4.3.4",
+    "prettier": "^3.9.0",
+    "tailwindcss": "^4.3.4",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
+  }
+}

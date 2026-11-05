@@ -6,11 +6,11 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --if-present -w packages/core -w packages/renderer-dom -w packages/template-format -w packages/language-service -w packages/prettier-plugin -w packages/vite -w packages/testing -w packages/vscode",
+    "build": "npm run build --if-present -w packages/core -w packages/renderer-dom -w packages/template-format -w packages/language-service -w packages/prettier-plugin -w packages/vite -w packages/testing -w packages/vscode -w packages/create-gable",
     "test": "vitest run",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "package": "npm run package -w packages/vscode"
+    "package": "npm run package -w packages/vscode -w packages/create-gable"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
