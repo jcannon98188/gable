@@ -33,6 +33,10 @@
     "./http": {
       "types": "./dist/http.d.ts",
       "import": "./dist/http.js"
+    },
+    "./router": {
+      "types": "./dist/router.d.ts",
+      "import": "./dist/router.js"
     }
   },
   "files": [

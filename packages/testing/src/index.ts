@@ -1,13 +1,17 @@
 import { COMPONENT_OVERRIDES, DEFER_BLOCKS, flushSync, hasPendingFlush, instantiate, whenFlushed, type DeferHandle, type MountedComponent } from "@gable/core/internal";
-import { ErrorHandler, type ComponentClass, type ErrorContext, type ErrorSource, type LazyEntry, type Provider } from "@gable/core";
+import { ErrorHandler, type Injector, type ComponentClass, type ErrorContext, type ErrorSource, type LazyEntry, type Provider } from "@gable/core";
 import { applyUpdate, type HotResult } from "@gable/core/hmr";
 import { createTestInjector, httpTesting } from "./injector.js";
 import { HttpBackend } from "@gable/core/http";
 import { HttpTestingBackend } from "./http.js";
 import type { Renderer } from "@gable/core/renderer";
-import { createTestRenderer, createTestRoot, query, queryAll, serialize, textContent, type TestNode } from "./renderer.js";
+import { Router, provideRouter, type NavigateOptions, type NavigationOutcome, type Route } from "@gable/core/router";
+import type { TestPlatform } from "./platform.js";
+import { createTestRenderer, type TestRenderer, createTestRoot, query, queryAll, serialize, textContent, type TestNode } from "./renderer.js";
 
-export type { TestNode } from "./renderer.js";
+export type { TestNode, TestRenderer } from "./renderer.js";
+export { createTestPlatform } from "./platform.js";
+export type { TestPlatform } from "./platform.js";
 export type { DeferHandle as DeferBlock, DeferState } from "@gable/core/internal";
 export type { HotResult } from "@gable/core/hmr";
 
@@ -43,6 +47,8 @@ export interface ErrorExpectations {
 /** A mounted component under test. It never flushes on its own: call `flush()`. */
 export interface Fixture<T extends object> {
   readonly instance: T;
+  /** The root injector (providers, overrides and the collecting ErrorHandler included). */
+  readonly injector: Injector;
   /** The host element node. */
   readonly root: TestNode;
   /** Every live `@defer` block, in creation order: drive each with `trigger()`, read its `state`, await `settle()`. */
@@ -165,6 +171,7 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
     get instance() {
       return mounted.instance;
     },
+    injector,
     root: mounted.host,
     defer,
     get http() {
@@ -228,3 +235,55 @@ export { createTestInjector } from "./injector.js";
 export { HttpTestingBackend, TestRequest } from "./http.js";
 export type { RequestMatch } from "./http.js";
 export { httpTesting } from "./injector.js";
+
+// --- mountApp ---------------------------------------------------------------
+
+export interface MountAppOptions extends Omit<MountOptions, "renderer"> {
+  routes: readonly Route[];
+  /** The initial URL. Defaults to `/`. */
+  url?: string;
+  /** Defaults to a test renderer starting at `url`; its in-memory Location, History and Title are provided. */
+  renderer?: TestRenderer;
+}
+
+/** A mounted app with a router. */
+export interface AppFixture<T extends object> extends Fixture<T> {
+  readonly router: Router;
+  /** Navigates, then resolves (with the outcome) after guards, lazy routes and the view update have finished. Never rejects. */
+  navigate(target: string | readonly unknown[], options?: NavigateOptions): Promise<NavigationOutcome>;
+  /** The in-memory Location: `url` is what a browser would show. */
+  readonly location: TestPlatform["location"];
+  /** The in-memory History: `entries`, `index`, and `back()` / `forward()` as the browser buttons. */
+  readonly history: TestPlatform["history"];
+  readonly title: TestPlatform["title"];
+}
+
+/**
+ * `mount` for an app with routes: the Root component (with a `<router-outlet>`), a router, and an in-memory
+ * Location, History and Title. `settle()` also waits for any navigation in flight, including the initial one.
+ */
+export function mountApp<T extends object>(Root: ComponentClass<T>, options: MountAppOptions): AppFixture<T> {
+  const { routes, url, renderer = createTestRenderer({ url }), providers = [], ...rest } = options;
+  const fixture = mount(Root, { ...rest, renderer, providers: [...renderer.providers!, ...provideRouter(routes), ...providers] });
+  const router = fixture.injector.get(Router)!;
+  const app: AppFixture<T> = Object.create(fixture, {
+    router: { value: router },
+    location: { value: renderer.platform.location },
+    history: { value: renderer.platform.history },
+    title: { value: renderer.platform.title },
+    settle: {
+      value: async () => {
+        await router.whenIdle();
+        await fixture.settle();
+      },
+    },
+    navigate: {
+      value: async (target: string | readonly unknown[], navigateOptions?: NavigateOptions) => {
+        const outcome = await router.navigate(target, navigateOptions);
+        await whenFlushed();
+        return outcome;
+      },
+    },
+  });
+  return app;
+}

@@ -7,24 +7,30 @@ export interface LazyEntry {
   readonly name: string;
   /** Loads the module once and returns the component; a failed load may be retried. */
   load(): Promise<ComponentClass<any>>;
+  /** Loads the module once and returns the named export, whatever it is (the router uses it for lazy children). */
+  loadExport(): Promise<unknown>;
 }
 
 /** `lazy(() => import('./chart.js'), 'Chart')`. */
 export function lazy(loader: () => Promise<Record<string, unknown>>, name: string): LazyEntry {
-  let loading: Promise<ComponentClass<any>> | null = null;
+  let loading: Promise<unknown> | null = null;
+  const loadExport = (): Promise<unknown> =>
+    (loading ??= loader().then((module) => {
+      if (!(name in module)) throw new Error(`lazy(): the loaded module has no export "${name}".`);
+      return module[name];
+    })).catch((error) => {
+      loading = null;
+      throw error;
+    });
   return {
     kind: "lazy",
     name,
-    load() {
-      return (loading ??= loader().then((module) => {
-        const Class = module[name];
+    loadExport,
+    load: () =>
+      loadExport().then((Class) => {
         if (typeof Class !== "function") throw new Error(`lazy(): the loaded module has no component export "${name}".`);
         return Class as ComponentClass<any>;
-      })).catch((error) => {
-        loading = null;
-        throw error;
-      });
-    },
+      }),
   };
 }
 
