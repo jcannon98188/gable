@@ -34,13 +34,24 @@ export interface SwitchNode {
   /** `expr` is null for `@default`. */
   cases: Array<{ expr: Expr | null; children: TemplateNode[] }>;
 }
+export interface DeferNode {
+  type: "defer";
+  /** `when` condition, if any. */
+  when: Expr | null;
+  /** `on` triggers; arguments are numbers (durations in ms) or identifier strings. With neither `when` nor `on`, the block defers to idle. */
+  triggers: Array<{ name: string; args: unknown[] }>;
+  children: TemplateNode[];
+  placeholder?: TemplateNode[];
+  loading?: TemplateNode[];
+  error?: TemplateNode[];
+}
 export interface LetNode {
   type: "let";
   name: string;
   expr: Expr;
 }
 
-export type TemplateNode = ElementNode | IfNode | ForNode | SwitchNode | LetNode | { type: "text"; parts: Array<string | Expr> };
+export type TemplateNode = ElementNode | IfNode | ForNode | SwitchNode | DeferNode | LetNode | { type: "text"; parts: Array<string | Expr> };
 
 /** The result of the `html` tag: the call site's static strings plus its `${}` values. */
 export interface TemplateResult {
@@ -242,8 +253,31 @@ class Parser {
           else throw new Error("@switch may only contain @case and @default blocks");
         }
       }
-      case "defer":
-        throw new Error("@defer is not supported yet");
+      case "defer": {
+        let when: Expr | null = null;
+        const triggers: DeferNode["triggers"] = [];
+        this.skipSpace();
+        const header = src[this.i] === "(" ? this.readHeader("defer") : "";
+        for (const part of splitTopLevel(header, ";")) {
+          const clause = part.trim();
+          if (clause === "") continue;
+          if (/^when\s/.test(clause)) {
+            if (when) throw new Error("@defer allows one `when` condition");
+            when = parseExpression(clause.slice(5));
+          } else if (/^on\s/.test(clause)) {
+            for (const item of splitTopLevel(clause.slice(3), ",")) triggers.push(parseTrigger(item));
+          } else throw new Error(`@defer header clauses must start with "when" or "on", got "${clause}"`);
+        }
+        const children = this.readBody("defer");
+        const node: DeferNode = { type: "defer", when, triggers, children };
+        for (;;) {
+          const section = (["placeholder", "loading", "error"] as const).find((s) => this.eat(s));
+          if (!section) break;
+          if (node[section]) throw new Error(`@defer has more than one @${section} block`);
+          node[section] = this.readBody(section);
+        }
+        return node;
+      }
       default:
         throw new Error(`Unexpected @${name} in template (it must follow an @if, @for or @switch block)`);
     }
@@ -309,6 +343,20 @@ function splitTopLevel(source: string, char: string): string[] {
     out.push(rest.slice(0, at));
     rest = rest.slice(at + 1);
   }
+}
+
+/** `idle`, `timer(500)`, `viewport(ref)`: durations (`500`, `500ms`, `2s`) become milliseconds, other arguments stay strings. */
+function parseTrigger(source: string): { name: string; args: unknown[] } {
+  const m = /^\s*([A-Za-z_$][\w$]*)\s*(?:\(([\s\S]*)\))?\s*$/.exec(source);
+  if (!m) throw new Error(`Bad @defer trigger "${source.trim()}"`);
+  const args = splitTopLevel(m[2] ?? "", ",")
+    .map((a) => a.trim())
+    .filter((a) => a !== "")
+    .map((a) => {
+      const d = /^(\d+(?:\.\d+)?)(ms|s)?$/.exec(a);
+      return d ? Number(d[1]) * (d[2] === "s" ? 1000 : 1) : a;
+    });
+  return { name: m[1]!, args };
 }
 
 /** `cond` or `cond; as alias`. */
