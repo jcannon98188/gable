@@ -19,8 +19,12 @@ export interface PluginInfo {
   };
 }
 
+/** Marks a language service the plugin already wraps (the extension's global plugin and a tsconfig entry can both load it). */
+const WRAPPED = Symbol.for("gable.language-service.wrapped");
+
 export function createPlugin(info: PluginInfo): ts.LanguageService {
   const base = info.languageService;
+  if ((base as unknown as Record<symbol, unknown>)[WRAPPED]) return base;
   const log = (message: string) => info.project.projectService.logger.info(`[gable] ${message}`);
 
   const settings = () => readConfig(info.project.getCompilerOptions());
@@ -129,6 +133,7 @@ export function createPlugin(info: PluginInfo): ts.LanguageService {
     return own ? [...prior, ...own] : prior;
   };
 
+  (proxy as unknown as Record<symbol, unknown>)[WRAPPED] = true;
   return proxy;
 }
 

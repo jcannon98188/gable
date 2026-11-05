@@ -6,15 +6,15 @@ import { build } from "rolldown";
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
 
-/** @param {{ outFile: string, bundleTypescript?: boolean }} options */
-export async function buildPlugin({ outFile, bundleTypescript = false }) {
+/** @param {{ outFile: string, bundleTypescript?: boolean, minify?: boolean }} options */
+export async function buildPlugin({ outFile, bundleTypescript = false, minify = false }) {
   await build({
     input: here("./src/plugin-entry.ts"),
     platform: "node",
     external: bundleTypescript ? [] : ["@typescript/typescript6"],
     // The shared expression grammar is inlined from source, so a build never needs core built first.
     resolve: { alias: { "@gable/core/tooling": here("../core/src/tooling.ts") } },
-    output: { file: outFile, format: "cjs", exports: "default", minify: false },
+    output: { file: outFile, format: "cjs", exports: "default", minify },
     logLevel: "warn",
   });
 }

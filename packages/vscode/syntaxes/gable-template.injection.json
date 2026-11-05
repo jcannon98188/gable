@@ -1,0 +1,463 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Gable template injection",
+  "scopeName": "gable-template.injection",
+  "injectionSelector": "L:source.ts -comment -string.quoted, L:source.tsx -comment -string.quoted",
+  "patterns": [
+    {
+      "include": "#template"
+    }
+  ],
+  "repository": {
+    "template": {
+      "name": "meta.template.gable",
+      "begin": "(?<![\\w$.])(html)\\s*(`)",
+      "beginCaptures": {
+        "1": {
+          "name": "entity.name.function.tagged-template.gable"
+        },
+        "2": {
+          "name": "punctuation.definition.string.template.begin.gable"
+        }
+      },
+      "end": "`",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.template.end.gable"
+        }
+      },
+      "contentName": "meta.embedded.block.gable",
+      "patterns": [
+        {
+          "include": "#content"
+        }
+      ]
+    },
+    "content": {
+      "patterns": [
+        {
+          "include": "#escape"
+        },
+        {
+          "include": "#hole"
+        },
+        {
+          "include": "#comment"
+        },
+        {
+          "include": "#interpolation"
+        },
+        {
+          "include": "#block-let"
+        },
+        {
+          "include": "#block-header"
+        },
+        {
+          "include": "#block-keyword"
+        },
+        {
+          "include": "#tag-close"
+        },
+        {
+          "include": "#tag-open"
+        }
+      ]
+    },
+    "escape": {
+      "match": "\\\\.",
+      "name": "constant.character.escape.gable"
+    },
+    "hole": {
+      "begin": "\\$\\{",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.embedded.begin.gable"
+        }
+      },
+      "end": "\\}",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.embedded.end.gable"
+        }
+      },
+      "name": "meta.template.expression.ts",
+      "contentName": "meta.embedded.line.ts",
+      "patterns": [
+        {
+          "include": "source.ts"
+        }
+      ]
+    },
+    "comment": {
+      "begin": "<!--",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.comment.begin.gable"
+        }
+      },
+      "end": "-->",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.comment.end.gable"
+        }
+      },
+      "name": "comment.block.gable"
+    },
+    "interpolation": {
+      "begin": "\\{\\{",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.interpolation.begin.gable"
+        }
+      },
+      "end": "\\}\\}",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.interpolation.end.gable"
+        }
+      },
+      "name": "meta.interpolation.gable",
+      "contentName": "meta.embedded.expression.gable",
+      "patterns": [
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    "block-let": {
+      "begin": "(?<![\\w.])(@let)\\s+([A-Za-z_$][\\w$]*)\\s*(=)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.block.gable"
+        },
+        "2": {
+          "name": "variable.other.readwrite.gable"
+        },
+        "3": {
+          "name": "keyword.operator.assignment.gable"
+        }
+      },
+      "end": ";",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.terminator.statement.gable"
+        }
+      },
+      "contentName": "meta.embedded.expression.gable",
+      "patterns": [
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    "block-header": {
+      "begin": "(?<![\\w.])(@(?:else if|if|for|switch|case|defer))\\s*(\\()",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.block.gable"
+        },
+        "2": {
+          "name": "punctuation.section.header.begin.gable"
+        }
+      },
+      "end": "\\)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.header.end.gable"
+        }
+      },
+      "name": "meta.block-header.gable",
+      "contentName": "meta.embedded.expression.gable",
+      "patterns": [
+        {
+          "match": "(?<![.\\w$])(?:of|track|as|when|on|idle|timer|viewport|interaction|hover)(?![\\w$])",
+          "name": "keyword.control.gable"
+        },
+        {
+          "match": ";",
+          "name": "punctuation.separator.gable"
+        },
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    "block-keyword": {
+      "match": "(?<![\\w.])@(?:else|empty|default|placeholder|loading|error)\\b",
+      "name": "keyword.control.block.gable"
+    },
+    "tag-close": {
+      "match": "(</)([A-Za-z][\\w:.-]*)\\s*(>)",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.gable"
+        },
+        "2": {
+          "name": "entity.name.tag.gable"
+        },
+        "3": {
+          "name": "punctuation.definition.tag.end.gable"
+        }
+      }
+    },
+    "tag-open": {
+      "begin": "(<)([A-Za-z][\\w:.-]*)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.gable"
+        },
+        "2": {
+          "name": "entity.name.tag.gable"
+        }
+      },
+      "end": "/?>",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.tag.end.gable"
+        }
+      },
+      "name": "meta.tag.gable",
+      "patterns": [
+        {
+          "include": "#hole"
+        },
+        {
+          "include": "#attr-two-way"
+        },
+        {
+          "include": "#attr-property"
+        },
+        {
+          "include": "#attr-event"
+        },
+        {
+          "include": "#attr-ref"
+        },
+        {
+          "include": "#attr-double"
+        },
+        {
+          "include": "#attr-single"
+        },
+        {
+          "include": "#attr-bare"
+        }
+      ]
+    },
+    "attr-two-way": {
+      "begin": "(\\[\\()([^\\s=()\\[\\]]+)(\\)\\])\\s*(=)\\s*([\"'])",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.binding.begin.gable"
+        },
+        "2": {
+          "name": "entity.other.attribute-name.binding.two-way.gable"
+        },
+        "3": {
+          "name": "punctuation.definition.binding.end.gable"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.gable"
+        },
+        "5": {
+          "name": "punctuation.definition.string.begin.gable"
+        }
+      },
+      "end": "\\5",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.gable"
+        }
+      },
+      "contentName": "meta.embedded.expression.gable",
+      "patterns": [
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    "attr-property": {
+      "begin": "(\\[)([^\\s=()\\[\\]]+)(\\])\\s*(=)\\s*([\"'])",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.binding.begin.gable"
+        },
+        "2": {
+          "name": "entity.other.attribute-name.binding.property.gable"
+        },
+        "3": {
+          "name": "punctuation.definition.binding.end.gable"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.gable"
+        },
+        "5": {
+          "name": "punctuation.definition.string.begin.gable"
+        }
+      },
+      "end": "\\5",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.gable"
+        }
+      },
+      "contentName": "meta.embedded.expression.gable",
+      "patterns": [
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    "attr-event": {
+      "begin": "(\\()([^\\s=()\\[\\]]+)(\\))\\s*(=)\\s*([\"'])",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.binding.begin.gable"
+        },
+        "2": {
+          "name": "entity.other.attribute-name.binding.event.gable"
+        },
+        "3": {
+          "name": "punctuation.definition.binding.end.gable"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.gable"
+        },
+        "5": {
+          "name": "punctuation.definition.string.begin.gable"
+        }
+      },
+      "end": "\\5",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.gable"
+        }
+      },
+      "contentName": "meta.embedded.expression.gable",
+      "patterns": [
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    "attr-ref": {
+      "match": "#[\\w$-]+",
+      "name": "entity.other.attribute-name.reference.gable"
+    },
+    "attr-double": {
+      "begin": "([^\\s=<>\"'/\\[\\]()#{}]+)\\s*(=)\\s*(\")",
+      "beginCaptures": {
+        "1": {
+          "name": "entity.other.attribute-name.gable"
+        },
+        "2": {
+          "name": "punctuation.separator.key-value.gable"
+        },
+        "3": {
+          "name": "punctuation.definition.string.begin.gable"
+        }
+      },
+      "end": "\"",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.gable"
+        }
+      },
+      "contentName": "string.quoted.double.gable",
+      "patterns": [
+        {
+          "include": "#hole"
+        }
+      ]
+    },
+    "attr-single": {
+      "begin": "([^\\s=<>\"'/\\[\\]()#{}]+)\\s*(=)\\s*(')",
+      "beginCaptures": {
+        "1": {
+          "name": "entity.other.attribute-name.gable"
+        },
+        "2": {
+          "name": "punctuation.separator.key-value.gable"
+        },
+        "3": {
+          "name": "punctuation.definition.string.begin.gable"
+        }
+      },
+      "end": "'",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.gable"
+        }
+      },
+      "contentName": "string.quoted.single.gable",
+      "patterns": [
+        {
+          "include": "#hole"
+        }
+      ]
+    },
+    "attr-bare": {
+      "match": "[^\\s=<>\"'/\\[\\]()#{}]+",
+      "name": "entity.other.attribute-name.gable"
+    },
+    "expression": {
+      "patterns": [
+        {
+          "match": "'(?:[^'\\\\]|\\\\.)*'",
+          "name": "string.quoted.single.gable"
+        },
+        {
+          "match": "\"(?:[^\"\\\\]|\\\\.)*\"",
+          "name": "string.quoted.double.gable"
+        },
+        {
+          "match": "\\b\\d+(?:\\.\\d+)?\\b",
+          "name": "constant.numeric.gable"
+        },
+        {
+          "match": "(?<![.\\w$])(?:true|false|null|undefined)(?![\\w$])",
+          "name": "constant.language.gable"
+        },
+        {
+          "match": "\\$[A-Za-z_]\\w*",
+          "name": "variable.language.gable"
+        },
+        {
+          "match": "\\?\\?|\\?\\.|&&|\\|\\||===|!==|==|!=|<=|>=|[<>!+\\-*/%?:]",
+          "name": "keyword.operator.gable"
+        },
+        {
+          "match": "\\.",
+          "name": "punctuation.accessor.gable"
+        },
+        {
+          "match": "[A-Za-z_$][\\w$]*(?=\\s*\\()",
+          "name": "entity.name.function.gable"
+        },
+        {
+          "match": "(?<=\\.)[A-Za-z_$][\\w$]*",
+          "name": "variable.other.property.gable"
+        },
+        {
+          "match": "[A-Za-z_$][\\w$]*",
+          "name": "variable.other.readwrite.gable"
+        },
+        {
+          "begin": "\\(",
+          "end": "\\)",
+          "name": "meta.brackets.gable",
+          "patterns": [
+            {
+              "include": "#expression"
+            }
+          ]
+        },
+        {
+          "match": ",",
+          "name": "punctuation.separator.gable"
+        }
+      ]
+    }
+  }
+}
