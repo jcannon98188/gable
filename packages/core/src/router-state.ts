@@ -4,8 +4,10 @@ import { INJECTOR, InjectionToken, inject, type Provider } from "./di.js";
 import { reportError } from "./errors.js";
 import { History, Location, Title } from "./platform.js";
 import { currentScope, runInScope, type Scope } from "./scope.js";
-import { computed, signal, type ReadonlySignal, type WritableSignal } from "./signals.js";
+import { computed, signal, untracked, type ReadonlySignal, type WritableSignal } from "./signals.js";
 import { isLazy } from "./lazy.js";
+import { hooks } from "./dev-hooks.js";
+import { DEV } from "./di.js";
 import type { ComponentClass } from "./component.js";
 import { matchRoutes, parseUrl, runGuard, toHref, type Match, type Route, type RouteSnapshot } from "./router-config.js";
 
@@ -30,7 +32,7 @@ export const OUTLET_DEPTH = new InjectionToken<number>("OutletDepth");
 
 /** An active routed component slot, shared by successive navigations that keep the same route. */
 export interface Level {
-  readonly route: Route;
+  route: Route;
   /** Index of the route in the matched chain. */
   readonly index: number;
   readonly component: ComponentClass<any>;
@@ -80,7 +82,7 @@ const loadedComponents = new WeakMap<Route, ComponentClass<any>>();
 /** The router: current URL state as signals with Observable twins, and `navigate`. */
 export class Router {
   #injector = inject(INJECTOR);
-  #routes = inject(ROUTES);
+  #routes: readonly Route[] = inject(ROUTES);
   #location = inject(Location);
   #history = inject(History);
   #title = inject(Title, { optional: true });
@@ -117,6 +119,7 @@ export class Router {
   #follow = this.#location.subscribe((href, state) => void this.#start(href, { push: false, state }));
   #release = this.#scope?.onDispose(this.#follow);
   #initial = this.#start(this.#location.href, { push: false });
+  _dev = DEV && hooks.current ? hooks.current.router({ scope: this.#scope, routes: () => this.#routes, replaceRoutes: (next) => this.#replaceRoutes(next as readonly Route[]) }) : undefined;
 
   #twin<T>(source: ReadonlySignal<T>): Observable<T> {
     return runInScope(this.#scope, () => toObservable(source));
@@ -135,6 +138,37 @@ export class Router {
   /** The Level rendered at `depth`, for `<router-outlet>`. */
   levelAt(depth: number): ReadonlySignal<Level | undefined> {
     return computed(() => this.#tree()[depth]);
+  }
+
+  /** Dev only (HMR): re-match an edited config against the current URL without guards, events or history changes. */
+  #replaceRoutes(next: readonly Route[]): Promise<boolean> {
+    const run = this.#rematch(next);
+    this.#inflight.add(run);
+    void run.finally(() => this.#inflight.delete(run));
+    return run;
+  }
+
+  async #rematch(next: readonly Route[]): Promise<boolean> {
+    const id = this.#id;
+    const parsed = parseUrl(untracked(this.#url) || this.#location.href);
+    const keepOld = (error: unknown): false => (reportError(error, "hmr", this.#scope, parsed.url), false);
+    try {
+      const match = await matchRoutes(next, parsed.segments, { children: (route) => this.#children(route), guard: async () => true });
+      if (!match || match[match.length - 1]!.route.redirectTo !== undefined) {
+        return keepOld(new Error(`The edited route config no longer matches "${parsed.url}"; keeping the previous route config.`));
+      }
+      await this.#loadComponents(match.map((m) => m.route));
+      if (id !== this.#id) return false; // a navigation started meanwhile: it runs against the old config
+      const resolve = (route: Route) => (route.component && isLazy(route.component) ? loadedComponents.get(route) : (route.component as ComponentClass<any> | undefined));
+      const same = (a: Route, b: Route) => a.path === b.path && sameComponent(resolve(a), resolve(b)) && sameProviders(a.providers, b.providers);
+      let keep = 0;
+      while (keep < match.length && keep < this.#chain.length && same(this.#chain[keep]!, match[keep]!.route)) keep++;
+      this.#routes = next;
+      this.#commit(match, keep, parsed, { push: false });
+      return true;
+    } catch (error) {
+      return error === LAZY_FAILED ? false : keepOld(error);
+    }
   }
 
   #start(href: string, options: RunOptions): Promise<NavigationOutcome> {
@@ -251,6 +285,7 @@ export class Router {
       const sub = match.slice(0, i + 1);
       const reused = i < keep ? old.find((l) => l.index === i) : undefined;
       if (reused) {
+        reused.route = route;
         reused.update(merge(sub), mergeData(sub));
         levels.push(reused);
       } else levels.push(makeLevel(route, i, component, providers, merge(sub), mergeData(sub), this.#scope));
@@ -270,6 +305,16 @@ export class Router {
     const title = [...match].reverse().find((m) => m.route.title !== undefined)?.route.title;
     if (title !== undefined) this.#title?.set(title);
   }
+}
+
+const canonOf = (value: unknown) => (DEV && hooks.current ? hooks.current.canon(value) : value);
+const sameComponent = (a: unknown, b: unknown) => canonOf(a) === canonOf(b);
+function sameProviders(a: readonly unknown[] = [], b: readonly unknown[] = []): boolean {
+  const canonProvider = (p: unknown) => {
+    if (!p || typeof p !== "object") return canonOf(p);
+    return Object.fromEntries(Object.entries(p).map(([k, v]) => [k, k === "provide" || k === "useClass" || k === "useExisting" ? canonOf(v) : v]));
+  };
+  return a.length === b.length && a.every((p, i) => p === b[i] || (typeof p === "object" && typeof b[i] === "object" && p && b[i] ? shallowEqual(canonProvider(p) as Record<string, unknown>, canonProvider(b[i]) as Record<string, unknown>) : canonOf(p) === canonOf(b[i])));
 }
 
 function makeLevel(route: Route, index: number, component: ComponentClass<any>, providers: Provider[], params: Record<string, string>, data: Record<string, unknown>, scope: Scope | null): Level {

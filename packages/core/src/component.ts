@@ -3,7 +3,7 @@ import { createScope, runInScope, type Scope } from "./scope.js";
 import { untracked } from "./signals.js";
 import type { Renderer } from "./renderer.js";
 import { DEV, InjectionToken, assertNoConstructor, createInjector, type Injector, type Provider } from "./di.js";
-import { hooks, type Region, type Swap } from "./dev-hooks.js";
+import { hooks, retireView, type Region, type Swap } from "./dev-hooks.js";
 import { createEnv } from "./expression.js";
 import { addAttribute, parseTemplate, type ElementNode, type TemplateResult } from "./template.js";
 import { applyBindings, buildNodes } from "./view.js";
@@ -57,6 +57,8 @@ export interface PreparedComponent<T extends object, N> {
   render(): void;
   /** Removes the nodes `render` created (for a host the component does not own). */
   clear(): void;
+  /** The root nodes `render` created (dev: DOM-state preservation across a rebuild). */
+  nodes(): N[];
   /** True when Setup threw: the scope is disposed, `instance` is an empty object and `render` does nothing. */
   readonly failed: boolean;
 }
@@ -141,7 +143,7 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
     scope.dispose();
     if (options.onSetupError === "throw" || (DEV && hooks.current?.strict())) throw error;
     reportError(error, "setup", scope);
-    return { instance: {} as T, host, scope, render() {}, clear() {}, failed: true };
+    return { instance: {} as T, host, scope, render() {}, clear() {}, nodes: () => [], failed: true };
   }
 
   function setUp(): PreparedComponent<T, N> {
@@ -179,6 +181,7 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
         if (DEV) viewScope = createScope(scope);
         parts = build(viewScope ?? scope);
       },
+      nodes: () => parts.flatMap((part) => part()),
       clear() {
         for (const part of parts) for (const node of part()) renderer.remove(node);
         parts = [];
@@ -208,10 +211,13 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
           }
           return {
             commit() {
-              parts = nextParts;
-              viewScope = next;
-              old.viewScope?.dispose();
-              for (const part of old.parts) for (const node of part()) renderer.remove(node);
+              const oldNodes = old.parts.flatMap((part) => part());
+              retireView(renderer, oldNodes, nextParts.flatMap((part) => part()), () => {
+                parts = nextParts;
+                viewScope = next;
+                old.viewScope?.dispose();
+                for (const node of oldNodes) renderer.remove(node);
+              });
             },
             abort() {
               next.dispose();
@@ -300,10 +306,12 @@ export function instantiate<T extends object, N>(Class: ComponentClass<T>, optio
         hooks.current?.region(next.scope, region);
         return {
           commit() {
-            const { scope, clear } = mounted;
-            Object.assign(mounted, { instance: next.instance, scope: next.scope, clear: next.clear, render: next.render });
-            scope.dispose();
-            clear();
+            const { scope, clear, nodes } = mounted;
+            retireView(renderer, nodes(), next.nodes(), () => {
+              Object.assign(mounted, { instance: next.instance, scope: next.scope, clear: next.clear, render: next.render, nodes: next.nodes });
+              scope.dispose();
+              clear();
+            });
           },
           abort() {
             next.scope.dispose();

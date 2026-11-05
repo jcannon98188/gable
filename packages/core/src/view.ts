@@ -4,7 +4,7 @@ import { createEnv, evaluate, readModel, runHandler, writeModel, type Env, type 
 import { createScope, currentScope, runInScope, type Scope } from "./scope.js";
 import { FAILED, guard, guarded } from "./errors.js";
 import { DEV } from "./di.js";
-import { hooks } from "./dev-hooks.js";
+import { hooks, retireView } from "./dev-hooks.js";
 import { inputOf } from "./input.js";
 import { OutputEmitter } from "./output.js";
 import { prepare, type ComponentClass } from "./component.js";
@@ -161,10 +161,12 @@ function replaceable<N>(renderer: Renderer<N>, build: (before: N | null) => Part
       return {
         commit() {
           const old = { scope, part };
-          scope = next;
-          part = nextPart;
-          old.scope.dispose();
-          for (const node of old.part()) renderer.remove(node);
+          retireView(renderer, old.part(), nextPart(), () => {
+            scope = next;
+            part = nextPart;
+            old.scope.dispose();
+            for (const node of old.part()) renderer.remove(node);
+          });
         },
         abort() {
           next.dispose();
