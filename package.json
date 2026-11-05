@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --if-present -w packages/core -w packages/renderer-dom -w packages/template-format -w packages/language-service -w packages/prettier-plugin -w packages/testing -w packages/vscode",
+    "build": "npm run build --if-present -w packages/core -w packages/renderer-dom -w packages/template-format -w packages/language-service -w packages/prettier-plugin -w packages/vite -w packages/testing -w packages/vscode",
     "test": "vitest run",
     "changeset": "changeset",
     "version-packages": "changeset version",
