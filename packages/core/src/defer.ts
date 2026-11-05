@@ -4,7 +4,8 @@ import { evaluate } from "./expression.js";
 import { reportError } from "./errors.js";
 import { effect, untracked, whenFlushed } from "./signals.js";
 import { currentScope } from "./scope.js";
-import { DEV, InjectionToken } from "./di.js";
+import { DEV } from "./dev-hooks.js";
+import { InjectionToken } from "./di.js";
 import { viewOf } from "./view-context.js";
 import { buildNodes, createSwitcher, type Part } from "./view.js";
 import type { DeferNode, TemplateNode } from "./template.js";
@@ -74,7 +75,7 @@ export function buildDefer<N>(node: DeferNode, renderer: Renderer<N>, env: Env, 
       },
       (error) => {
         if (scope?.disposed) return;
-        if (!node.error) reportError(error, "lazy", scope ?? null);
+        reportError(error, "lazy", scope ?? null); // reported even when an @error block renders
         untracked(() => show("error", node.error));
       },
     );

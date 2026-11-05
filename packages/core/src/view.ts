@@ -3,7 +3,7 @@ import type { Renderer } from "./renderer.js";
 import { createEnv, evaluate, readModel, runHandler, writeModel, type Env, type Expr, type HandlerExpr } from "./expression.js";
 import { createScope, currentScope, runInScope, type Scope } from "./scope.js";
 import { FAILED, guard, guarded } from "./errors.js";
-import { DEV } from "./di.js";
+import { DEV } from "./dev-hooks.js";
 import { hooks, retireView } from "./dev-hooks.js";
 import { inputOf } from "./input.js";
 import { OutputEmitter } from "./output.js";

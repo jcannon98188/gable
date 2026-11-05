@@ -52,6 +52,8 @@ function setForeignProperty(el: Element, name: string, value: unknown): void {
 const kebab = (name: string) => (name.startsWith("--") ? name : name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`));
 
 /** The renderer over the browser DOM: HTML, SVG and MathML, scoped styles and the `viewport`, `interaction` and `hover` triggers. */
+const UNSAFE_PROPERTIES = new Set(["innerhtml", "outerhtml", "srcdoc"]);
+
 export function createDomRenderer(options: DomRendererOptions = {}): DomRenderer {
   const doc = () => options.document ?? document;
   const sheets = new Map<string, HTMLStyleElement>();
@@ -84,6 +86,7 @@ export function createDomRenderer(options: DomRendererOptions = {}): DomRenderer
 
     setProperty(node, name, value) {
       const el = node as Element;
+      if (UNSAFE_PROPERTIES.has(name.toLowerCase())) throw new Error(`[${name}] is unsafe: it writes markup the template cannot sanitize. Bind text with {{ }} or build the elements in the template instead.`);
       if (namespaceOf(el) !== "html") return setForeignProperty(el, name, value);
       if (DEV && !(name in el) && !el.localName.includes("-")) {
         throw new Error(`Unknown property "${name}" on <${el.localName}>.${didYouMean(el, name)}`);
@@ -91,6 +94,7 @@ export function createDomRenderer(options: DomRendererOptions = {}): DomRenderer
       (el as any)[name] = value;
     },
     setAttribute(node, name, value) {
+      if (/^on/i.test(name) || name.toLowerCase() === "srcdoc") throw new Error(`[attr.${name}] is unsafe: it would run or embed code from a string. Use an event binding like (click)="..." instead.`);
       if (value === null) (node as Element).removeAttribute(name);
       else (node as Element).setAttribute(name, value);
     },

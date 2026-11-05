@@ -1,6 +1,10 @@
 import type { Scope } from "./scope.js";
 import type { Renderer } from "./renderer.js";
 
+/** Dev-only checks are gated on this so bundlers can drop them (`define: { __GABLE_DEV__: false }`). */
+declare const __GABLE_DEV__: boolean | undefined;
+export const DEV = typeof __GABLE_DEV__ === "undefined" || __GABLE_DEV__ !== false;
+
 // The only HMR code in the core: a slot the dev runtime (`@gable/core/hmr`) fills.
 // Every use is behind `DEV && hooks.current`, so a production build drops all of it.
 

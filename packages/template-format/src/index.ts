@@ -1,4 +1,5 @@
-import { parseTemplate, VOID, type Item } from "./parse.js";
+import { VOID } from "@gable/core/tooling";
+import { parseTemplate, type Item } from "./parse.js";
 import { findHtmlLiterals } from "./scan.js";
 
 export { runCli, type CliIo } from "./cli.js";

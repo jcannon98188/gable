@@ -219,8 +219,8 @@ describe("runaway effects", () => {
 describe("string literals in template expressions", () => {
   it("decode escapes", () => {
     class Lit {
-      static meta = { selector: "app-lit", template: html`{{ 'a\nb\tc\\d\'e\u0041' }}|{{ "q\\"r" }}` };
+      static meta = { selector: "app-lit", template: html`{{ 'a\\nb\\tc\\\\d\\'e\\u0041' }}|{{ "q\\"r" }}` };
     }
-    expect(mount(Lit).text()).toBe("a\nb\tc\d'eA|q\"r");
+    expect(mount(Lit).text()).toBe("a\nb\tc\\d'eA|q\"r");
   });
 });

@@ -1,9 +1,5 @@
 import { createScope, runInScope, type Scope } from "./scope.js";
-import { hooks } from "./dev-hooks.js";
-
-/** Dev-only checks are gated on this so bundlers can drop them (`define: { __GABLE_DEV__: false }`). */
-declare const __GABLE_DEV__: boolean | undefined;
-export const DEV = typeof __GABLE_DEV__ === "undefined" || __GABLE_DEV__ !== false;
+import { DEV, hooks } from "./dev-hooks.js";
 
 /** A class used as a Token. Abstract classes work too. */
 export type Type<T> = abstract new () => T;

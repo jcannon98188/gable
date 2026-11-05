@@ -18,6 +18,9 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json"
   },
+  "dependencies": {
+    "@gable/core": "0.0.0"
+  },
   "devDependencies": {
     "@types/node": "^26.6.6"
   }

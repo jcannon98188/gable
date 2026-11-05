@@ -1,3 +1,4 @@
+import { VOID } from "@gable/core/tooling";
 /**
  * A tolerant, structure-preserving parser for Gable template bodies, used only by the formatter.
  * It never throws: malformed input degrades to text. `${}` holes and `{{ }}` interpolations stay opaque.
@@ -22,7 +23,6 @@ export type Item =
       blank: boolean;
     };
 
-export const VOID = new Set("area base br col embed hr img input link meta source track wbr".split(" "));
 const RAW = new Set(["pre", "textarea", "script", "style"]);
 const BLOCK_KW = /^@(?:if|else|for|empty|switch|case|default|let|defer|placeholder|loading|error)(?![\w$])/;
 

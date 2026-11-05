@@ -44,6 +44,17 @@ describe("DOM renderer: dev-time errors", () => {
     expect(String(reported[0])).toMatch(/Unknown property "colour" on <div>.*\[attr\.colour\]/);
   });
 
+  it("rejects bindings that inject markup or script, and says they are unsafe", () => {
+    const host = mountTemplate(html`<div [innerHTML]="'<b>x</b>'"></div><iframe [srcdoc]="'<p>'"></iframe><a [attr.onclick]="'alert(1)'">a</a>`);
+    expect(reported.map(String)).toEqual([
+      expect.stringMatching(/[innerHTML].*unsafe/),
+      expect.stringMatching(/[srcdoc].*unsafe/),
+      expect.stringMatching(/[attr.onclick].*unsafe/),
+    ]);
+    expect(host.querySelector("b")).toBeNull();
+    expect(host.querySelector("a")!.hasAttribute("onclick")).toBe(false);
+  });
+
   it("explains a bootstrap target that matches nothing", () => {
     class Page {
       static meta = { selector: "app-page", template: html`<p></p>` };

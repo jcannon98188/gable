@@ -129,6 +129,7 @@ describe("@defer with lazy() imports", () => {
     await f.defer[0]!.settle();
     expect(f.defer[0]!.state).toBe("error");
     expect(f.text().trim()).toBe("e");
+    expect(f.claimErrors().map((r) => r.context.source)).toEqual(["lazy"]); // reported even though @error rendered
   });
 
   it("errors when the named export is missing", async () => {
@@ -144,6 +145,7 @@ describe("@defer with lazy() imports", () => {
     await f.flush();
     await f.defer[0]!.settle();
     expect(f.defer[0]!.state).toBe("error");
+    expect(f.claimErrors()).toHaveLength(1);
   });
 
   it("using a lazy component outside @defer is a dev-time error", () => {

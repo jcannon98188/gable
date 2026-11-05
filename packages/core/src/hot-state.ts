@@ -1,4 +1,4 @@
-import { DEV } from "./di.js";
+import { DEV } from "./dev-hooks.js";
 
 const store = DEV ? new Map<string, unknown>() : null;
 

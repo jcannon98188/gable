@@ -7,7 +7,7 @@ import { currentScope, runInScope, type Scope } from "./scope.js";
 import { computed, signal, untracked, type ReadonlySignal, type WritableSignal } from "./signals.js";
 import { isLazy } from "./lazy.js";
 import { hooks } from "./dev-hooks.js";
-import { DEV } from "./di.js";
+import { DEV } from "./dev-hooks.js";
 import type { ComponentClass } from "./component.js";
 import { matchRoutes, parseUrl, runGuard, toHref, type Match, type Route, type RouteSnapshot } from "./router-config.js";
 
