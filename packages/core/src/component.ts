@@ -1,6 +1,7 @@
 import { effect } from "./signals.js";
 import { createScope, runInScope, type Scope } from "./scope.js";
 import type { Renderer } from "./renderer.js";
+import { assertNoConstructor, createInjector, type Injector, type Provider } from "./di.js";
 import { evaluate } from "./expression.js";
 import { parseTemplate, type TemplateNode, type TemplateResult } from "./template.js";
 
@@ -8,6 +9,8 @@ import { parseTemplate, type TemplateNode, type TemplateResult } from "./templat
 export interface ComponentMeta {
   selector: string;
   template: TemplateResult;
+  /** Creates a child injector for this component and its descendants. */
+  providers?: Provider[];
 }
 
 /** A component is a plain class with `static meta`. No base class, no constructor. */
@@ -42,12 +45,16 @@ export function instantiate<T extends object, N>(
   renderer: Renderer<N>,
   parent: N,
   parentScope: Scope | null = null,
+  injector: Injector | null = null,
 ): MountedComponent<T, N> {
   const scope = createScope(parentScope);
-  const { selector, template } = Class.meta;
+  assertNoConstructor(Class);
+  const { selector, template, providers } = Class.meta;
+  const own = providers ? (injector ?? createInjector()).createChild(providers, { host: true }) : injector;
   const hostSpec = parseSelector(selector);
   return runInScope(scope, () => {
-    const instance = new Class(); // field initialisers run owned by `scope`
+    // Field initialisers run owned by `scope`, in the component injector context.
+    const instance = own ? own.run(() => new Class()) : new Class();
     const host = renderer.createElement(hostSpec.tag, parent);
     for (const [name, value] of hostSpec.attrs) renderer.setAttribute(host, name, value);
     for (const name of hostSpec.classes) renderer.setClass(host, name, true);

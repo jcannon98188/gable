@@ -1,5 +1,6 @@
 import { instantiate, whenFlushed, type MountedComponent } from "@gable/core/internal";
-import type { ComponentClass } from "@gable/core";
+import type { ComponentClass, Provider } from "@gable/core";
+import { createTestInjector } from "./injector.js";
 import type { Renderer } from "@gable/core/renderer";
 import { createTestRenderer, createTestRoot, query, queryAll, serialize, textContent, type TestNode } from "./renderer.js";
 
@@ -8,6 +9,8 @@ export type { TestNode } from "./renderer.js";
 export interface MountOptions {
   /** Defaults to the in-memory test renderer. */
   renderer?: Renderer<TestNode>;
+  /** Providers for the root injector; override any Token. */
+  providers?: Provider[];
 }
 
 /** A mounted component under test. It never flushes on its own: call `flush()`. */
@@ -29,7 +32,7 @@ export interface Fixture<T extends object> {
 export function mount<T extends object>(Component: ComponentClass<T>, options: MountOptions = {}): Fixture<T> {
   const renderer = options.renderer ?? createTestRenderer();
   const container = createTestRoot();
-  const mounted: MountedComponent<T, TestNode> = instantiate(Component, renderer, container);
+  const mounted: MountedComponent<T, TestNode> = instantiate(Component, renderer, container, null, createTestInjector(options.providers));
   let destroyed = false;
   return {
     instance: mounted.instance,
@@ -45,3 +48,4 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
     },
   };
 }
+export { createTestInjector } from "./injector.js";
