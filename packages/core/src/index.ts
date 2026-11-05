@@ -8,3 +8,4 @@ export type { InputSignal, ModelSignal } from "./input.js";
 export { output, OutputEmitter } from "./output.js";
 export { InjectionToken, inject, createInjector } from "./di.js";
 export type { Injector, InjectOptions, Provider, Token, Type } from "./di.js";
+export { viewChild, viewChildren, contentChild, contentChildren } from "./query.js";

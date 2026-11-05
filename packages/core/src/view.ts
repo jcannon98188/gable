@@ -7,7 +7,8 @@ import { inputOf } from "./input.js";
 import { OutputEmitter } from "./output.js";
 import { prepare, type ComponentClass } from "./component.js";
 import { parseSelector, matchesNode } from "./select.js";
-import { viewOf } from "./view-context.js";
+import { viewOf, type Content } from "./view-context.js";
+import { registerEntry, withContentTarget } from "./query.js";
 import type { ElementNode, ForNode, IfNode, SwitchNode, TemplateNode } from "./template.js";
 
 /** The live top-level nodes of a built piece of template (blocks change theirs over time). */
@@ -103,6 +104,7 @@ function eventHandler(handler: HandlerExpr, env: Env): (event: unknown) => void 
 }
 
 function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, parent: N, before: N | null): Part<N> {
+  if (node.tag === "slot") return buildSlot(node, renderer, env, parent, before);
   const el = renderer.createElement(node.tag, parent);
   const scope = currentScope();
   const view = viewOf(env);
@@ -115,7 +117,11 @@ function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, par
   renderer.insert(parent, el, before);
   for (const ref of node.refs) env.locals.set(ref, () => el);
 
-  const comps = matches.map((Class) => prepare(Class, { renderer, host: el, parentScope: scope, injector: view?.injector ?? null }));
+  const projects = matches.some((Class) => Class.meta.template);
+  const content = projects ? partitionContent(node.children, env) : null;
+  const comps = matches.map((Class) => prepare(Class, { renderer, host: el, parentScope: scope, injector: view?.injector ?? null, content }));
+  for (const comp of comps) registerEntry(view?.queries, { instance: comp.instance, node: el, refs: node.refs }, scope);
+  if (node.refs.length > 0) registerEntry(view?.queries, { node: el, refs: node.refs }, scope);
   const rest: Bindings = { attrs: node.attrs, bindings: [], models: [], events: [] };
   const inputFor = (name: string) => comps.map((c) => inputOf(c.instance, name)).find((h) => h);
   const subscribe = <T,>(source: { subscribe(next: (v: T) => void): { unsubscribe(): void } }, next: (v: T) => void) => {
@@ -145,10 +151,30 @@ function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, par
 
   applyBindings(el, rest, renderer, env);
   for (const comp of comps) comp.render();
-  if (!matches.some((Class) => Class.meta.template)) {
-    buildNodes(node.children, renderer, env, el, null);
-  }
+  if (!projects) buildNodes(node.children, renderer, env, el, null);
   return () => [el];
+}
+
+/** Splits a component element's children into named slots (`slot="name"`) and the default slot. */
+function partitionContent(children: TemplateNode[], env: Env): Content {
+  const slots = new Map<string, TemplateNode[]>();
+  for (const child of children) {
+    const name = (child.type === "element" && child.attrs.find((a) => a.name === "slot")?.value) || "";
+    slots.set(name, [...(slots.get(name) ?? []), child]);
+  }
+  return { env, slots };
+}
+
+/** `<slot>` renders what the parent projected, built in the parent's Env, else its own fallback children. */
+function buildSlot<N>(node: ElementNode, renderer: Renderer<N>, env: Env, parent: N, before: N | null): Part<N> {
+  const view = viewOf(env);
+  const name = node.attrs.find((a) => a.name === "name")?.value ?? "";
+  const projected = view?.content?.slots.get(name);
+  const parts =
+    projected && view?.content
+      ? withContentTarget(view.queries, () => buildNodes(projected, renderer, view.content!.env, parent, before))
+      : buildNodes(node.children, renderer, env, parent, before);
+  return () => flatten(parts);
 }
 
 // --- control flow ----------------------------------------------------------
@@ -300,14 +326,19 @@ function buildFor<N>(node: ForNode, renderer: Renderer<N>, env: Env, parent: N, 
         if (row.pos > maxPos) maxPos = row.pos;
         else moved.add(key);
       });
+      // Create new rows first-to-last so anything registered while building (queries) is in order.
+      const created = new Set<unknown>();
+      keys.forEach((key, i) => {
+        if (rows.has(key)) return;
+        rows.set(key, makeRow(items[i], i, anchor));
+        created.add(key);
+      });
+      // Then place rows last-to-first: moved and new rows go before their successor.
       let nextBefore: N = anchor;
       for (let i = keys.length - 1; i >= 0; i--) {
         const key = keys[i];
-        let row = rows.get(key);
-        if (!row) {
-          row = makeRow(items[i], i, nextBefore);
-          rows.set(key, row);
-        } else if (moved.has(key)) {
+        const row = rows.get(key)!;
+        if (moved.has(key) || created.has(key)) {
           for (const n of flatten(row.parts)) renderer.insert(parent, n, nextBefore);
         }
         nextBefore = flatten(row.parts)[0] ?? nextBefore;

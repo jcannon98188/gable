@@ -7,6 +7,8 @@ import { applyBindings, buildNodes } from "./view.js";
 import { describeFields, inputOf } from "./input.js";
 import { completeOutput } from "./output.js";
 import { parseSelector } from "./select.js";
+import { createQueryHost, declareQueries, withContentTarget } from "./query.js";
+import type { Content } from "./view-context.js";
 
 /** Static component metadata. */
 export interface ComponentMeta {
@@ -63,6 +65,8 @@ export interface PrepareOptions<N> {
   host: N;
   parentScope: Scope | null;
   injector: Injector | null;
+  /** Template the parent projects into this component's slots. */
+  content?: Content | null;
 }
 
 /** Runs a component's Setup (field initialisers) in its injection context and wires `meta.host`. */
@@ -75,17 +79,18 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
   if (own && providers) scope.onDispose(() => own.destroy());
   return runInScope(scope, () => {
     // Field initialisers run owned by `scope`, in the component injector context.
-    const instance = own ? own.run(() => new Class()) : new Class();
+    const queries = createQueryHost();
+    const instance = declareQueries(queries, () => (own ? own.run(() => new Class()) : new Class()));
     for (const out of describeFields(instance, Class.name)) scope.onDispose(() => completeOutput(out));
     const env = createEnv(instance);
-    env.view = { imports: imports ?? [], injector: own };
+    env.view = { imports: imports ?? [], injector: own, queries, content: options.content ?? null };
     applyBindings(host, hostSpec(Class), renderer, env);
     return {
       instance,
       host,
       scope,
       render() {
-        if (template) runInScope(scope, () => buildNodes(parseTemplate(template), renderer, env, host, null));
+        if (template) runInScope(scope, () => withContentTarget(null, () => buildNodes(parseTemplate(template), renderer, env, host, null)));
       },
     };
   });
