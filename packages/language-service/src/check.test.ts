@@ -1,6 +1,7 @@
-import { readFileSync } from "node:fs";
+import { cpSync, readFileSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import ts from "@typescript/typescript6";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { main } from "./cli.js";
 
 const fixture = (name: string) => fileURLToPath(new URL(`../fixtures/${name}`, import.meta.url));
@@ -200,5 +201,73 @@ describe("gable-check", () => {
   it("suggests the nearest member for a misspelled name", async () => {
     const { diagnostics } = await check("scope-fail");
     expect(diagnostics.find((d) => d.message.includes("'nam'"))!.message).toMatch(/Did you mean 'name'\?/);
+  });
+
+  describe("quick fixes", () => {
+    interface Fixed extends Reported {
+      fixes?: Array<{ title: string; edits: Array<{ start: number; length: number; newText: string }> }>;
+    }
+
+    it("offers a fix on every extractable diagnostic, and none where the loop item is not an object", async () => {
+      const { diagnostics } = await check("fixes");
+      const withFix = (diagnostics as Fixed[]).filter((d) => d.fixes?.length);
+      expect(withFix.map((d) => d.rule)).toEqual([
+        "bare-signal",
+        "expression-syntax",
+        "expression-syntax",
+        "call-non-signal",
+        "expression-syntax",
+        "expression-syntax",
+        "expression-syntax",
+      ]);
+      const numeric = where("fixes", "{{ n + 1 }}", 3);
+      const unfixable = (diagnostics as Fixed[]).filter((d) => !d.fixes?.length);
+      expect(unfixable.map((d) => [d.line, d.column])).toEqual([[numeric.line, numeric.column]]);
+    });
+
+    describe("applied with --fix to a copy of the project", () => {
+      const copy = fixture("_fix-run");
+      let fixedSource = "";
+      let after: Reported[] = [];
+
+      beforeAll(async () => {
+        rmSync(copy, { recursive: true, force: true });
+        cpSync(fixture("fixes"), copy, { recursive: true });
+        await main(["--project", copy, "--fix", "--format", "json"], { stdout: (s) => (after = JSON.parse(s)), stderr: () => {} });
+        fixedSource = readFileSync(`${copy}/src/app.ts`, "utf8");
+      });
+      afterAll(() => rmSync(copy, { recursive: true, force: true }));
+
+      it("leaves only the diagnostic that has no fix", () => {
+        expect(after.map((d) => d.rule)).toEqual(["expression-syntax"]);
+      });
+
+      it("extracts computed view-model signals onto the component and rewrites the template", () => {
+        expect(fixedSource).toContain("<p>{{ count() }}</p>");
+        expect(fixedSource).toContain("readonly countView = computed(() => this.count() + 1);");
+        expect(fixedSource).toContain("<p>{{ countView() }}</p>");
+        expect(fixedSource).toContain("readonly labelView = computed(() => this.label(this.count()));");
+        expect(fixedSource).toContain("readonly shoutView = computed(() => this.shout());");
+        expect(fixedSource).toContain('import { html, signal, computed } from "@gable/core";');
+      });
+
+      it("turns an Observable into a signal for the derived value", () => {
+        expect(fixedSource).toContain("readonly user = toSignal(this.user$);");
+        expect(fixedSource).toContain(`readonly userView = computed(() => this.user()?.name + '!');`);
+        expect(fixedSource).toContain('import { toSignal } from "@gable/core/rxjs";');
+      });
+
+      it("extracts a rows view model for a loop over a plain signal read", () => {
+        expect(fixedSource).toMatch(/readonly todosRows = computed\(\(\) => this\.todos\(\)\.map\(\(todo\) => \(\{ \.\.\.todo, todoView: /);
+        expect(fixedSource).toContain("@for (todo of todosRowsRows(); track todo.id)");
+      });
+
+      it("produces code that type-checks", () => {
+        const parsed = ts.getParsedCommandLineOfConfigFile(`${copy}/tsconfig.json`, undefined, { ...ts.sys, onUnRecoverableConfigFileDiagnostic: () => {} })!;
+        const program = ts.createProgram(parsed.fileNames, parsed.options);
+        const errors = ts.getPreEmitDiagnostics(program).map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"));
+        expect(errors).toEqual([]);
+      });
+    });
   });
 });

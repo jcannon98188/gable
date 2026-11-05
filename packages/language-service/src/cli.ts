@@ -1,14 +1,17 @@
 import path from "node:path";
 import { analyzeProject, type Diagnostic } from "./analyze.js";
+import { fixProject } from "./apply.js";
 
 export interface CliIo {
   stdout(text: string): void;
   stderr(text: string): void;
 }
 
-const USAGE = `Usage: gable-check [--project <tsconfig.json | dir>] [--format text|json]
+const USAGE = `Usage: gable-check [--project <tsconfig.json | dir>] [--format text|json] [--fix]
 
-Type-checks html templates against their component classes. Exits 1 when any
+Type-checks html templates against their component classes. --fix first applies
+the quick fixes (extracting computed view-model signals, calling bare signals).
+Exits 1 when any
 diagnostic has severity "error", 2 on a usage or configuration problem.
 Rule severities (off | warn | error) come from the "@gable/language-service"
 entry of compilerOptions.plugins in the tsconfig.
@@ -18,6 +21,7 @@ entry of compilerOptions.plugins in the tsconfig.
 export function main(argv: string[], io: CliIo, cwd = process.cwd()): number {
   let project = ".";
   let format: "text" | "json" = "text";
+  let fix = false;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]!;
     if (arg === "--project" || arg === "-p") project = argv[++i] ?? "";
@@ -25,14 +29,17 @@ export function main(argv: string[], io: CliIo, cwd = process.cwd()): number {
       const value = argv[++i];
       if (value !== "text" && value !== "json") return usageError(io, `--format must be "text" or "json"`);
       format = value;
-    } else if (arg === "--help" || arg === "-h") {
+    } else if (arg === "--fix") fix = true;
+    else if (arg === "--help" || arg === "-h") {
       io.stdout(USAGE);
       return 0;
     } else return usageError(io, `unknown argument "${arg}"`);
   }
   if (!project) return usageError(io, "--project needs a value");
 
-  const { diagnostics, configErrors } = analyzeProject(path.resolve(cwd, project));
+  const target = path.resolve(cwd, project);
+  if (fix) for (const file of fixProject(target)) io.stderr(`gable-check: fixed ${path.relative(cwd, file).split(path.sep).join("/")}\n`);
+  const { diagnostics, configErrors } = analyzeProject(target);
   if (configErrors.length) {
     for (const e of configErrors) io.stderr(`gable-check: configuration error: ${e}\n`);
     return 2;

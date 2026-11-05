@@ -56,8 +56,29 @@ export interface EventSite {
 
 export type Item = string | Group | Probe;
 
+/** The `@for` a value expression sits inside. */
+export interface LoopInfo {
+  item: string;
+  source: Src;
+  track: Src;
+  /** The first path step of the (valid) source expression, for asking the checker about it. */
+  sourceRef?: Ref;
+}
+
+/** A value expression the quick fixes may extract, with the scope it was written in. */
+export interface Site {
+  expr: Src;
+  locals: ReadonlySet<string>;
+  /** The innermost enclosing `@for`, when the expression is in its body. */
+  loop?: LoopInfo;
+  model: TemplateModel;
+}
+
 export interface TemplateModel {
   className: string;
+  /** Where quick fixes insert new class members (end of the last member, so field initializers run after the fields they read), and that line's indentation. */
+  insertAt: number;
+  indent: string;
   tree: TNode[];
   /** `${}` hole expressions, checked as plain TypeScript. */
   holes: Src[];
@@ -69,6 +90,7 @@ export interface Emitted {
   groups: Group[];
   refs: Ref[];
   events: EventSite[];
+  sites: Site[];
   /** The map of known element tags (a probe), for telling native tags from custom ones. */
   tags: Probe;
 }
@@ -106,6 +128,9 @@ export function emit(
   const groups: Group[] = [];
   const refs: Ref[] = [];
   const events: EventSite[] = [];
+  const sites: Site[] = [];
+  let model!: TemplateModel;
+  let loop: LoopInfo | undefined;
   const push = (s: string) => items.push(s);
   const probe = (text: string): Probe => {
     const p: Probe = { text, gen: 0 };
@@ -115,7 +140,8 @@ export function emit(
   const tags = probe("declare const __tags: HTMLElementTagNameMap;\n");
   const instanceType = (tag: string) => componentType(tag) ?? "{}";
 
-  function expression(e: Src, kind: Group["kind"], locals: ReadonlySet<string>, open: string, close: string): void {
+  function expression(e: Src, kind: Group["kind"], locals: ReadonlySet<string>, open: string, close: string, extractable = true): void {
+    if (kind === "value" && extractable) sites.push({ expr: e, locals, loop, model });
     if (kind !== "hole" && !isValid(e, kind as ExprKind)) return;
     const group: Group = { kind, parts: [], srcStart: e.start, srcEnd: e.start + e.text.length, refs: [], genStart: 0, genEnd: 0 };
     const add = (text: string, src?: number): Part => {
@@ -231,10 +257,15 @@ export function emit(
         case "for": {
           const inner = new Set(locals).add(node.item);
           for (const v of LOOP_VARS) inner.add(v);
+          const outerLoop = loop;
+          const first = refs.length;
           expression(node.source, "value", locals, `for (const ${node.item} of __iter(`, ")) {\n");
+          const info: LoopInfo = { item: node.item, source: node.source, track: node.track, sourceRef: refs[first] };
           push("const $index: number = 0, $count: number = 0; const $first: boolean = false, $last: boolean = false, $even: boolean = false, $odd: boolean = false;\n");
-          expression(node.track, "value", inner, "void (", ");\n");
+          expression(node.track, "value", inner, "void (", ");\n", false);
+          loop = info;
           nodes(node.children, inner);
+          loop = outerLoop;
           push("}\n");
           if (node.empty) {
             push("{\n");
@@ -259,6 +290,7 @@ export function emit(
   }
 
   templates.forEach((t, n) => {
+    model = t;
     push(`function __gable_check_${n}(__c: ${t.className}) {\n`);
     for (const hole of t.holes) expression(hole, "hole", new Set(), "void (", ");\n");
     nodes(t.tree, new Set());
@@ -286,5 +318,5 @@ export function emit(
       item.genEnd = offset;
     }
   }
-  return { text, groups, refs, events, tags };
+  return { text, groups, refs, events, sites, tags };
 }

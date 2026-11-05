@@ -65,7 +65,7 @@ export function parseTemplate(result: TemplateResult): TemplateNode[] {
   return parsed;
 }
 
-const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);
+export const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);
 const ATTR = /\s*([^\s=>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))?/y;
 
 class Parser {
@@ -281,10 +281,10 @@ class Parser {
   }
 }
 
-const BLOCK_START = /^@(?:if|else|for|empty|switch|case|default|let|defer|placeholder|loading|error)\b/;
+export const BLOCK_START = /^@(?:if|else|for|empty|switch|case|default|let|defer|placeholder|loading|error)\b/;
 
 /** Index of `char` outside quotes and parentheses, or -1. */
-function indexOfTopLevel(source: string, char: string, from = 0): number {
+export function indexOfTopLevel(source: string, char: string, from = 0): number {
   let depth = 0;
   let quote = "";
   for (let p = from; p < source.length; p++) {

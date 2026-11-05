@@ -3,6 +3,8 @@ import ts from "@typescript/typescript6";
 import { parseExpression, parseHandler } from "@gable/core/tooling";
 import { readConfig, type AnalyzerConfig, type RuleId, type Severity } from "./config.js";
 import { emit, type Emitted, type EventSite, type Group, type Ref, type TemplateModel } from "./emit.js";
+import { findIdentifier, inCallee, isObservableLike, isSignal, unwrap } from "./typeutil.js";
+import { callSignalFix, extractFix, type Fix, type FixEnv } from "./fixes.js";
 import { scanTemplate, ScanError, type ExprKind, type Src } from "./scan.js";
 
 export interface Diagnostic {
@@ -16,6 +18,8 @@ export interface Diagnostic {
   rule: RuleId;
   severity: "warn" | "error";
   message: string;
+  /** Quick fixes, best first. Edits are absolute offsets into files. */
+  fixes?: Fix[];
 }
 
 export interface AnalysisResult {
@@ -25,6 +29,9 @@ export interface AnalysisResult {
 }
 
 type RawDiagnostic = Omit<Diagnostic, "severity" | "line" | "column">;
+
+/** Rules whose diagnostics get quick fixes. */
+const FIXABLE = new Set<RuleId>(["bare-signal", "call-non-signal", "expression-syntax"]);
 
 /** Resolves `project` (a tsconfig file or a directory holding one) and analyzes every template in it. */
 export function analyzeProject(project: string): AnalysisResult {
@@ -139,6 +146,29 @@ function analyze(rootNames: string[], options: ts.CompilerOptions, config: Analy
     }
   }
 
+  // Quick fixes, now that types are known.
+  const taken = new Map<string, Set<string>>();
+  const classType = (sf: ts.SourceFile, name: string): ts.Type | undefined => {
+    const decl = sf.statements.find((n): n is ts.ClassDeclaration => ts.isClassDeclaration(n) && n.name?.text === name);
+    return decl && program.getTypeChecker().getTypeAtLocation(decl);
+  };
+  for (const d of raw) {
+    if (!FIXABLE.has(d.rule)) continue;
+    const state = files.get(norm(d.file));
+    if (!state) continue;
+    const emitted = final.emitted.get(norm(d.file))!;
+    const checked = program.getSourceFile(state.sf.fileName)!;
+    if (d.rule === "bare-signal") {
+      d.fixes = [callSignalFix(d.file, d.start + d.length, state.sf.text.slice(d.start, d.start + d.length))];
+      continue;
+    }
+    const site = emitted.sites.find((x) => d.start >= x.expr.start && d.start <= x.expr.start + x.expr.text.length);
+    if (!site) continue;
+    const env: FixEnv = { sf: state.sf, checked, checker: program.getTypeChecker(), classType: (n) => classType(checked, n), taken };
+    const fix = extractFix(d.file, site, env);
+    if (fix) d.fixes = [fix];
+  }
+
   // Apply per-rule severity, then position and de-duplicate.
   const out: Diagnostic[] = [];
   const seen = new Set<string>();
@@ -156,11 +186,6 @@ function analyze(rootNames: string[], options: ts.CompilerOptions, config: Analy
 
 // --- finding templates ------------------------------------------------------
 
-function unwrap(node: ts.Expression): ts.Expression {
-  while (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isSatisfiesExpression(node)) node = node.expression;
-  return node;
-}
-
 type OnError = (start: number, length: number, message: string) => void;
 
 /** Finds `static meta = { template: html`...` }` in each class and scans the template. */
@@ -177,7 +202,9 @@ function findTemplates(sf: ts.SourceFile, tag: string, onError: OnError): Templa
           if (!ts.isPropertyAssignment(prop) || !ts.isIdentifier(prop.name) || prop.name.text !== "template") continue;
           const value = unwrap(prop.initializer);
           if (!ts.isTaggedTemplateExpression(value) || !ts.isIdentifier(value.tag) || value.tag.text !== tag) continue;
-          const model = scanLiteral(sf, node.name.text, value.template, onError);
+          const lineStart = sf.getLineStarts()[sf.getLineAndCharacterOfPosition(member.getStart(sf)).line]!;
+          const indent = /^[ \t]*/.exec(sf.text.slice(lineStart))![0];
+          const model = scanLiteral(sf, node.name.text, { insertAt: node.members[node.members.length - 1]!.end, indent }, value.template, onError);
           if (model) models.push(model);
         }
       }
@@ -189,7 +216,7 @@ function findTemplates(sf: ts.SourceFile, tag: string, onError: OnError): Templa
 }
 
 /** `${}` holes are blanked out of the scanned text (never parsed inside) and returned as plain TS expressions. */
-function scanLiteral(sf: ts.SourceFile, className: string, literal: ts.TemplateLiteral, onError: OnError): TemplateModel | undefined {
+function scanLiteral(sf: ts.SourceFile, className: string, placement: { insertAt: number; indent: string }, literal: ts.TemplateLiteral, onError: OnError): TemplateModel | undefined {
   const bodyStart = literal.getStart(sf) + 1;
   const holes: Src[] = [];
   let text = sf.text.slice(bodyStart, literal.end - 1);
@@ -205,7 +232,7 @@ function scanLiteral(sf: ts.SourceFile, className: string, literal: ts.TemplateL
     }
   }
   try {
-    return { className, tree: scanTemplate(text, bodyStart), holes };
+    return { className, tree: scanTemplate(text, bodyStart), holes, ...placement };
   } catch (err) {
     if (!(err instanceof ScanError)) throw err;
     onError(err.start, err.length, err.message);
@@ -214,49 +241,6 @@ function scanLiteral(sf: ts.SourceFile, className: string, literal: ts.TemplateL
 }
 
 // --- rules that need types ----------------------------------------------------
-
-function findIdentifier(sf: ts.SourceFile, pos: number): ts.Identifier | undefined {
-  let found: ts.Identifier | undefined;
-  const visit = (node: ts.Node): void => {
-    if (found || pos < node.pos || pos >= node.end) return;
-    if (ts.isIdentifier(node) && node.getStart(sf) === pos) found = node;
-    else ts.forEachChild(node, visit);
-  };
-  visit(sf);
-  return found;
-}
-
-/** A signal is anything typed as (or extending) a `*Signal` interface: ReadonlySignal, WritableSignal, InputSignal... */
-function isSignal(checker: ts.TypeChecker, type: ts.Type): boolean {
-  const seen = new Set<ts.Type>();
-  const check = (t: ts.Type): boolean => {
-    if (seen.has(t)) return false;
-    seen.add(t);
-    if (t.isUnion()) return t.types.some(check);
-    const name = t.aliasSymbol?.name ?? t.getSymbol()?.name;
-    if (name && /Signal$/.test(name)) return true;
-    const target = (t.flags & ts.TypeFlags.Object && (t as ts.ObjectType).objectFlags & ts.ObjectFlags.Reference ? (t as ts.TypeReference).target : t) as ts.Type;
-    return target.isClassOrInterface() ? checker.getBaseTypes(target).some(check) : false;
-  };
-  return check(checker.getNonNullableType(type));
-}
-
-function isObservableLike(checker: ts.TypeChecker, type: ts.Type): boolean {
-  const t = checker.getNonNullableType(type);
-  const callable = (name: string) => {
-    const p = t.getProperty(name);
-    return !!p && checker.getTypeOfSymbol(p).getCallSignatures().length > 0;
-  };
-  return callable("subscribe") || callable("then");
-}
-
-/** True when `id` is part of the callee of some call (the handler's method path), not of its arguments. */
-function inCallee(id: ts.Node): boolean {
-  for (let node: ts.Node = id; node.parent && !ts.isBlock(node.parent) && !ts.isSourceFile(node.parent); node = node.parent) {
-    if (ts.isCallExpression(node.parent) && node.parent.expression === node) return true;
-  }
-  return false;
-}
 
 function classifyRef(ref: Ref, sf: ts.SourceFile, checker: ts.TypeChecker, observed: Set<number>, report: (rule: RuleId, message: string) => void): void {
   const kind = ref.group.kind;
