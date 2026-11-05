@@ -28,7 +28,7 @@ beforeAll(async () => {
   await installPlugin(probe);
   server = new Server(["--pluginProbeLocations", probe]);
   await server.request("configure", { hostInfo: "test" });
-  for (const name of ["app.ts", "typing.ts", "plain.ts"]) await server.request("open", { file: file(name), projectRootPath: fixtureDir });
+  for (const name of ["app.ts", "typing.ts", "plain.ts", "state.ts"]) await server.request("open", { file: file(name), projectRootPath: fixtureDir });
 }, 120_000);
 
 afterAll(() => {
@@ -55,6 +55,11 @@ describe("tsserver plugin", () => {
 
     it("leaves files without templates alone", async () => {
       expect(await diagnostics("plain.ts")).toEqual([]);
+    });
+
+    it("reports file rules in files that hold no template", async () => {
+      const found = await diagnostics("state.ts");
+      expect(found.map((d) => [d.category, d.message])).toEqual([["warning", expect.stringContaining("hotState")]]);
     });
 
     it("updates as the buffer is edited, before saving", async () => {

@@ -14,6 +14,18 @@ export const RULES = {
   "model-not-writable": "error",
   "model-type-mismatch": "error",
   "unknown-event": "error",
+  "lazy-outside-defer": "error",
+  "constructor-in-class": "error",
+  "module-level-state": "warn",
+  "class-fragment": "warn",
+  "class-fields-config": "error",
+  "router-link-import": "error",
+  "router-link-type": "error",
+  "field-not-a-field": "error",
+  "field-value-mismatch": "error",
+  "model-key-state": "error",
+  "rows-track-key": "warn",
+  "custom-control-members": "error",
 } as const satisfies Record<string, Severity>;
 
 export type RuleId = keyof typeof RULES;

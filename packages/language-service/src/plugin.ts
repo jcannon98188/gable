@@ -71,7 +71,8 @@ export function createPlugin(info: PluginInfo): ts.LanguageService {
 
   proxy.getSemanticDiagnostics = (file) => {
     const prior = base.getSemanticDiagnostics(file);
-    const found = gated(file, "diagnostics", () => {
+    // File rules (constructors, module-level state) apply to files without templates too.
+    const found = /\.[cm]?tsx?$/.test(file) ? guarded("diagnostics", () => {
       const sf = base.getProgram()?.getSourceFile(file);
       if (!sf) return undefined;
       return current()
@@ -85,7 +86,7 @@ export function createPlugin(info: PluginInfo): ts.LanguageService {
           code: RULE_CODES[d.rule],
           source: "gable",
         }));
-    });
+    }) : undefined;
     return found ? [...prior, ...found] : prior;
   };
 

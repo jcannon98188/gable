@@ -3,8 +3,10 @@ import ts from "@typescript/typescript6";
 import { parseExpression, parseHandler } from "@gable/core/tooling";
 import { readConfig, type AnalyzerConfig, type RuleId, type Severity } from "./config.js";
 import { emit, type Emitted, type EventSite, type Group, type Ref, type TemplateModel } from "./emit.js";
-import { findIdentifier, inCallee, isObservableLike, isSignal, unwrap } from "./typeutil.js";
+import { findIdentifier, hasValueModel, inCallee, isFieldType, isObservableLike, isSignal, unwrap } from "./typeutil.js";
 import { callSignalFix, extractFix, type Fix, type FixEnv } from "./fixes.js";
+import { templateRules } from "./file-rules.js";
+import { projectRules, sourceRules } from "./source-rules.js";
 import { scanTemplate, ScanError, type ExprKind, type Src } from "./scan.js";
 
 export interface Diagnostic {
@@ -89,13 +91,18 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
   const raw: RawDiagnostic[] = [];
   const base = programWith(new Map());
   const files = new Map<string, FileState>();
+  projectRules(options, (file, start, length, rule, message) => raw.push({ file, start, length, rule, message }));
   const components = new Map<string, ComponentInfo>();
+  const sources = new Map<string, ts.SourceFile>();
   for (const sf of base.getSourceFiles()) {
     if (sf.isDeclarationFile || !rootNames.some((r) => norm(r) === norm(sf.fileName))) continue;
+    sources.set(norm(sf.fileName), sf);
+    sourceRules(sf, base.getTypeChecker(), config.templateTag, (start, length, rule, message) => raw.push({ file: sf.fileName, start, length, rule, message }));
     for (const c of findComponents(sf)) components.set(c.selector, c);
     const models = findTemplates(sf, config.templateTag, (start, length, message) =>
       raw.push({ file: sf.fileName, start, length, rule: "template-syntax", message }),
     );
+    for (const model of models) templateRules(model, base.getTypeChecker(), (start, length, rule, message) => raw.push({ file: sf.fileName, start, length, rule, message }));
     if (models.length) files.set(norm(sf.fileName), { sf, models, observed: new Set(), syntax: new Map() });
   }
 
@@ -139,6 +146,18 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
     checkEvents(emitted, sf, checker, (site, message) =>
       raw.push({ file: state.sf.fileName, start: site.nameStart, length: Math.max(1, site.name.length), rule: "unknown-event", message }),
     );
+    for (const c of emitted.controls) {
+      const type = probeType(sf, checker, c.component);
+      if (type && !hasValueModel(checker, type)) {
+        raw.push({ file: state.sf.fileName, start: c.tagStart, length: c.tag.length, rule: "custom-control-members", message: `<${c.tag}> is bound with [field] but has no value = model<T>(): a custom control needs a value model (plus optional disabled, readonly, invalid, errors inputs and a touched output)` });
+      }
+    }
+    for (const loop of emitted.rowLoops) {
+      const type = probeType(sf, checker, loop.probe);
+      if (type && isFieldType(checker, type) && loop.track.text.replace(/\s/g, "") !== `${loop.item}.state.key`) {
+        raw.push({ file: state.sf.fileName, start: loop.track.start, length: loop.track.text.length, rule: "rows-track-key", message: `Rows are keyed by state.key so their state follows them: track ${loop.item}.state.key` });
+      }
+    }
     for (const ref of emitted.refs) {
       classifyRef(ref, sf, checker, state.observed, (rule, message) =>
         raw.push({ file: state.sf.fileName, start: ref.srcStart, length: ref.srcEnd - ref.srcStart, rule, message }),
@@ -163,6 +182,12 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
     for (const [start, { problem, length }] of state.syntax) {
       if (problem !== null) raw.push({ file: state.sf.fileName, start, length, rule: "expression-syntax", message: problem });
     }
+  }
+
+  // A value mismatch on something that is not a field at all is just noise.
+  for (let i = raw.length - 1; i >= 0; i--) {
+    const d = raw[i]!;
+    if (d.rule === "field-value-mismatch" && raw.some((o) => o.file === d.file && o.start === d.start && (o.rule === "field-not-a-field" || o.rule === "unknown-member"))) raw.splice(i, 1);
   }
 
   // Quick fixes, now that types are known.
@@ -196,7 +221,7 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
     const key = `${d.file}:${d.start}:${d.rule}`;
     if (severity === "off" || seen.has(key)) continue;
     seen.add(key);
-    const sf = files.get(norm(d.file))!.sf;
+    const sf = sources.get(norm(d.file)) ?? configFile(d.file);
     const { line, character } = sf.getLineAndCharacterOfPosition(d.start);
     out.push({ ...d, severity, line: line + 1, column: character + 1 });
   }
@@ -226,7 +251,7 @@ function findTemplates(sf: ts.SourceFile, tag: string, onError: OnError): Templa
           if (!ts.isTaggedTemplateExpression(value) || !ts.isIdentifier(value.tag) || value.tag.text !== tag) continue;
           const lineStart = sf.getLineStarts()[sf.getLineAndCharacterOfPosition(member.getStart(sf)).line]!;
           const indent = /^[ \t]*/.exec(sf.text.slice(lineStart))![0];
-          const model = scanLiteral(sf, node.name.text, { insertAt: node.members[node.members.length - 1]!.end, indent }, value.template, onError);
+          const model = scanLiteral(sf, node, { insertAt: node.members[node.members.length - 1]!.end, indent }, value.template, onError);
           if (model) models.push(model);
         }
       }
@@ -238,7 +263,7 @@ function findTemplates(sf: ts.SourceFile, tag: string, onError: OnError): Templa
 }
 
 /** `${}` holes are blanked out of the scanned text (never parsed inside) and returned as plain TS expressions. */
-function scanLiteral(sf: ts.SourceFile, className: string, placement: { insertAt: number; indent: string }, literal: ts.TemplateLiteral, onError: OnError): TemplateModel | undefined {
+function scanLiteral(sf: ts.SourceFile, classNode: ts.ClassDeclaration, placement: { insertAt: number; indent: string }, literal: ts.TemplateLiteral, onError: OnError): TemplateModel | undefined {
   const bodyStart = literal.getStart(sf) + 1;
   const holes: Src[] = [];
   let text = sf.text.slice(bodyStart, literal.end - 1);
@@ -254,7 +279,7 @@ function scanLiteral(sf: ts.SourceFile, className: string, placement: { insertAt
     }
   }
   try {
-    return { className, tree: scanTemplate(text, bodyStart), holes, ...placement };
+    return { className: classNode.name!.text, classNode, tree: scanTemplate(text, bodyStart), holes, ...placement };
   } catch (err) {
     if (!(err instanceof ScanError)) throw err;
     onError(err.start, err.length, err.message);
@@ -290,7 +315,9 @@ function classifyRef(ref: Ref, sf: ts.SourceFile, checker: ts.TypeChecker, obser
     }
     return;
   }
-  if (kind === "model" && ref.srcEnd === ref.group.srcEnd) return;
+  if ((kind === "model" || kind === "field") && ref.srcEnd === ref.group.srcEnd) return;
+  // A path into a form field (f.name.state) passes through signals on purpose.
+  if (ts.isPropertyAccessExpression(step.parent) && step.parent.expression === step && isFieldType(checker, type)) return;
   if (isSignal(checker, type)) report("bare-signal", `"${shown}" is a signal; call it: ${shown}()`);
   else if (isObservableLike(checker, type)) observed.add(ref.ordinal);
 }
@@ -310,7 +337,9 @@ function mapDiagnostic(d: ts.Diagnostic, groups: Group[], file: string): RawDiag
   const message = ts.flattenDiagnosticMessageText(d.messageText, "\n");
   const rule: RuleId = UNKNOWN_MEMBER.has(d.code)
     ? "unknown-member"
-    : group.kind === "model"
+    : group.rule
+      ? group.rule
+      : group.kind === "model"
       ? message.includes("Property 'set' is missing")
         ? "model-not-writable"
         : "model-type-mismatch"
@@ -406,4 +435,12 @@ function closest(name: string, candidates: string[]): string | undefined {
     if (d < bestDistance) [best, bestDistance] = [c, d];
   }
   return best;
+}
+
+const configFiles = new Map<string, ts.SourceFile>();
+/** A non-source file (the tsconfig) that diagnostics can point into. */
+function configFile(file: string): ts.SourceFile {
+  let sf = configFiles.get(file);
+  if (!sf) configFiles.set(file, (sf = ts.createSourceFile(file, ts.sys.readFile(file) ?? "", ts.ScriptTarget.Latest)));
+  return sf;
 }
