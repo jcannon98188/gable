@@ -300,9 +300,10 @@ interface Staged {
 const MODES = new Set(["reset", "reload", "ignore"]);
 
 /** The rec nearest the root: where failures that belong to no instance are reported. */
-function reporter(): Scope | null {
+function reporter(roots?: object[]): Scope | null {
+  const scopes = roots?.map((r) => ((r as { scope?: Scope }).scope ?? r) as Scope);
   let best: Rec | undefined;
-  for (const r of records) if (!best || r.scope.depth < best.scope.depth) best = r;
+  for (const r of records) if ((!scopes || scopes.some((s) => within(r.scope, s))) && (!best || r.scope.depth < best.scope.depth)) best = r;
   return best?.scope ?? null;
 }
 
@@ -333,7 +334,7 @@ function withSession<T>(old: Rec[], pairs: Set<Function>, fn: () => T): T {
 export function applyUpdate(updates: ModuleUpdate[], failures: unknown[] = [], roots?: object[]): HotResult {
   return untracked(() => {
     if (failures.length > 0) {
-      for (const error of failures) reportError(error, "hmr", reporter(), "module failed to evaluate");
+      for (const error of failures) reportError(error, "hmr", reporter(roots), "module failed to evaluate");
       return { status: "rolled-back", errors: failures };
     }
     for (const u of updates) adopt(u.url, u.exports, roots);
@@ -442,11 +443,11 @@ export function applyUpdate(updates: ModuleUpdate[], failures: unknown[] = [], r
         dropAliases();
       } catch (fatal) {
         building--;
-        reportError(fatal, "hmr", reporter(), "rollback failed");
+        reportError(fatal, "hmr", reporter(roots), "rollback failed");
         return { status: "reload", errors: [error, fatal] };
       }
       building--;
-      reportError(error, "hmr", reporter(), staged.map((s) => s.entry.canonical.name).join(", "));
+      reportError(error, "hmr", reporter(roots), staged.map((s) => s.entry.canonical.name).join(", "));
       return { status: "rolled-back", errors: [error] };
     }
     building--;
