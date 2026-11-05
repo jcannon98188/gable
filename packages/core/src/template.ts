@@ -1,8 +1,21 @@
-import { parseExpression, type Expr } from "./expression.js";
+import { parseExpression, parseHandler, type Expr, type HandlerExpr } from "./expression.js";
 
-export type TemplateNode =
-  | { type: "element"; tag: string; attrs: Array<{ name: string; value: string }>; props: Array<{ name: string; expr: Expr }>; children: TemplateNode[] }
-  | { type: "text"; parts: Array<string | Expr> };
+export type BindingKind = "prop" | "attr" | "class" | "style";
+
+export interface ElementNode {
+  type: "element";
+  tag: string;
+  attrs: Array<{ name: string; value: string }>;
+  bindings: Array<{ kind: BindingKind; name: string; expr: Expr }>;
+  events: Array<{ name: string; handler: HandlerExpr }>;
+  /** Two-way `[(name)]="signal"` bindings. */
+  models: Array<{ name: string; expr: Expr }>;
+  /** `#name` template refs. */
+  refs: string[];
+  children: TemplateNode[];
+}
+
+export type TemplateNode = ElementNode | { type: "text"; parts: Array<string | Expr> };
 
 /** The result of the `html` tag: the call site's static strings plus its `${}` values. */
 export interface TemplateResult {
@@ -21,7 +34,7 @@ export function parseTemplate(result: TemplateResult): TemplateNode[] {
   let parsed = cache.get(result.strings);
   if (!parsed) {
     if (result.values.length > 0) throw new Error("html`` holes (${}) are not supported yet");
-    parsed = parse(result.strings[0]!);
+    parsed = new Parser(result.strings[0]!).parseChildren("root");
     cache.set(result.strings, parsed);
   }
   return parsed;
@@ -30,72 +43,116 @@ export function parseTemplate(result: TemplateResult): TemplateNode[] {
 const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);
 const ATTR = /\s*([^\s=>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))?/y;
 
-function parse(source: string): TemplateNode[] {
-  const root: TemplateNode[] = [];
-  const stack: Array<{ tag: string; children: TemplateNode[] }> = [{ tag: "", children: root }];
-  let i = 0;
-  const top = () => stack[stack.length - 1]!;
+class Parser {
+  i = 0;
+  constructor(readonly source: string) {}
 
-  const pushText = (raw: string) => {
-    if (raw === "" || (/^\s*$/.test(raw) && raw.includes("\n"))) return;
-    top().children.push({ type: "text", parts: parseInterpolation(raw) });
-  };
-
-  while (i < source.length) {
-    const lt = source.indexOf("<", i);
-    if (lt === -1) {
-      pushText(source.slice(i));
-      break;
-    }
-    pushText(source.slice(i, lt));
-    if (source.startsWith("<!--", lt)) {
-      const end = source.indexOf("-->", lt);
-      if (end === -1) throw new Error("Unterminated comment in template");
-      i = end + 3;
-    } else if (source[lt + 1] === "/") {
-      const end = source.indexOf(">", lt);
-      const name = source.slice(lt + 2, end).trim();
-      if (stack.length === 1 || top().tag !== name) throw new Error(`Unexpected </${name}> in template`);
-      stack.pop();
-      i = end + 1;
-    } else {
-      const nameMatch = /^<([A-Za-z][\w-]*)/.exec(source.slice(lt));
-      if (!nameMatch) throw new Error(`Unexpected "<" at ${lt} in template`);
-      const tag = nameMatch[1]!;
-      const el: Extract<TemplateNode, { type: "element" }> = { type: "element", tag, attrs: [], props: [], children: [] };
-      let p = lt + nameMatch[0].length;
-      let selfClosing = false;
-      for (;;) {
-        while (/\s/.test(source[p] ?? "")) p++;
-        if (p >= source.length) throw new Error(`Unterminated <${tag}> in template`);
-        if (source[p] === ">") {
-          p++;
-          break;
-        }
-        if (source.startsWith("/>", p)) {
-          selfClosing = true;
-          p += 2;
-          break;
-        }
-        ATTR.lastIndex = p;
-        const m = ATTR.exec(source);
-        if (!m) throw new Error(`Bad attribute in <${tag}>`);
-        p = ATTR.lastIndex;
-        const name = m[1]!;
-        const value = m[2] ?? m[3] ?? "";
-        if (name.startsWith("[") && name.endsWith("]") && !name.startsWith("[(")) {
-          el.props.push({ name: name.slice(1, -1), expr: parseExpression(value) });
-        } else if (/^[[(#*@]/.test(name)) {
-          throw new Error(`Template syntax "${name}" is not supported yet`);
-        } else el.attrs.push({ name, value });
+  /** Parses nodes until the end of the enclosing element (`</tag>`, consumed), block (`}`, consumed) or the source. */
+  parseChildren(context: "root" | "element" | "block", tag = ""): TemplateNode[] {
+    const out: TemplateNode[] = [];
+    const src = this.source;
+    const pushText = (raw: string) => {
+      if (raw === "" || (/^\s*$/.test(raw) && raw.includes("\n"))) return;
+      out.push({ type: "text", parts: parseInterpolation(raw) });
+    };
+    while (this.i < src.length) {
+      const text = this.scanText(context === "block");
+      pushText(src.slice(this.i, text.end));
+      this.i = text.end;
+      if (text.closeBlock) {
+        this.i++;
+        return out;
       }
-      top().children.push(el);
-      if (!selfClosing && !VOID.has(tag)) stack.push({ tag, children: el.children });
-      i = p;
+      if (this.i >= src.length) break;
+      const at = this.i;
+      if (src.startsWith("<!--", at)) {
+        const end = src.indexOf("-->", at);
+        if (end === -1) throw new Error("Unterminated comment in template");
+        this.i = end + 3;
+      } else if (src[at + 1] === "/") {
+        const end = src.indexOf(">", at);
+        const name = src.slice(at + 2, end).trim();
+        if (context !== "element" || tag !== name) throw new Error(`Unexpected </${name}> in template`);
+        this.i = end + 1;
+        return out;
+      } else out.push(this.parseElement(at));
     }
+    if (context === "element") throw new Error(`Unclosed <${tag}> in template`);
+    if (context === "block") throw new Error("Unclosed block ({) in template");
+    return out;
   }
-  if (stack.length > 1) throw new Error(`Unclosed <${top().tag}> in template`);
-  return root;
+
+  /** Finds the end of the current text run: the next `<`, or a closing `}` when inside a block. `{{ }}` is skipped whole. */
+  private scanText(inBlock: boolean): { end: number; closeBlock: boolean } {
+    const src = this.source;
+    let p = this.i;
+    while (p < src.length) {
+      const c = src[p];
+      if (c === "<") return { end: p, closeBlock: false };
+      if (c === "{" && src[p + 1] === "{") {
+        const close = src.indexOf("}}", p);
+        if (close === -1) throw new Error("Unterminated {{ in template");
+        p = close + 2;
+        continue;
+      }
+      if (c === "}" && inBlock) return { end: p, closeBlock: true };
+      p++;
+    }
+    return { end: p, closeBlock: false };
+  }
+
+  private parseElement(lt: number): ElementNode {
+    const src = this.source;
+    const nameMatch = /^<([A-Za-z][\w-]*)/.exec(src.slice(lt));
+    if (!nameMatch) throw new Error(`Unexpected "<" at ${lt} in template`);
+    const tag = nameMatch[1]!;
+    const el: ElementNode = { type: "element", tag, attrs: [], bindings: [], events: [], models: [], refs: [], children: [] };
+    let p = lt + nameMatch[0].length;
+    let selfClosing = false;
+    for (;;) {
+      while (/\s/.test(src[p] ?? "")) p++;
+      if (p >= src.length) throw new Error(`Unterminated <${tag}> in template`);
+      if (src[p] === ">") {
+        p++;
+        break;
+      }
+      if (src.startsWith("/>", p)) {
+        selfClosing = true;
+        p += 2;
+        break;
+      }
+      ATTR.lastIndex = p;
+      const m = ATTR.exec(src);
+      if (!m) throw new Error(`Bad attribute in <${tag}>`);
+      p = ATTR.lastIndex;
+      addAttribute(el, m[1]!, m[2] ?? m[3] ?? "");
+    }
+    this.i = p;
+    if (!selfClosing && !VOID.has(tag)) el.children = this.parseChildren("element", tag);
+    return el;
+  }
+}
+
+function addAttribute(el: ElementNode, name: string, value: string): void {
+  if (name.startsWith("[(") && name.endsWith(")]")) {
+    el.models.push({ name: name.slice(2, -2), expr: parseExpression(value) });
+  } else if (name.startsWith("[") && name.endsWith("]")) {
+    const target = name.slice(1, -1);
+    const dot = target.indexOf(".");
+    const prefix = dot < 0 ? "" : target.slice(0, dot);
+    if (prefix === "attr" || prefix === "class" || prefix === "style") {
+      el.bindings.push({ kind: prefix, name: target.slice(dot + 1), expr: parseExpression(value) });
+    } else el.bindings.push({ kind: "prop", name: target, expr: parseExpression(value) });
+  } else if (name.startsWith("(") && name.endsWith(")")) {
+    el.events.push({ name: name.slice(1, -1), handler: parseHandler(value) });
+  } else if (name.startsWith("#")) {
+    el.refs.push(name.slice(1));
+  } else if (name.startsWith("*")) {
+    throw new Error(`Structural directives ("${name}") do not exist; use @if or @for blocks.`);
+  } else {
+    if (value.includes("{{")) throw new Error(`Interpolation in attribute "${name}" is not supported; use [attr.${name}] or [${name}].`);
+    el.attrs.push({ name, value });
+  }
 }
 
 function parseInterpolation(raw: string): Array<string | Expr> {

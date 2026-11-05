@@ -23,6 +23,8 @@ export interface Fixture<T extends object> {
   html(): string;
   /** Resolves after the next scheduled flush has applied pending updates. */
   flush(): Promise<void>;
+  /** Fires an event on a node as if the renderer had emitted it (calls its listeners). */
+  dispatch(target: TestNode, name: string, event?: unknown): void;
   destroy(): void;
 }
 
@@ -39,6 +41,9 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
     text: () => textContent(mounted.host),
     html: () => (destroyed ? "" : serialize(mounted.host)),
     flush: () => whenFlushed(),
+    dispatch: (target, name, event) => {
+      for (const handler of [...(target.listeners[name] ?? [])]) handler(event);
+    },
     destroy() {
       destroyed = true;
       mounted.destroy();

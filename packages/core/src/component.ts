@@ -1,8 +1,9 @@
 import { effect } from "./signals.js";
 import { createScope, runInScope, type Scope } from "./scope.js";
 import type { Renderer } from "./renderer.js";
-import { evaluate } from "./expression.js";
-import { parseTemplate, type TemplateNode, type TemplateResult } from "./template.js";
+import { createEnv } from "./expression.js";
+import { parseTemplate, type TemplateResult } from "./template.js";
+import { buildNodes } from "./view.js";
 
 /** Static component metadata. */
 export interface ComponentMeta {
@@ -52,7 +53,7 @@ export function instantiate<T extends object, N>(
     for (const [name, value] of hostSpec.attrs) renderer.setAttribute(host, name, value);
     for (const name of hostSpec.classes) renderer.setClass(host, name, true);
     renderer.insert(parent, host);
-    for (const node of parseTemplate(template)) build(node, renderer, host, instance);
+    buildNodes(parseTemplate(template), renderer, createEnv(instance), host, null);
     return {
       instance,
       host,
@@ -62,31 +63,4 @@ export function instantiate<T extends object, N>(
       },
     };
   });
-}
-
-function build<N>(node: TemplateNode, renderer: Renderer<N>, parent: N, instance: object): void {
-  if (node.type === "text") {
-    const dynamic = node.parts.some((p) => typeof p !== "string");
-    const text = renderer.createText(dynamic ? "" : (node.parts as string[]).join(""));
-    renderer.insert(parent, text);
-    if (dynamic) {
-      effect(() => {
-        let out = "";
-        for (const part of node.parts) {
-          if (typeof part === "string") out += part;
-          else {
-            const v = evaluate(part, instance);
-            out += v == null ? "" : String(v);
-          }
-        }
-        renderer.setText(text, out);
-      });
-    }
-    return;
-  }
-  const el = renderer.createElement(node.tag, parent);
-  for (const { name, value } of node.attrs) renderer.setAttribute(el, name, value);
-  renderer.insert(parent, el);
-  for (const { name, expr } of node.props) effect(() => renderer.setProperty(el, name, evaluate(expr, instance)));
-  for (const child of node.children) build(child, renderer, el, instance);
 }
