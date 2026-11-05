@@ -3,5 +3,8 @@ export type { ReadonlySignal, WritableSignal, SignalOptions } from "./signals.js
 export { html } from "./template.js";
 export type { TemplateResult } from "./template.js";
 export type { ComponentMeta, ComponentClass } from "./component.js";
+export { input, model } from "./input.js";
+export type { InputSignal, ModelSignal } from "./input.js";
+export { output, OutputEmitter } from "./output.js";
 export { InjectionToken, inject, createInjector } from "./di.js";
 export type { Injector, InjectOptions, Provider, Token, Type } from "./di.js";

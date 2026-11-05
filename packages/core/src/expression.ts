@@ -1,3 +1,4 @@
+import type { ViewContext } from "./view-context.js";
 // Gable's own expression language: parser plus tree-walking interpreter. No eval.
 // Value expressions allow property reads (`a.b`, `a?.b`), zero-argument signal
 // reads (`count()`), literals, `!` and `??`. Event handlers additionally allow
@@ -23,6 +24,8 @@ export interface Env {
   /** Template-local variables (loop vars, `@let`, `#ref`, `$event`); read inside an effect they subscribe. */
   readonly locals: Map<string, () => unknown>;
   readonly parent: Env | null;
+  /** Set on a component's root Env: what its template needs to compose children. */
+  view?: ViewContext;
 }
 
 export function createEnv(instance: object, parent: Env | null = null): Env {

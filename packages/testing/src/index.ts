@@ -34,7 +34,7 @@ export interface Fixture<T extends object> {
 export function mount<T extends object>(Component: ComponentClass<T>, options: MountOptions = {}): Fixture<T> {
   const renderer = options.renderer ?? createTestRenderer();
   const container = createTestRoot();
-  const mounted: MountedComponent<T, TestNode> = instantiate(Component, renderer, container, null, createTestInjector(options.providers));
+  const mounted: MountedComponent<T, TestNode> = instantiate(Component, { renderer, parent: container, injector: createTestInjector(options.providers) });
   let destroyed = false;
   return {
     instance: mounted.instance,

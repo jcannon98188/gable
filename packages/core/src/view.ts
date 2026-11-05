@@ -1,7 +1,13 @@
 import { computed, effect, signal, untracked, type WritableSignal } from "./signals.js";
 import type { Renderer } from "./renderer.js";
-import { createEnv, evaluate, readModel, runHandler, writeModel, type Env, type Expr } from "./expression.js";
+import { createEnv, evaluate, readModel, runHandler, writeModel, type Env, type Expr, type HandlerExpr } from "./expression.js";
 import { createScope, currentScope, runInScope, type Scope } from "./scope.js";
+import { DEV } from "./di.js";
+import { inputOf } from "./input.js";
+import { OutputEmitter } from "./output.js";
+import { prepare, type ComponentClass } from "./component.js";
+import { parseSelector, matchesNode } from "./select.js";
+import { viewOf } from "./view-context.js";
 import type { ElementNode, ForNode, IfNode, SwitchNode, TemplateNode } from "./template.js";
 
 /** The live top-level nodes of a built piece of template (blocks change theirs over time). */
@@ -57,14 +63,14 @@ function buildText<N>(parts: Array<string | Expr>, renderer: Renderer<N>, env: E
   return () => [text];
 }
 
-function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, parent: N, before: N | null): Part<N> {
-  const el = renderer.createElement(node.tag, parent);
-  const scope = currentScope();
-  for (const { name, value } of node.attrs) renderer.setAttribute(el, name, value);
-  renderer.insert(parent, el, before);
-  for (const ref of node.refs) env.locals.set(ref, () => el);
+type Bindings = Pick<ElementNode, "attrs" | "bindings" | "models" | "events">;
 
-  for (const { kind, name, expr } of node.bindings) {
+/** Applies attributes, bindings, two-way models and event listeners to `el`, all owned by the current scope. */
+export function applyBindings<N>(el: N, spec: Bindings, renderer: Renderer<N>, env: Env): void {
+  const scope = currentScope();
+  for (const { name, value } of spec.attrs) renderer.setAttribute(el, name, value);
+
+  for (const { kind, name, expr } of spec.bindings) {
     effect(() => {
       const value = evaluate(expr, env);
       switch (kind) {
@@ -80,25 +86,68 @@ function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, par
     });
   }
 
-  function listen(name: string, handler: (event: unknown) => void): void {
-    const off = renderer.listen(el, name, handler);
-    scope?.onDispose(off);
-  }
-
-  for (const { name, expr } of node.models) {
+  for (const { name, expr } of spec.models) {
     effect(() => renderer.setProperty(el, name, readModel(expr, env)));
     // The renderer decides what produces `<name>Change` (e.g. an input event on a native input).
-    listen(`${name}Change`, (event) => writeModel(expr, env, event));
+    scope?.onDispose(renderer.listen(el, `${name}Change`, (event) => writeModel(expr, env, event)));
   }
 
-  for (const { name, handler } of node.events) {
-    listen(name, (event) => {
-      const local: Env = { instance: env.instance, locals: new Map([["$event", () => event]]), parent: env };
-      untracked(() => runHandler(handler, local));
-    });
+  for (const { name, handler } of spec.events) scope?.onDispose(renderer.listen(el, name, eventHandler(handler, env)));
+}
+
+function eventHandler(handler: HandlerExpr, env: Env): (event: unknown) => void {
+  return (event) => {
+    const local: Env = { instance: env.instance, locals: new Map([["$event", () => event]]), parent: env };
+    untracked(() => runHandler(handler, local));
+  };
+}
+
+function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, parent: N, before: N | null): Part<N> {
+  const el = renderer.createElement(node.tag, parent);
+  const scope = currentScope();
+  const view = viewOf(env);
+  const matches = (view?.imports ?? []).filter((Class) => matchesNode(parseSelector(Class.meta.selector), node));
+  if (DEV && matches.length === 0 && node.tag.includes("-")) {
+    throw new Error(
+      `Unknown element <${node.tag}>. Add its component to meta.imports of the component whose template uses it.`,
+    );
+  }
+  renderer.insert(parent, el, before);
+  for (const ref of node.refs) env.locals.set(ref, () => el);
+
+  const comps = matches.map((Class) => prepare(Class, { renderer, host: el, parentScope: scope, injector: view?.injector ?? null }));
+  const rest: Bindings = { attrs: node.attrs, bindings: [], models: [], events: [] };
+  const inputFor = (name: string) => comps.map((c) => inputOf(c.instance, name)).find((h) => h);
+  const subscribe = <T,>(source: { subscribe(next: (v: T) => void): { unsubscribe(): void } }, next: (v: T) => void) => {
+    const sub = source.subscribe(next);
+    scope?.onDispose(() => sub.unsubscribe());
+  };
+
+  for (const { name, value } of node.attrs) inputFor(name)?.set(value);
+  for (const binding of node.bindings) {
+    const target = binding.kind === "prop" ? inputFor(binding.name) : undefined;
+    if (target) effect(() => target.set(evaluate(binding.expr, env)));
+    else rest.bindings.push(binding);
+  }
+  for (const model of node.models) {
+    const target = inputFor(model.name);
+    if (!target) rest.models.push(model);
+    else {
+      effect(() => target.set(readModel(model.expr, env)));
+      if (target.changes) subscribe(target.changes, (v) => writeModel(model.expr, env, v));
+    }
+  }
+  for (const event of node.events) {
+    const out = comps.map((c) => (c.instance as Record<string, unknown>)[event.name]).find((o) => o instanceof OutputEmitter);
+    if (out) subscribe(out as OutputEmitter<unknown>, eventHandler(event.handler, env));
+    else rest.events.push(event);
   }
 
-  buildNodes(node.children, renderer, env, el, null);
+  applyBindings(el, rest, renderer, env);
+  for (const comp of comps) comp.render();
+  if (!matches.some((Class) => Class.meta.template)) {
+    buildNodes(node.children, renderer, env, el, null);
+  }
   return () => [el];
 }
 
