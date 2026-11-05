@@ -83,3 +83,23 @@ export interface DevHooks {
 }
 
 export const hooks: { current: DevHooks | null } = { current: null };
+
+/**
+ * Dev: retires the old nodes of a rebuilt view around the renderer's optional DOM-state ops: captured before
+ * anything is removed, restored onto the new nodes after. Best effort; a failure here never fails the update.
+ */
+export function retireView<N>(renderer: Renderer<N>, oldNodes: N[], newNodes: N[], retire: () => void): void {
+  let token: unknown;
+  try {
+    token = renderer.captureViewState?.(oldNodes);
+  } catch {
+    token = undefined;
+  }
+  retire();
+  if (token === undefined) return;
+  try {
+    renderer.restoreViewState?.(newNodes, token);
+  } catch {
+    // DOM state is a nicety
+  }
+}

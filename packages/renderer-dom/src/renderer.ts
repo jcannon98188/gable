@@ -4,6 +4,7 @@ import { DEV } from "./dev.js";
 import { createDomPlatform, type PlatformOptions } from "./platform.js";
 import { scopeCss } from "./scope-css.js";
 import { isKnownTag, type Namespace } from "./tags.js";
+import { captureViewState, restoreViewState } from "./view-state.js";
 import { DOM_TRIGGERS, observeDomTrigger } from "./triggers.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -183,6 +184,8 @@ export function createDomRenderer(options: DomRendererOptions = {}): DomRenderer
       if (typeof target === "object" && target !== null && (target as Node).nodeType === 1) return target as Element;
       throw new Error("bootstrap target must be a CSS selector or an element when using the DOM renderer.");
     },
+
+    ...(DEV ? { captureViewState: (roots: Node[]) => captureViewState(roots), restoreViewState: (roots: Node[], token: unknown) => restoreViewState(roots, token as ReturnType<typeof captureViewState>) } : {}),
 
     observeTrigger: (name, args, placeholder, fire) => observeDomTrigger(name, args, placeholder, fire),
   };
