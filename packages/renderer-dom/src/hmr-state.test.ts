@@ -67,6 +67,7 @@ describe("DOM state across a template rebuild", () => {
   it("restores scroll offsets", () => {
     const { app, q } = start();
     q<HTMLElement>(".box").scrollTop = 40;
+    q<HTMLElement>(".box").dispatchEvent(new Event("scroll")); // jsdom does not fire scroll events itself
     applyUpdate([{ url: "/page-2.js", exports: { Page: Edited } }], []);
     expect(q<HTMLElement>(".box").scrollTop).toBe(40);
   });

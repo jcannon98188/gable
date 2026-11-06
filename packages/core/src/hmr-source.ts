@@ -20,12 +20,14 @@ export function ownMembers(Class: Function): Array<[PropertyKey, PropertyDescrip
   return out;
 }
 
-export function describe(Class: Function): Definition {
+/** `unwrap` maps an instrumented method back to the function the source text came from. */
+export function describe(Class: Function, unwrap: (fn: Function) => Function = (fn) => fn): Definition {
   let source = Function.prototype.toString.call(Class);
   const texts: string[] = [];
   const members: string[] = [];
   for (const [key, d, isStatic] of ownMembers(Class)) {
-    for (const fn of [d.value, d.get, d.set]) {
+    for (const raw of [d.value, d.get, d.set]) {
+      const fn = typeof raw === "function" ? unwrap(raw) : raw;
       if (typeof fn !== "function" || /^class[\s{]/.test(Function.prototype.toString.call(fn))) continue;
       const text = Function.prototype.toString.call(fn);
       texts.push(text);

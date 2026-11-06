@@ -52,6 +52,7 @@ State was kept in every run. Initial dev-server load: about 2.2 to 5.8 s for 500
 
 ## Findings
 
-- A method-only edit leaves the DOM stale when a `computed` has already called the method: the prototype is patched, but nothing re-runs the computed, so the view shows the old result until one of its signal dependencies changes. (The benchmark's method probe calls the method from an event handler for that reason.)
-- Latency of an edit to a **leaf** component grows with app size (about 45 ms at 500 components, about 165 ms at 2000), so some per-update cost is proportional to the whole app rather than to the edited component.
-- Editing a service rebuilds every component that injected it, which dominates: about 1.4 s at 2000 components.
+- A method-only edit used to leave the DOM stale when a `computed` had already called the method (TASK-16). The runtime now makes every call of a registered class's method read a per-class version signal that an edit bumps, so callers re-run. The benchmark still clicks `mark` to detect the edit, which now also covers the case where nothing calls the method.
+- Leaf-edit latency grows with app size (TASK-17), but the cost is in Vite's file watcher, not in Gable: after a change, Vite's chokidar re-reads the edited file's whole directory (`readdirp` plus one `lstat` per file), and this generated app keeps all N components in one `src/` directory. That is about 25 ms at 500 files and 113 ms at 2000, and the module request does not even leave the browser until it is done. Gable's own work for a leaf edit is a few ms at any size. Real apps spread files across directories.
+- Editing an inner component rebuilds its subtree (about N/4 components), which is inherent; the avoidable part was a synchronous forced layout (`scrollTop` read on every element to capture scroll offsets), now replaced by recording scrolled elements from scroll events: inner template edit at 2000 went from about 700 ms to about 465 ms.
+- Editing a service rebuilds every component that injected it, which dominates (about 0.8 s at 2000 components).

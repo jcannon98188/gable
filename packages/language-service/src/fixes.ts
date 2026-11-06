@@ -76,15 +76,15 @@ function references(root: ts.Node, isLocal: (n: string) => boolean, isMember: (n
 }
 
 /** The `import { name } from module` situation of a file: the local name to use, and an edit when an import must be added. */
-function ensureImport(file: string, sf: ts.SourceFile, name: string, module: string): { local: string; edit?: TextEdit } {
+export function ensureImport(file: string, sf: ts.SourceFile, name: string, module: string, typeOnly = false): { local: string; edit?: TextEdit } {
   for (const stmt of sf.statements) {
     if (!ts.isImportDeclaration(stmt) || !ts.isStringLiteral(stmt.moduleSpecifier) || stmt.moduleSpecifier.text !== module) continue;
     const clause = stmt.importClause;
-    if (!clause || clause.isTypeOnly || !clause.namedBindings || !ts.isNamedImports(clause.namedBindings)) continue;
+    if (!clause || (clause.isTypeOnly && !typeOnly) || !clause.namedBindings || !ts.isNamedImports(clause.namedBindings)) continue;
     const elements = clause.namedBindings.elements;
-    const found = elements.find((e) => !e.isTypeOnly && (e.propertyName ?? e.name).text === name);
+    const found = elements.find((e) => (typeOnly || !e.isTypeOnly) && (e.propertyName ?? e.name).text === name);
     if (found) return { local: found.name.text };
-    if (elements.length) return { local: name, edit: { file, start: elements[elements.length - 1]!.end, length: 0, newText: `, ${name}` } };
+    if (elements.length) return { local: name, edit: { file, start: elements[elements.length - 1]!.end, length: 0, newText: `, ${typeOnly && !clause.isTypeOnly ? "type " : ""}${name}` } };
   }
   return { local: name, edit: { file, start: 0, length: 0, newText: `import { ${name} } from "${module}";\n` } };
 }

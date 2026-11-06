@@ -64,3 +64,34 @@ describe("hotReplace: patch and view rebuild", () => {
     expect(setupLog).toEqual(["setup"]);
   });
 });
+
+describe("hotReplace: method-only edits reach dependents", () => {
+  const labelled = (body: string) =>
+    new Function(
+      "html",
+      "signal",
+      "computed",
+      `return class Labelled {
+        static meta = { selector: "app-labelled", template: html(["{{ shown() }} / {{ direct() }}"]) };
+        count = signal(1);
+        shown = computed(() => this.fmt(this.count()));
+        direct() { return this.fmt(0); }
+        fmt(n) { return ${body}; }
+      };`,
+    )((s: string[]) => ({ strings: Object.assign([...s], { raw: [...s] }), values: [] }), signal, computed) as new () => any;
+
+  it("re-evaluates a computed and a template binding that called the edited method, with no signal change", async () => {
+    const fixture = mount(labelled("'A' + n"));
+    await fixture.flush();
+    expect(fixture.text()).toBe("A1 / A0");
+    const instance = fixture.instance;
+
+    const result = fixture.hotReplace(labelled("'B' + n"));
+    await fixture.flush();
+
+    expect(result.status).toBe("applied");
+    expect(fixture.instance).toBe(instance);
+    expect(fixture.text()).toBe("B1 / B0");
+    expect(instance.count()).toBe(1);
+  });
+});

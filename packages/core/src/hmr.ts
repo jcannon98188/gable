@@ -5,7 +5,7 @@ import { registerComponentStyles } from "./component.js";
 import { reportError } from "./errors.js";
 import type { Scope } from "./scope.js";
 import type { Renderer } from "./renderer.js";
-import { untracked } from "./signals.js";
+import { signal, untracked, type WritableSignal } from "./signals.js";
 import { describe, ownMembers, type Definition } from "./hmr-source.js";
 import { transferState } from "./hmr-transfer.js";
 
@@ -76,8 +76,48 @@ function canonMeta(meta: Meta | undefined): Meta | undefined {
   return out;
 }
 
+/** Instrumented wrapper to the function it wraps. */
+const instrumented = new WeakMap<Function, Function>();
+const unwrap = (fn: Function): Function => instrumented.get(fn) ?? fn;
+/** Per canonical class: bumped when an edit changes its methods; every call of a method reads it, so callers re-run. */
+const versions = new WeakMap<Function, WritableSignal<number>>();
+
+/**
+ * Wraps the canonical prototype's methods and getters so each call reads the class's version signal. A computed
+ * or binding that called a method then depends on the class's edits, and a method-only hot patch (which changes
+ * no signal the caller read) still re-runs it.
+ */
+function instrument(C: Cls): WritableSignal<number> {
+  let version = versions.get(C);
+  if (version) return version;
+  version = signal(0);
+  versions.set(C, version);
+  const read = version;
+  const proto = C.prototype;
+  const track = <F extends Function>(fn: F): F => {
+    if (instrumented.has(fn) || /^class[s{]/.test(Function.prototype.toString.call(fn))) return fn;
+    const wrapped = function (this: unknown, ...args: unknown[]) {
+      read();
+      return fn.apply(this, args);
+    } as unknown as F;
+    Object.defineProperty(wrapped, "name", { value: fn.name, configurable: true });
+    Object.defineProperty(wrapped, "length", { value: fn.length, configurable: true });
+    instrumented.set(wrapped, fn);
+    return wrapped;
+  };
+  for (const key of Reflect.ownKeys(proto)) {
+    if (key === "constructor") continue;
+    const d = Object.getOwnPropertyDescriptor(proto, key)!;
+    if (!d.configurable) continue;
+    if (typeof d.value === "function") Object.defineProperty(proto, key, { ...d, value: track(d.value) });
+    else if (d.get) Object.defineProperty(proto, key, { ...d, get: track(d.get) });
+  }
+  return version;
+}
+
 function register(entryId: string, Class: Cls): Entry {
-  const entry: Entry = { id: entryId, canonical: Class, latest: Class, def: describe(Class), meta: canonMeta(Class.meta) };
+  const entry: Entry = { id: entryId, canonical: Class, latest: Class, def: describe(Class, unwrap), meta: canonMeta(Class.meta) };
+  instrument(Class);
   entries.set(entryId, entry);
   entryOf.set(Class, entry);
   return entry;
@@ -182,6 +222,7 @@ const impl: DevHooks = {
   },
   component(Class, own): ComponentBegin {
     const C = canon(Class) as Cls;
+    instrument(C);
     let deps = new Set<object>();
     const old = session?.queues.get(C)?.shift();
     if (session && old && own && old.injector) {
@@ -214,6 +255,7 @@ const impl: DevHooks = {
   },
   service(Class, injector): ServiceBegin {
     const C = canon(Class) as Cls;
+    instrument(C);
     let deps = new Set<object>();
     return {
       construct: () => construct(C, (d) => (deps = d)),
@@ -290,9 +332,12 @@ function patch(entry: Entry, next: Cls, def: Definition, meta: Meta | undefined)
   // Statics that are not methods are on the class too: ownMembers lists every own key.
   apply(C.prototype, protoKeys, next.prototype);
   apply(C, staticKeys, next, (k) => (k === "meta" && meta ? { ...Object.getOwnPropertyDescriptor(next, "meta")!, value: meta } : undefined));
+  const methodsChanged = before.def.members !== def.members;
   entry.latest = next;
   entry.def = def;
   entry.meta = meta;
+  const version = instrument(C);
+  if (methodsChanged) version.set(version() + 1);
   return () => {
     for (const fn of undo.reverse()) fn();
     Object.assign(entry, before);

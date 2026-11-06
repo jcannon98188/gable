@@ -3,10 +3,11 @@ import ts from "@typescript/typescript6";
 import { parseExpression, parseHandler } from "@gable/core/tooling";
 import { readConfig, type AnalyzerConfig, type RuleId, type Severity } from "./config.js";
 import { emit, type Emitted, type EventSite, type Group, type Ref, type TemplateModel } from "./emit.js";
-import { findIdentifier, hasValueModel, inCallee, isFieldType, isObservableLike, isSignal, unwrap } from "./typeutil.js";
+import { closest, findIdentifier, hasValueModel, inCallee, isFieldType, isObservableLike, isSignal, unwrap } from "./typeutil.js";
 import { callSignalFix, extractFix, type Fix, type FixEnv } from "./fixes.js";
 import { templateRules } from "./file-rules.js";
 import { projectRules, sourceRules } from "./source-rules.js";
+import { componentMetaRules } from "./meta-rules.js";
 import { scanTemplate, ScanError, type ExprKind, type Src } from "./scan.js";
 
 export interface Diagnostic {
@@ -98,6 +99,7 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
     if (sf.isDeclarationFile || !rootNames.some((r) => norm(r) === norm(sf.fileName))) continue;
     sources.set(norm(sf.fileName), sf);
     sourceRules(sf, base.getTypeChecker(), config.templateTag, (start, length, rule, message) => raw.push({ file: sf.fileName, start, length, rule, message }));
+    componentMetaRules(sf, base.getTypeChecker(), base, (start, length, message, fixes) => raw.push({ file: sf.fileName, start, length, rule: "component-meta", message, fixes }));
     for (const c of findComponents(sf)) components.set(c.selector, c);
     const models = findTemplates(sf, config.templateTag, (start, length, message) =>
       raw.push({ file: sf.fileName, start, length, rule: "template-syntax", message }),
@@ -414,27 +416,6 @@ function checkEvents(emitted: Emitted, sf: ts.SourceFile, checker: ts.TypeChecke
     const hint = closest(site.name, [...names]);
     report(site, `Unknown event "${site.name}" on <${site.tag}>${hint ? `. Did you mean "${hint}"?` : ""}`);
   }
-}
-
-function distance(a: string, b: string): number {
-  let row = Array.from({ length: b.length + 1 }, (_, j) => j);
-  for (let i = 1; i <= a.length; i++) {
-    const next = [i];
-    for (let j = 1; j <= b.length; j++) next[j] = Math.min(row[j]! + 1, next[j - 1]! + 1, row[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1));
-    row = next;
-  }
-  return row[b.length]!;
-}
-
-/** The candidate nearest to `name`, when it is near enough to be a plausible typo. */
-function closest(name: string, candidates: string[]): string | undefined {
-  let best: string | undefined;
-  let bestDistance = Math.max(2, Math.floor(name.length / 3)) + 1;
-  for (const c of candidates) {
-    const d = distance(name.toLowerCase(), c.toLowerCase());
-    if (d < bestDistance) [best, bestDistance] = [c, d];
-  }
-  return best;
 }
 
 const configFiles = new Map<string, ts.SourceFile>();

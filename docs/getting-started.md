@@ -294,6 +294,8 @@ npm run check
 
 Runs `tsc --noEmit` and then `gable-check`, which type-checks the `html` templates against their component classes (unknown members, a signal read without `()`, wrong event names and more). It exits non-zero on errors, so use it in CI. In VS Code, install the recommended **Gable** extension (`gable.gable-vscode`) to see the same diagnostics, completions and highlighting as you type. The extension uses the workspace TypeScript through `typescript.tsdk` in `.vscode/settings.json`.
 
+`gable-check` also checks each `static meta` against `ComponentMeta`, since TypeScript cannot type a class’s static side without a base class or decorator. The `gable/component-meta` rule reports unknown keys (`selectr`), values of the wrong type, `imports` entries that are not components or `lazy()` entries, and a missing `selector`; its quick fix adds `satisfies ComponentMeta` (and the import), which hands the same check to the compiler. You can write it yourself by ending the initialiser with `satisfies ComponentMeta` (a type import from `@gable/core`). Once a meta has `satisfies ComponentMeta` or a type annotation, the rule stays out of the way. Set its severity, or turn it off, under `rules` in the plugin entry: `{ "name": "@gable/language-service", "rules": { "component-meta": "warn" } }`.
+
 ## Format
 
 `npm run format` runs Prettier with `@gable/prettier-plugin`, which formats the HTML inside `html` templates as well as the TypeScript.

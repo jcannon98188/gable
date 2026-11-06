@@ -18,6 +18,39 @@ export interface ViewState {
   entries: Entry[];
 }
 
+// Reading scrollTop on every element forces a synchronous layout of the whole page (hundreds of ms on a large
+// view), so scrolled elements are recorded as they scroll (scroll events do not bubble, but can be captured).
+const tracked = new WeakSet<Document>();
+const scrolled = new Set<WeakRef<Element>>();
+const seen = new WeakSet<Element>();
+
+/** Starts recording which elements of `doc` get scrolled. Idempotent. */
+export function trackScroll(doc: Document): void {
+  if (tracked.has(doc)) return;
+  tracked.add(doc);
+  doc.addEventListener(
+    "scroll",
+    (event) => {
+      const target = event.target;
+      if (!target || (target as Node).nodeType !== 1) return;
+      if (seen.has(target as Element)) return;
+      seen.add(target as Element);
+      scrolled.add(new WeakRef(target as Element));
+    },
+    { capture: true, passive: true },
+  );
+}
+
+const liveScrolled = (): Set<Element> => {
+  const live = new Set<Element>();
+  for (const ref of scrolled) {
+    const el = ref.deref();
+    if (el) live.add(el);
+    else scrolled.delete(ref);
+  }
+  return live;
+};
+
 const ancestry = (node: Node, top: Node | undefined): string => {
   const names: string[] = [];
   for (let n: Node | null = node; n; n = n === top ? null : n.parentNode) names.push(n.nodeName);
@@ -26,21 +59,33 @@ const ancestry = (node: Node, top: Node | undefined): string => {
 const isElement = (node: Node): node is HTMLElement => node.nodeType === 1;
 const isText = (el: HTMLElement): el is HTMLInputElement | HTMLTextAreaElement => el.localName === "input" || el.localName === "textarea";
 
-function* walk(roots: Node[]): Generator<{ node: Node; path: number[] }> {
-  const visit = function* (node: Node, path: number[]): Generator<{ node: Node; path: number[] }> {
-    yield { node, path };
+/** Visits every node under `roots` depth first. `path` is shared and mutated: copy it to keep it. */
+function walk(roots: Node[], visit: (node: Node, path: number[]) => void): void {
+  const path: number[] = [];
+  const descend = (node: Node) => {
+    visit(node, path);
     let i = 0;
-    for (let child = node.firstChild; child; child = child.nextSibling) yield* visit(child, [...path, i++]);
+    for (let child = node.firstChild; child; child = child.nextSibling) {
+      path.push(i++);
+      descend(child);
+      path.pop();
+    }
   };
-  for (let i = 0; i < roots.length; i++) yield* visit(roots[i]!, [i]);
+  for (let i = 0; i < roots.length; i++) {
+    path.push(i);
+    descend(roots[i]!);
+    path.pop();
+  }
 }
 
 export function captureViewState(roots: Node[]): ViewState {
   const entries: Entry[] = [];
+  const moved = liveScrolled();
   const active = roots[0]?.ownerDocument?.activeElement ?? null;
-  for (const { node, path } of walk(roots)) {
-    if (!isElement(node)) continue;
-    const entry: Entry = { path, name: ancestry(node, roots[path[0]!]) };
+  // Most elements keep nothing, so the entry (path copy and ancestry string) is only built for those that do.
+  walk(roots, (node, path) => {
+    if (!isElement(node)) return;
+    const entry: Entry = { path: [], name: "" };
     let keep = false;
     if (isText(node)) {
       const type = (node as HTMLInputElement).type;
@@ -59,7 +104,7 @@ export function captureViewState(roots: Node[]): ViewState {
       entry.selected = [...select.options].flatMap((o, i) => (o.selected ? [i] : []));
       keep = true;
     }
-    if (node.scrollTop || node.scrollLeft) {
+    if (moved.has(node as Element) && (node.scrollTop || node.scrollLeft)) {
       entry.scroll = [node.scrollTop, node.scrollLeft];
       keep = true;
     }
@@ -67,8 +112,12 @@ export function captureViewState(roots: Node[]): ViewState {
       entry.focused = true;
       keep = true;
     }
-    if (keep) entries.push(entry);
-  }
+    if (keep) {
+      entry.path = path.slice();
+      entry.name = ancestry(node, roots[path[0]!]);
+      entries.push(entry);
+    }
+  });
   return { entries };
 }
 

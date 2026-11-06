@@ -4,7 +4,7 @@ import { DEV } from "./dev.js";
 import { createDomPlatform, type PlatformOptions } from "./platform.js";
 import { scopeCss } from "./scope-css.js";
 import { isKnownTag, type Namespace } from "./tags.js";
-import { captureViewState, restoreViewState } from "./view-state.js";
+import { captureViewState, restoreViewState, trackScroll } from "./view-state.js";
 import { DOM_TRIGGERS, observeDomTrigger } from "./triggers.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -55,7 +55,11 @@ const kebab = (name: string) => (name.startsWith("--") ? name : name.replace(/[A
 const UNSAFE_PROPERTIES = new Set(["innerhtml", "outerhtml", "srcdoc"]);
 
 export function createDomRenderer(options: DomRendererOptions = {}): DomRenderer {
-  const doc = () => options.document ?? document;
+  const doc = () => {
+    const d = options.document ?? document;
+    if (DEV) trackScroll(d);
+    return d;
+  };
   const sheets = new Map<string, HTMLStyleElement>();
   // Built when first injected, so creating the renderer needs no browser globals.
   let platform: ReturnType<typeof createDomPlatform> | undefined;

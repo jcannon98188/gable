@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { check, where } from "../test-support/check.js";
+import { cpSync, readFileSync, rmSync } from "node:fs";
+import { check, fixture, where } from "../test-support/check.js";
+import { main } from "./cli.js";
 
 describe("lazy() outside @defer", () => {
   it("passes lazy components used inside @defer, including its triggers, @placeholder, @loading and @error blocks", async () => {
@@ -147,5 +149,55 @@ describe("forms rules", () => {
   it("names the fix for an uncalled state read", async () => {
     const { diagnostics } = await check("forms-fail");
     expect(diagnostics.find((d) => d.rule === "bare-signal")!.message).toMatch(/f\.name\.state\.errors\(\)/);
+  });
+});
+
+describe("component-meta", () => {
+  it("passes valid metas, typed metas, shared metas, directives and classes without static meta", async () => {
+    const { code, diagnostics } = await check("meta-pass");
+    expect(diagnostics).toEqual([]);
+    expect(code).toBe(0);
+  });
+
+  it("reports unknown keys, bad values, non-component imports and a missing selector", async () => {
+    const { code, diagnostics } = await check("meta-fail");
+    const at = (snippet: string, into = 0) => where("meta-fail", snippet, into);
+    const expected = [
+      at("selectr"),
+      at("NotAComponent, Plain"),
+      at("Plain, \"x-leaf\"]"),
+      at("\"x-leaf\"]"),
+      at("{ role: 3 }"),
+      at("\"shadow\""),
+      at("7,"),
+      at("meta = { template"),
+    ];
+    expect(found(diagnostics)).toEqual(expected.map((p) => ["component-meta", p.line, p.column, "error"]));
+    expect(code).toBe(1);
+    expect(diagnostics[0]!.message).toMatch(/Did you mean "selector"/);
+    expect(diagnostics[1]!.message).toMatch(/imports entry NotAComponent is not a component or a lazy\(\) entry/);
+  });
+
+  it("offers 'satisfies ComponentMeta' (with the import), and a spelling fix for a near-miss key", async () => {
+    const { diagnostics } = await check("meta-fail");
+    const fixes = (diagnostics as unknown as Array<{ fixes?: Array<{ title: string; edits: Array<{ newText: string }> }> }>)[0]!.fixes!;
+    expect(fixes.map((f) => f.title)).toEqual(["Add 'satisfies ComponentMeta'", "Change spelling to 'selector'"]);
+    expect(fixes[0]!.edits.map((e) => e.newText)).toEqual([", type ComponentMeta", " satisfies ComponentMeta"]);
+  });
+
+  it("applies the fix with --fix, after which the compiler takes over the checking", async () => {
+    const copy = fixture("_meta-fix-run");
+    rmSync(copy, { recursive: true, force: true });
+    cpSync(fixture("meta-fail"), copy, { recursive: true });
+    try {
+      let after: Array<{ rule: string }> = [];
+      await main(["--project", copy, "--fix", "--format", "json"], { stdout: (s) => (after = JSON.parse(s)), stderr: () => {} });
+      const source = readFileSync(`${copy}/src/app.ts`, "utf8");
+      expect(source).toContain('import { html, signal, type ComponentMeta } from "@gable/core";');
+      expect(source.match(/ satisfies ComponentMeta/g)).toHaveLength(3);
+      expect(after).toEqual([]);
+    } finally {
+      rmSync(copy, { recursive: true, force: true });
+    }
   });
 });

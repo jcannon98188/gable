@@ -99,3 +99,25 @@ export function hasValueModel(checker: ts.TypeChecker, type: ts.Type): boolean {
   const value = type.getProperty("value");
   return !!value && !!checker.getTypeOfSymbol(value).getProperty("changes") && isSignal(checker, checker.getTypeOfSymbol(value));
 }
+
+function distance(a: string, b: string): number {
+  let row = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const next = [i];
+    for (let j = 1; j <= b.length; j++) next[j] = Math.min(row[j]! + 1, next[j - 1]! + 1, row[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1));
+    row = next;
+  }
+  return row[b.length]!;
+}
+
+/** The candidate nearest to `name`, when it is near enough to be a plausible typo. */
+export function closest(name: string, candidates: string[]): string | undefined {
+  let best: string | undefined;
+  let bestDistance = Math.max(2, Math.floor(name.length / 3)) + 1;
+  for (const c of candidates) {
+    const d = distance(name.toLowerCase(), c.toLowerCase());
+    if (d < bestDistance) [best, bestDistance] = [c, d];
+  }
+  return best;
+}
+

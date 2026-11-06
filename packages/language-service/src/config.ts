@@ -26,6 +26,7 @@ export const RULES = {
   "model-key-state": "error",
   "rows-track-key": "warn",
   "custom-control-members": "error",
+  "component-meta": "error",
 } as const satisfies Record<string, Severity>;
 
 export type RuleId = keyof typeof RULES;
