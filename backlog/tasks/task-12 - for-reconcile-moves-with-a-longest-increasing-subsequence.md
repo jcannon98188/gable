@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-06 03:46'
-updated_date: '2026-11-06 03:54'
+updated_date: '2026-11-06 04:45'
 labels:
   - performance
   - core
@@ -39,6 +39,8 @@ The js-framework-benchmark app (examples/js-framework-benchmark) showed that swa
 
 <!-- SECTION:NOTES:BEGIN -->
 Swap rows 2 and 999 of 1000: DOM childList mutations (added+removed nodes, MutationObserver in Edge) 1994 -> 4. Bench swap rows paint median 71.9ms -> 24.9ms/28.6ms (two runs; the machine was noisy). Unit test in packages/testing/src/for.test.ts counts renderer.insert calls (997 with the old greedy code, <=4 now). npx vitest run packages/testing packages/core: 282 passed incl. HMR carry-over tests. Bench numbers also include concurrent TASK-14 signals.ts edits in the working tree.
+
+Clean A/B vs 435b332 (Edge 156 headless, i9-9900KF, alternated runs, median of medians; details in docs/performance.md): js-framework-benchmark clear 1,000 rows 86.7 -> 16.1 ms (-81%), swap rows 61.6 -> 23.6 ms (-62%), replace 1,000 rows 185 -> 107 ms (-42%); select/update/remove unchanged (same frame); create 1,000 -9% but baseline spread 56%, unproven.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

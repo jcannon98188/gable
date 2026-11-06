@@ -2,7 +2,7 @@
 // It is structurally typed against Observable/Promise and never imports RxJS,
 // so signals and templates stay RxJS-free (RxJS is only a peer dependency of
 // the `@gable/core/rxjs` entry).
-import { signal, type ReadonlySignal } from "./signals.js";
+import { stateSource, type ReadonlySignal } from "./signals.js";
 import { reportError } from "./errors.js";
 import { currentScope, type Scope } from "./scope.js";
 
@@ -75,8 +75,8 @@ export function toSignal<T>(source: StreamSource<T>, options: ToSignalOptions<T>
   if (!owner && !options.manual) {
     throw new Error("toSignal() must be called during setup (a component or service field initialiser). Pass { scope } or { manual: true } to call it elsewhere.");
   }
-  const state = signal<T | undefined>(options.initialValue);
-  const stop = connect(source, (value) => state.set(value), owner);
+  const { read, write } = stateSource<T | undefined>(options.initialValue);
+  const stop = connect(source, write, owner);
   owner?.onDispose(stop);
-  return () => state();
+  return read;
 }

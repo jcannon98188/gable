@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-06 03:46'
-updated_date: '2026-11-06 03:50'
+updated_date: '2026-11-06 04:45'
 labels:
   - performance
   - core
@@ -39,6 +39,8 @@ examples/reactivity-benchmark: effect() costs about 1.5-2x a raw signal-polyfill
 
 <!-- SECTION:NOTES:BEGIN -->
 Benchmark (examples/reactivity-benchmark, ns/op, gable; noisy machine). Before -> after run1 / run2: effects-shared 1212 -> 744 / 583 (polyfill ~620-700 in same runs); effects-sparse 9728 -> 7291 / 4778 (sparse was dominated by running the 100 dirty effects, not the scan; polyfill 6418-21843 across runs); create-dispose 5283 -> 3473 / 2193; batched-writes 142 -> 68 (microtask 144 -> 87); other scenarios (deep-chain, wide-fanout, diamond, dynamic-deps, toSignal-*) unchanged within noise. Implementation: bucketed watchers (32 effects each) with dirty-bucket list; EffectNode extends Signal.Computed; flushNow skips scanning when no bucket was notified. A write during an effect's first run (tracked by a write counter) queues its bucket for the next flush scan, matching the old getPending behaviour. Tests: npx vitest run packages/core packages/testing all pass (order.test.ts unchanged).
+
+Clean A/B vs 435b332 (Edge 156 headless, i9-9900KF, alternated runs, median of medians; details in docs/performance.md): reactivity-benchmark create-dispose 4.43 -> 1.97 ms (-56%), effects-sparse 0.63 -> 0.27 ms (-57%), effects-shared 5.67 -> 4.28 ms (-25%); batched-writes unchanged (0.064 vs 0.065 ms). Caveat: effects-sparse polyfill control is bimodal run to run.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

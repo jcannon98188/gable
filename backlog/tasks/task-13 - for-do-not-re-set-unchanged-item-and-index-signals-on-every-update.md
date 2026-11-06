@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-06 03:46'
-updated_date: '2026-11-06 03:54'
+updated_date: '2026-11-06 04:45'
 labels:
   - performance
   - core
@@ -39,6 +39,8 @@ Each @for run sets the item and index signals of every surviving row even when u
 
 <!-- SECTION:NOTES:BEGIN -->
 AC1: rows now remember the last item written (Row.value) and skip item.set when identical and index.set when pos is unchanged. Note Signal.State already dedupes with Object.is, so the saving is the skipped set call, not a recompute; the new test (counting getter items) passes before and after and acts as a regression guard. AC2 profile of create 10k (CDP sampling, Edge): ~1.9s total, ~930ms '(program)' (native layout/style), 114ms GC, ~97ms setAttribute, ~97ms insertBefore; Gable's own JS is a small share. Cheap win taken: newly created rows at the end of the list were inserted once while building and again in the placement loop; the trailing run is now left in place (insertBefore into tbody for create 10k: 20000 -> 10000). Create 10k paint median ~1000-1550ms before and after, within noise on this machine (1196.6 baseline; 1002/1315/1430/1552 after), so no measurable time win is claimed. Create 1,000 baseline 207ms vs 114-222ms after, also noisy. Tests: 282 passed.
+
+Clean A/B vs 435b332 (Edge 156 headless, i9-9900KF, alternated runs, median of medians; details in docs/performance.md): covered together with TASK-12 in the js-framework-benchmark (replace/swap/clear gains above); no separate isolation was measured, so the share attributable to fewer signal writes alone is unknown. update every 10th row unchanged (22.5 vs 22.6 ms).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

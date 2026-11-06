@@ -25,9 +25,20 @@ export interface SignalOptions<T> {
 export function signal<T>(initial: T, options?: SignalOptions<T>): WritableSignal<T> {
   const state = new Signal.State<T>(initial, options?.equal ? { equals: options.equal } : undefined);
   const read = (() => state.get()) as WritableSignal<T>;
-  read.set = (value) => (writes++, state.set(value));
-  read.update = (fn) => (writes++, state.set(fn(state.get())));
+  read.set = (value) => (firstRuns > 0 && writes++, state.set(value));
+  read.update = (fn) => (firstRuns > 0 && writes++, state.set(fn(state.get())));
   return read;
+}
+
+/**
+ * A read-only signal plus the function that feeds it (what toSignal needs). It
+ * reads straight through to the state, one call layer shallower than wrapping a
+ * writable signal in a read-only closure; that layer is paid on every read, and
+ * toSignal-fan-in reads 1,000 of these per run.
+ */
+export function stateSource<T>(initial: T): { read: ReadonlySignal<T>; write: (value: T) => void } {
+  const state = new Signal.State<T>(initial);
+  return { read: () => state.get(), write: (value) => (firstRuns > 0 && writes++, state.set(value)) };
 }
 
 export function computed<T>(fn: () => T, options?: SignalOptions<T>): ReadonlySignal<T> {
@@ -72,7 +83,9 @@ let scheduled: Promise<void> | null = null;
 let dirtyBuckets: Bucket[] = [];
 /** Buckets with room for another effect. */
 const openBuckets: Bucket[] = [];
-/** Counts signal writes, so effect() can tell whether its first run wrote to a signal. */
+/** Effects whose synchronous first run is in progress. Writes are only counted while this is above zero, which keeps the hot write path to a load and a branch. */
+let firstRuns = 0;
+/** Counts signal writes made during first runs, so effect() can tell whether its first run wrote to a signal. */
 let writes = 0;
 
 function newBucket(): Bucket {
@@ -193,15 +206,19 @@ export function effect(fn: () => void): void {
     if (bucket.size-- === BUCKET_SIZE) openBuckets.push(bucket);
   });
   const before = writes;
+  firstRuns++;
   try {
     node.get(); // the initial run is synchronous
   } catch (error) {
     reportError(error, "effect", scope); // reported; the effect stays alive for its next dependency change
+  } finally {
+    firstRuns--;
   }
   bucket.watcher.watch(node);
   if (writes !== before && !bucket.queued) {
     // The first run wrote a signal it had read; watch() does not notify for an already-dirty node, so look at this bucket on the next flush.
     bucket.queued = true;
     dirtyBuckets.push(bucket);
+    schedule();
   }
 }

@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-06 03:58'
-updated_date: '2026-11-06 04:11'
+updated_date: '2026-11-06 04:45'
 labels:
   - performance
   - hmr
@@ -39,6 +39,8 @@ examples/hmr-benchmark: editing a leaf component costs about 45 ms at 500 compon
 Baseline (msedge headless, 8 iter, median ms; noisy machine): 500 leaf template 54 / 2000 leaf template 443 (README sample runs gave 44/167); 2000 inner template 695, inner class field 828, leaf service 1655. After: 500 leaf template 42, 2000 leaf 184; 2000 inner template 465, inner field 490, leaf service 880, inner service 824.
 Profile of a 2000-component leaf edit: browser JS is ~10 ms (flat); the module request leaves the browser ~140 ms after the write vs ~40 ms at 500. Node profile of the dev server over that window: Vite's chokidar re-reads the edited file's directory (readdirp _read + lstat per file, filterPath/picomatch): 113 ms at 2000 files vs 25 ms at 500. All N generated components live in one src/ dir, so this is O(files in directory) inside Vite, not Gable. Not fixable in Gable; real apps spread files over directories; documented in the benchmark README.
 Inner edits: the browser profile showed 556-700 ms in renderer-dom captureViewState, forced synchronous layout from reading scrollTop on every element of the old subtree. Fix: record scrolled elements from captured scroll events (trackScroll in packages/renderer-dom/src/view-state.ts) and read scroll offsets only for those; also made the walk iterative and ancestry strings lazy. jsdom test now dispatches a scroll event after setting scrollTop. Inner template 1138 -> 314 ms with scroll reads disabled in a profile run; full bench inner 695 -> 465. Service rebuild cost was dominated by the same capture. Remaining inner cost is rebuilding N/4 components (inherent).
+
+Clean A/B vs 435b332 (Edge 156 headless, i9-9900KF, alternated runs, median of medians; details in docs/performance.md): hmr-benchmark at 2000 components: service edit 1314/1402 -> 806/807 ms (~-41%), inner class-field/template-text 685-763 -> 482-554 ms (~-30%); method/style edits and the leaf-target edits show no improvement (leaf edits at 2000 read +7..+32% but within noise with 2 runs per side). Leaf latency still ~200 ms at 2000 components vs ~50 ms at 500, i.e. still grows with app size.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
