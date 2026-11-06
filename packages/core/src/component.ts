@@ -10,6 +10,7 @@ import { applyBindings, buildNodes } from "./view.js";
 import { describeFields, inputOf } from "./input.js";
 import { completeOutput } from "./output.js";
 import { parseSelector } from "./select.js";
+import { inReadPhase } from "./read-phase.js";
 import { createQueryHost, declareQueries, withContentTarget } from "./query.js";
 import { isLazy, type LazyEntry } from "./lazy.js";
 import type { Content } from "./view-context.js";
@@ -156,7 +157,7 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
       const previous = hostContext;
       hostContext = { renderer, host };
       try {
-        return dev ? (dev.construct() as T) : new Class();
+        return inReadPhase("setup", () => (dev ? (dev.construct() as T) : new Class()));
       } finally {
         hostContext = previous;
       }
@@ -173,7 +174,7 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
     const bindHost = () => {
       if (hostBound) return;
       hostBound = true;
-      runInScope(scope, () => applyBindings(host, hostSpec(Class), renderer, env));
+      runInScope(scope, () => inReadPhase("host binding", () => applyBindings(host, hostSpec(Class), renderer, env)));
     };
     let parts: Array<() => N[]> = [];
     // Dev: the view lives in its own scope so a hot update can rebuild it without touching Setup.

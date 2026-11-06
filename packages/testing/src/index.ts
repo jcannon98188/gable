@@ -59,6 +59,8 @@ export interface Fixture<T extends object> {
   queryAll(selector: string): TestNode[];
   /** Concatenated text of the host's subtree. */
   text(): string;
+  /** Concatenated text of any node's subtree (`TestNode.text` is only the node's own text). */
+  textOf(node: TestNode): string;
   /** Stable pretty-printed markup of the host's subtree (empty once destroyed). */
   html(): string;
   /**
@@ -92,6 +94,21 @@ export interface Fixture<T extends object> {
    * (a radio is chosen with `true`). Sets the control's property, then fires its `input` or `change` event.
    */
   fill(target: TestNode, value: string | boolean): void;
+  /**
+   * Types into a control the way a browser does: sets its `value`, then fires `input` with a realistic event
+   * (`$event.target.value` is the typed text). Use it for plain controls whose handler reads `$event`.
+   */
+  type(target: TestNode, text: string): void;
+  /**
+   * Fires `change` with a realistic event: a string sets `value`, a boolean sets `checked`
+   * (`$event.target.value` / `$event.target.checked`). Omit `value` to fire it on the control as it is.
+   */
+  change(target: TestNode, value?: string | boolean): void;
+  /**
+   * Fires `keydown` with a realistic event (`$event.key`, `$event.code`, modifiers, `$event.target`).
+   * `init` overrides or adds any event field, e.g. `{ shiftKey: true }`.
+   */
+  keydown(target: TestNode, key: string, init?: Record<string, unknown>): void;
   /** The control loses focus (a `[field]` marks its field touched). */
   blur(target: TestNode): void;
   /** Destroys the component, then fails with any unmatched HTTP request or error report the test never expected. Safe to call twice. */
@@ -127,6 +144,37 @@ function defaultAdvance(ms: number): void | Promise<void> {
   const fn = clock?.advanceTimersByTimeAsync ?? clock?.advanceTimersByTime;
   if (!fn) throw new Error("advance(ms) needs fake timers: pass mount(..., { advanceTimers }) or expose your runner's `vi`/`jest` global.");
   return fn.call(clock, ms);
+}
+
+/** A DOM-like view of a node: `value`, `checked` and friends read and write the node's live props. */
+function targetOf(node: TestNode): Record<string, unknown> {
+  const view: Record<string, unknown> = { tagName: (node.tag ?? "").toUpperCase(), nodeName: (node.tag ?? "").toUpperCase(), node };
+  for (const key of ["value", "checked", "selectedIndex"]) {
+    Object.defineProperty(view, key, { enumerable: true, get: () => node.props[key], set: (v) => void (node.props[key] = v) });
+  }
+  for (const key of ["id", "name", "type", "className"]) {
+    Object.defineProperty(view, key, { enumerable: true, get: () => node.props[key] ?? node.attrs[key === "className" ? "class" : key] });
+  }
+  return view;
+}
+
+function eventFor(node: TestNode, type: string, init: Record<string, unknown> = {}): Record<string, unknown> {
+  const target = targetOf(node);
+  const event: Record<string, unknown> = {
+    type,
+    target,
+    currentTarget: target,
+    bubbles: true,
+    cancelable: true,
+    defaultPrevented: false,
+    preventDefault() {
+      event.defaultPrevented = true;
+    },
+    stopPropagation() {},
+    stopImmediatePropagation() {},
+    ...init,
+  };
+  return event;
 }
 
 const tick = async () => {
@@ -187,6 +235,7 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
     query: (selector) => query(mounted.host, selector),
     queryAll: (selector) => queryAll(mounted.host, selector),
     text: () => textContent(mounted.host),
+    textOf: textContent,
     html: () => (destroyed ? "" : serialize(mounted.host)),
     flush: async () => {
       await whenFlushed();
@@ -222,6 +271,20 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
       if (typeof value === "boolean") target.props.checked = value;
       else target.props.value = value;
       fixture.dispatch(target, toggles || target.tag === "select" ? "change" : "input");
+    },
+    type: (target, text) => {
+      target.props.value = text;
+      fixture.dispatch(target, "input", eventFor(target, "input", { inputType: "insertText", data: text }));
+    },
+    change: (target, value) => {
+      if (typeof value === "boolean") target.props.checked = value;
+      else if (value !== undefined) target.props.value = value;
+      fixture.dispatch(target, "change", eventFor(target, "change"));
+    },
+    keydown: (target, key, init) => {
+      const code = key.length === 1 ? (/[a-z]/i.test(key) ? `Key${key.toUpperCase()}` : /d/.test(key) ? `Digit${key}` : key === " " ? "Space" : key) : key;
+      const modifiers = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false, repeat: false };
+      fixture.dispatch(target, "keydown", eventFor(target, "keydown", { key, code, ...modifiers, ...init }));
     },
     blur: (target) => fixture.dispatch(target, "blur"),
     destroy() {

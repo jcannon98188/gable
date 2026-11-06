@@ -1,0 +1,38 @@
+{
+  "name": "gable-js-framework-benchmark",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "check": "tsc --noEmit && gable-check",
+    "bench": "node scripts/bench.mjs",
+    "build-prod": "vite build --config vite.upstream.config.ts"
+  },
+  "dependencies": {
+    "@gable/core": "file:vendor/gable-core-0.0.0.tgz",
+    "@gable/renderer-dom": "file:vendor/gable-renderer-dom-0.0.0.tgz",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@gable/language-service": "file:vendor/gable-language-service-0.0.0.tgz",
+    "@gable/testing": "file:vendor/gable-testing-0.0.0.tgz",
+    "@gable/vite": "file:vendor/gable-vite-0.0.0.tgz",
+    "playwright-core": "^1.50.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
+  },
+  "overrides": {
+    "@gable/core": "file:vendor/gable-core-0.0.0.tgz",
+    "@gable/language-service": "file:vendor/gable-language-service-0.0.0.tgz",
+    "@gable/prettier-plugin": "file:vendor/gable-prettier-plugin-0.0.0.tgz",
+    "@gable/renderer-dom": "file:vendor/gable-renderer-dom-0.0.0.tgz",
+    "@gable/template-format": "file:vendor/gable-template-format-0.0.0.tgz",
+    "@gable/testing": "file:vendor/gable-testing-0.0.0.tgz",
+    "@gable/vite": "file:vendor/gable-vite-0.0.0.tgz"
+  }
+}

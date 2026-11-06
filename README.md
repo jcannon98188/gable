@@ -112,7 +112,7 @@ Versioning uses [Changesets](https://github.com/changesets/changesets) (`npm run
 
 - `GLOSSARY.md`: the project's vocabulary.
 - `backlog/`: design decisions and implementation tasks, managed with [Backlog.md](https://github.com/MrLesk/Backlog.md).
-- `docs/`: user documentation.
+- `docs/`: user documentation, including the [router guide](docs/router.md).
 
 ## License
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mountApp, type TestNode } from '@gable/testing';
+import { mountApp } from '@gable/testing';
 import { TodoApp } from './components/todo-app.js';
 import { routes } from './routes.js';
 import { TodoStorage } from './services/todo-storage.js';
@@ -26,16 +26,14 @@ function start(options: { raw?: string; url?: string } = {}) {
   return { app, storage };
 }
 
-const textOf = (n: TestNode): string => n.text + n.children.map(textOf).join('');
-
 async function add(app: ReturnType<typeof start>['app'], title: string) {
   const input = app.query('.new-todo')!;
-  app.dispatch(input, 'input', { target: { value: title } });
-  app.dispatch(input, 'keydown', { key: 'Enter' });
+  app.type(input, title);
+  app.keydown(input, 'Enter');
   await app.settle();
 }
 
-const titles = (app: ReturnType<typeof start>['app']) => app.queryAll('.todo-list label').map(textOf);
+const titles = (app: ReturnType<typeof start>['app']) => app.queryAll('.todo-list label').map((n) => app.textOf(n));
 const seed = JSON.stringify([
   { id: 'a', title: 'one', completed: false },
   { id: 'b', title: 'two', completed: true },
@@ -61,10 +59,10 @@ describe('TodoMVC', () => {
   it('counts active items with correct pluralisation', async () => {
     const { app } = start();
     await add(app, 'a');
-    expect(textOf(app.query('.todo-count')!)).toBe('1 item left');
+    expect(app.textOf(app.query('.todo-count')!)).toBe('1 item left');
     await add(app, 'b');
-    expect(textOf(app.query('.todo-count')!)).toBe('2 items left');
-    expect(textOf(app.query('.todo-count strong')!)).toBe('2');
+    expect(app.textOf(app.query('.todo-count')!)).toBe('2 items left');
+    expect(app.textOf(app.query('.todo-count strong')!)).toBe('2');
   });
 
   it('completes a todo, toggles all, and clears completed', async () => {
@@ -72,10 +70,10 @@ describe('TodoMVC', () => {
     await app.settle();
     expect(app.queryAll('.todo-list li.completed')).toHaveLength(1);
 
-    app.dispatch(app.query('.toggle-all')!, 'change', { target: { checked: true } });
+    app.change(app.query('.toggle-all')!, true);
     await app.settle();
     expect(app.queryAll('.todo-list li.completed')).toHaveLength(2);
-    expect(textOf(app.query('.todo-count')!)).toBe('0 items left');
+    expect(app.textOf(app.query('.todo-count')!)).toBe('0 items left');
 
     app.dispatch(app.query('.clear-completed')!, 'click');
     await app.settle();
@@ -90,8 +88,8 @@ describe('TodoMVC', () => {
       await app.settle();
       expect(app.query('.todo-list li.editing')).not.toBeNull();
       const field = app.query('.edit')!;
-      app.dispatch(field, 'input', { target: { value } });
-      app.dispatch(field, 'keydown', { key });
+      app.type(field, value);
+      app.keydown(field, key);
       await app.settle();
     };
 
@@ -110,17 +108,17 @@ describe('TodoMVC', () => {
     const { app } = start({ raw: seed, url: '/active' });
     await app.settle();
     expect(titles(app)).toEqual(['one']);
-    expect(textOf(app.query('.filters a.selected')!)).toBe('Active');
+    expect(app.textOf(app.query('.filters a.selected')!)).toBe('Active');
 
-    app.dispatch(app.query('.todo-list .toggle')!, 'change', { target: { checked: true } });
+    app.change(app.query('.todo-list .toggle')!, true);
     await app.settle();
     expect(titles(app)).toEqual([]);
 
     await app.navigate('/completed');
     expect(titles(app)).toEqual(['one', 'two']);
-    expect(textOf(app.query('.filters a.selected')!)).toBe('Completed');
+    expect(app.textOf(app.query('.filters a.selected')!)).toBe('Completed');
 
     await app.navigate('/');
-    expect(textOf(app.query('.filters a.selected')!)).toBe('All');
+    expect(app.textOf(app.query('.filters a.selected')!)).toBe('All');
   });
 });

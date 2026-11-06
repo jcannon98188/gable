@@ -1,5 +1,6 @@
 import { signal, type ReadonlySignal, type WritableSignal } from "./signals.js";
 import { OutputEmitter } from "./output.js";
+import { readPhase } from "./read-phase.js";
 
 const HANDLE = Symbol("gable.input");
 const UNSET = Symbol("gable.unset");
@@ -34,13 +35,30 @@ export function input<T>(initial?: T): InputSignal<T | undefined> {
   return read;
 }
 
+const WHERE = {
+  setup: "in setup, in a field initialiser or an effect created there",
+  "host binding": "in a meta.host binding",
+  effect: "in an effect or template binding",
+} as const;
+
+function unsetMessage(name: string, owner: string): string {
+  const phase = readPhase();
+  const where = phase ? WHERE[phase] : "in a template, computed or other code";
+  const hint =
+    phase === "setup"
+      ? " Effects run once as soon as they are created, so read the input in the template, a computed or an event handler instead."
+      : "";
+  const who = name ? `Required input "${name}" of ${owner}` : "A required input (not yet named during setup)";
+  return `${who} was read before it was set (read ${where}). Inputs are bound after setup, so a required input cannot be read while the component is being set up.${hint} Make sure the parent template binds it.`;
+}
+
 input.required = function required<T>(): InputSignal<T> {
   const state = signal<T | typeof UNSET>(UNSET);
   const read = (() => {
     const v = state();
     if (v === UNSET) {
       const h = (read as unknown as Record<symbol, InputHandle>)[HANDLE]!;
-      throw new Error(`Required input "${h.name}" of ${h.owner} was read before it was set. Bind it in the parent template.`);
+      throw new Error(unsetMessage(h.name, h.owner));
     }
     return v;
   }) as InputSignal<T>;

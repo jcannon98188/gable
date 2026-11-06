@@ -4,6 +4,7 @@ title: 'Verify TodoMVC in a real browser, including an HMR walkthrough'
 status: To Do
 assignee: []
 created_date: '2026-11-06 03:23'
+updated_date: '2026-11-06 03:30'
 labels:
   - example
   - hmr
@@ -24,3 +25,9 @@ examples/todomvc passes tests, tsc, gable-check and vite build but has never bee
 - [ ] #2 Editing a component, template, style and the store hot-updates with todos, filter and an in-progress edit preserved
 - [ ] #3 Any bugs found are filed or fixed
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+User confirmed HMR works in a real browser (2026-11-05). Remaining: check each app-spec behaviour in a browser.
+<!-- SECTION:NOTES:END -->

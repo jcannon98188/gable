@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { from } from "rxjs";
-import { html, input, model, output, signal } from "@gable/core";
+import { effect, html, input, model, output, signal } from "@gable/core";
 import { mount } from "@gable/testing";
 
 class Badge {
@@ -114,6 +114,51 @@ describe("composition: imports, inputs, outputs, models", () => {
     expect(a!.classes).toContain("on");
     expect(b!.attrs.role).toBeUndefined();
     expect(hosts).toBe(1);
+  });
+});
+
+describe("required input read too early", () => {
+  const unbound = (Child: new () => object) => {
+    class Parent {
+      static meta = { selector: "app-parent", imports: [Child], template: html`<app-early></app-early>` };
+    }
+    return String(mount(Parent).claimErrors()[0]?.error);
+  };
+
+  it("names a field initialiser read as setup and says inputs bind after setup", () => {
+    class Early {
+      static meta = { selector: "app-early", template: html`x` };
+      name = input.required<string>();
+      upper = this.name().toUpperCase();
+    }
+    const message = unbound(Early);
+    expect(message).toMatch(/was read before it was set \(read in setup/);
+    expect(message).toMatch(/Inputs are bound after setup/);
+  });
+
+  it("names an effect created in setup", () => {
+    class Early {
+      static meta = { selector: "app-early", template: html`x` };
+      name = input.required<string>();
+      _ = effect(() => void this.name());
+    }
+    expect(unbound(Early)).toMatch(/read in setup, in a field initialiser or an effect/);
+  });
+
+  it("names a template read when the parent never binds the input", () => {
+    class Early {
+      static meta = { selector: "app-early", template: html`{{ name() }}` };
+      name = input.required<string>();
+    }
+    expect(unbound(Early)).toMatch(/read in an effect or template binding/);
+  });
+
+  it("names a meta.host read of an input the parent never binds", () => {
+    class Early {
+      static meta = { selector: "app-early", host: { "[attr.data-n]": "name()" }, template: html`x` };
+      name = input.required<string>();
+    }
+    expect(unbound(Early)).toMatch(/read in a meta.host binding/);
   });
 });
 

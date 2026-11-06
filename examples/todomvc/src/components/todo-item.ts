@@ -11,7 +11,7 @@ export class TodoItem {
     host: { '[class.completed]': 'completed()', '[class.editing]': 'editing()' },
     template: html`
       <div class="view">
-        <input class="toggle" type="checkbox" [checked]="completed()" (change)="toggle($event)" />
+        <input class="toggle" type="checkbox" [checked]="completed()" (change)="store.setCompleted(id(), $event.currentTarget.checked)" />
         <label (dblclick)="startEditing()">{{ title() }}</label>
         <button class="destroy" (click)="remove()"></button>
       </div>
@@ -20,7 +20,7 @@ export class TodoItem {
           class="edit"
           #editInput
           [value]="draft()"
-          (input)="setDraft($event)"
+          (input)="draft.set($event.currentTarget.value)"
           (keydown)="onKeydown($event.key)"
           (blur)="commit()"
         />
@@ -39,14 +39,6 @@ export class TodoItem {
   draft = signal('');
 
   focusOnEdit = effect(() => this.editInput()?.focus?.());
-
-  toggle(event: Event): void {
-    this.store.setCompleted(this.id(), (event.target as HTMLInputElement).checked);
-  }
-
-  setDraft(event: Event): void {
-    this.draft.set((event.target as HTMLInputElement).value);
-  }
 
   remove(): void {
     this.store.remove(this.id());

@@ -131,6 +131,7 @@ describe("gable-check", () => {
       ["type-mismatch", "onText($event)", 7],
       ["model-type-mismatch", '[(value)]="num" />', 11],
       ["model-type-mismatch", '"num"></x-child>', 1],
+      ["type-mismatch", "$event.currentTarget.checked", 0],
     ];
 
     it("reports exactly the bad bindings", async () => {

@@ -11,7 +11,8 @@
     "test": "vitest run",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "package": "npm run package -w packages/vscode -w packages/create-gable"
+    "package": "npm run package -w packages/vscode -w packages/create-gable",
+    "pack:local": "node scripts/pack-local.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",

@@ -128,7 +128,7 @@ declare function __w<P>(v: { (): P; set(value: P): void }): void;
 type __El<T extends string> = T extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[T] : HTMLElement;
 type __EvMap<E> = E extends HTMLBodyElement ? HTMLBodyElementEventMap : E extends HTMLMediaElement ? HTMLMediaElementEventMap : HTMLElementEventMap;
 type __Out<T> = T extends import("rxjs").Observable<infer U> ? U : any;
-type __Ev<C, E, N extends string> = N extends keyof C ? __Out<C[N]> : N extends keyof __EvMap<E> ? __EvMap<E>[N] : any;
+type __Ev<C, E, N extends string> = N extends keyof C ? __Out<C[N]> : N extends keyof __EvMap<E> ? __EvMap<E>[N] & { readonly currentTarget: E } : any;
 type __Prop<C, E, N extends string> = N extends keyof C ? (C[N] extends { (): infer T } ? T : any) : N extends keyof E ? E[N] : any;
 `;
 

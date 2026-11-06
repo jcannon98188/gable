@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
-import { basename, join, resolve } from "node:path";
+import { basename, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export type PackageManager = "npm" | "pnpm" | "yarn" | "bun";
@@ -29,6 +29,37 @@ export interface ScaffoldOptions {
   targetDir: string;
   /** Package manager whose commands the README shows. Default npm. */
   packageManager?: PackageManager;
+  /** A directory of `@gable/*` tarballs (see `npm run pack:local`): the starter then installs from them instead of the registry. */
+  localDir?: string;
+}
+
+/** True when `dir` holds a tarball for `name` (`@gable/core` is `gable-core-<version>.tgz`). */
+function tarballFor(files: string[], name: string): string | undefined {
+  const prefix = name.replace(/^@/, "").replace("/", "-") + "-";
+  return files.find((f) => f.startsWith(prefix) && f.endsWith(".tgz") && /^\d/.test(f.slice(prefix.length)));
+}
+
+/** Points every `@gable/*` dependency in the manifest text at a tarball in `dir` and pins every tarball under `overrides`, since the packages depend on each other. */
+function localizeManifest(text: string, dir: string): string {
+  if (!existsSync(dir) || !statSync(dir).isDirectory()) throw new Error(`--local: ${dir} is not a directory.`);
+  const files = readdirSync(dir);
+  const spec = (file: string) => `file:${join(dir, file).split(sep).join("/")}`;
+  const manifest = JSON.parse(text);
+  for (const field of ["dependencies", "devDependencies"]) {
+    for (const dep of Object.keys(manifest[field] ?? {})) {
+      if (!dep.startsWith("@gable/")) continue;
+      const file = tarballFor(files, dep);
+      if (!file) throw new Error(`--local: no tarball for ${dep} in ${dir}. Run "npm run pack:local <app-dir>" in the Gable repository first.`);
+      manifest[field][dep] = spec(file);
+    }
+  }
+  manifest.overrides = Object.fromEntries(
+    files.flatMap((file) => {
+      const match = /^gable-(.+?)-\d[^/]*\.tgz$/.exec(file);
+      return match ? [[`@gable/${match[1]}`, spec(file)]] : [];
+    }),
+  );
+  return JSON.stringify(manifest, null, 2) + "\n";
 }
 
 const VALID_NAME = /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
@@ -38,6 +69,8 @@ export function scaffold(options: ScaffoldOptions): string[] {
   if (!VALID_NAME.test(options.name)) throw new Error(`"${options.name}" is not a valid package name (lowercase letters, digits and dashes).`);
   if (existsSync(options.targetDir) && readdirSync(options.targetDir).length > 0) throw new Error(`${options.targetDir} is not empty.`);
   const values: Record<string, string> = { name: options.name, version: ownVersion(), ...commandsFor(options.packageManager ?? "npm") };
+  const localDir = options.localDir ? resolve(options.localDir) : undefined;
+  if (localDir) localizeManifest(readFileSync(join(templateDir, "package.json"), "utf8"), localDir); // fail before writing anything
   const written: string[] = [];
   const copy = (from: string, to: string, rel: string) => {
     mkdirSync(to, { recursive: true });
@@ -46,7 +79,8 @@ export function scaffold(options: ScaffoldOptions): string[] {
       const relative = rel ? `${rel}/${RENAMED[entry] ?? entry}` : (RENAMED[entry] ?? entry);
       if (statSync(source).isDirectory()) copy(source, join(to, entry), relative);
       else {
-        const text = readFileSync(source, "utf8").replace(/\{\{(\w+)\}\}/g, (match, key: string) => values[key] ?? match);
+        let text = readFileSync(source, "utf8").replace(/\{\{(\w+)\}\}/g, (match, key: string) => values[key] ?? match);
+        if (localDir && relative === "package.json") text = localizeManifest(text, localDir);
         writeFileSync(join(to, RENAMED[entry] ?? entry), text);
         written.push(relative);
       }
@@ -66,7 +100,11 @@ export interface CliIo {
 const USAGE = `Usage: npm create gable@latest [project-name]
 
 Copies the Gable starter into a new directory. Asks for a project name when none
-is given. There are no other options.
+is given.
+
+Options:
+  --local <dir>   Install @gable/* from the tarballs in <dir> (made by "npm run pack:local"
+                  in the Gable repository) instead of the registry. For unpublished builds.
 `;
 
 /** Runs create-gable and returns the exit code. */
@@ -75,6 +113,20 @@ export async function main(argv: string[], env: Record<string, string | undefine
     io.stdout(USAGE);
     return 0;
   }
+  let localDir: string | undefined;
+  const positional: string[] = [];
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]!;
+    if (arg !== "--local" && !arg.startsWith("--local=")) positional.push(arg);
+    else {
+      localDir = arg === "--local" ? argv[++i] : arg.slice("--local=".length);
+      if (!localDir || localDir.startsWith("-")) {
+        io.stderr(`create-gable: --local needs a directory\n${USAGE}`);
+        return 2;
+      }
+    }
+  }
+  argv = positional;
   const flag = argv.find((a) => a.startsWith("-"));
   if (flag || argv.length > 1) {
     io.stderr(`create-gable: ${flag ? `unknown option "${flag}"` : "expected at most one argument"}\n${USAGE}`);
@@ -84,7 +136,7 @@ export async function main(argv: string[], env: Record<string, string | undefine
   const targetDir = resolve(cwd, name);
   const pm = detectPackageManager(env.npm_config_user_agent);
   try {
-    scaffold({ name: basename(targetDir), targetDir, packageManager: pm });
+    scaffold({ name: basename(targetDir), targetDir, packageManager: pm, localDir: localDir && resolve(cwd, localDir) });
   } catch (error) {
     io.stderr(`create-gable: ${(error as Error).message}\n`);
     return 1;

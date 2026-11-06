@@ -274,13 +274,17 @@ When a class changes, Gable builds a new instance, carries over fields with the 
 - **Opt out per class.** Add `static hmr = "reset"` to a component or service to get fresh state on every edit of it.
 - **Broken code leaves the app alone.** A syntax error or a throwing module is reported in the overlay and the running app is untouched; fix the file and save.
 
+## When a required input may first be read
+
+Inputs are bound by the parent after the component's setup (field initialisers) has run. A `input.required()` field therefore cannot be read during setup, including in an effect created there, because effects run once immediately. It can be read in the template, in `meta.host` bindings, in computeds and in event handlers. If you read it too early, the dev error says whether the read happened in setup, a host binding or an effect/template binding, and that inputs are bound after setup.
+
 ## Test
 
 ```
 npm test
 ```
 
-`src/counter.test.ts` mounts `Counter` with `mount` from `@gable/testing`, drives it through the test renderer (no browser, no DOM) and reads the result with `fixture.text()` and `fixture.query()`. The root-scoped `CounterStore` resolves without any setup; pass `providers` to `mount` to replace it.
+`src/counter.test.ts` mounts `Counter` with `mount` from `@gable/testing`, drives it through the test renderer (no browser, no DOM) and reads the result with `fixture.text()` and `fixture.query()`. `fixture.textOf(node)` reads any node’s deep text. For handlers that read `$event`, `fixture.type(input, "text")`, `fixture.change(control, value | checked)` and `fixture.keydown(input, "Enter", { shiftKey: true })` fire `input`, `change` and `keydown` with browser-shaped events (`$event.target.value`, `$event.target.checked`, `$event.key`, `preventDefault()`); `fixture.fill` is for `[field]`-bound controls. The root-scoped `CounterStore` resolves without any setup; pass `providers` to `mount` to replace it.
 
 ## Check
 
@@ -302,6 +306,10 @@ npm run preview
 ```
 
 The production bundle contains no HMR code.
+
+## Routing
+
+The starter has no routes. See the [Router guide](./router.md) for `provideRouter`, guards, lazy routes and hash mode.
 
 ## Adding Gable to an existing Vite app
 

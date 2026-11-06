@@ -17,6 +17,7 @@ export class Page {
       <input [(value)]="num" />
       <input [(value)]="text" (input)="onInput($event)" />
       <x-child [(value)]="num"></x-child>
+      <input (input)="text.set($event.currentTarget.checked)" />
     `,
   };
   text = signal("");

@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { main } from "./index.js";
 
@@ -51,7 +51,7 @@ describe("create-gable", () => {
     expect(existsSync(join(cwd, "asked-app", "src", "main.ts"))).toBe(true);
   });
 
-  it("has no options beyond --help", async () => {
+  it("has no options beyond --help and --local", async () => {
     expect((await run(["--help"])).out).toContain("Usage:");
     const bad = await run(["--typescript", "x"]);
     expect(bad.code).toBe(2);
@@ -65,5 +65,46 @@ describe("create-gable", () => {
     const invalid = await run(["Bad Name"]);
     expect(invalid.code).toBe(1);
     expect(invalid.err).toContain("not a valid package name");
+  });
+
+  describe("--local", () => {
+    const fake = (...names: string[]) => {
+      const dir = join(cwd, "vendor");
+      mkdirSync(dir);
+      for (const n of names) writeFileSync(join(dir, n), "");
+      return dir;
+    };
+    const all = ["core", "renderer-dom", "testing", "vite", "language-service", "prettier-plugin", "template-format"].map((n) => `gable-${n}-1.2.3.tgz`);
+
+    it("points @gable/* at the tarballs and overrides every one of them", async () => {
+      const dir = fake(...all, "create-gable-1.2.3.tgz");
+      const result = await run(["--local", dir, "my-app"]);
+      expect(result.code).toBe(0);
+      const pkg = JSON.parse(read("my-app", "package.json"));
+      const spec = (n: string) => `file:${dir.split(sep).join("/")}/gable-${n}-1.2.3.tgz`;
+      expect(pkg.dependencies["@gable/core"]).toBe(spec("core"));
+      expect(pkg.devDependencies["@gable/vite"]).toBe(spec("vite"));
+      expect(pkg.dependencies.rxjs).toBe("^7.8.2");
+      expect(Object.keys(pkg.overrides).sort()).toEqual(
+        ["core", "language-service", "prettier-plugin", "renderer-dom", "template-format", "testing", "vite"].map((n) => `@gable/${n}`),
+      );
+      expect(pkg.overrides["@gable/template-format"]).toBe(spec("template-format"));
+    });
+
+    it("accepts --local=<dir> and a relative directory", async () => {
+      fake(...all);
+      expect((await run(["my-app", "--local=vendor"])).code).toBe(0);
+      expect(JSON.parse(read("my-app", "package.json")).dependencies["@gable/core"]).toMatch(/^file:.*\/vendor\/gable-core-1\.2\.3\.tgz$/);
+    });
+
+    it("fails before writing anything when a tarball is missing, the directory is absent or the value is missing", async () => {
+      const dir = fake(...all.filter((f) => !f.includes("-vite-")));
+      const missing = await run(["--local", dir, "my-app"]);
+      expect(missing.code).toBe(1);
+      expect(missing.err).toContain("no tarball for @gable/vite");
+      expect(existsSync(join(cwd, "my-app"))).toBe(false);
+      expect((await run(["--local", join(cwd, "nope"), "my-app"])).err).toContain("not a directory");
+      expect((await run(["my-app", "--local"])).code).toBe(2);
+    });
   });
 });

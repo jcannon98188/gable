@@ -1,0 +1,24 @@
+{
+  "name": "gable-reactivity-benchmark",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "bench": "node src/bench.mjs",
+    "bench:json": "node src/bench.mjs --json"
+  },
+  "dependencies": {
+    "@gable/core": "file:vendor/gable-core-0.0.0.tgz",
+    "rxjs": "^7.8.2",
+    "signal-polyfill": "0.2.2"
+  },
+  "overrides": {
+    "@gable/core": "file:vendor/gable-core-0.0.0.tgz",
+    "@gable/language-service": "file:vendor/gable-language-service-0.0.0.tgz",
+    "@gable/prettier-plugin": "file:vendor/gable-prettier-plugin-0.0.0.tgz",
+    "@gable/renderer-dom": "file:vendor/gable-renderer-dom-0.0.0.tgz",
+    "@gable/template-format": "file:vendor/gable-template-format-0.0.0.tgz",
+    "@gable/testing": "file:vendor/gable-testing-0.0.0.tgz",
+    "@gable/vite": "file:vendor/gable-vite-0.0.0.tgz"
+  }
+}

@@ -35,14 +35,14 @@ src/
 
 ## Build
 
-`@gable/*` is not published to npm yet, so it is installed from tarballs in `vendor/`, packed from this repository:
+`@gable/*` is not published to npm yet, so it is installed from tarballs in `vendor/` (gitignored), packed from this repository.
+`npm run pack:local` builds the workspace, packs every publishable package into `vendor/` and keeps this app's
+`file:` dependencies and `overrides` in `package.json` pointing at them. Re-run it after changing a package.
 
 ```sh
 # from the repository root
-npm install && npm run build
-for p in core renderer-dom vite testing language-service prettier-plugin template-format; do
-  (cd packages/$p && npm pack --pack-destination ../../examples/todomvc/vendor)
-done
+npm install
+npm run pack:local            # defaults to examples/todomvc
 
 # then, in examples/todomvc
 npm install

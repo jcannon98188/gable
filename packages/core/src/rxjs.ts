@@ -1,8 +1,8 @@
 // `@gable/core/rxjs`: the RxJS side of Gable. This is the only entry that
 // imports RxJS (a peer dependency); the signal core and templates never do.
-import { Observable, Subscription, asyncScheduler, type SchedulerAction, type SchedulerLike } from "rxjs";
-import { effect, runAfterFlush, type ReadonlySignal } from "./signals.js";
-import { createScope, currentScope, runInScope } from "./scope.js";
+import { Observable, Subscription, type Subscriber, asyncScheduler, type SchedulerAction, type SchedulerLike } from "rxjs";
+import { effect, runAfterFlush, untracked, type ReadonlySignal } from "./signals.js";
+import { createScope, currentScope, runInScope, type Scope } from "./scope.js";
 
 export { toSignal } from "./bridge.js";
 export type { ToSignalOptions } from "./bridge.js";
@@ -13,25 +13,58 @@ export type { ToSignalOptions } from "./bridge.js";
  */
 export function toObservable<T>(source: ReadonlySignal<T>): Observable<T> {
   const owner = currentScope();
+  // All live subscribers share one effect (and scope), created by the first
+  // subscriber and disposed with the last. Each keeps its own last-seen value.
+  interface Entry {
+    subscriber: Subscriber<T>;
+    first: boolean;
+    last: T | undefined;
+  }
+  const entries = new Set<Entry>();
+  let scope: Scope | null = null;
+
+  const deliver = (entry: Entry, value: T) => {
+    if (entry.first || !Object.is(value, entry.last)) entry.subscriber.next(value);
+    entry.first = false;
+    entry.last = value;
+  };
+
   return new Observable<T>((subscriber) => {
-    const scope = createScope(owner);
-    let first = true;
-    let last: T;
-    runInScope(scope, () =>
-      effect(() => {
-        let value: T;
-        try {
-          value = source();
-        } catch (error) {
-          subscriber.error(error);
-          return;
-        }
-        if (first || !Object.is(value, last)) subscriber.next(value);
-        first = false;
-        last = value;
-      }),
-    );
-    return () => scope.dispose();
+    const entry: Entry = { subscriber, first: true, last: undefined };
+    entries.add(entry);
+    if (scope) {
+      // Joining a running effect: emit the current value now; the effect covers later changes.
+      let value: T;
+      try {
+        value = untracked(source);
+      } catch (error) {
+        subscriber.error(error);
+        return () => void entries.delete(entry);
+      }
+      deliver(entry, value);
+    } else {
+      const own = (scope = createScope(owner));
+      runInScope(own, () =>
+        effect(() => {
+          let value: T;
+          try {
+            value = source();
+          } catch (error) {
+            for (const e of [...entries]) e.subscriber.error(error);
+            return;
+          }
+          for (const e of [...entries]) if (entries.has(e)) deliver(e, value);
+        }),
+      );
+    }
+    return () => {
+      entries.delete(entry);
+      if (entries.size === 0 && scope) {
+        const done = scope;
+        scope = null;
+        done.dispose();
+      }
+    };
   });
 }
 

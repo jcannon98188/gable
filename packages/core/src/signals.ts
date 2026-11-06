@@ -1,5 +1,6 @@
 import { Signal } from "signal-polyfill";
 import { reportError } from "./errors.js";
+import { inReadPhase, readPhase } from "./read-phase.js";
 import { currentScope, createScope, runInScope, type Scope } from "./scope.js";
 
 // The TC39 polyfill is an implementation detail: it is imported only here and
@@ -24,8 +25,8 @@ export interface SignalOptions<T> {
 export function signal<T>(initial: T, options?: SignalOptions<T>): WritableSignal<T> {
   const state = new Signal.State<T>(initial, options?.equal ? { equals: options.equal } : undefined);
   const read = (() => state.get()) as WritableSignal<T>;
-  read.set = (value) => state.set(value);
-  read.update = (fn) => state.set(fn(state.get()));
+  read.set = (value) => (writes++, state.set(value));
+  read.update = (fn) => (writes++, state.set(fn(state.get())));
   return read;
 }
 
@@ -41,19 +42,53 @@ export function untracked<T>(fn: () => T): T {
 
 // --- scheduler -------------------------------------------------------------
 
-interface EffectNode {
-  readonly scope: Scope;
-  readonly seq: number;
-  readonly computed: Signal.Computed<void>;
+// Effects are watched in buckets of up to BUCKET_SIZE, each with its own
+// watcher. A watcher's notify callback says which bucket went dirty, so a flush
+// scans only the dirty buckets (via getPending) rather than every watched
+// effect. The notify callback may not touch signals, so it only records the
+// bucket and schedules the microtask flush.
+const BUCKET_SIZE = 32;
+
+interface Bucket {
+  readonly watcher: Signal.subtle.Watcher;
+  size: number;
+  queued: boolean;
 }
 
-const nodes = new Map<Signal.Computed<void>, EffectNode>();
+class EffectNode extends Signal.Computed<void> {
+  constructor(
+    fn: () => void,
+    readonly scope: Scope,
+    readonly seq: number,
+    readonly bucket: Bucket,
+  ) {
+    super(fn);
+  }
+}
+
 let seq = 0;
 let scheduled: Promise<void> | null = null;
+/** Buckets that may hold a pending effect. */
+let dirtyBuckets: Bucket[] = [];
+/** Buckets with room for another effect. */
+const openBuckets: Bucket[] = [];
+/** Counts signal writes, so effect() can tell whether its first run wrote to a signal. */
+let writes = 0;
 
-// One watcher for every effect. Its notify callback may not touch signals, so
-// it only schedules the microtask flush.
-const watcher = new Signal.subtle.Watcher(() => schedule());
+function newBucket(): Bucket {
+  const bucket: Bucket = {
+    size: 0,
+    queued: false,
+    watcher: new Signal.subtle.Watcher(() => {
+      if (!bucket.queued) {
+        bucket.queued = true;
+        dirtyBuckets.push(bucket);
+      }
+      schedule();
+    }),
+  };
+  return bucket;
+}
 
 function schedule(): void {
   scheduled ??= Promise.resolve().then(flushNow);
@@ -69,17 +104,26 @@ export function runAfterFlush(task: () => void, scope: Scope | null = currentSco
 /** Most rounds one flush runs before it concludes that effects keep re-arming each other. */
 const MAX_FLUSH_ROUNDS = 1000;
 
+function byDepthThenCreation(a: EffectNode, b: EffectNode): number {
+  return a.scope.depth - b.scope.depth || a.seq - b.seq;
+}
+
 function flushNow(): void {
-  // Effects may write signals and so re-arm the watcher: loop until quiet.
+  // Effects may write signals and so re-arm a watcher: loop until quiet.
   // Parents run before children; ties run in creation order.
   let rounds = 0;
   for (;;) {
-    const pending = watcher
-      .getPending()
-      .map((c) => nodes.get(c as Signal.Computed<void>))
-      .filter((n): n is EffectNode => n !== undefined)
-      .sort((a, b) => a.scope.depth - b.scope.depth || a.seq - b.seq);
-    watcher.watch(); // re-arm notifications
+    let pending: EffectNode[] = [];
+    if (dirtyBuckets.length > 0) {
+      const buckets = dirtyBuckets;
+      dirtyBuckets = [];
+      for (const bucket of buckets) {
+        bucket.queued = false;
+        for (const c of bucket.watcher.getPending()) pending.push(c as EffectNode);
+        bucket.watcher.watch(); // re-arm notifications
+      }
+      if (pending.length > 1) pending.sort(byDepthThenCreation);
+    }
     if (pending.length > 0 && ++rounds > MAX_FLUSH_ROUNDS) {
       reportError(new Error(`Effects did not settle after ${MAX_FLUSH_ROUNDS} rounds: an effect loop keeps writing signals the others read.`), "effect", pending[0]!.scope);
       break;
@@ -97,7 +141,7 @@ function flushNow(): void {
     for (const node of pending) {
       if (node.scope.disposed) continue;
       try {
-        node.computed.get();
+        node.get();
       } catch (error) {
         reportError(error, "effect", node.scope);
       }
@@ -128,19 +172,36 @@ export function flushSync(): void {
  */
 export function effect(fn: () => void): void {
   const scope = currentScope() ?? createScope(null);
-  const computedNode = new Signal.Computed<void>(() => {
-    // Effects see the scope they were created in (nested effects own children).
-    runInScope(scope, fn);
-  });
-  nodes.set(computedNode, { scope, seq: seq++, computed: computedNode });
+  const bucket = openBuckets.length > 0 ? openBuckets[openBuckets.length - 1]! : newBucket();
+  if (bucket.size === 0 || bucket.size === BUCKET_SIZE - 1) {
+    // fresh bucket becomes open; a bucket that just filled stops being open
+    if (bucket.size === 0 && openBuckets[openBuckets.length - 1] !== bucket) openBuckets.push(bucket);
+    if (bucket.size === BUCKET_SIZE - 1) openBuckets.pop();
+  }
+  bucket.size++;
+  const node = new EffectNode(
+    () => {
+      // Effects see the scope they were created in (nested effects own children).
+      runInScope(scope, () => (readPhase() ? fn() : inReadPhase("effect", fn)));
+    },
+    scope,
+    seq++,
+    bucket,
+  );
   scope.onDispose(() => {
-    watcher.unwatch(computedNode);
-    nodes.delete(computedNode);
+    bucket.watcher.unwatch(node);
+    if (bucket.size-- === BUCKET_SIZE) openBuckets.push(bucket);
   });
+  const before = writes;
   try {
-    computedNode.get(); // the initial run is synchronous
+    node.get(); // the initial run is synchronous
   } catch (error) {
     reportError(error, "effect", scope); // reported; the effect stays alive for its next dependency change
   }
-  watcher.watch(computedNode);
+  bucket.watcher.watch(node);
+  if (writes !== before && !bucket.queued) {
+    // The first run wrote a signal it had read; watch() does not notify for an already-dirty node, so look at this bucket on the next flush.
+    bucket.queued = true;
+    dirtyBuckets.push(bucket);
+  }
 }

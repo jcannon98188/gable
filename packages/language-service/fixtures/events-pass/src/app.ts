@@ -14,11 +14,17 @@ export class Page {
       <button (click)="onClick($event)">go</button>
       <input [(value)]="text" (input)="onInput($event)" #box />
       <x-child [(value)]="text" (picked)="onPick($event)" (closed)="reset()" (click)="onClick($event)"></x-child>
+      <input (input)="text.set($event.currentTarget.value)" (keydown)="onEnter($event.key)" />
+      <input type="checkbox" (change)="done.set($event.currentTarget.checked)" />
       <p (click)="count.set(1)">{{ count() }}</p>
     `,
   };
   text = signal("");
   count = signal(0);
+  done = signal(false);
+  onEnter(key: string): void {
+    void key;
+  }
   onClick(event: MouseEvent): void {
     void event;
   }

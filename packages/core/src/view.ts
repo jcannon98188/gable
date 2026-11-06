@@ -366,8 +366,30 @@ interface Row<N> {
   item: WritableSignal<unknown>;
   index: WritableSignal<number>;
   parts: Part<N>[];
+  /** The item last written to the item signal. */
+  value: unknown;
   /** Position in the previous render. */
   pos: number;
+}
+
+/** Marks the members of one longest strictly increasing subsequence of `seq` (O(n log n)). */
+function longestIncreasing(seq: number[]): boolean[] {
+  const tails: number[] = []; // tails[k]: index in seq of the smallest tail of an increasing run of length k + 1
+  const prev: number[] = new Array(seq.length);
+  for (let i = 0; i < seq.length; i++) {
+    let lo = 0;
+    let hi = tails.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (seq[tails[mid]] < seq[i]) lo = mid + 1;
+      else hi = mid;
+    }
+    prev[i] = lo > 0 ? tails[lo - 1] : -1;
+    tails[lo] = i;
+  }
+  const keep: boolean[] = new Array(seq.length).fill(false);
+  for (let i = tails.length ? tails[tails.length - 1] : -1; i >= 0; i = prev[i]) keep[i] = true;
+  return keep;
 }
 
 function buildFor<N>(node: ForNode, renderer: Renderer<N>, env: Env, parent: N, before: N | null): Part<N> {
@@ -403,7 +425,7 @@ function buildFor<N>(node: ForNode, renderer: Renderer<N>, env: Env, parent: N, 
     rowEnv.locals.set("$even", () => indexSig() % 2 === 0);
     rowEnv.locals.set("$odd", () => indexSig() % 2 === 1);
     const parts = runInScope(scope, () => buildNodes(node.children, renderer, rowEnv, parent, nextBefore));
-    return { scope, item: itemSig, index: indexSig, parts, pos: index };
+    return { scope, item: itemSig, index: indexSig, parts, value: item, pos: index };
   };
 
   const safe = guard(outer, "@for");
@@ -436,16 +458,25 @@ function buildFor<N>(node: ForNode, renderer: Renderer<N>, env: Env, parent: N, 
         for (const n of flatten(row.parts)) renderer.remove(n);
         rows.delete(key);
       }
-      // Rows whose previous order is still increasing keep their nodes; the rest move.
-      const moved = new Set<unknown>();
-      let maxPos = -1;
+      // Surviving rows on a longest increasing subsequence of their previous positions keep their nodes; the rest move.
+      const survivors: Row<N>[] = [];
+      const survivorKeys: unknown[] = [];
       keys.forEach((key, i) => {
         const row = rows.get(key);
         if (!row) return;
-        row.item.set(items[i]);
-        row.index.set(i);
-        if (row.pos > maxPos) maxPos = row.pos;
-        else moved.add(key);
+        // Skip writes that change nothing: an unchanged item (by identity) and index wake no dependents.
+        if (row.value !== items[i]) {
+          row.value = items[i];
+          row.item.set(items[i]);
+        }
+        if (row.pos !== i) row.index.set(i);
+        survivors.push(row);
+        survivorKeys.push(key);
+      });
+      const moved = new Set<unknown>();
+      const stay = longestIncreasing(survivors.map((r) => r.pos));
+      survivors.forEach((_, i) => {
+        if (!stay[i]) moved.add(survivorKeys[i]);
       });
       // Create new rows first-to-last so anything registered while building (queries) is in order.
       const created = new Set<unknown>();
@@ -455,11 +486,15 @@ function buildFor<N>(node: ForNode, renderer: Renderer<N>, env: Env, parent: N, 
         created.add(key);
       });
       // Then place rows last-to-first: moved and new rows go before their successor.
+      // New rows were built just before the anchor in order, so a run of them at the end is already in place.
       let nextBefore: N = anchor;
+      let trailing = true;
       for (let i = keys.length - 1; i >= 0; i--) {
         const key = keys[i];
         const row = rows.get(key)!;
-        if (moved.has(key) || created.has(key)) {
+        const isNew = created.has(key);
+        if (!isNew) trailing = false;
+        if (moved.has(key) || (isNew && !trailing)) {
           for (const n of flatten(row.parts)) renderer.insert(parent, n, nextBefore);
         }
         nextBefore = flatten(row.parts)[0] ?? nextBefore;

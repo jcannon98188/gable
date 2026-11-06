@@ -96,6 +96,24 @@ describe("params and nesting", () => {
     expect(app.text()).toBe("user 3");
   });
 
+  it("a leaf route with no component and no children matches, exposes its data and renders nothing in the outlet", async () => {
+    const routes: Route[] = [
+      { path: "", data: { filter: "all" } },
+      { path: "active", data: { filter: "active" }, title: "Active" },
+      { path: "**", redirectTo: "/" },
+    ];
+    const app = mountApp(Root, { routes, url: "/" });
+    await app.settle();
+    expect(app.router.data()).toEqual({ filter: "all" });
+    expect(app.text()).toBe("");
+    expect(await app.navigate("/active")).toEqual({ status: "success", url: "/active" });
+    expect(app.router.data()).toEqual({ filter: "active" });
+    expect(app.title.get()).toBe("Active");
+    expect(app.text()).toBe("");
+    expect(await app.navigate("/nope")).toEqual({ status: "success", url: "/" });
+    expect(app.router.data()).toEqual({ filter: "all" });
+  });
+
   it("wildcard matches the rest; the first matching route wins", async () => {
     const routes: Route[] = [{ path: "about", component: About }, { path: "**", component: Home }];
     const app = mountApp(Root, { routes, url: "/about" });

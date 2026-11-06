@@ -17,7 +17,7 @@ export class TodoApp {
             placeholder="What needs to be done?"
             autofocus
             [value]="draft()"
-            (input)="setDraft($event)"
+            (input)="draft.set($event.currentTarget.value)"
             (keydown)="onKeydown($event.key)"
           />
         </header>
@@ -28,7 +28,7 @@ export class TodoApp {
               class="toggle-all"
               type="checkbox"
               [checked]="store.allCompleted()"
-              (change)="toggleAll($event)"
+              (change)="store.toggleAll($event.currentTarget.checked)"
             />
             <label for="toggle-all">Mark all as complete</label>
             <ul class="todo-list">
@@ -55,14 +55,6 @@ export class TodoApp {
 
   store = inject(TodoStore);
   draft = signal('');
-
-  setDraft(event: Event): void {
-    this.draft.set((event.target as HTMLInputElement).value);
-  }
-
-  toggleAll(event: Event): void {
-    this.store.toggleAll((event.target as HTMLInputElement).checked);
-  }
 
   onKeydown(key: string): void {
     if (key === ENTER_KEY && this.store.add(this.draft())) this.draft.set('');

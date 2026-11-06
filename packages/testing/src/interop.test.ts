@@ -142,133 +142,42 @@ describe("toObservable", () => {
     await f.flush();
     expect(seen).toEqual([1]);
   });
-});
 
-describe("renderScheduler", () => {
-  it("runs scheduled work inside the render flush", async () => {
-    const subject = new Subject<number>();
-    class C {
-      static meta = { selector: "app-c", template: html`<p>{{ n() }}</p>` };
-      n = toSignal(subject.pipe(observeOn(renderScheduler)));
-    }
-    const f = mount(C);
-    subject.next(9);
-    expect(f.instance.n()).toBeUndefined();
-    await f.flush();
-    expect(f.instance.n()).toBe(9);
-    expect(f.text()).toBe("9");
-  });
-});
-
-describe("output", () => {
-  it("is an Observable that completes when its scope is destroyed", () => {
-    const seen: number[] = [];
-    let done = false;
+  it("shares one effect between subscribers; each sees its own sequence and unsubscribes independently", async () => {
+    const a: number[] = [];
+    const b: number[] = [];
+    const n = signal(1);
     class C {
       static meta = { selector: "app-c", template: html`<p></p>` };
-      changed = output<number>();
+      stream = toObservable(n);
     }
     const f = mount(C);
-    f.instance.changed.subscribe({ next: (v) => seen.push(v), complete: () => (done = true) });
-    f.instance.changed.emit(1);
-    f.instance.changed.emit(2);
-    expect(seen).toEqual([1, 2]);
-    f.destroy();
-    expect(done).toBe(true);
-  });
-});
-
-describe("Observables and Promises bound directly in templates", () => {
-  it("shows nothing before the first emission, then the value", async () => {
-    const subject = new Subject<string>();
-    class C {
-      static meta = { selector: "app-c", template: html`<p>[{{ name$ }}]</p>` };
-      name$ = subject;
-    }
-    const f = mount(C);
-    expect(f.text()).toBe("[]");
-    subject.next("Ada");
+    const subA = f.instance.stream.subscribe((v) => a.push(v));
+    n.set(2);
+    f.instance.stream.subscribe((v) => b.push(v)); // joins before the flush: sees the current value
     await f.flush();
-    expect(f.text()).toBe("[Ada]");
+    expect(a).toEqual([1, 2]);
+    expect(b).toEqual([2]);
+    subA.unsubscribe();
+    n.set(3);
+    await f.flush();
+    expect(a).toEqual([1, 2]);
+    expect(b).toEqual([2, 3]);
   });
 
-  it("applies optional chaining along paths and keeps the last value after completion", async () => {
-    const subject = new Subject<{ name: string }>();
+  it("resubscribing after the last subscriber left starts afresh", async () => {
+    const seen: number[] = [];
+    const n = signal(1);
     class C {
-      static meta = { selector: "app-c", template: html`<p>[{{ user$?.name }}]</p>` };
-      user$ = subject;
+      static meta = { selector: "app-c", template: html`<p></p>` };
+      stream = toObservable(n);
     }
     const f = mount(C);
-    expect(f.text()).toBe("[]");
-    subject.next({ name: "Ada" });
-    subject.complete();
+    f.instance.stream.subscribe(() => {}).unsubscribe();
+    n.set(2);
+    f.instance.stream.subscribe((v) => seen.push(v));
+    n.set(3);
     await f.flush();
-    expect(f.text()).toBe("[Ada]");
-  });
-
-  it("binds Promises", async () => {
-    class C {
-      static meta = { selector: "app-c", template: html`<p>[{{ answer }}]</p>` };
-      answer = Promise.resolve(42);
-    }
-    const f = mount(C);
-    expect(f.text()).toBe("[]");
-    await Promise.resolve();
-    await f.flush();
-    expect(f.text()).toBe("[42]");
-  });
-
-  it("resubscribes when the reference changes and unsubscribes the old one", async () => {
-    const a = new Subject<string>();
-    const b = new Subject<string>();
-    class C {
-      static meta = { selector: "app-c", template: html`<p>[{{ current().stream$ }}]</p>` };
-      current = signal({ stream$: a });
-    }
-    const f = mount(C);
-    expect(a.observed).toBe(true);
-    a.next("from a");
-    await f.flush();
-    expect(f.text()).toBe("[from a]");
-    f.instance.current.set({ stream$: b });
-    await f.flush();
-    expect(a.observed).toBe(false);
-    expect(b.observed).toBe(true);
-    b.next("from b");
-    await f.flush();
-    expect(f.text()).toBe("[from b]");
-  });
-
-  it("subscribes once however many times the view re-renders, and unsubscribes on destroy", async () => {
-    const subject = new BehaviorSubject("x");
-    class C {
-      static meta = { selector: "app-c", template: html`<p>{{ tick() }}{{ s$ }}</p>` };
-      tick = signal(0);
-      s$ = subject;
-    }
-    const f = mount(C);
-    expect(subject.observers.length).toBe(1);
-    f.instance.tick.set(1);
-    await f.flush();
-    f.instance.tick.set(2);
-    await f.flush();
-    expect(subject.observers.length).toBe(1);
-    expect(f.text()).toBe("2x");
-    f.destroy();
-    expect(subject.observed).toBe(false);
-  });
-
-  it("sends a bound stream's error to the error handler", async () => {
-    const subject = new Subject<string>();
-    class C {
-      static meta = { selector: "app-c", template: html`<p>[{{ s$ }}]</p>` };
-      s$ = subject;
-    }
-    const f = mount(C);
-    subject.next("ok");
-    subject.error(new Error("bad"));
-    await expect(f.flush()).rejects.toThrow("bad");
-    expect(f.claimErrors().map((r) => r.error)).toEqual([new Error("bad")]);
-    expect(f.text()).toBe("[ok]");
+    expect(seen).toEqual([2, 3]);
   });
 });
