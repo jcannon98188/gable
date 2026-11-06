@@ -1,0 +1,27 @@
+{
+  "name": "gable-hmr-benchmark",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "bench": "node bench.mjs"
+  },
+  "dependencies": {
+    "@gable/core": "file:vendor/gable-core-0.0.0.tgz",
+    "@gable/renderer-dom": "file:vendor/gable-renderer-dom-0.0.0.tgz"
+  },
+  "devDependencies": {
+    "@gable/vite": "file:vendor/gable-vite-0.0.0.tgz",
+    "playwright": "^1.65.0",
+    "vite": "^8.3.6"
+  },
+  "overrides": {
+    "@gable/core": "file:vendor/gable-core-0.0.0.tgz",
+    "@gable/language-service": "file:vendor/gable-language-service-0.0.0.tgz",
+    "@gable/prettier-plugin": "file:vendor/gable-prettier-plugin-0.0.0.tgz",
+    "@gable/renderer-dom": "file:vendor/gable-renderer-dom-0.0.0.tgz",
+    "@gable/template-format": "file:vendor/gable-template-format-0.0.0.tgz",
+    "@gable/testing": "file:vendor/gable-testing-0.0.0.tgz",
+    "@gable/vite": "file:vendor/gable-vite-0.0.0.tgz"
+  }
+}
