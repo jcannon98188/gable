@@ -116,3 +116,26 @@ describe("composition: imports, inputs, outputs, models", () => {
     expect(hosts).toBe(1);
   });
 });
+
+describe("host bindings and required inputs", () => {
+  class Row {
+    static meta = { selector: "li[app-row]", host: { "[class.done]": "done()", "[attr.data-name]": "name()" }, template: html`{{ name() }}` };
+    name = input.required<string>();
+    done = input(false);
+  }
+  class List {
+    static meta = { selector: "app-list", imports: [Row], template: html`<ul><li app-row [name]="label()" [done]="true"></li></ul>` };
+    label = signal("one");
+  }
+
+  it("lets meta.host bindings read a required input the parent binds", async () => {
+    const fixture = mount(List);
+    await fixture.settle();
+    const row = fixture.query("li")!;
+    expect(row.classes).toContain("done");
+    expect(row.attrs["data-name"]).toBe("one");
+    fixture.instance.label.set("two");
+    await fixture.settle();
+    expect(row.attrs["data-name"]).toBe("two");
+  });
+});

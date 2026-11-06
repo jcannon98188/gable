@@ -1,0 +1,32 @@
+{
+  "name": "gable-todomvc",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "check": "tsc --noEmit && gable-check"
+  },
+  "dependencies": {
+    "@gable/core": "file:vendor/gable-core-0.0.0.tgz",
+    "@gable/renderer-dom": "file:vendor/gable-renderer-dom-0.0.0.tgz",
+    "rxjs": "^7.8.2",
+    "todomvc-app-css": "^2.4.3",
+    "todomvc-common": "^1.0.5"
+  },
+  "devDependencies": {
+    "@gable/language-service": "file:vendor/gable-language-service-0.0.0.tgz",
+    "@gable/testing": "file:vendor/gable-testing-0.0.0.tgz",
+    "@gable/vite": "file:vendor/gable-vite-0.0.0.tgz",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
+  },
+  "overrides": {
+    "@gable/core": "file:vendor/gable-core-0.0.0.tgz",
+    "@gable/template-format": "file:vendor/gable-template-format-0.0.0.tgz"
+  }
+}

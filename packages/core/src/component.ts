@@ -168,7 +168,13 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
       imports: applyOverrides(own, imports ?? []).filter((e): e is ComponentClass<any> => !isLazy(e)),
       lazies: applyOverrides(own, imports ?? []).filter(isLazy), injector: own, queries, content: options.content ?? null, scopeToken };
     if (scopeToken) renderer.setAttribute(host, scopeToken, "");
-    applyBindings(host, hostSpec(Class), renderer, env);
+    // Host bindings are applied by render(), after the parent has bound inputs, so they may read required inputs.
+    let hostBound = false;
+    const bindHost = () => {
+      if (hostBound) return;
+      hostBound = true;
+      runInScope(scope, () => applyBindings(host, hostSpec(Class), renderer, env));
+    };
     let parts: Array<() => N[]> = [];
     // Dev: the view lives in its own scope so a hot update can rebuild it without touching Setup.
     let viewScope: Scope | null = null;
@@ -179,6 +185,7 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
       host,
       scope,
       render() {
+        bindHost();
         if (!Class.meta.template) return;
         if (DEV) viewScope = createScope(scope);
         parts = build(viewScope ?? scope);
