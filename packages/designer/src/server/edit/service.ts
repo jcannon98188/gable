@@ -6,6 +6,7 @@ import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parseTemplateTree } from "@gable/template-format";
 import { sourceText, type SourceText } from "../source.js";
 import { setCssDeclaration } from "./css.js";
+import { unifiedDiff, type UnifiedDiff } from "./diff.js";
 import { applyHunks, applyWithReverse, hash, locate, type Hunk, type PatchHunk } from "./hunks.js";
 import { ensureImport, ensureMetaImport, setMetaString } from "./meta.js";
 import { buildPalette } from "./palette.js";
@@ -18,6 +19,8 @@ interface Entry {
   abs: string;
   /** The patch that undoes (or, on the redo stack, redoes) the change, in the coordinates of the file as it is now. */
   patch: PatchHunk[];
+  /** What the change did when it was last applied (the write itself, or its redo), for the Code tab. */
+  diff: UnifiedDiff;
   stale: boolean;
 }
 
@@ -194,7 +197,7 @@ export class EditService {
     }
     const bad = this.#write(abs, next.text);
     if (bad) return bad;
-    this.#undo.push({ id: this.#next++, label, abs, patch: next.reverse, stale: false });
+    this.#undo.push({ id: this.#next++, label, abs, patch: next.reverse, diff: unifiedDiff(this.#rel(abs), original, next.text), stale: false });
     if (this.#undo.length > MAX_HISTORY) this.#undo.shift();
     this.#redo = [];
     return { ok: true, label, file: this.#rel(abs), select };
@@ -235,14 +238,18 @@ export class EditService {
     const bad = this.#write(entry.abs, next.text);
     if (bad) return bad;
     from.pop();
-    to.push({ ...entry, patch: next.reverse, stale: false });
+    // Redo applies the change again: its diff is that write. Undo keeps the diff of the change it took back.
+    const diff = to === this.#undo ? unifiedDiff(this.#rel(entry.abs), current, next.text) : entry.diff;
+    to.push({ ...entry, patch: next.reverse, diff, stale: false });
     return { ok: true, label: `${verb}: ${entry.label}`, file: this.#rel(entry.abs), select: null, ...(located.relocated ? { relocated: true } : {}) };
   }
 
   history(): HistoryInfo {
     const item = (e: Entry): HistoryItem => ({ id: e.id, label: e.label, file: this.#rel(e.abs), stale: e.stale });
     const external = [...new Set([...this.#undo, ...this.#redo].filter((e) => e.stale).map((e) => this.#rel(e.abs)))];
-    return { undo: this.#undo.map(item), redo: this.#redo.map(item), external };
+    const top = this.#undo[this.#undo.length - 1];
+    const last = top ? { ...item(top), diff: top.diff } : null;
+    return { undo: this.#undo.map(item), redo: this.#redo.map(item), external, last };
   }
 }
 

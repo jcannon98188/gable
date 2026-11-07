@@ -2,9 +2,10 @@
 // project's Vite with `--config`), so nothing is written to the project. It injects the Preview agent into every page,
 // serves the component-mode host page for a `*.scenes.ts` module, and, in page mode, injects a scenario module that
 // applies a scene's providers and HTTP mocks to the real app before it bootstraps.
+import { readFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import type { Plugin } from "vite";
-import { SCENARIO_PARAM } from "../protocol.js";
+import { AXE_PATH, SCENARIO_PARAM } from "../protocol.js";
 
 const PAGE = "/__gable-designer/component";
 const HOST = "/__gable-designer/host.js";
@@ -101,7 +102,16 @@ if (import.meta.hot) {
 `;
 }
 
-export function designerPlugin(options: { agentFile: string }): Plugin {
+/**
+ * axe-core as an ES module for the agent. axe's UMD build assigns `window.axe` when it finds a window (as a plain script tag
+ * would); the module only re-exports that. Read from the Designer's own dependency, so the project needs no axe-core.
+ */
+export async function axeModule(axeFile: string | null): Promise<string> {
+  if (!axeFile) return 'throw new Error("axe-core is not installed with the Designer, so accessibility checks cannot run.");\n';
+  return `${await readFile(axeFile, "utf8")}\nexport default globalThis.axe;\n`;
+}
+
+export function designerPlugin(options: { agentFile: string; axeFile?: string | null }): Plugin {
   const agentUrl = "/@fs/" + options.agentFile.replaceAll("\\", "/").replace(/^\//, "");
   return {
     name: "gable-designer",
@@ -110,6 +120,11 @@ export function designerPlugin(options: { agentFile: string }): Plugin {
       server.config.server.fs.allow.push(dirname(dirname(options.agentFile)));
       server.middlewares.use(async (req, res, next) => {
         const url = req.url ?? "";
+        if (url.split("?")[0] === AXE_PATH) {
+          res.setHeader("content-type", "text/javascript");
+          res.setHeader("cache-control", "no-cache");
+          return void res.end(await axeModule(options.axeFile ?? null));
+        }
         if (!url.startsWith(PAGE)) return next();
         const query = new URL(url, "http://x").searchParams;
         const scenes = query.get("scenes");

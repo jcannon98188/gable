@@ -1074,6 +1074,44 @@ ui-virtual-table {
   gap: 4px;
   padding-top: 8px;
 }
+/* The last patch as a unified diff: old and new line numbers, removed lines red, added lines green. */
+.code.diff .ln.add {
+  background: var(--ok-bg);
+}
+.code.diff .ln.del {
+  background: var(--err-bg);
+}
+.code.diff .ln.hunk {
+  color: var(--d-dim);
+}
+.code.diff .n {
+  width: 30px;
+}
+.diff-add {
+  color: var(--ok);
+}
+.diff-del {
+  color: var(--err);
+}
+.a11y-row {
+  grid-template-columns: 76px minmax(0, 1fr) minmax(0, max-content);
+  cursor: pointer;
+}
+.a11y-row:hover,
+.a11y-row[aria-current="true"] {
+  background: var(--d-hover);
+}
+.a11y-what {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.a11y-row .elink {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .follow {
   padding-top: 2px;
   font-size: 11px;
