@@ -6,6 +6,7 @@ canvas. Private (not published).
 ```
 npm run build -w packages/designer          # agent + backend (tsc) and the shell (vite)
 node packages/designer/dist/server/cli.js examples/todomvc      # then open the printed URL in a browser
+node packages/designer/dist/server/cli.js                       # no folder: reopens the most recent project
 packages/designer/src-tauri/target/debug/gable-designer.exe examples/todomvc   # the desktop window (cargo build in src-tauri)
 ```
 
@@ -86,11 +87,36 @@ Accessibility, HTTP) and Style, Content and Inspector on the right. Tokens live 
 Ctrl K opens the command palette, generated from the current state in `shell/src/app/commands.ts`. Panel sizes, the drawer and
 the theme are saved per project with the frame layout (`chrome` in the device settings), never in browser storage.
 
-Open project, install the agent, extract component, create Scenario and accessibility checks have no backend yet: they show the
-real part and say the rest is unavailable, with the action disabled. Nothing pretends to have run.
+Extract component, create Scenario and accessibility checks have no backend yet: they show the real part and say the rest is
+unavailable, with the action disabled. Nothing pretends to have run.
 
 ```
 node packages/designer/e2e/chrome-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port>
+```
+
+## Projects and the dev server
+
+The project name in the top bar opens **Open a project**: a folder field, the recent projects and a folder lister (folders
+only, projects marked). Opening a folder stops the current project's Vite, starts the new one's on the same preview port and
+reloads the shell; the backend, its token and the window stay. Recent projects (ten at most) are kept in `recent.json` in the
+user data directory; the CLI and the desktop app reopen the most recent one when started without a folder.
+
+The **Connect** dialog checks the project: package.json, Vite, and the Preview agent's in-app hook (`@gable/core/designer`,
+`src/server/projects.ts`). When they are listed in package.json but not installed, **Install and start** runs the project's
+package manager (`packageManager` field or lockfile: npm, pnpm, yarn or bun) and restarts the dev server; a project that is not
+a Gable app, or whose `@gable/core` is too old, is told so and not installed into. The Designer's half of the agent comes from
+its Vite plugin, so nothing is added to the source.
+
+When the dev server fails or stops, the canvas says why, shows the end of its log and offers **Restart server** and **Open
+log** (the whole output of the project's Vite and of installs run from here). Backend endpoints (`src/server/project-api.ts`,
+token-checked): `/api/project/recent`, `/api/project/folders?dir=`, `/api/project/open`, `/api/project/install`,
+`/api/server/log`, `/api/server/restart`; the `server`, `log` and `project` events come over `/api/events`.
+
+The driven check is self-contained: it builds a fixture app whose dependencies are not installed (`file:` links into this
+checkout, so the install works offline), starts the backend and a headless Edge, and stops only what it started.
+
+```
+node packages/designer/e2e/project-check.mjs [--edge <msedge.exe>] [--shot dir] [--keep]
 ```
 
 ## Page mode
