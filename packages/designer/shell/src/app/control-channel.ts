@@ -12,6 +12,7 @@ import { PageState } from "./page-state.js";
 import { DEV_NOTE, PerfState } from "./perf-state.js";
 import { SignalEdits } from "./signal-edits.js";
 import { SignalTimeline } from "./signal-timeline-state.js";
+import { WhyState } from "./why-state.js";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -24,6 +25,7 @@ export class ControlChannel {
   perf = inject(PerfState);
   signals = inject(SignalEdits);
   timeline = inject(SignalTimeline);
+  why = inject(WhyState);
   network = inject(NetworkState);
   storage = inject(StorageState);
 
@@ -264,6 +266,21 @@ export class ControlChannel {
       const info = await t.refresh();
       if (!info) throw new Error("The selected frame has no state history: its app is not running with the Gable devtools hook.");
       return { info, ...(travel ? { travel } : {}) };
+    },
+    why: async (a) => {
+      this.#ready();
+      if (a.id) {
+        const shown = await this.why.explain(a.id).catch(() => null);
+        return { shown, empty: shown ? "" : `Nothing with id ${a.id} is rendered in the selected frame.` };
+      }
+      const shown = await this.why.refresh(a.scope ?? "element");
+      return { shown, empty: shown ? "" : this.why.empty() };
+    },
+    highlightUpdates: async ({ on }) => {
+      this.#ready();
+      this.why.setHighlight(on);
+      await this.state.preview.call("flashUpdates", { on }).then(() => this.why.highlightError.set(""), (e: Error) => this.why.highlightError.set(e.message));
+      return { on: this.why.highlight(), error: this.why.highlightError() };
     },
     network: (command) => this.network.command(command),
     storage: (command) => this.storage.command(command),

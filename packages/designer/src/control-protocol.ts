@@ -10,6 +10,7 @@ import type { HttpLogEntry, PageScenarioInfo, PerfReport, SceneInfo, SceneStateR
 import type { NetworkCommand, NetworkCommandResult } from "./network.js";
 import type { StorageCommand, StorageCommandResult } from "./storage.js";
 import type { SourceRange } from "./server/source.js";
+import type { WhyShown } from "./why.js";
 
 export interface FrameSnapshot {
   id: string;
@@ -95,6 +96,18 @@ export interface ControlCommands {
   network: { params: NetworkCommand; result: NetworkCommandResult };
   /** The Storage panel: a frame's localStorage, sessionStorage and cookies, read and edited. */
   storage: { params: StorageCommand; result: StorageCommandResult };
+  /** The Why tab (TASK-56.19): what the selection's bindings depend on and why they last updated; `id` explains one component, signal or effect instead. */
+  why: { params: WhyAction; result: WhyResult };
+  /** The Why tab's "Highlight updates": the canvas outlines the elements whose bindings re-run. */
+  highlightUpdates: { params: { on: boolean }; result: { on: boolean; error: string } };
+}
+
+export type WhyAction = { scope?: "element" | "component"; id?: string };
+
+export interface WhyResult {
+  /** Null when there is nothing to show; `empty` says why. */
+  shown: WhyShown | null;
+  empty: string;
 }
 
 /** What the `history` command does: report, travel (to a step; `start`: before the first; `live`: the newest), clear, record. */

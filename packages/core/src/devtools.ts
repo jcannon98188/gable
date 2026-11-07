@@ -4,7 +4,7 @@
 // console snippet) talks to: `call(method, params)` for state and actions, `connect(listener)` for pushed events.
 // Every value that crosses the hook is JSON-safe. No semver promise.
 import type { DevtoolsSink, HmrChange, RouterDevInfo } from "./dev-hooks.js";
-import { devtools } from "./dev-hooks.js";
+import { binding, devtools } from "./dev-hooks.js";
 import { inspectNode, peekNode, pokeNode } from "./signals.js";
 import { SignalHistory, type HistoryInfo, type TravelResult } from "./signal-history.js";
 import type { Scope } from "./scope.js";
@@ -119,8 +119,77 @@ export interface EffectRun {
   id: string;
   label: string;
   component: string | null;
+  /** The component's devtools id, when it has one (an additive field). */
+  componentId?: string | null;
   ms: number;
   first: boolean;
+  /** Why it re-ran: the signal writes (see `why`). Absent on a first run; empty when no recorded write explains the run. Additive. */
+  causes?: WhyCause[];
+}
+
+// --- why did it update ------------------------------------------------------
+
+/** A signal write that made an effect run again: the state signal, its value before and after, and the computeds between it and the effect. */
+export interface WhyCause {
+  signal: Edge & { owner: string | null };
+  before: Preview;
+  after: Preview;
+  /** The computeds the change travelled through, from the signal towards the effect (empty: the effect reads the signal itself). */
+  via: Edge[];
+  /** `designer`: written through `setSignal` or by time travel. `app`: the app's own code. */
+  by: "app" | "designer";
+}
+
+export interface WhyRun {
+  /** `performance.now()` when it ran. */
+  at: number;
+  ms: number;
+  /** The effect's first run (its creation): there is no earlier state to change from. */
+  first: boolean;
+  causes: WhyCause[];
+  /** More causes than are listed. */
+  more: number;
+}
+
+/** What an effect (or a computed or state signal) depends on, as a tree: each node's own dependencies below it. */
+export interface WhyDependency {
+  id: string;
+  name: string;
+  kind: SignalKind;
+  owner: string | null;
+  value: Preview;
+  /** Its own dependencies (a state signal has none). */
+  depends: WhyDependency[];
+  /** Already shown above (a diamond in the graph), so not expanded again. */
+  again?: true;
+  /** Left out: the tree is bounded in depth and size. */
+  cut?: true;
+}
+
+export interface WhyNode {
+  id: string;
+  name: string;
+  kind: SignalKind;
+  owner: { id: string; name: string } | null;
+  /** The template binding this effect updates (`text`, `prop:value`, `class:done`...) and the node it is on; null for any other effect, a computed or a state signal. */
+  binding: { what: string; node: string } | null;
+  runs: number;
+  dependencies: WhyDependency[];
+  /** What reads it (effects and computeds): who would be told when it changes. */
+  dependents: Edge[];
+  /** The last runs of an effect, oldest first (at most 5). */
+  recent: WhyRun[];
+  /** A state signal: the last recorded write of it (needs state history), else null. */
+  lastWrite: { seq: number; at: number; source: "app" | "designer"; before: Preview; after: Preview } | null;
+}
+
+export interface WhyReport {
+  id: string;
+  name: string;
+  kind: "component" | SignalKind;
+  nodes: WhyNode[];
+  /** Effects left out of `nodes` (the report holds at most 40). */
+  more: number;
 }
 
 /** One scheduler flush (or, with `kind: "init"`, the first runs of effects created outside a flush). */
@@ -251,6 +320,11 @@ export interface DevtoolsMethods {
   /** Puts the app back to its state just after step `seq` (one before the first step: the state before it). */
   travel: { params: { seq: number }; result: TravelResult };
   clearHistory: { params: void; result: true };
+  /**
+   * What a component's effects (its template bindings among them) or one signal depends on, and why each effect last ran: the
+   * signal writes that made it run. `id` is a component, signal or effect id. Added after version 1; additive.
+   */
+  why: { params: { id: string }; result: WhyReport | null };
 }
 
 export interface GableDevtoolsHook {
@@ -264,6 +338,10 @@ export interface GableDevtoolsHook {
   componentFor(node: unknown): string | null;
   /** The component that owns `instance` (what design tooling needs to name the owner of a template node). */
   componentOfInstance(instance: object): { id: string; name: string; source: SourceInfo | null } | null;
+  /** The ids of the effects that update `nodes` (elements, or the text nodes inside them): the template bindings, for `why`. Added after version 1; additive. */
+  effectsOf(nodes: unknown[]): string[];
+  /** The nodes the effects `ids` update: the element a binding is on, or a text binding's parent element. Added after version 1; additive. */
+  targetsOf(ids: string[]): unknown[];
   /** Lets a package show its own state and history in the panel. */
   registerInspector(id: string, spec: InspectorSpec): InspectorHandle;
 }
@@ -432,6 +510,10 @@ interface Rec {
   runs: number;
   totalMs: number;
   lastMs: number;
+  /** An effect made by a template binding: the node it updates. */
+  target?: { ref: WeakRef<object>; what: string; on: WeakRef<object> };
+  /** The last runs, for `why`. */
+  recent?: WhyRun[];
 }
 
 interface Comp {
@@ -471,6 +553,15 @@ const MAX_RUNS_PER_FLUSH = 200;
 const MAX_ROUTER_EVENTS = 100;
 const MAX_INSPECTOR_LOG = 500;
 const MAX_HMR = 50;
+const WHY_RUNS = 5;
+const WHY_NODES = 40;
+const WHY_CAUSES = 5;
+/** The graph walk for one run's causes, and the bounds of the dependency tree. */
+const WHY_VISIT = 300;
+const WHY_DEPTH = 4;
+const WHY_TREE_NODES = 60;
+/** Written state signals remembered between a write and the flush that answers it. */
+const MAX_TOUCHED = 1000;
 
 const className = (fn: unknown): string => (typeof fn === "function" ? fn.name || "anonymous" : String(fn));
 
@@ -525,6 +616,9 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
   let treeQueued = false;
   let injQueued = false;
   let highlighted: HTMLElement | null = null;
+  /** State nodes written since the last task, with their value before the first write: what `beforeRun` finds causes in. */
+  const touched = new Map<object, { before: unknown; by: "app" | "designer" }>();
+  let pendingCauses: { causes: WhyCause[]; more: number } | null = null;
 
   const emit = (event: DevtoolsEvent) => {
     for (const listener of [...listeners]) {
@@ -815,9 +909,121 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
   };
   /** A model's own setter also notifies its parent binding; everything else writes the state directly. */
   const writeRec = (rec: Rec, value: unknown) => {
+    noteWrite(rec.node, "designer");
     if (rec.kind === "model" && rec.read) (rec.read as unknown as { set(v: unknown): void }).set(value);
     else pokeNode(rec.node, value);
   };
+
+  /** Remembers a state node about to be written; forgotten after the task, when the effects it made pending have run. */
+  function noteWrite(node: object, by: "app" | "designer"): void {
+    if (touched.has(node) || touched.size >= MAX_TOUCHED) return;
+    let before: unknown;
+    try {
+      before = peekNode(node);
+    } catch {
+      return;
+    }
+    if (touched.size === 0) setTimeout(() => touched.clear(), 0);
+    touched.set(node, { before, by });
+  }
+
+  /** The written signals an effect reads (directly or through computeds), with the computeds between: why it is pending now. */
+  function findCauses(effectNode: object): { causes: WhyCause[]; more: number } {
+    const causes: WhyCause[] = [];
+    let more = 0;
+    const seen = new Set<object>([effectNode]);
+    const queue: Array<{ node: object; path: object[] }> = inspectNode(effectNode).sources.map((node) => ({ node, path: [] }));
+    for (let i = 0; i < queue.length && i < WHY_VISIT; i++) {
+      const { node, path } = queue[i]!;
+      if (seen.has(node)) continue;
+      seen.add(node);
+      const info = inspectNode(node);
+      if (!info.state) {
+        for (const source of info.sources) queue.push({ node: source, path: [...path, node] });
+        continue;
+      }
+      const t = touched.get(node);
+      if (!t) continue;
+      let after: unknown;
+      try {
+        after = peekNode(node);
+      } catch {
+        continue;
+      }
+      if (Object.is(t.before, after)) continue;
+      if (causes.length >= WHY_CAUSES) {
+        more++;
+        continue;
+      }
+      const rec = byNode.get(node);
+      const owner = rec ? ownerOf(rec.scope) : null;
+      causes.push({
+        signal: rec ? { id: idOf(rec), name: recName(rec), kind: rec.kind, owner: owner ? className(owner.Class) : null } : { id: "", name: "(unknown signal)", kind: "internal", owner: null },
+        before: preview(t.before),
+        after: preview(after),
+        via: edgesOf([...path].reverse()),
+        by: t.by,
+      });
+    }
+    return { causes, more };
+  }
+
+  function dependencyTree(node: object, depth: number, budget: { left: number }, seen: Set<object>): WhyDependency | null {
+    const rec = byNode.get(node);
+    if (!rec) return null;
+    const owner = ownerOf(rec.scope);
+    const out: WhyDependency = { id: idOf(rec), name: recName(rec), kind: rec.kind, owner: owner ? className(owner.Class) : null, value: valueOf(rec), depends: [] };
+    if (seen.has(node)) return { ...out, again: true };
+    seen.add(node);
+    budget.left--;
+    const { sources } = inspectNode(node);
+    if (sources.length === 0) return out;
+    if (depth >= WHY_DEPTH || budget.left <= 0) return { ...out, cut: true };
+    for (const source of sources) {
+      const dep = dependencyTree(source, depth + 1, budget, seen);
+      if (dep) out.depends.push(dep);
+    }
+    return out;
+  }
+
+  function whyNode(rec: Rec): WhyNode {
+    const owner = ownerOf(rec.scope);
+    const { sinks, sources } = inspectNode(rec.node);
+    const budget = { left: WHY_TREE_NODES };
+    const seen = new Set<object>([rec.node]);
+    const dependencies = sources.map((s) => dependencyTree(s, 1, budget, seen)).filter((d): d is WhyDependency => !!d);
+    const target = rec.target?.ref.deref();
+    let lastWrite: WhyNode["lastWrite"] = null;
+    if (rec.kind !== "effect" && rec.id) {
+      const steps = history.info().steps;
+      for (let i = steps.length - 1; i >= 0 && !lastWrite; i--) {
+        const w = steps[i]!.writes.find((x) => x.id === rec.id);
+        if (w) lastWrite = { seq: steps[i]!.seq, at: steps[i]!.at, source: steps[i]!.source, before: w.before, after: w.after };
+      }
+    }
+    return {
+      id: idOf(rec),
+      name: recName(rec),
+      kind: rec.kind,
+      owner: owner ? { id: owner.id, name: className(owner.Class) } : null,
+      binding: rec.target && target ? { what: rec.target.what, node: nodeLabel(rec.target.on.deref() ?? target) } : null,
+      runs: rec.runs,
+      dependencies,
+      dependents: edgesOf(sinks),
+      recent: [...(rec.recent ?? [])],
+      lastWrite,
+    };
+  }
+
+  function why(id: string): WhyReport | null {
+    const c = compById.get(id);
+    if (c) {
+      const own = [...effects].filter((e) => ownerOf(e.scope) === c);
+      return { id: c.id, name: className(c.Class), kind: "component", nodes: own.slice(0, WHY_NODES).map(whyNode), more: Math.max(0, own.length - WHY_NODES) };
+    }
+    const rec = lookup(id);
+    return rec ? { id, name: recName(rec), kind: rec.kind, nodes: [whyNode(rec)], more: 0 } : null;
+  }
 
   const sink: DevtoolsSink = {
     get timing() {
@@ -828,6 +1034,13 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
     },
     write(node) {
       history.willWrite(node);
+    },
+    touch(node) {
+      noteWrite(node, "app");
+    },
+    beforeRun(node) {
+      pendingCauses = null;
+      if (touched.size > 0 && byNode.has(node)) pendingCauses = findCauses(node);
     },
     signal(read, node, kind, scope) {
       const rec: Rec = { node, kind, scope, read, seq: ++seq, runs: 0, totalMs: 0, lastMs: 0 };
@@ -843,6 +1056,8 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
     },
     effect(node, scope) {
       const rec: Rec = { node, kind: "effect", scope, seq: ++seq, runs: 0, totalMs: 0, lastMs: 0 };
+      const bound = binding.current;
+      if (bound && bound.node && typeof bound.node === "object") rec.target = { ref: new WeakRef(bound.node), what: bound.what, on: new WeakRef((typeof bound.on === "object" && bound.on) || bound.node) };
       byNode.set(node, rec);
       effects.add(rec);
       scope.onDispose(() => effects.delete(rec));
@@ -854,9 +1069,13 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
       rec.totalMs += ms;
       rec.lastMs = ms;
       batchMs += ms;
+      const why = first ? null : pendingCauses;
+      pendingCauses = null;
+      (rec.recent ??= []).push({ at: performance.now(), ms: round(ms), first, causes: why?.causes ?? [], more: why?.more ?? 0 });
+      if (rec.recent.length > WHY_RUNS) rec.recent.shift();
       if (batch.length < MAX_RUNS_PER_FLUSH) {
         const owner = ownerOf(rec.scope);
-        batch.push({ id: idOf(rec), label: recName(rec), component: owner ? className(owner.Class) : null, ms: round(ms), first });
+        batch.push({ id: idOf(rec), label: recName(rec), component: owner ? className(owner.Class) : null, componentId: owner?.id ?? null, ms: round(ms), first, ...(first ? {} : { causes: why?.causes ?? [] }) });
       } else batchMore++;
       if (first && !initQueued) {
         initQueued = true;
@@ -985,6 +1204,7 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
     recordHistory: ({ on }) => (history.record(on), { recording: history.recording }),
     travel: ({ seq }) => history.travel(seq),
     clearHistory: () => (history.clear(), true),
+    why: ({ id }) => why(id),
     highlight: ({ id }) => highlight(id),
     openInEditor: async ({ id }) => {
       const c = compById.get(id);
@@ -1047,6 +1267,24 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
     componentOfInstance(instance) {
       for (const c of comps) if (c.instance === instance) return { id: c.id, name: className(c.Class), source: sourceOf(c.Class) };
       return null;
+    },
+    targetsOf(ids) {
+      const out = new Set<unknown>();
+      for (const id of ids) {
+        const rec = lookup(id);
+        const on = rec?.target?.on.deref();
+        if (on) out.add(on);
+      }
+      return [...out];
+    },
+    effectsOf(nodes) {
+      const wanted = new Set<unknown>(nodes);
+      const out: string[] = [];
+      for (const rec of effects) {
+        const on = rec.target?.on.deref();
+        if (on && wanted.has(on)) out.push(idOf(rec));
+      }
+      return out;
     },
     registerInspector(id, spec) {
       const insp: Insp = { id, spec, log: [] };

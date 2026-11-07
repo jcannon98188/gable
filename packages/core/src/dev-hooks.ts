@@ -149,6 +149,33 @@ export interface DevtoolsSink {
   readonly recording?: boolean;
   /** A state node is about to be written (its value is still the old one). Only while `recording`. */
   write?(node: object): void;
+  /** A state node is about to be written (its value is still the old one). While a client is connected: what the causes of effect runs are found from. */
+  touch?(node: object): void;
+  /** A pending effect is about to re-run in a flush: the sink finds which written signal made it pending. */
+  beforeRun?(node: object): void;
+}
+
+/** What a template binding effect updates: the node (an element, or a text node) and what is bound (`text`, `prop:value`, `class:active`...). */
+export interface BindingTarget {
+  node: unknown;
+  what: string;
+  /** The element the binding shows on: `node` itself, or for a text binding the element holding the text. */
+  on: unknown;
+}
+
+/** Dev: the binding whose effect is being created, so the devtools can tell which template node an effect updates. */
+export const binding: { current: BindingTarget | null } = { current: null };
+
+/** Runs `create` (which makes the effect of one binding) with `node`/`what` named for the devtools; a no-op in production. */
+export function inBinding<T>(node: unknown, what: string, create: () => T, on: unknown = node): T {
+  if (!DEV || !devtools.current) return create();
+  const before = binding.current;
+  binding.current = { node, what, on };
+  try {
+    return create();
+  } finally {
+    binding.current = before;
+  }
 }
 
 export const devtools: { current: DevtoolsSink | null } = { current: null };

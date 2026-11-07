@@ -13,6 +13,7 @@ import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";
 import { EditState } from "./edit-state.js";
 import { SignalTimelineTab } from "./signal-timeline.js";
+import { WhyTab } from "./why-panel.js";
 import { NetworkPanel } from "./network-panel.js";
 import { StoragePanel } from "./storage-panel.js";
 import { DEV_NOTE, PerfState, RATING_LABEL, elementText, formatBytes, formatMetric, formatMs } from "./perf-state.js";
@@ -699,6 +700,7 @@ export class DrawerTabs {
       { value: "problems", label: "Problems", badge: problems, err: errors > 0, warn: errors === 0 && problems > 0 },
       { value: "hmr", label: "HMR timeline", badge: 0, err: false, warn: false },
       { value: "state", label: "State timeline", badge: 0, err: false, warn: false },
+      { value: "why", label: "Why updated", badge: 0, err: false, warn: false },
       { value: "a11y", label: "Accessibility", badge: this.a11y.violations(), err: this.a11y.severe(), warn: !this.a11y.severe() && this.a11y.violations() > 0 },
       { value: "perf", label: "Performance", badge: this.perf.poor() + this.perf.needsWork(), err: this.perf.poor() > 0, warn: this.perf.poor() === 0 && this.perf.needsWork() > 0 },
       { value: "http", label: "Network", badge: 0, err: false, warn: false },
@@ -717,7 +719,7 @@ export class DrawerBody {
   static meta = {
     selector: "app-drawer-body",
     host: { class: "drawer" },
-    imports: [DrawerTabs, CodeTab, ProblemsTab, HmrTab, SignalTimelineTab, AccessibilityTab, PerformanceTab, NetworkPanel, StoragePanel],
+    imports: [DrawerTabs, CodeTab, ProblemsTab, HmrTab, SignalTimelineTab, WhyTab, AccessibilityTab, PerformanceTab, NetworkPanel, StoragePanel],
     template: html`
       <app-drawer-tabs></app-drawer-tabs>
       <div class="dbody" role="tabpanel" [attr.aria-labelledby]="labelledBy()">
@@ -727,6 +729,8 @@ export class DrawerBody {
           <app-hmr-tab></app-hmr-tab>
         } @else if (tab() === 'state') {
           <app-signal-timeline></app-signal-timeline>
+        } @else if (tab() === 'why') {
+          <app-why-tab></app-why-tab>
         } @else if (tab() === 'a11y') {
           <app-accessibility-tab></app-accessibility-tab>
         } @else if (tab() === 'perf') {
