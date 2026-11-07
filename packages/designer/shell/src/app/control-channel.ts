@@ -8,6 +8,7 @@ import type { ControlCommands, ControlName, ControlRequest, FrameRect, Selection
 import { DesignerState } from "./designer-state.js";
 import { NetworkState } from "./network-state.js";
 import { StorageState } from "./storage-state.js";
+import { MatrixState } from "./matrix-state.js";
 import { PageState } from "./page-state.js";
 import { DEV_NOTE, PerfState } from "./perf-state.js";
 import { SignalEdits } from "./signal-edits.js";
@@ -26,6 +27,7 @@ export class ControlChannel {
   timeline = inject(SignalTimeline);
   network = inject(NetworkState);
   storage = inject(StorageState);
+  matrix = inject(MatrixState);
 
   booted = this.#boot();
 
@@ -267,6 +269,7 @@ export class ControlChannel {
     },
     network: (command) => this.network.command(command),
     storage: (command) => this.storage.command(command),
+    matrix: (command) => this.matrix.command(command),
 
     frameRect: ({ frame: id }): FrameRect => {
       const frame = this.#frameOf(id);

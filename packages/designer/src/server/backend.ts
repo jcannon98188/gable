@@ -17,6 +17,8 @@ import type { EditOp, TargetRef } from "./edit/types.js";
 import { CdpEmulator } from "./cdp.js";
 import { handleDeviceApi } from "./device-api.js";
 import { handleNetworkApi } from "./network-api.js";
+import { handleMatrixApi } from "./matrix-api.js";
+import { MatrixStore } from "./matrix.js";
 import { resolveNode, type NodeReport } from "./source.js";
 import { sceneIndex } from "./scene-index.js";
 import { editRouteConfig, listComponents, locateRouteConfig, type RouteEdit } from "./route-config.js";
@@ -220,6 +222,15 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
   let session = openSession(resolve(options.root));
   session.server.start();
 
+  // The matrix keeps its last run and renders against one project, so each open project has its own store.
+  const matrices = new WeakMap<Session, MatrixStore>();
+  const matrixStore = (): MatrixStore => {
+    const s = session;
+    let store = matrices.get(s);
+    if (!store) matrices.set(s, (store = new MatrixStore({ root: s.root, dataDir: data, previewUrl: () => (s.info().ready ? previewUrl : null) })));
+    return store;
+  };
+
   // The MCP control plane follows the open project: its context reads whichever session is current.
   const control = createControlPlane({
     get root() {
@@ -387,6 +398,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
       if (await handleTokenApi({ root, tailwind, json, readBody }, req, res, url)) return;
       if (await handleDeviceApi({ root, previewUrl, cdp, json, readBody }, req, res, url)) return;
       if (await handleNetworkApi({ root, cdp, json, readBody }, req, res, url)) return;
+      if (await handleMatrixApi({ store: matrixStore, json, readBody }, req, res, url)) return;
       const projectApi = { root: () => root, dataDir: data, log: () => s.log.text(), open: switchProject, install, restart: async () => (await s.server.restart(), s.info()), json, readBody };
       if (await handleProjectApi(projectApi, req, res, url)) return;
       return json(res, 404, { error: "no such endpoint" });

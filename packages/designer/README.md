@@ -93,7 +93,7 @@ node packages/designer/e2e/device-check.mjs --port <cdp port> --shell 127.0.0.1:
 
 The shell's chrome follows the Claude Design boards: a top bar (mode, Select or Interact, connection, undo and redo, theme, palette),
 Structure, Insert and Routes on the left, the canvas with its device bar, a bottom drawer (Code, Problems, HMR timeline,
-State timeline, Accessibility, Performance, Network, Storage) and Style, Content and Inspector on the right. Tokens live outside the gable-ui marker block in
+State timeline, Accessibility, Performance, Network, Storage, Matrix) and Style, Content and Inspector on the right. Tokens live outside the gable-ui marker block in
 `shell/src/shell.css`, mapped onto gable-ui's variables, so components need no `dark:` variant here.
 
 Ctrl K opens the command palette, generated from the current state in `shell/src/app/commands.ts`. Panel sizes, the drawer and
@@ -288,6 +288,34 @@ The protocol gained `storage`, `setStorageItem`, `removeStorageItem`, `clearStor
 ```
 node packages/designer/e2e/storage-check.mjs            # spawns the backend (with CDP) on test-fixtures/net-app and a headless Edge, stops only those
 node packages/designer/e2e/storage-check.mjs --no-cdp   # the same without CDP: the page's cookies only, HttpOnly labelled unavailable
+```
+
+## Matrix
+
+The drawer's **Matrix** tab renders every Scenario at several widths and compares each picture with a saved baseline
+(`shell/src/app/matrix-panel.ts`, `matrix-state.ts`; backend `src/server/matrix.ts`). Columns are breakpoints (default phone 375,
+md 768, lg 1024, xl 1280; type other widths in the field), rows are the Scenarios of every `*.scenes.ts` file. At most 48 cells
+and 6 breakpoints per run, with a 720px viewport height unless asked otherwise.
+
+It is rendered by the backend, not the canvas: a headless Chromium (found like the `screenshot` tool's, `GABLE_CHROME` wins)
+loads each cell's component-mode URL against the project's dev server at the cell's width, waits for the Scenario to mount and
+fonts to load, and keeps a PNG and the rendered `innerHTML`. So the Preview agent protocol is unchanged (`PROTOCOL_VERSION` stays 1)
+and no stream is added; the shell asks `POST /api/matrix`. A Scenario that throws is an `error` cell with the message.
+
+Each cell is `new` (no baseline), `same`, `changed` (pixels differ beyond a small per-channel tolerance; the share and bounding box
+are shown), `markup` (same pixels, different rendered markup) or `error`. Opening a cell shows the *Diff* (the baseline faded, changed
+pixels red, areas present in only one picture amber), the *Current* and the *Baseline* picture, and the unified diff of the pretty-printed
+markup in gable-ui's `ui-code-block`/diff renderer. *Show in frame* puts the Scenario on the canvas at that width. *Save changed* and
+*Save all* store exactly what the last run showed as the baselines; *Forget baselines* deletes them.
+
+Baselines live in the Designer's data directory (`matrix/<hash of the project path>/<scene>.png`), never in the project and never
+in browser storage, so nothing is written to the source. MCP: `get_matrix` (counts and per-cell status, no pictures), `run_matrix`
+(`files`, `scenes`, `breakpoints`, `height`), `get_matrix_cell` (the current, baseline and diff images plus the markup diff; opens the
+cell in the tab), `save_matrix_baselines` and `forget_matrix_baselines` (`all`, `changed` or named cells). They go through the shell, so the tab
+shows what an agent does.
+
+```
+node packages/designer/e2e/matrix-check.mjs   # spawns the backend and a headless Edge on test-fixtures/matrix-app, edits and restores its CSS and template, stops only those
 ```
 
 ## Projects and the dev server
@@ -515,6 +543,7 @@ left out to mean the element selected in the window.
 | App state | `set_signal`, `pin_signal`: write the running app's signals (not the source); `get_signal_history`, `travel_signal_history` (a step, `start` or `live`), `clear_signal_history`, `record_signal_history`: the State timeline |
 | Network | `get_network`, `set_network_condition`, `record_http`, `get_recording`, `save_recording_as_scenario`, `list_mocks`, `edit_mock`, `remove_mock` (see Network) |
 | Storage | `get_storage`, `set_storage_item`, `remove_storage_item`, `clear_storage`, `set_cookie`, `delete_cookie` (see Storage) |
+| Matrix | `get_matrix`, `run_matrix`, `get_matrix_cell`, `save_matrix_baselines`, `forget_matrix_baselines` (see Matrix) |
 | See | `screenshot`: a PNG of a frame as MCP image content |
 
 **Screenshots.** In the desktop app (WebView2 with a CDP port) the live frame is captured over CDP: the frame's own target
