@@ -1,0 +1,6 @@
+{
+  "componentsDir": "shell/src/components/ui",
+  "utilsDir": "shell/src/lib/ui",
+  "css": "shell/src/shell.css",
+  "baseColor": "neutral"
+}

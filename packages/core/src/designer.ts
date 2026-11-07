@@ -13,6 +13,11 @@ export interface DesignNode {
   tag: string;
   /** The template literal's text (`strings.raw[0]`); a file-level tool finds the literal by this. */
   raw: string;
+  /**
+   * False when the template contains escapes (a backslash): the runtime parses the cooked text, so the offsets below do not
+   * line up with `raw` and a tool must not map them to the file.
+   */
+  exact: boolean;
   /** Offset of the `<`. */
   start: number;
   /** Offset just after the opening tag. */
@@ -93,6 +98,7 @@ export function createDesigner(target?: { __GABLE_DESIGNER_HOOK__?: DesignerHook
       id: entry.id,
       tag: entry.node.tag,
       raw: tpl.raw[0]!,
+      exact: tpl[0] === tpl.raw[0],
       start,
       openEnd,
       end,

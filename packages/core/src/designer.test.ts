@@ -47,6 +47,7 @@ describe("design layer", () => {
     const f = mount(Counter);
     const p = designer.hook.nodeOf(f.query("p")!)!;
     expect(p.tag).toBe("p");
+    expect(p.exact).toBe(true);
     expect(p.component?.name).toBe("Counter");
     expect(p.raw.slice(p.start, p.end)).toBe("<p>{{ n() }}</p>");
     expect(p.raw.slice(p.start, p.openEnd)).toBe("<p>");
