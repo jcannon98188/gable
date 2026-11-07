@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+@theme {
+  --breakpoint-md: 800px;
+  --breakpoint-3xl: 1900px;
+  --color-brand: #ff0066;
+  --radius-blob: 40% 60%;
+}

@@ -22,7 +22,8 @@
     "lucide": "^1.70.0",
     "tailwind-merge": "^3.7.0",
     "@gable/ui-primitives": "0.0.0",
-    "@typescript/typescript6": "^6.0.2"
+    "@typescript/typescript6": "^6.0.2",
+    "@tailwindcss/node": "4.3.5"
   },
   "devDependencies": {
     "@gable/vite": "0.0.0",

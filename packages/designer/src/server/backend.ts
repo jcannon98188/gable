@@ -17,6 +17,7 @@ import { handleDeviceApi } from "./device-api.js";
 import { resolveNode, type NodeReport } from "./source.js";
 import { sceneIndex } from "./scene-index.js";
 import { editRouteConfig, listComponents, locateRouteConfig, type RouteEdit } from "./route-config.js";
+import { TailwindService, handleTailwindApi } from "./tailwind/api.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -142,6 +143,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
 
   // --- events (SSE) and file watching -----------------------------------------------
   const edits = new EditService(root);
+  const tailwind = new TailwindService(root);
   const clients = new Set<ServerResponse>();
   const broadcast = (event: string, data: unknown) => {
     for (const res of clients) res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
@@ -150,6 +152,8 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
   const watcher = watch(root, { recursive: true }, (_, file) => {
     if (!file || !/\.(ts|tsx|css|html)$/.test(file)) return;
     if (file.split(/[\\/]/).some((p) => SKIP.has(p))) return;
+    // A stylesheet changed: the Tailwind design system (theme, plugins) is rebuilt on next use.
+    if (file.endsWith(".css")) (tailwind.invalidate(), broadcast("tailwind", { revision: tailwind.revision }));
     clearTimeout(debounce);
     // An edit made outside the Designer: undo history for that file is marked, and the shell is told.
     if (edits.noteFileChanged(resolve(root, file))) broadcast("history", edits.history());
@@ -244,6 +248,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
           req.on("close", () => clients.delete(res));
           return;
       }
+      if (await handleTailwindApi({ service: tailwind, cdp, json, readBody }, req, res, url)) return;
       if (await handleDeviceApi({ root, previewUrl, cdp, json, readBody }, req, res, url)) return;
       return json(res, 404, { error: "no such endpoint" });
     }
