@@ -52,7 +52,17 @@ export type EditOp =
   /** Sets a string-valued static meta property (`selector`, `id`, `encapsulation`) of the component that owns the template. */
   | { op: "setMeta"; target: TargetRef; key: string; value: string }
   /** Sets (`value`) or removes (`null`) one declaration of a CSS rule; the rule is appended when the file has none. */
-  | { op: "setCss"; file: string; selector: string; property: string; value: string | null };
+  | { op: "setCss"; file: string; selector: string; property: string; value: string | null }
+  /**
+   * Adds a scene to a scenes file (root-relative, `/src/x.scenes.ts`): after its last scene, as written. `from` copies an
+   * existing scene's definition (its inputs, providers and mocks) and gives the copy `description`.
+   */
+  | { op: "addScene"; file: string; name: string; description?: string; from?: string }
+  /**
+   * Moves an element (static markup only) into a new component `name` in a file beside the template's, and uses it in its place.
+   * `all` also replaces the identical copies of the element in the same template.
+   */
+  | { op: "extract"; target: TargetRef; name: string; all?: boolean };
 
 export interface EditError {
   ok: false;
@@ -73,6 +83,10 @@ export interface EditDone {
   noop?: boolean;
   /** Undo or redo found its place by context because the file was edited meanwhile. */
   relocated?: boolean;
+  /** Files the edit created (project-relative). */
+  created?: string[];
+  /** Something the edit could not carry over, said plainly (for example scoped styles that do not reach a new component). */
+  note?: string;
 }
 
 export type EditResult = EditDone | EditError;
@@ -124,7 +138,11 @@ export interface NodeModel {
   next: SiblingRef | null;
   parent: SiblingRef | null;
   canHaveChildren: boolean;
+  /** Whether the element can be extracted into a component, and how many identical copies the template has (itself included). */
+  extract?: ExtractCheck;
 }
+
+export type ExtractCheck = { ok: true; copies: number } | { ok: false; why: string };
 
 export type DescribeResult = NodeModel | EditError;
 
@@ -142,6 +160,8 @@ export interface HistoryItem {
   id: number;
   label: string;
   file: string;
+  /** Every file the entry changes, when it is more than one (extract writes the source and creates the component). */
+  files?: string[];
   /** The file was changed by something other than the Designer since this entry was recorded. */
   stale: boolean;
 }

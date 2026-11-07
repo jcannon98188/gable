@@ -100,19 +100,6 @@ check(await ev(`document.documentElement.classList.contains("dark")`), "the them
 await palette("Use the light theme");
 await sleep(600);
 
-// --- flows without a backend say so, and do nothing ---------------------------------------------------------------------
-// (Open project has a backend now: e2e/project-check.mjs drives it.)
-for (const [command, words, button] of [
-  ["Extract to component", "not available yet", "Extract"],
-  ["New Scenario", "cannot write Scenarios yet", "Create"],
-]) {
-  await palette(command);
-  const body = await ev(`[...document.querySelectorAll('[role="dialog"]')].map((d) => d.innerText).join(" ")`);
-  const off = await ev(`[...document.querySelectorAll('[role="dialog"] button')].find((b) => b.textContent.trim() === ${JSON.stringify(button)})?.disabled === true`);
-  check(body.includes(words) && off, `${command} says it is unavailable and its action is disabled`, body.slice(0, 120).replace(/\s+/g, " "));
-  await key("Escape", "Escape", 27);
-  await sleep(300);
-}
 await palette("Show Accessibility in the drawer");
 await until(() => ev(`!/^(Not checked|Checking…)$/.test(document.querySelector('[data-part="a11y-status"]')?.textContent.trim() ?? "Not checked")`), "the accessibility checks report", 60000);
 check((await ev("document.body.innerText")).includes("axe-core"), "Accessibility lists the Preview agent's checks (see a11y-diff-check.mjs for the rest)");

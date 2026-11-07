@@ -34,14 +34,26 @@ hot-updates the canvas and the shell selects the same element again.
   escapes, and files holding two identical literals, are refused.
 - Ops (`src/server/edit/types.ts`): `setText`, `addText`, `setAttr`, `removeAttr`, `setBinding` (prop/attr/class/style/model from a
   signal picker), `addTextBinding`, `insert` (palette: HTML, gable-ui and project components; also imports the class and lists it in
-  `imports`), `delete`, `move`, `wrap` (`@if`/`@for`), `setMeta` (selector/id/encapsulation) and `setCss` (one declaration of a rule).
+  `imports`), `delete`, `move`, `wrap` (`@if`/`@for`), `setMeta` (selector/id/encapsulation), `setCss` (one declaration of a rule), `addScene` and `extract` (below).
 - Read-only: events, refs, i18n, opaque expressions and `{{ }}` interpolations are shown, never rewritten (`readonly` error).
 - Formatting: a template that is formatter-clean before the edit is reformatted as a whole with the repo's formatter options
   (`.prettierrc` / `package.json#prettier`), so the result equals formatter output; any other template is touched only where the
   edit is. CRLF files stay CRLF.
 - History: each write records a reverse patch (`hunks.ts`, with surrounding context). Undo/redo first try the exact position, then a
   unique match of the context, and otherwise report a `conflict` and write nothing. The backend's file watcher flags history entries
-  of files changed outside the Designer (`history` event; the panel shows it).
+  of files changed outside the Designer (`history` event; the panel shows it). An entry can span files (extract writes the source
+  and creates the component): every file is located before any is written, a created file is removed by its undo and re-created by
+  redo, and a conflict in any file refuses the whole step.
+- **New Scenario** (`addScene`, `src/server/edit/scenario.ts`): adds a scene to the component-mode scenes file as one insertion after
+  its last scene, keeping the file's layout, quotes and trailing commas (the TypeScript parser finds `scenes`; a computed `scenes`
+  is refused). An empty scene, or a copy of another scene's definition as written with the new description. The scenes file's
+  hot update lists it, and the shell mounts it.
+- **Extract component** (`extract`, `src/server/edit/extract.ts`): moves the selected element into `<kebab-name>.ts` beside the
+  template's file (selector `app-<kebab-name>`, `html` imported like the source does, template formatter-clean), imports the
+  components its markup uses (matched by the palette's selectors; an unknown custom element is refused), and replaces the
+  element, or every identical copy in the template, with the new tag; the class is imported and listed in `imports`. Only static
+  markup moves: bindings, events, refs, blocks and `{{ }}` read the old component's state and are refused with the reason
+  (`describe` reports this as `extract` before anything is tried). Scoped `styles` do not follow; the result says so.
 
 ## Device emulation and frames
 
@@ -87,7 +99,7 @@ Accessibility, HTTP) and Style, Content and Inspector on the right. Tokens live 
 Ctrl K opens the command palette, generated from the current state in `shell/src/app/commands.ts`. Panel sizes, the drawer and
 the theme are saved per project with the frame layout (`chrome` in the device settings), never in browser storage.
 
-Extract component and create Scenario have no backend yet: they show the real part and say the rest is unavailable, with the action disabled. Nothing pretends to have run.
+Extract component and create Scenario write source through the edit API; the flows with no backend yet show the real part and say the rest is unavailable, with the action disabled. Nothing pretends to have run.
 
 ```
 node packages/designer/e2e/chrome-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port>
@@ -138,6 +150,14 @@ checkout, so the install works offline), starts the backend and a headless Edge,
 
 ```
 node packages/designer/e2e/project-check.mjs [--edge <msedge.exe>] [--shot dir] [--keep]
+```
+
+New Scenario and Extract component have their own self-contained check: it starts the built Designer on `examples/todomvc` and a
+headless Edge/Chromium, drives both dialogs, undoes both edits, puts the project's files back and stops only what it started.
+`examples/todomvc` needs its own dependencies installed (`todomvc-common` and `todomvc-app-css`).
+
+```
+node packages/designer/e2e/writers-check.mjs [--browser <path to msedge/chrome>]
 ```
 
 ## Page mode
