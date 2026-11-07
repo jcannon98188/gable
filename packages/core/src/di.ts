@@ -54,6 +54,8 @@ interface Entry {
   make: () => unknown;
   /** Dev only: the value was built from a class. */
   tracked?: boolean;
+  /** Dev only: the Provider this entry came from (the devtools show it). */
+  provider?: Provider;
 }
 
 let current: InjectorImpl | null = null;
@@ -96,7 +98,7 @@ class InjectorImpl implements Injector {
     if (parent) parent.#children.add(this);
     for (const p of providers) this.#register(p);
     if (DEV && devtools.current) {
-      devtools.current.injector(this, parent, () => [...this.#records].map(([token, r]) => ({ token, value: r.value, resolved: r.resolved })), this.scope);
+      devtools.current.injector(this, parent, () => [...this.#records].map(([token, r]) => ({ token, value: r.value, resolved: r.resolved, provider: r.provider })), this.scope);
     }
     if (DEV && hooks.current) {
       hooks.current.injectorCreated(this, {
@@ -113,7 +115,7 @@ class InjectorImpl implements Injector {
   #register(provider: Provider): void {
     if (DEV && hooks.current) provider = canonProvider(provider);
     const rec = (provide: Token<unknown>, make: () => unknown) =>
-      { this.#records.set(provide, { resolving: false, resolved: false, value: undefined, make }); };
+      { this.#records.set(provide, { resolving: false, resolved: false, value: undefined, make, ...(DEV ? { provider } : {}) }); };
     if (typeof provider === "function") return rec(provider, () => this.#construct(provider));
     const { provide } = provider;
     if ("useValue" in provider) rec(provide, () => provider.useValue);

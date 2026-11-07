@@ -28,6 +28,10 @@
       "types": "./dist/devtools.d.ts",
       "import": "./dist/devtools.js"
     },
+    "./designer": {
+      "types": "./dist/designer.d.ts",
+      "import": "./dist/designer.js"
+    },
     "./internal": {
       "types": "./dist/internal.d.ts",
       "import": "./dist/internal.js"

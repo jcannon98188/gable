@@ -138,15 +138,35 @@ export interface DevtoolsSink {
   injector(
     injector: object,
     parent: object | null,
-    entries: () => Array<{ token: unknown; value: unknown; resolved: boolean }>,
+    entries: () => Array<{ token: unknown; value: unknown; resolved: boolean; provider?: unknown }>,
     scope: Scope,
   ): void;
   router(info: RouterDevInfo): void;
-  hmr(result: { status: string; errors: unknown[]; modules: string[] }): void;
-  /** An element was built from template node `node` (an `ElementNode`; its `pos` says where in the source). Optional: used by design tooling. */
-  element?(el: unknown, node: object): void;
+  hmr(result: { status: string; errors: unknown[]; modules: string[]; changes?: HmrChange[] }): void;
   /** A module (by URL) exports `Class` (from the Vite plugin's accept line). */
   source(Class: Function, url: string): void;
 }
 
 export const devtools: { current: DevtoolsSink | null } = { current: null };
+
+/** How a hot update changed one class: `patch` swapped members in place, `view` rebuilt the template, `resetup` re-ran the Setup. */
+export interface HmrChange {
+  name: string;
+  kind: "none" | "patch" | "view" | "resetup";
+}
+
+// --- design tooling --------------------------------------------------------
+
+/**
+ * What the dev-only design layer (`designer.ts`, entry `@gable/core/designer`) receives from the runtime. It is a slot of
+ * its own, not part of the devtools protocol: design tooling needs to see template nodes and intercept listeners, which an
+ * inspection protocol should not offer. Every call site is behind `DEV && design.current`.
+ */
+export interface DesignSink {
+  /** An element was built from template node `node` (an `ElementNode`; its `pos` says where in the source) of the component `instance`. */
+  element(el: unknown, node: object, instance: object): void;
+  /** A template event binding is about to be registered on `el`; returns the function to register instead. */
+  listener(el: unknown, name: string, handler: (event: unknown) => void): (event: unknown) => void;
+}
+
+export const design: { current: DesignSink | null } = { current: null };

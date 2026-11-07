@@ -5,7 +5,7 @@ import { createScope, currentScope, runInScope, type Scope } from "./scope.js";
 import { FAILED, guard, guarded } from "./errors.js";
 import { DEV } from "./dev-hooks.js";
 import { disposeAndRemove } from "./removal.js";
-import { devtools, hooks, retireView } from "./dev-hooks.js";
+import { design, hooks, retireView } from "./dev-hooks.js";
 import { inputOf } from "./input.js";
 import { OutputEmitter } from "./output.js";
 import { prepare, type ComponentClass } from "./component.js";
@@ -117,7 +117,10 @@ export function applyBindings<N>(el: N, spec: Bindings, renderer: Renderer<N>, e
     scope?.onDispose(renderer.listen(el, `${name}Change`, (event) => guarded(scope, "event", () => writeModel(expr, env, event), `${name}Change`)));
   }
 
-  for (const { name, handler } of spec.events) scope?.onDispose(renderer.listen(el, name, eventHandler(handler, env, scope, name)));
+  for (const { name, handler } of spec.events) {
+    const listener = eventHandler(handler, env, scope, name);
+    scope?.onDispose(renderer.listen(el, name, DEV && design.current ? design.current.listener(el, name, listener) : listener));
+  }
 }
 
 /** A listener that reports its errors (and its returned Promise's rejection) as `event` instead of throwing. */
@@ -192,7 +195,7 @@ function buildElementOf<N>(
   matches: ComponentClass<any>[],
 ): Part<N> {
   const el = renderer.createElement(node.tag, parent);
-  if (DEV) devtools.current?.element?.(el, node);
+  if (DEV) design.current?.element(el, node, env.instance);
   const scope = currentScope();
   if (view?.scopeToken) renderer.setAttribute(el, view.scopeToken, "");
   renderer.insert(parent, el, before);

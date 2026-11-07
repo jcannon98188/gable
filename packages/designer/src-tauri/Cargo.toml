@@ -1,0 +1,14 @@
+# Standalone workspace root so the desktop shell never joins the repo's cargo graph.
+[package]
+name = "gable-designer"
+version = "0.0.0"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde_json = "1"
+
+[workspace]

@@ -3,7 +3,7 @@
 // transport-agnostic global, `window.__GABLE_DEVTOOLS_HOOK__`, that any client (the browser extension, a test, a
 // console snippet) talks to: `call(method, params)` for state and actions, `connect(listener)` for pushed events.
 // Every value that crosses the hook is JSON-safe. No semver promise.
-import type { DevtoolsSink, RouterDevInfo } from "./dev-hooks.js";
+import type { DevtoolsSink, HmrChange, RouterDevInfo } from "./dev-hooks.js";
 import { devtools } from "./dev-hooks.js";
 import { inspectNode, peekNode, pokeNode } from "./signals.js";
 import type { Scope } from "./scope.js";
@@ -87,9 +87,19 @@ export interface InjectorNode {
   entryCount: number;
 }
 
+/** The Provider behind a Token: how its value is made. */
+export interface ProviderInfo {
+  /** `class`: a bare class or `useClass`; `value`: `useValue`; `factory`: `useFactory`; `existing`: `useExisting` (an alias of `target`). */
+  kind: "class" | "value" | "factory" | "existing";
+  /** The class (`class`), the aliased Token (`existing`), the factory's name (`factory`) or a preview of the value (`value`). */
+  target: string;
+}
+
 export interface InjectorEntry {
   name: string;
   kind: "class" | "token";
+  /** How this Token is provided in this injector; `null` when the entry did not come from a Provider. */
+  provider: ProviderInfo | null;
   resolved: boolean;
   value: Preview;
   /** Signals found on a resolved class instance. */
@@ -126,6 +136,8 @@ export interface HmrEntry {
   at: number;
   status: string;
   modules: string[];
+  /** What the update did to each changed class: `patch`, `view` or `resetup` (classes whose edit changed nothing are left out). */
+  changes: HmrChange[];
   errors: string[];
 }
 
@@ -218,21 +230,6 @@ export interface DevtoolsMethods {
   inspectors: { params: void; result: InspectorInfo[] };
 }
 
-/** Where a rendered element came from: offsets are into `raw` (the template literal's text), not into the file. */
-export interface TemplateSource {
-  /** The component whose template contains the element (a projected element belongs to its author, not its host). */
-  component: { id: string; name: string; source: SourceInfo | null } | null;
-  tag: string;
-  /** The literal's text as written (`strings.raw[0]`); a file-level tool finds the literal by this. */
-  raw: string;
-  /** `<` of the opening tag. */
-  start: number;
-  /** Just after the opening tag. */
-  openEnd: number;
-  /** Just after the element. */
-  end: number;
-}
-
 export interface GableDevtoolsHook {
   readonly version: 1;
   /** Subscribes to pushed events. Effect timings are only measured while at least one client is connected. */
@@ -242,8 +239,8 @@ export interface GableDevtoolsHook {
   element(id: string): unknown;
   /** The id of the nearest component whose host is `node` or an ancestor of it. */
   componentFor(node: unknown): string | null;
-  /** Design tooling: the template element that produced `node` (or its nearest ancestor that has one), with its range inside the template's string. */
-  templateSourceOf(node: unknown): TemplateSource | null;
+  /** The component that owns `instance` (what design tooling needs to name the owner of a template node). */
+  componentOfInstance(instance: object): { id: string; name: string; source: SourceInfo | null } | null;
   /** Lets a package show its own state and history in the panel. */
   registerInspector(id: string, spec: InspectorSpec): InspectorHandle;
 }
@@ -382,7 +379,7 @@ interface Inj {
   id: string;
   injector: object;
   parent: Inj | null;
-  entries: () => Array<{ token: unknown; value: unknown; resolved: boolean }>;
+  entries: () => Array<{ token: unknown; value: unknown; resolved: boolean; provider?: unknown }>;
   scope: Scope;
 }
 
@@ -406,6 +403,17 @@ const MAX_INSPECTOR_LOG = 500;
 const MAX_HMR = 50;
 
 const className = (fn: unknown): string => (typeof fn === "function" ? fn.name || "anonymous" : String(fn));
+
+function describeProvider(p: unknown): ProviderInfo | null {
+  if (typeof p === "function") return { kind: "class", target: className(p) };
+  if (!p || typeof p !== "object") return null;
+  const o = p as Record<string, unknown>;
+  if ("useClass" in o) return { kind: "class", target: className(o.useClass) };
+  if ("useValue" in o) return { kind: "value", target: preview(o.useValue, 0).s };
+  if ("useFactory" in o) return { kind: "factory", target: className(o.useFactory) };
+  if ("useExisting" in o) return { kind: "existing", target: tokenName(o.useExisting) };
+  return null;
+}
 
 function tokenName(token: unknown): string {
   if (typeof token === "function") return className(token);
@@ -436,7 +444,6 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
   const routers = new Set<Rtr>();
   const inspectors = new Map<string, Insp>();
   const sources = new WeakMap<Function, string>();
-  const elementNodes = new WeakMap<object, { tag: string; pos?: { start: number; openEnd: number; end: number; tpl: TemplateStringsArray } }>();
   const listeners = new Set<(event: DevtoolsEvent) => void>();
   const flushes: FlushRecord[] = [];
   const hmrLog: HmrEntry[] = [];
@@ -596,6 +603,7 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
       entries: i.entries().map((e) => ({
         name: tokenName(e.token),
         kind: typeof e.token === "function" ? "class" : "token",
+        provider: describeProvider(e.provider),
         resolved: e.resolved,
         value: e.resolved ? preview(e.value, 1) : { t: "undefined", s: "(not created yet)" },
         signals: e.resolved && e.value && typeof e.value === "object" ? scan(e.value as object).map(signalInfo) : [],
@@ -791,17 +799,14 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
         routers.delete(rtr);
       });
     },
-    hmr({ status, errors, modules }) {
-      const entry: HmrEntry = { seq: ++seq, at: performance.now(), status, modules, errors: errors.map((e) => (e instanceof Error ? e.message : String(e))) };
+    hmr({ status, errors, modules, changes }) {
+      const entry: HmrEntry = { seq: ++seq, at: performance.now(), status, modules, changes: (changes ?? []).filter((c) => c.kind !== "none"), errors: errors.map((e) => (e instanceof Error ? e.message : String(e))) };
       hmrLog.push(entry);
       if (hmrLog.length > MAX_HMR) hmrLog.shift();
       emit({ type: "hmr", entry });
     },
     source(Class, url) {
       sources.set(Class, url);
-    },
-    element(el, node) {
-      if (el && typeof el === "object") elementNodes.set(el, node as never);
     },
   };
 
@@ -895,18 +900,8 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
       }
       return null;
     },
-    templateSourceOf(node) {
-      for (let n = node as any; n && typeof n === "object"; n = n.parentNode ?? n.parent) {
-        const tn = elementNodes.get(n);
-        if (!tn?.pos) continue;
-        const { start, openEnd, end, tpl } = tn.pos;
-        let owner: Comp | null = null;
-        for (const c of comps) if ((c.Class as { meta?: { template?: { strings?: unknown } } }).meta?.template?.strings === tpl) owner = c;
-        return {
-          component: owner ? { id: owner.id, name: owner.Class.name, source: sourceOf(owner.Class) } : null,
-          tag: tn.tag, raw: tpl.raw[0]!, start, openEnd, end,
-        };
-      }
+    componentOfInstance(instance) {
+      for (const c of comps) if (c.instance === instance) return { id: c.id, name: className(c.Class), source: sourceOf(c.Class) };
       return null;
     },
     registerInspector(id, spec) {

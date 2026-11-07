@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node", "vite/client"],
+    "plugins": [{ "name": "@gable/language-service", "renderer": "@gable/renderer-dom" }]
+  },
+  "include": ["src", "shell/src", "shell/vite.config.ts"],
+  "exclude": ["src/**/*.test.ts"]
+}

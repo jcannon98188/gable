@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { computed, effect, html, inject, input, model, output, signal } from "@gable/core";
+import { InjectionToken, computed, effect, html, inject, input, model, output, signal } from "@gable/core";
 import { RouterOutlet, type Route } from "@gable/core/router";
 import { applyUpdate, registerModule } from "@gable/core/hmr";
 import { mount, mountApp } from "@gable/testing";
@@ -186,9 +186,33 @@ describe("injectors", () => {
     expect(own.parent).toBeTruthy();
     expect(nodes.some((n) => n.id === own.parent)).toBe(true);
     const cart = call<any>("injector", { id: own.id }).entries.find((e: any) => e.name === "Cart");
-    expect(cart).toMatchObject({ kind: "class", resolved: true });
+    expect(cart).toMatchObject({ kind: "class", resolved: true, provider: { kind: "class", target: "Cart" } });
     expect(cart.signals.map((s: any) => s.name).sort()).toEqual(["items", "total"]);
     expect(call<any>("component", { id: idOfRoot(f) }).injector).toBe(own.id);
+  });
+
+  it("shows the Provider behind each Token", () => {
+    class Api {
+      base = "real";
+    }
+    class FakeApi {
+      base = "fake";
+    }
+    const PORT = new InjectionToken<number>("Port");
+    class Page {
+      static meta = {
+        selector: "app-page",
+        providers: [Cart, { provide: Api, useClass: FakeApi }, { provide: PORT, useValue: 8080 }, { provide: Shop, useExisting: Cart }],
+        template: html`<p></p>`,
+      };
+    }
+    mount(Page);
+    const own = call<any[]>("injectors").find((n) => n.component?.name === "Page")!;
+    const providers = Object.fromEntries(call<any>("injector", { id: own.id }).entries.map((e: any) => [e.name, e.provider]));
+    expect(providers.Cart).toEqual({ kind: "class", target: "Cart" });
+    expect(providers.Api).toEqual({ kind: "class", target: "FakeApi" });
+    expect(providers['InjectionToken(Port)']).toEqual({ kind: "value", target: "8080" });
+    expect(providers.Shop).toEqual({ kind: "existing", target: "Cart" });
   });
 
   it("drops destroyed injectors", () => {
@@ -260,11 +284,53 @@ describe("hmr and source", () => {
       applyUpdate([{ url: "http://localhost:5173/src/page.ts?t=2", exports: { Page } }]);
       const log = call<any[]>("hmrLog");
       expect(log).toHaveLength(1);
-      expect(log[0]).toMatchObject({ modules: ["http://localhost:5173/src/page.ts"] });
+      expect(log[0]).toMatchObject({ modules: ["http://localhost:5173/src/page.ts"], changes: [] });
       expect(events.some((e) => e.type === "hmr")).toBe(true);
     } finally {
       delete globalThis.__GABLE_DEV_SERVER__;
     }
+  });
+
+  it("tells whether an edit patched, rebuilt the view or re-ran the setup", () => {
+    // Each version is a class of the same name, as a re-evaluated module would export.
+    const V1 = (() => class Page {
+      static meta = { selector: "app-page", template: html`<p>v1</p>` };
+      n = signal(1);
+      hello() {
+        return "a";
+      }
+    })();
+    const V2 = (() => class Page {
+      static meta = { selector: "app-page", template: html`<p>v1</p>` };
+      n = signal(1);
+      hello() {
+        return "b";
+      }
+    })();
+    const V3 = (() => class Page {
+      static meta = { selector: "app-page", template: html`<p>v2</p>` };
+      n = signal(1);
+      hello() {
+        return "b";
+      }
+    })();
+    const V4 = (() => class Page {
+      static meta = { selector: "app-page", template: html`<p>v2</p>` };
+      n = signal(2);
+      hello() {
+        return "b";
+      }
+    })();
+    const url = "http://localhost:5173/src/kinds.ts";
+    registerModule(url, { Page: V1 });
+    mount(V1);
+    const kind = (Class: Function) => {
+      applyUpdate([{ url, exports: { Page: Class } }]);
+      return call<any[]>("hmrLog").at(-1).changes;
+    };
+    expect(kind(V2)).toEqual([{ name: "Page", kind: "patch" }]);
+    expect(kind(V3)).toEqual([{ name: "Page", kind: "view" }]);
+    expect(kind(V4)).toEqual([{ name: "Page", kind: "resetup" }]);
   });
 
   it("says why it cannot open a file", async () => {
@@ -302,23 +368,5 @@ describe("preview", () => {
     expect(kids.fn!.s).toContain("fn");
     expect(kids.e!.s).toBe("Error: x");
     expect(kids.m!.s).toBe("Map(1)");
-  });
-});
-
-describe("template source (design tooling)", () => {
-  it("maps a rendered element to its range inside the template literal, and a child's element to the child's template", () => {
-    const f = mount(Counter);
-    const p = f.query("p")!;
-    const src = dt.hook.templateSourceOf(p)!;
-    expect(src.tag).toBe("p");
-    expect(src.component?.name).toBe("Counter");
-    expect(src.raw.slice(src.start, src.end)).toBe("<p>{{ doubled() }}</p>");
-    expect(src.raw.slice(src.start, src.openEnd)).toBe("<p>");
-    const b = dt.hook.templateSourceOf(f.query("b")!)!;
-    expect(b.component?.name).toBe("Child");
-    expect(b.raw.slice(b.start, b.end)).toBe("<b>{{ label() }}</b>");
-    const host = dt.hook.templateSourceOf(f.query("app-child")!)!;
-    expect(host.component?.name).toBe("Counter");
-    expect(host.raw.slice(host.start, host.end)).toMatch(/^<app-child .*><\/app-child>$/);
   });
 });
