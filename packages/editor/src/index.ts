@@ -14,3 +14,5 @@ export * from "./yjs/provider.js";
 export * from "./component/presence.js";
 export * from "./plugins/comments.js";
 export * from "./component/comments-panel.js";
+export * from "./plugins/suggestions.js";
+export * from "./component/suggestions-panel.js";
