@@ -1,7 +1,7 @@
 // The write-back service: applies an edit operation to the project's own source files as a minimal text patch, and keeps the
 // history of reverse patches for undo and redo. The Designer never holds a model of the design; the file is read, patched and
 // written back, and the project's Vite shows the result by HMR.
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parseTemplateTree } from "@gable/template-format";
 import { sourceText, type SourceText } from "../source.js";
@@ -9,16 +9,32 @@ import { setCssDeclaration } from "./css.js";
 import { applyHunks, applyWithReverse, hash, locate, type Hunk, type PatchHunk } from "./hunks.js";
 import { ensureImport, ensureMetaImport, setMetaString } from "./meta.js";
 import { buildPalette } from "./palette.js";
+import { extractCheck, planExtract } from "./extract.js";
+import { planScene } from "./scenario.js";
 import { DEFAULT_FORMAT, applyPlan, describeElement, elementsOf, fail, findTarget, locateLiteral, plan, type FormatOptions } from "./template.js";
-import type { DescribeResult, EditError, EditOp, EditResult, HistoryInfo, HistoryItem, PaletteEntry, TargetRef } from "./types.js";
+import type { DescribeResult, EditDone, EditError, EditOp, EditResult, HistoryInfo, HistoryItem, PaletteEntry, TargetRef } from "./types.js";
+
+interface Change {
+  abs: string;
+  /** The patch that undoes (or, on the redo stack, redoes) the change, in the coordinates of the file as it is now. */
+  patch: PatchHunk[];
+  /** The edit created this file: undoing it empties the file and so removes it, and redoing starts from no file. */
+  created: boolean;
+}
 
 interface Entry {
   id: number;
   label: string;
-  abs: string;
-  /** The patch that undoes (or, on the redo stack, redoes) the change, in the coordinates of the file as it is now. */
-  patch: PatchHunk[];
+  /** One change per file; the first is the file the edit was made in. */
+  changes: Change[];
   stale: boolean;
+}
+
+/** One file an edit writes: its text before (null: the file is new) and the hunks to apply to it. */
+export interface FileWrite {
+  abs: string;
+  original: string | null;
+  hunks: Hunk[];
 }
 
 const MAX_HISTORY = 200;
@@ -95,7 +111,7 @@ export class EditService {
     this.#written.set(abs, hash(current));
     let any = false;
     for (const e of [...this.#undo, ...this.#redo]) {
-      if (e.abs === abs && !e.stale) {
+      if (e.changes.some((c) => c.abs === abs) && !e.stale) {
         e.stale = true;
         any = true;
       }
@@ -121,7 +137,7 @@ export class EditService {
     const entry = findTarget(elementsOf(tree), target);
     if ("ok" in entry) return entry;
     const line = (offset: number) => t.src.text.slice(0, t.lit.open + offset).split("\n").length;
-    return describeElement(t.body, tree, entry, this.#rel(t.abs), line);
+    return { ...describeElement(t.body, tree, entry, this.#rel(t.abs), line), extract: extractCheck(t.body, tree, entry) };
   }
 
   palette(): PaletteEntry[] {
@@ -140,6 +156,7 @@ export class EditService {
 
   #apply(op: EditOp): EditResult {
     if (op.op === "setCss") return this.#css(op);
+    if (op.op === "addScene") return this.#scene(op);
     const t = this.#template(op.target);
     if ("ok" in t) return t;
     const { abs, src, lit, body } = t;
@@ -156,6 +173,15 @@ export class EditService {
       hunks = h;
       label = `Set ${op.key}`;
       select = { raw: body, offset: op.target.start };
+    } else if (op.op === "extract") {
+      const planned = planExtract({ abs, rel: this.#rel(abs), text: src.text, lit, fo, palette: () => buildPalette(this.root) }, op);
+      if ("ok" in planned) return planned;
+      const crlf = src.original.includes("\r\n");
+      const files: FileWrite[] = [
+        { abs, original: src.original, hunks: this.#toOriginal(src, planned.hunks) },
+        { abs: planned.created.abs, original: null, hunks: [{ start: 0, end: 0, text: crlf ? planned.created.text.replaceAll("\n", "\r\n") : planned.created.text }] },
+      ];
+      return this.#commitFiles(files, planned.label, planned.select, { created: [this.#rel(planned.created.abs)], ...(planned.note ? { note: planned.note } : {}) });
     } else {
       const tree = parseTemplateTree(body);
       const entries = elementsOf(tree);
@@ -186,18 +212,57 @@ export class EditService {
   }
 
   #commit(abs: string, original: string, hunks: Hunk[], label: string, select: { raw: string; offset: number } | null): EditResult {
-    let next: ReturnType<typeof applyWithReverse>;
-    try {
-      next = applyWithReverse(original, hunks);
-    } catch (e) {
-      return fail("invalid", e instanceof Error ? e.message : String(e));
+    return this.#commitFiles([{ abs, original, hunks }], label, select);
+  }
+
+  /** Writes every file of one edit and records them as one history entry. Nothing is written unless every patch applies. */
+  #commitFiles(files: FileWrite[], label: string, select: { raw: string; offset: number } | null, extra: Partial<EditDone> = {}): EditResult {
+    const planned: Array<{ abs: string; text: string; reverse: PatchHunk[]; created: boolean }> = [];
+    for (const f of files) {
+      if (f.original === null && existsSync(f.abs)) return fail("invalid", `${this.#rel(f.abs)} already exists.`);
+      try {
+        const next = applyWithReverse(f.original ?? "", f.hunks);
+        planned.push({ abs: f.abs, text: next.text, reverse: next.reverse, created: f.original === null });
+      } catch (e) {
+        return fail("invalid", e instanceof Error ? e.message : String(e));
+      }
     }
-    const bad = this.#write(abs, next.text);
-    if (bad) return bad;
-    this.#undo.push({ id: this.#next++, label, abs, patch: next.reverse, stale: false });
+    const done: typeof planned = [];
+    for (const p of planned) {
+      const bad = this.#write(p.abs, p.text);
+      if (bad) {
+        this.#rollback(done, files);
+        return bad;
+      }
+      done.push(p);
+    }
+    this.#undo.push({ id: this.#next++, label, changes: planned.map((p) => ({ abs: p.abs, patch: p.reverse, created: p.created })), stale: false });
     if (this.#undo.length > MAX_HISTORY) this.#undo.shift();
     this.#redo = [];
-    return { ok: true, label, file: this.#rel(abs), select };
+    return { ok: true, label, file: this.#rel(files[0]!.abs), select, ...extra };
+  }
+
+  /** Puts back the files a failed multi-file write had already written. */
+  #rollback(written: Array<{ abs: string; created: boolean }>, files: FileWrite[]): void {
+    for (const w of written) {
+      const original = files.find((f) => f.abs === w.abs)?.original;
+      try {
+        if (w.created) rmSync(w.abs, { force: true });
+        else if (original != null) writeFileSync(w.abs, original);
+      } catch {
+        // best effort: the write that failed is what gets reported
+      }
+    }
+  }
+
+  #scene(op: Extract<EditOp, { op: "addScene" }>): EditResult {
+    if (!/\.scenes\.ts$/.test(op.file)) return fail("invalid", "Scenarios are written to a *.scenes.ts file.");
+    const abs = this.#fileOf({ file: op.file.replace(/^\//, "") });
+    if (typeof abs !== "string") return abs;
+    const src = sourceText(readFileSync(abs, "utf8"));
+    const planned = planScene(src.text, op);
+    if ("ok" in planned) return planned;
+    return this.#commit(abs, src.original, this.#toOriginal(src, planned.hunks), planned.label, null);
   }
 
   #css(op: Extract<EditOp, { op: "setCss" }>): EditResult {
@@ -225,23 +290,48 @@ export class EditService {
   #step(from: Entry[], to: Entry[], verb: string): EditResult {
     const entry = from[from.length - 1];
     if (!entry) return fail("nothing", `Nothing to ${verb.toLowerCase()}.`);
-    if (!existsSync(entry.abs)) return fail("missing", `${this.#rel(entry.abs)} no longer exists.`);
-    const current = readFileSync(entry.abs, "utf8");
-    const located = locate(current, entry.patch);
-    if (!located.ok) {
-      return fail("conflict", `${verb} cannot be applied: ${located.error} (${this.#rel(entry.abs)} was edited outside the Designer.)`);
+    // Every file is located before any is written: an entry is undone or redone whole, or not at all.
+    const steps: Array<{ change: Change; next: ReturnType<typeof applyWithReverse> }> = [];
+    let relocated = false;
+    for (const change of entry.changes) {
+      const exists = existsSync(change.abs);
+      // A file the edit created is absent while the edit is undone, so redo starts from no file.
+      if (!exists && !change.created) return fail("missing", `${this.#rel(change.abs)} no longer exists.`);
+      const current = exists ? readFileSync(change.abs, "utf8") : "";
+      const located = locate(current, change.patch);
+      if (!located.ok) {
+        return fail("conflict", `${verb} cannot be applied: ${located.error} (${this.#rel(change.abs)} was edited outside the Designer.)`);
+      }
+      relocated ||= located.relocated;
+      steps.push({ change, next: applyWithReverse(current, located.hunks) });
     }
-    const next = applyWithReverse(current, located.hunks);
-    const bad = this.#write(entry.abs, next.text);
-    if (bad) return bad;
+    for (const s of steps) {
+      if (s.change.created && s.next.text === "") {
+        try {
+          rmSync(s.change.abs, { force: true });
+        } catch (e) {
+          return fail("io", `Could not remove ${this.#rel(s.change.abs)}: ${e instanceof Error ? e.message : e}`);
+        }
+        this.#written.delete(s.change.abs);
+        continue;
+      }
+      const bad = this.#write(s.change.abs, s.next.text);
+      if (bad) return bad;
+    }
     from.pop();
-    to.push({ ...entry, patch: next.reverse, stale: false });
-    return { ok: true, label: `${verb}: ${entry.label}`, file: this.#rel(entry.abs), select: null, ...(located.relocated ? { relocated: true } : {}) };
+    to.push({ ...entry, changes: steps.map((s) => ({ ...s.change, patch: s.next.reverse })), stale: false });
+    return { ok: true, label: `${verb}: ${entry.label}`, file: this.#rel(entry.changes[0]!.abs), select: null, ...(relocated ? { relocated: true } : {}) };
   }
 
   history(): HistoryInfo {
-    const item = (e: Entry): HistoryItem => ({ id: e.id, label: e.label, file: this.#rel(e.abs), stale: e.stale });
-    const external = [...new Set([...this.#undo, ...this.#redo].filter((e) => e.stale).map((e) => this.#rel(e.abs)))];
+    const item = (e: Entry): HistoryItem => ({
+      id: e.id,
+      label: e.label,
+      file: this.#rel(e.changes[0]!.abs),
+      ...(e.changes.length > 1 ? { files: e.changes.map((c) => this.#rel(c.abs)) } : {}),
+      stale: e.stale,
+    });
+    const external = [...new Set([...this.#undo, ...this.#redo].filter((e) => e.stale).flatMap((e) => e.changes.map((c) => this.#rel(c.abs))))];
     return { undo: this.#undo.map(item), redo: this.#redo.map(item), external };
   }
 }

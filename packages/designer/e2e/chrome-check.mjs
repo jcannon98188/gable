@@ -103,8 +103,6 @@ await sleep(600);
 // --- flows without a backend say so, and do nothing ---------------------------------------------------------------------
 for (const [command, words, button] of [
   ["Open a project", "not available yet", "Browse…"],
-  ["Extract to component", "not available yet", "Extract"],
-  ["New Scenario", "cannot write Scenarios yet", "Create"],
 ]) {
   await palette(command);
   const body = await ev(`[...document.querySelectorAll('[role="dialog"]')].map((d) => d.innerText).join(" ")`);

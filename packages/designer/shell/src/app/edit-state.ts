@@ -74,11 +74,17 @@ export class EditState {
     if (this.target()?.start === target.start && this.target()?.raw === target.raw) this.model.set(result);
   }
 
-  /** Runs an edit of the selected element. */
-  async edit(build: (target: TargetRef) => EditOp): Promise<void> {
+  /** Runs an edit of the selected element. Resolves to the outcome, or null when nothing was sent. */
+  async edit(build: (target: TargetRef) => EditOp): Promise<EditResult | null> {
     const target = this.target();
-    if (!target || this.busy()) return;
-    await this.#run(() => this.state.api<EditResult>("/api/edit/apply", build(target)));
+    if (!target || this.busy()) return null;
+    return this.#run(() => this.state.api<EditResult>("/api/edit/apply", build(target)));
+  }
+
+  /** Runs an edit that is not about the selected element (adding a Scenario). */
+  async apply(op: EditOp): Promise<EditResult | null> {
+    if (this.busy()) return null;
+    return this.#run(() => this.state.api<EditResult>("/api/edit/apply", op));
   }
 
   async undo(): Promise<void> {
@@ -89,7 +95,7 @@ export class EditState {
     await this.#run(() => this.state.api<EditResult>("/api/edit/redo", {}));
   }
 
-  async #run(call: () => Promise<EditResult>): Promise<void> {
+  async #run(call: () => Promise<EditResult>): Promise<EditResult | null> {
     this.busy.set(true);
     try {
       const r = await call();
@@ -97,10 +103,12 @@ export class EditState {
       this.#announce(r);
       if (r.ok && r.select) await this.#reselect(r.select);
       else if (r.ok) this.model.set(null);
+      return r;
     } catch (e) {
       const text = e instanceof Error ? e.message : String(e);
       this.notice.set({ ok: false, text });
       this.toast.error("Couldn't apply this edit", { description: text, action: { label: "Open code", onClick: () => this.onShowPatch() } });
+      return { ok: false, code: "io", error: text };
     } finally {
       this.busy.set(false);
     }
@@ -111,18 +119,21 @@ export class EditState {
     if (!r.ok) return void this.toast.error("Couldn't apply this edit", { description: r.error, action: { label: "Open code", onClick: () => this.onShowPatch() } });
     if (r.noop) return;
     this.toast.show(r.label, {
-      description: this.state.relative(r.file) + (r.relocated ? " (found its place after the file changed)" : ""),
+      description: [r.file, ...(r.created ?? [])].map((f) => this.state.relative(f)).join(", ") + (r.relocated ? " (found its place after the file changed)" : "") + (r.note ? `. ${r.note}` : ""),
       action: { label: "Undo", onClick: () => void this.undo() },
     });
   }
 
   /** After HMR re-renders the template, select the same element again (the runtime ids went stale with the old template). */
   async #reselect(at: { raw: string; offset: number }): Promise<void> {
+    // A call to a frame that reloaded meanwhile (an edit that adds a module can do that) is never answered: bound each one, or
+    // the edit would stay busy for good.
+    const within = <T>(p: Promise<T>): Promise<T | null> => Promise.race([p.catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 1000))]);
     for (let i = 0; i < 12; i++) {
       await new Promise((r) => setTimeout(r, 250));
-      const node = await this.state.preview.call("nodeAt", { raw: at.raw, offset: at.offset }).catch(() => null);
+      const node = await within(this.state.preview.call("nodeAt", { raw: at.raw, offset: at.offset }));
       if (node) {
-        await this.state.preview.call("selectNode", { id: node.id }).catch(() => undefined);
+        await within(this.state.preview.call("selectNode", { id: node.id }));
         return;
       }
     }
