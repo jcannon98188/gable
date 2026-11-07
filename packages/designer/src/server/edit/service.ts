@@ -6,6 +6,7 @@ import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parseTemplateTree } from "@gable/template-format";
 import { sourceText, type SourceText } from "../source.js";
 import { setCssDeclaration } from "./css.js";
+import { planTokenEdit } from "../tokens/patch.js";
 import { unifiedDiff, type UnifiedDiff } from "./diff.js";
 import { applyHunks, applyWithReverse, hash, locate, type Hunk, type PatchHunk } from "./hunks.js";
 import { ensureImport, ensureMetaImport, setMetaString } from "./meta.js";
@@ -168,6 +169,7 @@ export class EditService {
 
   #apply(op: EditOp): EditResult {
     if (op.op === "setCss") return this.#css(op);
+    if (op.op === "setToken") return this.#token(op);
     if (op.op === "addScene") return this.#scene(op);
     const t = this.#template(op.target);
     if ("ok" in t) return t;
@@ -300,6 +302,20 @@ export class EditService {
     if ("ok" in hunks) return hunks;
     const src = sourceText(original);
     return this.#commit(abs, original, this.#toOriginal(src, hunks), op.value === null ? `Remove ${op.property}` : `Set ${op.property}`, null);
+  }
+
+  /** A design token (tokens/patch.ts): one custom property in one exact context of a stylesheet. */
+  #token(op: Extract<EditOp, { op: "setToken" }>): EditResult {
+    if (!/\.css$/i.test(op.file)) return fail("invalid", "Only .css files can be edited here.");
+    const abs = this.#inside(resolve(join(this.root, op.file)));
+    if (typeof abs !== "string") return abs;
+    const original = readFileSync(abs, "utf8");
+    const atRules = op.atRules ?? [];
+    const hunks = planTokenEdit(original.replaceAll("\r\n", "\n"), { name: op.name, selector: op.selector, atRules, value: op.value, ...(op.expect !== undefined ? { expect: op.expect } : {}) });
+    if ("ok" in hunks) return hunks;
+    const where = [...atRules, ...(op.selector !== null ? [op.selector] : [])].join(" ");
+    if (op.expect !== undefined && op.value !== null && op.expect !== null && op.expect.trim() === op.value.trim()) return { ok: true, label: `Set ${op.name}`, file: this.#rel(abs), select: null, noop: true };
+    return this.#commit(abs, original, this.#toOriginal(sourceText(original), hunks), `${op.value === null ? "Remove" : "Set"} ${op.name} (${where})`, null);
   }
 
   // --- history ---------------------------------------------------------------------------------------------------

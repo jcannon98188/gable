@@ -54,6 +54,12 @@ export type EditOp =
   /** Sets (`value`) or removes (`null`) one declaration of a CSS rule; the rule is appended when the file has none. */
   | { op: "setCss"; file: string; selector: string; property: string; value: string | null }
   /**
+   * Sets (`value`) or removes (`null`) one design token (a custom property) in one exact context of a project stylesheet:
+   * the rule `selector` (null: directly in the at-rule, as in `@theme`) inside `atRules`, outermost first. A context the file
+   * lacks is appended. `expect` is the value the caller read there (null: none); the edit is refused as stale when it differs.
+   */
+  | { op: "setToken"; file: string; name: string; selector: string | null; atRules?: string[]; value: string | null; expect?: string | null }
+  /**
    * Adds a scene to a scenes file (root-relative, `/src/x.scenes.ts`): after its last scene, as written. `from` copies an
    * existing scene's definition (its inputs, providers and mocks) and gives the copy `description`.
    */

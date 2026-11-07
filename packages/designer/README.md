@@ -34,7 +34,7 @@ hot-updates the canvas and the shell selects the same element again.
   escapes, and files holding two identical literals, are refused.
 - Ops (`src/server/edit/types.ts`): `setText`, `addText`, `setAttr`, `removeAttr`, `setBinding` (prop/attr/class/style/model from a
   signal picker), `addTextBinding`, `insert` (palette: HTML, gable-ui and project components; also imports the class and lists it in
-  `imports`), `delete`, `move`, `wrap` (`@if`/`@for`), `setMeta` (selector/id/encapsulation), `setCss` (one declaration of a rule), `addScene` and `extract` (below).
+  `imports`), `delete`, `move`, `wrap` (`@if`/`@for`), `setMeta` (selector/id/encapsulation), `setCss` (one declaration of a rule), `setToken` (one design token in one exact context; see Design tokens), `addScene` and `extract` (below).
 - Read-only: events, refs, i18n, opaque expressions and `{{ }}` interpolations are shown, never rewritten (`readonly` error).
 - Formatting: a template that is formatter-clean before the edit is reformatted as a whole with the repo's formatter options
   (`.prettierrc` / `package.json#prettier`), so the result equals formatter output; any other template is touched only where the
@@ -314,6 +314,47 @@ node packages/designer/e2e/tailwind-check.mjs --port <cdp port> --shell 127.0.0.
 node packages/designer/e2e/tailwind-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port> --off
 ```
 
+## Design tokens
+
+The Tokens tab (right side, next to Style) lists the project's design tokens: the CSS custom properties its stylesheets define,
+with or without Tailwind. The source is the truth (ADR 0001): the backend reads the stylesheets, and an edit is one minimal patch
+on the same undo history as every other edit.
+
+- **What is read** (`src/server/tokens/`). Every `.css` file of the project (not `node_modules`, `dist` and the like), plus the
+  package stylesheets they `@import` (`@gable/ui/theme.css`). Package stylesheets are read-only. Each definition keeps its
+  exact context: `:root`, `.dark`, `@media (prefers-color-scheme: dark) :root`, `[data-theme="ocean"]`, `@theme` /
+  `@theme inline`, or a component selector. Tailwind's own `--tw-*` and the default theme are left to Tailwind mode.
+- **Light and dark.** A token's light value is the last document-wide definition outside dark mode; its dark value is the last
+  one under `.dark`, `[data-theme=dark]`, `prefers-color-scheme: dark` or `@variant dark`. A token with no dark value gets its
+  dark edit in the dark context the project uses most. `@theme inline` tokens are refused for a dark edit: Tailwind writes their
+  value into the classes, so the tab says to set the token they read. Values are shown as written, and swatches use the
+  value with `var()` followed through other tokens. Definitions overridden by a later one in the same context are struck through.
+- **Editing.** Click a value, type, press Enter (Escape abandons the edit). The `setToken` op changes only the value in that one
+  context. It adds the declaration to the context's block, or appends the block when the file has none; `null` removes a
+  definition. It is refused as stale when the file no longer says what the tab showed. A package token is overridden in the
+  project stylesheet that imports it. That stylesheet comes after the import, so the override wins and theme.css is never
+  touched. The frame picks the change up by Vite's CSS hot update. The toast, Ctrl Z and the Undo button take it back.
+- **Uses.** Each token shows how many places read it. Those are CSS declarations with `var()`, template `style` attributes and
+  bindings, and template classes. Classes are matched through the project's Tailwind design system, so `bg-primary` counts for
+  `--primary`. Without Tailwind, a class counts only when it spells `var()`. A use through an alias (a token whose value reads
+  this one) names the alias. A class made from an `@theme inline` token counts for that token by name (`text-brand` for
+  `--color-brand`). Click a use to select its element on the canvas: a template use by its position, a CSS use by the first
+  element its rule matches.
+- **The selected element.** The Style tab and the Tokens tab list the tokens the selected element reads, from its classes, its
+  inline style, and the project's rules for its classes. A click opens that token in the Tokens tab.
+
+Backend endpoints (`src/server/tokens/api.ts`, token-checked like the rest): `GET /api/tokens/list`, and `POST /api/tokens/usages`
+`{ name }` and `/api/tokens/element` `{ classes, style }`. Edits are the `setToken` op of `/api/edit/apply`. MCP: `list_tokens`
+(filter, kind), `get_token_usages` (each use carries `select` for `select_element`) and `set_token` (`scheme` light/dark, or
+`context` for one listed definition; `value: null` removes it).
+
+The driven check runs against `test-fixtures/tokens-app` (its own tokens next to gable-ui's theme.css) in a headless Edge. It
+puts the fixture's stylesheet back byte for byte:
+
+```
+npm run build -w packages/designer && node packages/designer/e2e/tokens-check.mjs [--browser <path>] [--shot <file>]
+```
+
 ## Agents (MCP)
 
 The backend hosts an [MCP](https://modelcontextprotocol.io) server (`src/server/mcp/`, official TypeScript SDK) so a coding agent
@@ -334,9 +375,9 @@ left out to mean the element selected in the window.
 
 | Group | Tools |
 | --- | --- |
-| Read | `get_status` (call first), `list_components`, `list_scenes`, `list_routes`, `get_problems`, `get_history`, `describe_element`, `get_selection`, `get_styles`, `get_tree`, `get_signals`, `get_hmr_timeline`, `get_http_log`, `get_performance` |
+| Read | `get_status` (call first), `list_components`, `list_scenes`, `list_routes`, `get_problems`, `get_history`, `describe_element`, `get_selection`, `get_styles`, `get_tree`, `get_signals`, `get_hmr_timeline`, `get_http_log`, `get_performance`, `list_tokens`, `get_token_usages` |
 | Window | `set_mode`, `show_page`, `show_component`, `set_scene`, `set_scenario`, `navigate`, `add_frame`, `update_frame`, `remove_frame`, `select_frame`, `select_element` (by position or CSS selector) |
-| Edit | `edit_text`, `set_attribute`, `bind`, `insert_element`, `delete_element`, `move_element`, `wrap_element`, `set_component_meta`, `set_css`, `edit_classes` (Tailwind, at a breakpoint and state), `undo`, `redo` |
+| Edit | `edit_text`, `set_attribute`, `bind`, `insert_element`, `delete_element`, `move_element`, `wrap_element`, `set_component_meta`, `set_css`, `edit_classes` (Tailwind, at a breakpoint and state), `set_token`, `undo`, `redo` |
 | See | `screenshot`: a PNG of a frame as MCP image content |
 
 **Screenshots.** In the desktop app (WebView2 with a CDP port) the live frame is captured over CDP: the frame's own target
