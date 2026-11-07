@@ -119,6 +119,17 @@ describe("Tree", () => {
     expect(labels()).toContain("app");
   });
 
+  it("rotates the chevron of an open branch and leaves a closed one pointing right", async () => {
+    const app = await boot(App);
+    app.expanded.set(["src"]);
+    await settle();
+    const open = row("src").querySelector("svg")!;
+    const closed = row("docs").querySelector("svg")!;
+    expect(open.getAttribute("data-open")).toBe("true");
+    expect(closed.getAttribute("data-open")).toBe("false");
+    expect(open.getAttribute("class")).toContain("data-[open=true]:rotate-90");
+  });
+
   it("moves with the arrow keys, Home and End, skipping disabled rows", async () => {
     const app = await boot(App);
     app.expanded.set(["src", "src/app"]);

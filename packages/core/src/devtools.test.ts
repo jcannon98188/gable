@@ -13,7 +13,7 @@ beforeEach(() => {
 afterEach(() => dt.dispose());
 
 const call = <T>(method: string, params?: unknown) => dt.hook.call(method as any, params as any) as T;
-const find = <T extends { name: string }>(list: T[], name: string): T => list.find((x) => x.name === name)!;
+const find = <T = any>(list: Array<{ name: string }>, name: string): T => list.find((x) => x.name === name) as T;
 const idOfRoot = (f: { root: unknown }) => dt.hook.componentFor(f.root)!;
 
 class Child {

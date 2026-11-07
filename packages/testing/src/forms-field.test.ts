@@ -23,7 +23,7 @@ describe("[field] on native controls", () => {
     f = form(signal({ email: "", age: null as number | null, terms: false, plan: "a", color: "blue", bio: "", date: "2020-01-02" }), (p) => {
       required(p.email);
       email(p.email);
-      disabled(p.bio, ({ root }) => root.terms());
+      disabled(p.bio, ({ root }) => (root as any).terms());
     });
     firstError = computed(() => this.f.email.state.errors()[0]?.kind ?? "");
   }
@@ -139,7 +139,7 @@ describe("[field] on custom controls", () => {
     static meta = { selector: "app-page", imports: [Rating], template: html`<app-rating [field]="f.stars" />` };
     f = form(signal({ stars: null as number | null }), (p) => {
       required(p.stars);
-      disabled(p.stars, ({ root }) => root.stars() === 99);
+      disabled(p.stars, ({ root }) => (root as any).stars() === 99);
     });
   }
 
@@ -200,7 +200,7 @@ describe("a complete form through the Fixture", () => {
   it("validates sync and async, submits, and shows server errors", async () => {
     vi.useFakeTimers();
     try {
-      const t = mount(Register, { advanceTimers: (ms) => vi.advanceTimersByTimeAsync(ms) });
+      const t = mount(Register, { advanceTimers: async (ms) => void (await vi.advanceTimersByTimeAsync(ms)) });
       const go = t.query(".go")!;
       t.dispatch(go, "click");
       await t.settle();

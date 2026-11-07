@@ -4,7 +4,8 @@ import { cn } from "../lib/cn.js";
 import { useHostClass } from "../lib/host-class.js";
 import { UiIcon } from "../lib/icon.js";
 import { UiButton } from "./button.js";
-import { resolveLocale, UiCalendar, type CalendarMode, type CaptionLayout, type DateRange, type LocaleSource, type WeekDay } from "./calendar.js";
+import { useDateLocale, type DateLocaleLoader, type LocaleSource } from "../lib/date-locale.js";
+import { UiCalendar, type CalendarMode, type CaptionLayout, type DateRange, type WeekDay } from "./calendar.js";
 import { PopoverTrigger, UiPopover } from "./popover.js";
 
 const INPUT =
@@ -44,7 +45,7 @@ export class UiDatePicker {
           autocomplete="off"
           [attr.class]="inputClasses()"
           [value]="inputText()"
-          [attr.placeholder]="placeholder()"
+          [attr.placeholder]="placeholderText()"
           [attr.aria-label]="inputLabel()"
           [attr.aria-invalid]="inputInvalid()"
           [attr.readonly]="readonlyAttr()"
@@ -81,6 +82,7 @@ export class UiDatePicker {
           [max]="max()"
           [isDisabled]="isDisabled()"
           [locale]="locale()"
+          [localeLoader]="localeLoader()"
           [captionLayout]="captionLayout()"
           [weekStartsOn]="weekStartsOn()"
           [showOutsideDays]="showOutsideDays()"
@@ -103,6 +105,8 @@ export class UiDatePicker {
   max = input<Date | null>(null);
   isDisabled = input<((day: Date) => boolean) | null>(null);
   locale = input<LocaleSource | undefined>(undefined);
+  /** Loads the date-fns locale for the I18n locale (`(name) => import("date-fns/locale").then((m) => m[name])`), used for `displayFormat`, parsing and the calendar. */
+  localeLoader = input<DateLocaleLoader | undefined>(undefined);
   /** Passed to the calendar: month and year dropdowns in its heading. */
   captionLayout = input<CaptionLayout>("label");
   weekStartsOn = input<WeekDay | undefined>(undefined);
@@ -112,7 +116,8 @@ export class UiDatePicker {
   displayFormat = input<string>("PPP");
   /** Single mode: add a text input for typing the date in `displayFormat`. */
   typeable = input<boolean>(false);
-  placeholder = input<string>("Pick a date");
+  /** Text of the empty button. Unset, it is translated through the I18n service (`ui.datePicker.placeholder`). */
+  placeholder = input<string | undefined>(undefined);
   /** Names the field for screen readers: the button reads "label: date". */
   label = input<string>("");
   disabled = input<boolean>(false);
@@ -126,13 +131,20 @@ export class UiDatePicker {
 
   private apply = useHostClass(() => cn(this.typeable() ? "inline-flex items-center gap-1" : "inline-block", this.class()));
 
-  dialogLabel = computed(() => this.label() || (this.mode() === "range" ? "Choose dates" : "Choose date"));
+  private dl = useDateLocale(() => this.locale(), () => this.localeLoader());
+  private effectiveLocale = this.dl.locale;
+  placeholderText = computed(() => this.placeholder() ?? this.dl.i18n.t`:date picker empty button@@ui.datePicker.placeholder:Pick a date`);
+  dialogLabel = computed(
+    () =>
+      this.label() ||
+      (this.mode() === "range" ? this.dl.i18n.t`:date picker dialog name@@ui.datePicker.chooseDates:Choose dates` : this.dl.i18n.t`:date picker dialog name@@ui.datePicker.chooseDate:Choose date`),
+  );
   blocked = computed(() => this.disabled() || this.readonly());
   triggerClasses = computed(() => cn(this.typeable() ? TYPEABLE_TRIGGER : TRIGGER, this.triggerClass()));
   invalidAttr = computed(() => (this.invalid() ? "true" : null));
   inputClasses = computed(() => cn(INPUT, this.triggerClass()));
   readonlyAttr = computed(() => (this.readonly() ? "" : null));
-  inputLabel = computed(() => this.label() || "Date");
+  inputLabel = computed(() => this.label() || this.dl.i18n.t`:date picker text input name@@ui.datePicker.date:Date`);
   /** What the user is typing; `null` shows the value formatted. */
   private draft = signal<string | null>(null);
   private typedInvalid = signal(false);
@@ -141,7 +153,7 @@ export class UiDatePicker {
     const draft = this.draft();
     if (draft !== null) return draft;
     const v = this.value();
-    return v ? format(v, this.displayFormat(), { locale: resolveLocale(this.locale()) }) : "";
+    return v ? format(v, this.displayFormat(), { locale: this.effectiveLocale() }) : "";
   });
   private clearDraft = effect(() => {
     this.value();
@@ -152,14 +164,14 @@ export class UiDatePicker {
   emptyAttr = computed(() => (this.hasValue() ? "false" : "true"));
 
   text = computed(() => {
-    const opts = { locale: resolveLocale(this.locale()) };
+    const opts = { locale: this.effectiveLocale() };
     const pattern = this.displayFormat();
     if (this.mode() === "single") {
       const v = this.value();
-      return v ? format(v, pattern, opts) : this.placeholder();
+      return v ? format(v, pattern, opts) : this.placeholderText();
     }
     const { from, to } = this.range();
-    if (!from) return this.placeholder();
+    if (!from) return this.placeholderText();
     return to ? `${format(from, pattern, opts)} - ${format(to, pattern, opts)}` : `${format(from, pattern, opts)} -`;
   });
   buttonLabel = computed(() => (this.typeable() ? this.dialogLabel() : this.label() ? `${this.label()}: ${this.text()}` : null));
@@ -194,7 +206,7 @@ export class UiDatePicker {
       this.value.set(null);
       return;
     }
-    const day = parse(text.trim(), this.displayFormat(), this.today() ?? new Date(), { locale: resolveLocale(this.locale()) });
+    const day = parse(text.trim(), this.displayFormat(), this.today() ?? new Date(), { locale: this.effectiveLocale() });
     if (!isValid(day) || !this.allowed(day)) {
       this.typedInvalid.set(true);
       return;

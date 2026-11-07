@@ -17,6 +17,7 @@ import {
 } from "date-fns";
 import { cn } from "../lib/cn.js";
 import { useHostClass } from "../lib/host-class.js";
+import { useDateLocale, type DateLocaleLoader, type LocaleSource } from "../lib/date-locale.js";
 import { UiIcon } from "../lib/icon.js";
 import { UiButton } from "./button.js";
 
@@ -24,13 +25,7 @@ export type CalendarMode = "single" | "range";
 export type WeekDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 /** How the month heading is shown: plain text, or with month and/or year dropdowns to jump around. */
 export type CaptionLayout = "label" | "dropdown" | "dropdown-months" | "dropdown-years";
-/** A date-fns locale, or a function returning one (read inside the calendar's computeds, so a signal it reads re-renders it). */
-export type LocaleSource = Locale | (() => Locale | undefined);
-
-/** Resolves a `LocaleSource`. */
-export function resolveLocale(source: LocaleSource | undefined): Locale | undefined {
-  return typeof source === "function" ? source() : source;
-}
+export { resolveLocale, type LocaleSource } from "../lib/date-locale.js";
 
 const SELECT =
   "h-8 cursor-pointer rounded-md border border-input bg-transparent px-2 text-sm font-medium shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
@@ -80,9 +75,11 @@ const dayKey = (d: Date) => format(d, "yyyy-MM-dd");
  * day inside it; it follows the selection when not set). `min`, `max` and the `isDisabled` predicate disable days: they cannot be
  * picked, are skipped by selection but still reachable with the arrow keys, and carry `aria-disabled`.
  *
- * `locale` takes a date-fns `Locale` (for example `fr` from the `date-fns/locale` module): it sets the month and weekday names and, unless
- * `weekStartsOn` is given, the first day of the week. Leave it unset for English (US). Every string the calendar shows that
- * is not date formatting (`previousLabel`, `nextLabel`) is an input, so an app can translate them.
+ * Locale: unset, the calendar follows the I18n service (`I18n.locale`, `"en"` with no provider): month and weekday names come from
+ * `Intl` for that locale and re-render when it changes. `locale` takes a date-fns `Locale` (for example `fr` from `date-fns/locale`) as an
+ * override: it sets the names and, unless `weekStartsOn` is given, the first day of the week. `localeLoader` loads the date-fns locale
+ * that matches the I18n locale (see `dateFnsLocaleNames`). The labels (`previousLabel`, `nextLabel`, `monthLabel`, `yearLabel`) are
+ * translated through I18n (ids `ui.calendar.*`) unless an input overrides them.
  *
  * Semantics (WAI-ARIA date grid): a `role="grid"` table named by the month heading, column headers with the full weekday as
  * the name, `role="gridcell"` days with a full-date `aria-label`, `aria-selected` on selected days and `aria-current="date"` on today.
@@ -96,25 +93,25 @@ export class UiCalendar {
     imports: [UiButton, UiIcon],
     template: html`
       <div class="relative flex h-8 items-center justify-center">
-        <button uiButton variant="outline" type="button" [class]="prevClass" [attr.aria-label]="previousLabel()" [disabled]="!canPrev()" (click)="prevMonth()">
+        <button uiButton variant="outline" type="button" [class]="prevClass" [attr.aria-label]="previousText()" [disabled]="!canPrev()" (click)="prevMonth()">
           <svg uiIcon="chevron-left"></svg>
         </button>
         <div [attr.id]="captionId" aria-live="polite" [attr.class]="captionClass()">{{ caption() }}</div>
         @if (monthDropdown()) {
-          <select [attr.aria-label]="monthLabel()" [attr.class]="selectClass" (change)="onMonthSelect($event)">
+          <select [attr.aria-label]="monthText()" [attr.class]="selectClass" (change)="onMonthSelect($event)">
             @for (m of monthOptions(); track m.value) {
               <option [attr.value]="m.value" [selected]="m.selected" [disabled]="m.disabled">{{ m.label }}</option>
             }
           </select>
         }
         @if (yearDropdown()) {
-          <select [attr.aria-label]="yearLabel()" [attr.class]="selectClass" (change)="onYearSelect($event)">
+          <select [attr.aria-label]="yearText()" [attr.class]="selectClass" (change)="onYearSelect($event)">
             @for (y of yearOptions(); track y.value) {
               <option [attr.value]="y.value" [selected]="y.selected">{{ y.label }}</option>
             }
           </select>
         }
-        <button uiButton variant="outline" type="button" [class]="nextClass" [attr.aria-label]="nextLabel()" [disabled]="!canNext()" (click)="nextMonth()">
+        <button uiButton variant="outline" type="button" [class]="nextClass" [attr.aria-label]="nextText()" [disabled]="!canNext()" (click)="nextMonth()">
           <svg uiIcon="chevron-right"></svg>
         </button>
       </div>
@@ -176,10 +173,16 @@ export class UiCalendar {
   showOutsideDays = input<boolean>(true);
   /** What "today" is. Mainly for tests and demos; default is the current date. */
   today = input<Date | null>(null);
-  monthLabel = input<string>("Month");
-  yearLabel = input<string>("Year");
-  previousLabel = input<string>("Go to the previous month");
-  nextLabel = input<string>("Go to the next month");
+  /**
+   * Loads the date-fns locale for the I18n locale (see `dateFnsLocaleNames`): `(name) => import("date-fns/locale").then((m) => m[name])`.
+   * Needed only for date-fns specifics (the first day of the week); month and weekday names follow `I18n.locale` through `Intl`.
+   */
+  localeLoader = input<DateLocaleLoader | undefined>(undefined);
+  /** Accessible names. Unset, they are translated through the I18n service (ids `ui.calendar.*`); set them to override. */
+  monthLabel = input<string | undefined>(undefined);
+  yearLabel = input<string | undefined>(undefined);
+  previousLabel = input<string | undefined>(undefined);
+  nextLabel = input<string | undefined>(undefined);
   class = input<string>("");
 
   private hostRef = injectHost<HTMLElement>();
@@ -196,8 +199,13 @@ export class UiCalendar {
 
   private now = computed(() => startOfDay(this.today() ?? new Date()));
   private shown = computed(() => startOfMonth(this.month() ?? this.value() ?? this.range().from ?? this.now()));
-  private loc = computed(() => resolveLocale(this.locale()));
-  private options = computed(() => ({ locale: this.loc(), weekStartsOn: this.weekStartsOn() ?? this.loc()?.options?.weekStartsOn ?? 0 }) as { locale?: Locale; weekStartsOn: WeekDay });
+  private dl = useDateLocale(() => this.locale(), () => this.localeLoader());
+  private loc = this.dl.locale;
+  private options = computed(() => ({ locale: this.loc(), weekStartsOn: this.weekStartsOn() ?? this.dl.weekStart() }) as { locale?: Locale; weekStartsOn: WeekDay });
+  previousText = computed(() => this.previousLabel() ?? this.dl.i18n.t`:calendar button@@ui.calendar.previous:Go to the previous month`);
+  nextText = computed(() => this.nextLabel() ?? this.dl.i18n.t`:calendar button@@ui.calendar.next:Go to the next month`);
+  monthText = computed(() => this.monthLabel() ?? this.dl.i18n.t`:calendar select@@ui.calendar.month:Month`);
+  yearText = computed(() => this.yearLabel() ?? this.dl.i18n.t`:calendar select@@ui.calendar.year:Year`);
   monthDropdown = computed(() => this.captionLayout() === "dropdown" || this.captionLayout() === "dropdown-months");
   yearDropdown = computed(() => this.captionLayout() === "dropdown" || this.captionLayout() === "dropdown-years");
   /** With a dropdown the heading stays for assistive tech (it names the grid) but is not shown. */
@@ -210,7 +218,7 @@ export class UiCalendar {
       const first = new Date(shown.getFullYear(), i, 1);
       return {
         value: String(i),
-        label: format(first, "LLLL", { locale: this.loc() }),
+        label: this.dl.part(first, "month"),
         selected: i === shown.getMonth(),
         disabled: (!!min && isBefore(endOfMonth(first), startOfDay(min))) || (!!max && isAfter(first, startOfDay(max))),
       };
@@ -227,7 +235,7 @@ export class UiCalendar {
     });
   });
   multiselectable = computed(() => (this.mode() === "range" ? "true" : null));
-  caption = computed(() => format(this.shown(), "LLLL yyyy", { locale: this.loc() }));
+  caption = computed(() => this.dl.part(this.shown(), "caption"));
   canPrev = computed(() => !this.min() || isAfter(this.shown(), startOfDay(this.min()!)));
   canNext = computed(() => !this.max() || isBefore(endOfMonth(this.shown()), startOfDay(this.max()!)));
 
@@ -236,7 +244,7 @@ export class UiCalendar {
     const start = startOfWeek(this.now(), opts);
     return Array.from({ length: 7 }, (_, i) => {
       const day = addDays(start, i);
-      return { key: i, short: format(day, "EEEEEE", opts), long: format(day, "EEEE", opts) };
+      return { key: i, short: this.dl.part(day, "weekdayShort"), long: this.dl.part(day, "weekdayLong") };
     });
   });
 
@@ -294,8 +302,8 @@ export class UiCalendar {
     return {
       key: dayKey(day),
       date: day,
-      text: hidden ? "" : format(day, "d", s.opts),
-      label: hidden ? null : format(day, "PPPP", s.opts),
+      text: hidden ? "" : this.dl.part(day, "dayNumber"),
+      label: hidden ? null : this.dl.part(day, "dayLabel"),
       selected: hidden ? null : selected ? "true" : "false",
       current: isToday ? "date" : null,
       disabled: disabled || hidden ? "true" : null,

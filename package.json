@@ -13,7 +13,8 @@
     "version-packages": "changeset version",
     "package": "npm run package -w packages/vscode -w packages/create-gable",
     "pack:local": "node scripts/pack-local.mjs",
-    "bench:hmr": "node examples/hmr-benchmark/bench.mjs"
+    "bench:hmr": "node examples/hmr-benchmark/bench.mjs",
+    "typecheck:tests": "tsc -p tsconfig.test.json"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",

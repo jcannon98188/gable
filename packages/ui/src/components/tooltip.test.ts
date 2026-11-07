@@ -21,7 +21,7 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 const setup = async () => {
-  const f = mount(App, { providers: provideTestDom(), advanceTimers: (ms) => vi.advanceTimersByTimeAsync(ms) });
+  const f = mount(App, { providers: provideTestDom(), advanceTimers: async (ms) => void (await vi.advanceTimersByTimeAsync(ms)) });
   await f.settle();
   return { f, trigger: () => f.queryAll("button")[0]!, tip: () => f.query("[role=tooltip]")! };
 };

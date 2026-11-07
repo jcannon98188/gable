@@ -21,7 +21,7 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 const setup = async () => {
-  const f = mount(App, { providers: provideTestDom(), advanceTimers: (ms) => vi.advanceTimersByTimeAsync(ms) });
+  const f = mount(App, { providers: provideTestDom(), advanceTimers: async (ms) => void (await vi.advanceTimersByTimeAsync(ms)) });
   await f.settle();
   const click = async (node: ReturnType<typeof f.query>) => {
     f.dispatch(node!, "click", domEvent(node!, "click"));

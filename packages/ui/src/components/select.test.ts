@@ -34,7 +34,7 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 const setup = async () => {
-  const f = mount(App, { providers: provideTestDom(), advanceTimers: (ms) => vi.advanceTimersByTimeAsync(ms) });
+  const f = mount(App, { providers: provideTestDom(), advanceTimers: async (ms) => void (await vi.advanceTimersByTimeAsync(ms)) });
   await f.settle();
   const option = (value: string) => f.queryAll("[role=option]").find((n) => n.attrs["data-value"] === value)!;
   const click = async (node: ReturnType<typeof f.query>) => {
@@ -49,7 +49,7 @@ describe("Select", () => {
     const { trigger } = await setup();
     expect(trigger().attrs["aria-labelledby"]).toBeUndefined();
     expect(trigger().attrs["aria-label"]).toBe("Pick a fruit");
-    const f = mount(Named, { providers: provideTestDom(), advanceTimers: (ms) => vi.advanceTimersByTimeAsync(ms) });
+    const f = mount(Named, { providers: provideTestDom(), advanceTimers: async (ms) => void (await vi.advanceTimersByTimeAsync(ms)) });
     await f.settle();
     const [a, b] = f.queryAll("[role=combobox]");
     expect(a!.attrs["aria-label"]).toBe("Fruit");

@@ -106,7 +106,7 @@ describe("(b) slot-based item components collected with contentChildren", () => 
   }
 
   const setup = async () => {
-    const f = mount(App, { providers: provideItemsDom(), advanceTimers: (ms) => vi.advanceTimersByTimeAsync(ms) });
+    const f = mount(App, { providers: provideItemsDom(), advanceTimers: async (ms) => void (await vi.advanceTimersByTimeAsync(ms)) });
     await f.settle();
     const opt = (v: string) => f.queryAll("[role=option]").find((n) => n.attrs["data-value"] === v)!;
     return { f, opt, trigger: f.query("button")!, content: f.query("[role=listbox]")! };
@@ -142,7 +142,7 @@ describe("(b) slot-based item components collected with contentChildren", () => 
       static meta = { selector: "app-root", imports: [UiSelect, Opt2], template: html`<ui-select><ui-select-option value="a" label="Apple"></ui-select-option><ui-select-option value="b" label="Banana"></ui-select-option></ui-select>` };
       sel = viewChild(UiSelect);
     }
-    const f = mount(App2, { providers: provideItemsDom(), advanceTimers: (ms) => vi.advanceTimersByTimeAsync(ms) });
+    const f = mount(App2, { providers: provideItemsDom(), advanceTimers: async (ms) => void (await vi.advanceTimersByTimeAsync(ms)) });
     await f.settle();
     expect(f.queryAll("ui-select-option").length).toBe(2);
     f.dispatch(f.query("button")!, "click", domEvent(f.query("button")!, "click"));

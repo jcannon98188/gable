@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bootstrap, createComponent, createInjector, html, inject, input, InjectionToken, signal } from "@gable/core";
+import { type ComponentClass, bootstrap, createComponent, createInjector, html, inject, input, InjectionToken, signal } from "@gable/core";
 import { createTestRenderer, createTestRoot } from "@gable/testing/renderer";
 import { mount } from "@gable/testing";
 
@@ -38,7 +38,7 @@ describe("scoped styles", () => {
 
   it("can opt out of scoping", () => {
     const renderer = createTestRenderer();
-    const f = mount(Plain, { renderer });
+    const f = mount(Plain as unknown as ComponentClass<Plain>, { renderer });
     expect(renderer.styles.get("Plain")).toBe(".b { color: blue }");
     expect(Object.keys(f.query("div")!.attrs)).toEqual([]);
   });
@@ -86,7 +86,7 @@ describe("createComponent", () => {
   it("rejects an input name the component does not declare", () => {
     const renderer = createTestRenderer();
     const injector = createInjector([{ provide: GREETING, useValue: "x" }]);
-    expect(() => createComponent(Hello, { renderer, injector, inputs: { nope: 1 } })).toThrow(/no input "nope"/);
+    expect(() => createComponent(Hello, { renderer, injector, inputs: { nope: 1 } as never })).toThrow(/no input "nope"/);
   });
 });
 

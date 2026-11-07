@@ -26,7 +26,7 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 const setup = async () => {
-  const f = mount(App, { providers: provideTestDom(), advanceTimers: (ms) => vi.advanceTimersByTimeAsync(ms) });
+  const f = mount(App, { providers: provideTestDom(), advanceTimers: async (ms) => void (await vi.advanceTimersByTimeAsync(ms)) });
   await f.settle();
   const trigger = (value: string) => f.query(`[role=tab][data-value=${value}]`)!;
   const panel = (value: string) => f.queryAll("[role=tabpanel]").find((p) => p.attrs["aria-labelledby"]!.endsWith(`trigger-${value}`))!;

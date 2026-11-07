@@ -32,6 +32,7 @@ export const LIB_META: LibMeta[] = [
   { name: "host-class", file: "host-class.ts", dependencies: ["@gable/core"], lib: [] },
   { name: "icon", file: "icon.ts", dependencies: ["@gable/core", "lucide"], lib: ["cn"] },
   { name: "placement", file: "placement.ts", dependencies: [], lib: [] },
+  { name: "date-locale", file: "date-locale.ts", dependencies: ["@gable/core", "date-fns"], lib: [] },
 ];
 
 export const COMPONENT_META: ComponentMeta[] = [
@@ -401,7 +402,7 @@ export const COMPONENT_META: ComponentMeta[] = [
     exports: ["CalendarMode", "WeekDay", "DateRange", "CalendarCell", "UiCalendar"],
     dependencies: ["@gable/core", "date-fns"],
     registryDependencies: ["button"],
-    lib: ["cn", "host-class", "icon"],
+    lib: ["cn", "date-locale", "host-class", "icon"],
   },
   {
     name: "date-picker",
@@ -409,7 +410,7 @@ export const COMPONENT_META: ComponentMeta[] = [
     exports: ["UiDatePicker"],
     dependencies: ["@gable/core", "date-fns"],
     registryDependencies: ["button", "calendar", "popover"],
-    lib: ["cn", "host-class", "icon"],
+    lib: ["cn", "date-locale", "host-class", "icon"],
   },
   {
     name: "button-group",

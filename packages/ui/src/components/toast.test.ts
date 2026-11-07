@@ -18,9 +18,9 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 const setup = async () => {
-  const f = mount(App, { providers: [...provideTestDom(), { provide: LiveAnnouncer, useValue: announcer }], advanceTimers: (ms) => vi.advanceTimersByTimeAsync(ms) });
+  const f = mount(App, { providers: [...provideTestDom(), { provide: LiveAnnouncer, useValue: announcer }], advanceTimers: async (ms) => void (await vi.advanceTimersByTimeAsync(ms)) });
   await f.settle();
-  const toast = f.injector.get(ToastService);
+  const toast = f.injector.get(ToastService)!;
   const items = () => f.queryAll("li");
   return { f, toast, items };
 };

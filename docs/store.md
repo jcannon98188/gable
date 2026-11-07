@@ -41,11 +41,12 @@ Templates read signals only: `{{ store.remaining() }}`, `{{ store.user.name() }}
 | `withHooks({ onInit, onDestroy })` or `withHooks((store) => ({ ... }))` | Lifecycle (below). May be used several times. |
 | `patchState(store, ...updaters)` | The only way to write state. Each updater is a partial object or `(state) => partial`; applied in order, committed as one write. |
 | `withHotState(import.meta, key, { reset? })` | Keeps state across hot module updates (dev only). See "HMR". |
-| `withDevtools(name)` | Shows the store in the Gable devtools Stores tab (dev only): its state, plus a `patch` history entry (changed keys and values) for every `patchState` that changes something. See `docs/devtools.md`. |
+| `withDevtools(name)` | Shows the store in the Gable devtools Stores tab (dev only): its state, plus an `action` history entry (method name, args summary, the patches it made) for every `withMethods` call (including an `rxMethod` method), and a `patch` entry for each `patchState` outside a call. See `docs/devtools.md`. |
+| `withStorage(key, { keys?, storage?, version?, migrate?, debounce?, sync? })` | Persists chosen state keys to localStorage and restores them at construction. See "Persistence". |
 | `getState(store)` | The current state as a plain object (a tracked read). |
 | `DeepSignal`, `SignalStoreOf`, `StoreFeature`, `StateSignals`, `WritableStateSource` | Types. |
 
-Not in this package yet (separate tasks): `withStorage`, action-level devtools history. Also not provided: `withProps`, `watchState`, `withLinkedState`, a `providedIn` option.
+Not provided: `withProps`, `watchState`, `withLinkedState`, a `providedIn` option.
 
 ## Scope and DI
 
@@ -138,6 +139,33 @@ class TodoStore extends signalStore(withState({ todos: [] as Todo[] }), withHotS
 When the store's module is edited and evaluated again, the new class starts from the state the previous one last had. `patchState` records every write, so nothing is lost between edits. Keys the new store still declares are restored; keys it removed are dropped; keys it added keep their initial value. Rename the key, or pass `{ reset: true }`, to start fresh. Without `import.meta.hot` (production) it does nothing. `key` names the store within its module (state is stored per module URL without query, plus key), so give two stores in one file different keys.
 
 A live instance keeps running its old methods (they are closures made at construction); the new behaviour and the preserved state arrive together when the new class is constructed.
+
+## Persistence
+
+`withStorage("prefs", { keys: ["theme"], version: 2 })` saves the chosen state keys as JSON, `{ v: version, state: {...} }`, under one storage key, and restores them when the store is constructed (after all features are applied, before `onInit`).
+
+```ts
+class Prefs extends signalStore(
+  withState({ theme: "light", draft: "" }),
+  withStorage("prefs", { keys: ["theme"], version: 2, migrate: (old, v) => (v === 1 ? { theme: old.colour } : old) }),
+) {
+  static scope = "root";
+}
+```
+
+| Option | Meaning |
+| --- | --- |
+| `keys` | State keys to persist (typed against the state). Default: all keys the store has. |
+| `storage` | `"local"` (default), `"session"`, a `StorageLike` (`getItem`, `setItem`) or a function returning one (or `undefined`). |
+| `version`, `migrate` | Data saved under a different version goes to `migrate(saved, savedVersion)`; without `migrate` it is discarded. A throwing `migrate` discards it too. |
+| `debounce` | Milliseconds after the last change before writing (default 100). `0` writes on every change. |
+| `sync` | Apply other tabs' changes to the same key (the `storage` event). They appear as normal state changes and are not written back. Default false. |
+
+- Only keys the store declares are restored. Values are not validated: bump `version` and migrate when a key's shape changes. State must be JSON-friendly (no Dates, Maps, class instances).
+- Pending writes are flushed when the store is destroyed and on `pagehide`.
+- Missing storage (SSR, no `localStorage`), a throwing accessor (blocked cookies), corrupt JSON and write errors (quota) are caught: the store just runs without persistence.
+- With `withHotState`, list `withStorage` first so the in-session hot state wins over the saved copy.
+- Persisting the whole of a large state on each change is O(size) after the debounce; pick `keys`.
 
 ## Language-service rules
 

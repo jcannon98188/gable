@@ -55,7 +55,7 @@ const handle = hook?.registerInspector("cart", { label: "Cart store", snapshot: 
 handle?.log("add", { sku: "a1" });
 ```
 
-`snapshot()` is called whenever the Stores tab refreshes; `log(type, data)` appends a history entry (the last 500 are kept). Guard the registration with `DEV` so production builds drop it. No dependency on core internals is needed. For a `signalStore`, add the `withDevtools("Cart")` feature from `@gable/store` instead: it registers the store (dev only) and logs every `patchState` that changes something.
+`snapshot()` is called whenever the Stores tab refreshes; `log(type, data)` appends a history entry (the last 500 are kept). Guard the registration with `DEV` so production builds drop it. No dependency on core internals is needed. For a `signalStore`, add the `withDevtools("Cart")` feature from `@gable/store` instead: it registers the store (dev only) and logs history entries: an `action` entry for every method call from `withMethods` (an `rxMethod` used as a method included) with the method `name`, a short summary of its `args` and the `patches` (changed keys with new values) it made before returning, plus `error` if it threw; and a `patch` entry for each `patchState` that changes something outside a method call. Patches made after an `await`, or later by an `rxMethod` pipeline, are not part of the action and appear as `patch` entries. Wrapping methods is dev only (the `__GABLE_DEV__` guard), so production builds contain none of it.
 
 ## Manual checklist
 

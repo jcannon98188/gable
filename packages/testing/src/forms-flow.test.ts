@@ -9,7 +9,7 @@ function host<F>(make: () => F) {
     static meta = { selector: "app-host", template: html`<p>host</p>` };
     f = make();
   }
-  return mount(Host, { advanceTimers: (ms) => vi.advanceTimersByTimeAsync(ms) });
+  return mount(Host, { advanceTimers: async (ms) => void (await vi.advanceTimersByTimeAsync(ms)) });
 }
 
 describe("async validation", () => {

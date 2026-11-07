@@ -241,23 +241,31 @@ function plain(value: unknown): string {
   return value == null ? "" : String(value);
 }
 
+/** The `Intl.NumberFormat` options of a `{n, number, style}` style (shared with baked builds, which inline them). */
+export function numberFormatOptions(style: string): Intl.NumberFormatOptions | undefined {
+  if (style === "integer") return { maximumFractionDigits: 0 };
+  if (style === "percent") return { style: "percent" };
+  if (style === "compact") return { notation: "compact" };
+  if (style.startsWith("currency:")) return { style: "currency", currency: style.slice(9).trim().toUpperCase() };
+  return undefined;
+}
+
+/** The `Intl.DateTimeFormat` options of a `{d, date|time, style}` style. */
+export function dateFormatOptions(kind: "date" | "time", style: string): Intl.DateTimeFormatOptions {
+  const length = (["short", "medium", "long", "full"] as const).find((x) => x === style) ?? "medium";
+  return kind === "date" ? { dateStyle: length } : { timeStyle: length };
+}
+
 function formatNumber(value: unknown, style: string, locale: string): string {
   const n = Number(value);
   if (value == null || Number.isNaN(n)) return plain(value);
-  let options: Intl.NumberFormatOptions | undefined;
-  if (style === "integer") options = { maximumFractionDigits: 0 };
-  else if (style === "percent") options = { style: "percent" };
-  else if (style === "compact") options = { notation: "compact" };
-  else if (style.startsWith("currency:")) options = { style: "currency", currency: style.slice(9).trim().toUpperCase() };
-  return intl("number", locale, options, (l, o) => new Intl.NumberFormat(l, o)).format(n);
+  return intl("number", locale, numberFormatOptions(style), (l, o) => new Intl.NumberFormat(l, o)).format(n);
 }
 
 function formatDate(value: unknown, kind: "date" | "time", style: string, locale: string): string {
   const d = value instanceof Date ? value : new Date(value as string | number);
   if (value == null || Number.isNaN(d.getTime())) return plain(value);
-  const length = (["short", "medium", "long", "full"] as const).find((x) => x === style) ?? "medium";
-  const options: Intl.DateTimeFormatOptions = kind === "date" ? { dateStyle: length } : { timeStyle: length };
-  return intl("date", locale, options, (l, o) => new Intl.DateTimeFormat(l, o)).format(d);
+  return intl("date", locale, dateFormatOptions(kind, style), (l, o) => new Intl.DateTimeFormat(l, o)).format(d);
 }
 
 // --- ids and markers -------------------------------------------------------

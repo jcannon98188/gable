@@ -46,7 +46,7 @@ describe("(c) Select items rendered from data with @for", () => {
     label = computed(() => this.select.api().valueAsString || "Pick");
   }
   const setup = async () => {
-    const f = mount(App, { providers: provideItemsDom(), advanceTimers: (ms) => vi.advanceTimersByTimeAsync(ms) });
+    const f = mount(App, { providers: provideItemsDom(), advanceTimers: async (ms) => void (await vi.advanceTimersByTimeAsync(ms)) });
     await f.settle();
     const li = (v: string) => f.queryAll("[role=option]").find((n) => n.attrs["data-value"] === v)!;
     return { f, li, trigger: f.query("button")!, content: f.query("[role=listbox]")! };

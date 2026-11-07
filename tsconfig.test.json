@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "sourceMap": false,
+    "types": ["node"],
+    "paths": {
+      "@gable/core": ["./packages/core/src/index.ts"],
+      "@gable/core/*": ["./packages/core/src/*.ts"],
+      "@gable/testing": ["./packages/testing/src/index.ts"],
+      "@gable/testing/*": ["./packages/testing/src/*.ts"],
+      "@gable/ui-primitives": ["./packages/ui-primitives/src/index.ts"],
+      "@gable/ui-primitives/testing": ["./packages/ui-primitives/src/testing.ts"],
+      "@gable/ui": ["./packages/ui/src/index.ts"],
+      "@gable/store": ["./packages/store/src/index.ts"],
+      "@gable/renderer-dom": ["./packages/renderer-dom/src/index.ts"],
+      "@gable/template-format": ["./packages/template-format/src/index.ts"],
+      "@gable/prettier-plugin": ["./packages/prettier-plugin/src/index.ts"]
+    }
+  },
+  "include": ["packages/*/src/**/*.test.ts", "packages/*/src/**/*.test.tsx"]
+}

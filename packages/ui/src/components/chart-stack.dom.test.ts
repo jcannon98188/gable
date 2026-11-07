@@ -90,11 +90,11 @@ describe("Chart legend toggling", () => {
     expect(Number(bars[0].getAttribute("y")) + Number(bars[0].getAttribute("height"))).toBeCloseTo(Number(base.getAttribute("y1")), 1);
   });
 
-  it("pie legends stay plain text", async () => {
+  it("pie legends are toggles too (see chart-zoom tests for slice toggling)", async () => {
     const app = await boot(StackApp);
     app.kind.set("pie");
     await settle();
-    expect(legendButtons()).toHaveLength(0);
+    expect(legendButtons()).toHaveLength(3);
   });
 });
 

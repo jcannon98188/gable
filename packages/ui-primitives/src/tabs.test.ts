@@ -33,7 +33,7 @@ class App {
 }
 
 const mountTabs = () => {
-  const f = mount(App, { providers: provideTestDom(), advanceTimers: (ms) => vi.advanceTimersByTimeAsync(ms) });
+  const f = mount(App, { providers: provideTestDom(), advanceTimers: async (ms) => void (await vi.advanceTimersByTimeAsync(ms)) });
   const tab = (value: string) => f.query(`[data-value=${value}]`)!;
   const panel = (value: string) => f.queryAll("[role=tabpanel]").find((p) => p.attrs["aria-labelledby"]!.endsWith(`trigger-${value}`))!;
   return { f, tab, panel };

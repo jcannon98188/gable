@@ -7,7 +7,7 @@ import { closest, findIdentifier, hasValueModel, inCallee, isFieldType, isObserv
 import { callSignalFix, extractFix, type Fix, type FixEnv } from "./fixes.js";
 import { templateRules } from "./file-rules.js";
 import { a11yRules } from "./a11y-rules.js";
-import { i18nRules } from "./i18n-rules.js";
+import { i18nRules, i18nSourceRules } from "./i18n-rules.js";
 import { projectRules, sourceRules } from "./source-rules.js";
 import { componentMetaRules } from "./meta-rules.js";
 import { scanTemplate, ScanError, type ExprKind, type Src } from "./scan.js";
@@ -101,6 +101,7 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
     if (sf.isDeclarationFile || !rootNames.some((r) => norm(r) === norm(sf.fileName))) continue;
     sources.set(norm(sf.fileName), sf);
     sourceRules(sf, base.getTypeChecker(), config.templateTag, (start, length, rule, message) => raw.push({ file: sf.fileName, start, length, rule, message }));
+    i18nSourceRules(sf, (start, length, rule, message) => raw.push({ file: sf.fileName, start, length, rule, message }), config);
     componentMetaRules(sf, base.getTypeChecker(), base, (start, length, message, fixes) => raw.push({ file: sf.fileName, start, length, rule: "component-meta", message, fixes }));
     for (const c of findComponents(sf)) components.set(c.selector, c);
     const models = findTemplates(sf, config.templateTag, (start, length, message) =>

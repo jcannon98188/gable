@@ -1,9 +1,10 @@
 // i18n marker lint rules for templates. They look at the scanned template tree only (no types, no catalogs).
 // Each rule reports through `report(start, length, rule, message)` like the a11y rules.
 
-import { messageFromParts, messageId, parseMarker } from "@gable/core/tooling";
+import { messageFromParts, messageFromStrings, messageId, parseMarker } from "@gable/core/tooling";
+import ts from "@typescript/typescript6";
 import type { Report } from "./a11y-rules.js";
-import type { AnalyzerConfig } from "./config.js";
+import type { AnalyzerConfig, I18nCheckConfig } from "./config.js";
 import { translatedIds } from "./i18n-catalogs.js";
 import type { TemplateModel } from "./emit.js";
 import type { ElementNode, TNode, TextNode } from "./scan.js";
@@ -18,9 +19,7 @@ const USER_FACING_ATTRS = ["title", "placeholder", "alt", "aria-label"];
 export function i18nRules(model: TemplateModel, report: Report, config?: Pick<AnalyzerConfig, "i18n" | "severity">): void {
   const checkCatalogs = config?.i18n !== undefined && config.severity["i18n-missing-translation"] !== "off";
   const checkUnmarked = config !== undefined && config.severity["i18n-unmarked-text"] !== "off";
-  const catalogs = checkCatalogs
-    ? config.i18n!.locales.map((locale) => ({ locale, ids: translatedIds(config.i18n!, locale) }))
-    : [];
+  const catalogs = checkCatalogs ? catalogStates(config.i18n!) : [];
   const visit = (nodes: TNode[], ignored = false): void => {
     for (const node of nodes) {
       switch (node.type) {
@@ -158,4 +157,49 @@ function missingTranslations(el: ElementNode, catalogs: CatalogState[], report: 
     });
     check(messageFromParts(parts), own.value, own.nameStart, 4);
   }
+}
+
+const catalogStates = (config: I18nCheckConfig): CatalogState[] => config.locales.map((locale) => ({ locale, ids: translatedIds(config, locale) }));
+
+/** The receiver of a `.t` tag that is taken to be the I18n service: `inject(I18n)`, or a name containing "i18n" (the spelling the Vite plugin extracts). */
+const SERVICE_RECEIVER = /^(?:(?:this\s*\.\s*)?#?[\w$]*i18n[\w$]*|inject\s*\(\s*I18n\s*\))$/i;
+
+/**
+ * `i18n-missing-translation` for messages in code: `i18n` tagged templates and `.t` tagged templates on the I18n service,
+ * the same ones the Vite plugin extracts (same message and id). Does nothing without an `i18n` config section.
+ */
+export function i18nSourceRules(sf: ts.SourceFile, report: Report, config: Pick<AnalyzerConfig, "i18n" | "severity">): void {
+  if (config.i18n === undefined || config.severity["i18n-missing-translation"] === "off") return;
+  if (!sf.text.includes("i18n") && !sf.text.includes("I18n")) return;
+  const catalogs = catalogStates(config.i18n);
+  if (catalogs.length === 0) return;
+  const visit = (node: ts.Node): void => {
+    if (ts.isTaggedTemplateExpression(node)) {
+      const tag = node.tag;
+      const isMessage =
+        (ts.isIdentifier(tag) && tag.text === "i18n") ||
+        (ts.isPropertyAccessExpression(tag) && tag.name.text === "t" && SERVICE_RECEIVER.test(tag.expression.getText(sf)));
+      if (isMessage) checkMessage(sf, node, catalogs, report);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+}
+
+function checkMessage(sf: ts.SourceFile, node: ts.TaggedTemplateExpression, catalogs: CatalogState[], report: Report): void {
+  const t = node.template;
+  const pieces = ts.isNoSubstitutionTemplateLiteral(t) ? [t] : [t.head, ...t.templateSpans.map((s) => s.literal)];
+  if (pieces.some((p) => p.text === undefined || p.rawText === undefined)) return; // an invalid escape: the build reports it
+  let built;
+  try {
+    built = messageFromStrings(pieces.map((p) => p.text), pieces.map((p) => p.rawText!));
+  } catch {
+    return;
+  }
+  const id = built.marker.id ?? messageId(built.message, built.marker.description);
+  const missing = catalogs.filter((c) => !c.ids?.has(id));
+  if (missing.length === 0) return;
+  const unreadable = missing.filter((c) => c.ids === null).map((c) => c.locale);
+  const note = unreadable.length ? ` (no readable catalog for ${unreadable.join(", ")})` : "";
+  report(node.tag.getStart(sf), node.tag.getWidth(sf), "i18n-missing-translation", `"${shorten(built.message)}" (id ${id}) has no translation for ${missing.map((c) => c.locale).join(", ")}${note}`);
 }

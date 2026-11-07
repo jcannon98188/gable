@@ -131,6 +131,55 @@ describe("baking", () => {
   });
 });
 
+describe("baking plural, select, number and date forms in code messages", () => {
+  /** Bakes an `i18n.t` message of two holes (a, b) with `translation` for `locale`; returns the function of (a, b). */
+  function lowered(translation: string, locale = "en") {
+    const code = "export const f = (a, b) => i18n.t`n ${a} ${b}`;";
+    const baked = bakeSource(code, "src/c.ts", { locale, translate: (k) => (k === id("n {0} {1}", "") ? translation : undefined), missing: () => {} });
+    expect(baked.code).not.toMatch(/i18n|parseMessage|formatMessage/);
+    return { run: new Function(baked.code.replace("export ", "") + "; return f;")() as (a: unknown, b?: unknown) => string, code: baked.code };
+  }
+
+  it("lowers plural with exact matches, offsets and the number as #", () => {
+    const en = lowered("{0, plural, =0 {No items} one {# item} other {# items}}");
+    expect(en.run(0)).toBe("No items");
+    expect(en.run(1)).toBe("1 item");
+    expect(en.run(1234)).toBe("1,234 items");
+    const ru = lowered("{0, plural, one {# файл} few {# файла} many {# файлов} other {# файла}}", "ru");
+    expect([1, 3, 5, 21].map((n) => ru.run(n))).toEqual(["1 файл", "3 файла", "5 файлов", "21 файл"]);
+    const off = lowered("{0, plural, offset:1 =0 {nobody} one {you and # other} other {you and # others}}");
+    expect([0, 2, 3].map((n) => off.run(n))).toEqual(["nobody", "you and 1 other", "you and 2 others"]);
+  });
+
+  it("lowers selectordinal and select, with placeholders and nesting", () => {
+    const ord = lowered("{0, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}");
+    expect([1, 2, 3, 4, 11, 22].map((n) => ord.run(n))).toEqual(["1st", "2nd", "3rd", "4th", "11th", "22nd"]);
+    const sel = lowered("{0, select, female {She} male {He} other {They}} left {1, plural, one {# time} other {# times}}");
+    expect(sel.run("female", 1)).toBe("She left 1 time");
+    expect(sel.run("x", 2)).toBe("They left 2 times");
+    const nested = lowered("{0, select, a {{1, plural, one {# apple} other {# apples}}} other {{1, plural, one {# pear} other {# pears}}}}");
+    expect(nested.run("a", 2)).toBe("2 apples");
+    expect(nested.run("b", 1)).toBe("1 pear");
+  });
+
+  it("lowers number and date forms for the baked locale", () => {
+    const num = lowered("{0, number} / {0, number, percent} / {0, number, currency:EUR} / {0, number, integer}", "de");
+    const nf = (o?: Intl.NumberFormatOptions) => new Intl.NumberFormat("de", o).format(1234.5);
+    expect(num.run(1234.5)).toBe(`${nf()} / ${nf({ style: "percent" })} / ${nf({ style: "currency", currency: "EUR" })} / ${nf({ maximumFractionDigits: 0 })}`);
+    const date = lowered("{0, date, long} {0, time, short}", "fr");
+    const d = new Date(2024, 2, 5, 14, 30);
+    expect(date.run(d)).toBe(`${new Intl.DateTimeFormat("fr", { dateStyle: "long" }).format(d)} ${new Intl.DateTimeFormat("fr", { timeStyle: "short" }).format(d)}`);
+    expect(num.run("abc")).toContain("abc");
+  });
+
+  it("includes only the helpers a module uses, and rejects bad placeholders and forms in html templates", () => {
+    expect(lowered("{0, plural, other {#}}").code).not.toContain("__gableDate");
+    expect(() => lowered("{3, plural, other {#}}")).toThrow(/uses \{3\}/);
+    const html = "const t = html`<p i18n>Hi {{ n() }}</p>`;";
+    expect(() => bake(html, { [id("Hi {0}", "")]: "{0, plural, one {#} other {#}}" })).toThrow(/templates cannot call functions/);
+  });
+});
+
 describe("catalog files", () => {
   const root = mkdtempSync(join(tmpdir(), "gable-i18n-"));
   it("writes the source catalog, merges existing translations and marks new and obsolete ones", () => {

@@ -194,7 +194,7 @@ describe("gable-check", () => {
       expect(diagnostics).toHaveLength(expectations.length);
     });
 
-    it.each(expectations)("%s at %j", async (rule, snippet, into) => {
+    it.each(expectations as unknown as Array<[string, string, number | undefined]>)("%s at %j", async (rule, snippet, into) => {
       const { diagnostics } = await check(`${prefix}-fail`);
       const at = where(`${prefix}-fail`, snippet, into);
       expect(diagnostics.find((d) => d.rule === rule && d.line === at.line && d.column === at.column), JSON.stringify(diagnostics, null, 1)).toBeDefined();

@@ -1,4 +1,4 @@
-export { signalStore, withState, withComputed, withMethods, withHooks, withHotState, withDevtools, patchState, getState, STATE_SOURCE } from "./store.js";
+export { signalStore, withState, withComputed, withMethods, withHooks, withHotState, withDevtools, withStorage, patchState, getState, STATE_SOURCE } from "./store.js";
 export type {
   DeepSignal,
   SignalStoreOf,
@@ -6,6 +6,8 @@ export type {
   StoreFeature,
   StoreShape,
   WritableStateSource,
+  StorageLike,
+  WithStorageOptions,
   StateUpdater,
 } from "./store.js";
 export { rxMethod } from "./rx-method.js";

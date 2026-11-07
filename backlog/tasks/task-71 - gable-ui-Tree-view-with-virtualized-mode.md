@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-07T05:05:00Z'
-updated_date: '2026-11-07T05:15:00Z'
+updated_date: '2026-11-07T05:34:00Z'
 labels:
   - ui
   - gable-ui
@@ -38,6 +38,8 @@ Reported missing while dogfooding: a tree view for file-explorer style UIs, insp
 
 <!-- SECTION:NOTES:BEGIN -->
 Decision: native implementation, @zag-js/tree-view not installed and no package.json/lockfile edits. packages/ui/src/components/tree.ts (UiTree, flattenTree, expandableIds), tree.test.ts (in-memory), tree.dom.test.ts (jsdom, axe, 10,100-node virtual window, End/Home focus and scrollToIndex, flatten perf, 20k deep chain). Gallery: examples/ui-gallery/tree.html + src/tree-main.ts/tree-demo.ts/tree-demo.test.ts (test passes against source via aliases; gallery itself needs npm run pack:local before its own vitest/dev sees the new components). AC4 left unchecked: not viewed in a real browser; needs pack:local then npm run dev.
+
+Fixed chevron: open branches rotate 90deg via data-[open=true]:rotate-90 (reported while dogfooding); test added.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

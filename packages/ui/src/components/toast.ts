@@ -1,4 +1,4 @@
-import { computed, html, inject, input, signal } from "@gable/core";
+import { computed, html, I18n, inject, input, signal } from "@gable/core";
 import { currentScope } from "@gable/core/internal";
 import { LiveAnnouncer } from "@gable/core/renderer";
 import { UiDrawerDrag, UiPortal, UiPresence } from "@gable/ui-primitives";
@@ -196,6 +196,10 @@ const ICON_CLASS: Record<ToastType, string> = {
 };
 
 let regionCounter = 0;
+/** Pixels each older toast is shifted, and the scale it loses, per step behind the front; how many steps show. */
+const STACK_OFFSET = 10;
+const STACK_SCALE = 0.05;
+const STACK_VISIBLE = 3;
 
 /** True when a keydown matches a spec like `alt+t` or `ctrl+shift+k` (modifiers must match exactly; the key is compared by physical letter key or `key`). */
 export function matchesHotkey(event: { key?: string; code?: string; altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean }, spec: string): boolean {
@@ -216,8 +220,10 @@ export function matchesHotkey(event: { key?: string; code?: string; altKey?: boo
  *
  *   <ui-toaster position="bottom-right" [limit]="3"></ui-toaster>
  *
- * Hovering or focusing the region pauses the timers of every toast. `limit` caps how many are shown at once (the
- * oldest are hidden until there is room; they are not dismissed). A toast can be swiped away with a finger, pen or mouse
+ * Hovering or focusing the region pauses the timers of every toast and opens the stack. Collapsed (the default `stack`), the newest toast
+ * is in front and up to two older ones peek out behind it, scaled down and offset; the rest are hidden and not focusable. Opened, the
+ * toasts are a list again. `limit` caps how many are shown at once (the oldest are queued, not dismissed, and counted in a "+N more"
+ * line). The stack transitions are off under `prefers-reduced-motion`. A toast can be swiped away with a finger, pen or mouse
  * (toward the nearest screen edge; it uses the same drag engine as the drawer). `hotkey` (default `alt+t`, `""` turns it off) moves
  * focus to the region from anywhere on the page, which also pauses the timers; Tab then reaches each toast's buttons.
  */
@@ -232,14 +238,15 @@ export class UiToaster {
           [attr.id]="regionId"
           tabindex="-1"
           [attr.class]="regionClasses()"
+          [attr.data-expanded]="expandedAttr()"
           (mouseenter)="hover(true)"
           (mouseleave)="hover(false)"
           (focusin)="focus(true)"
           (focusout)="blur($event)"
         >
-          <ol class="contents">
+          <ol [attr.class]="listClasses()" data-toaster-list>
             @for (t of rows(); track t.id) {
-              <li uiPresence uiDrawerDrag [side]="swipeSide()" (dismiss)="close(t.id)" [attr.data-type]="t.type" class="pointer-events-auto touch-pan-y data-[dragged]:data-[state=closed]:animate-none data-[dragging]:select-none flex w-full items-start gap-3 rounded-lg border bg-popover p-4 text-sm text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-right-8 motion-reduce:animate-none">
+              <li uiPresence uiDrawerDrag [side]="swipeSide()" (dismiss)="close(t.id)" [attr.data-type]="t.type" [attr.data-stack]="t.stack" [attr.style]="t.style" [attr.inert]="t.inert" class="pointer-events-auto transition-[transform,opacity] duration-200 motion-reduce:transition-none data-[stack=back]:pointer-events-none data-[stack=back]:overflow-hidden data-[stack=back]:[contain:size] touch-pan-y data-[dragged]:data-[state=closed]:animate-none data-[dragging]:select-none flex w-full items-start gap-3 rounded-lg border bg-popover p-4 text-sm text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-right-8 motion-reduce:animate-none">
                 @if (t.spinner) {
                   <span class="mt-0.5 size-4 shrink-0 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground motion-reduce:animate-none" aria-hidden="true"></span>
                 }
@@ -272,14 +279,22 @@ export class UiToaster {
               </li>
             }
           </ol>
+          @if (hiddenCount()) {
+            <div data-toaster-more class="pointer-events-auto mt-1 rounded-md bg-popover px-2 py-0.5 text-xs text-muted-foreground shadow-xs">{{ moreText() }}</div>
+          }
         </section>
       </ui-portal>
     `,
   };
 
   position = input<ToastPosition>("bottom-right");
-  /** The most toasts shown at once. */
+  /** The most toasts shown at once (when expanded). Older ones stay queued behind them and are counted in a "+N more" line. */
   limit = input<number>(5);
+  /**
+   * Stack the toasts: collapsed, the newest is in front and older ones peek out behind it, scaled down and offset; hovering or
+   * focusing the region expands them into a list. `false` always shows the plain list.
+   */
+  stack = input<boolean>(true);
   /** Keyboard shortcut that focuses the region, like `alt+t` or `ctrl+shift+k`. Empty turns it off. */
   hotkey = input<string>("alt+t");
   class = input<string>("");
@@ -289,22 +304,42 @@ export class UiToaster {
   swipeSide = computed(() => (this.position().endsWith("left") ? "left" : "right"));
 
   service = inject(ToastService);
-  private hovered = false;
-  private focused = false;
+  private i18n = inject(I18n);
+  private hovered = signal(false);
+  private focused = signal(false);
+  /** The stack is open: the pointer is over the region or focus is inside it. */
+  expanded = computed(() => this.hovered() || this.focused());
+  expandedAttr = computed(() => (this.expanded() ? "true" : null));
+  private collapsed = computed(() => this.stack() && !this.expanded() && this.shown().length > 1);
+  private shown = computed(() => this.service.toasts().slice(-Math.max(1, this.limit())));
+  /** How many open toasts are queued beyond `limit`. */
+  hiddenCount = computed(() => this.service.toasts().length - this.shown().length);
+  moreText = computed(() => this.i18n.t`:hidden toast count@@ui.toast.more:+${this.hiddenCount()} more`);
+  listClasses = computed(() => (this.collapsed() ? "pointer-events-auto grid w-full [&>li]:col-start-1 [&>li]:row-start-1" : "pointer-events-auto flex w-full flex-col gap-2"));
 
   regionClasses = computed(() => cn("pointer-events-none fixed z-[100] flex w-full max-w-sm flex-col gap-2 p-4 outline-none", POSITIONS[this.position()], this.class()));
-  rows = computed(() =>
-    this.service
-      .toasts()
-      .slice(-Math.max(1, this.limit()))
-      .map((t) => ({
+  rows = computed(() => {
+    const shown = this.shown();
+    const collapsed = this.collapsed();
+    const top = this.position().startsWith("top");
+    return shown.map((t, i) => {
+      const depth = shown.length - 1 - i;
+      const style = collapsed
+        ? `transform: translateY(${(top ? 1 : -1) * depth * STACK_OFFSET}px) scale(${1 - depth * STACK_SCALE}); transform-origin: ${top ? "top" : "bottom"} center; z-index: ${shown.length - depth}; opacity: ${depth >= STACK_VISIBLE ? 0 : 1};`
+        : null;
+      return {
         ...t,
         spinner: t.type === "loading",
         icon: ICON[t.type],
         iconClass: cn("mt-0.5 size-4", ICON_CLASS[t.type]),
         actionLabel: t.action?.label ?? "",
-      })),
-  );
+        stack: collapsed ? (depth === 0 ? "front" : "back") : "open",
+        style,
+        // Collapsed, only the front toast is reachable; the others leave the tab order until the stack opens.
+        inert: collapsed && depth > 0 ? "" : null,
+      };
+    });
+  });
 
   private bindHotkey = (() => {
     const doc = (globalThis as { document?: Document }).document;
@@ -324,11 +359,11 @@ export class UiToaster {
   }
 
   hover(on: boolean): void {
-    this.hovered = on;
+    this.hovered.set(on);
     this.sync();
   }
   focus(on: boolean): void {
-    this.focused = on;
+    this.focused.set(on);
     this.sync();
   }
   blur(event: { currentTarget?: unknown; relatedTarget?: unknown }): void {
@@ -344,7 +379,7 @@ export class UiToaster {
     this.service.dismiss(id);
   }
   private sync(): void {
-    if (this.hovered || this.focused) this.service.pause();
+    if (this.expanded()) this.service.pause();
     else this.service.resume();
   }
 }

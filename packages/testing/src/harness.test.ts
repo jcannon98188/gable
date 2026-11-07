@@ -15,7 +15,7 @@ describe("settle, flushSync and advance", () => {
 
   it("advance(ms) drives debounceTime on the runner fake timers, then settles the view", async () => {
     vi.useFakeTimers();
-    const f = mount(Search, { advanceTimers: (ms) => vi.advanceTimersByTimeAsync(ms) });
+    const f = mount(Search, { advanceTimers: async (ms) => void (await vi.advanceTimersByTimeAsync(ms)) });
     f.instance.query.next("a");
     await f.advance(299);
     expect(f.text()).toBe("none");

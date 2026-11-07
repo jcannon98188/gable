@@ -69,6 +69,8 @@ interface Hooks {
   ready: Array<() => void>;
   /** Called synchronously with the new state after every patchState. */
   persist: Array<(state: Record<string, unknown>) => void>;
+  /** Dev only: wrappers around every method call (devtools action log). Each receives the method name, its arguments and a function that runs it. */
+  actions: Array<(name: string, args: unknown[], run: () => unknown) => unknown>;
 }
 
 const hooksOf = new WeakMap<object, Hooks>();
@@ -151,13 +153,31 @@ export function withComputed<In extends StoreShape, Props extends Record<string,
   }) as never;
 }
 
+/**
+ * Dev only: routes a method call through the store's action wrappers (see `withDevtools`). With none registered it calls the
+ * method directly. Own properties of the method (an `rxMethod`'s `destroy`) are kept.
+ */
+function instrument(store: object, name: string, fn: (...args: never[]) => unknown): (...args: never[]) => unknown {
+  const wrapped = function (this: unknown, ...args: never[]) {
+    const wrappers = hooksOf.get(store)?.actions;
+    if (!wrappers || wrappers.length === 0) return fn.apply(this, args);
+    let run = () => fn.apply(this, args);
+    for (const wrap of wrappers) {
+      const inner = run;
+      run = () => wrap(name, args, inner);
+    }
+    return run();
+  };
+  return Object.assign(wrapped, fn);
+}
+
 /** Adds methods. The factory runs once, in the injection context, so it can call `inject()`. */
 export function withMethods<In extends StoreShape, Methods extends Record<string, (...args: never[]) => unknown>>(
   factory: (store: SignalStoreOf<In>) => Methods,
 ): StoreFeature<In, { state: {}; props: {}; methods: Methods }> {
   return ((store: object) => {
     const methods = factory(store as SignalStoreOf<In>);
-    for (const [name, fn] of Object.entries(methods)) define(store, name, fn);
+    for (const [name, fn] of Object.entries(methods)) define(store, name, DEV ? instrument(store, name, fn) : fn);
     return store;
   }) as never;
 }
@@ -221,10 +241,31 @@ interface DevtoolsHook {
   registerInspector(id: string, spec: { label: string; snapshot(): unknown }): { log(type: string, data?: unknown): void; dispose(): void };
 }
 
+/** A short, JSON-safe description of a method argument for the action log. */
+function summarize(value: unknown, depth = 0): unknown {
+  if (value === null || value === undefined || typeof value === "number" || typeof value === "boolean") return value;
+  if (typeof value === "string") return value.length > 80 ? value.slice(0, 80) + "…" : value;
+  if (typeof value === "bigint" || typeof value === "symbol") return String(value);
+  if (typeof value === "function") return `[Function${value.name ? " " + value.name : ""}]`;
+  if (Array.isArray(value)) return depth > 0 ? `Array(${value.length})` : value.slice(0, 5).map((v) => summarize(v, 1)).concat(value.length > 5 ? [`… ${value.length - 5} more`] : []);
+  if (value instanceof Date) return value.toISOString();
+  if (typeof (value as { subscribe?: unknown }).subscribe === "function") return "[Observable]";
+  if (isPlainObject(value)) {
+    if (depth > 0) return "{…}";
+    const out: Record<string, unknown> = {};
+    for (const key of Object.keys(value).slice(0, 8)) out[key] = summarize(value[key], 1);
+    return out;
+  }
+  return `[${(value as object).constructor?.name ?? "Object"}]`;
+}
+
 /**
  * Shows the store in the Gable devtools panel (Stores tab; dev only, in production this does nothing). The panel reads
  * the current state, and every `patchState` that changes something is added to the history as a `patch` entry holding
- * the changed keys with their new values. `name` identifies the store in the panel; give each live store its own
+ * the changed keys with their new values. Method calls (`withMethods`, including an `rxMethod` used as a method) are logged
+ * as `action` entries: the method `name`, a short summary of its `args`, and the `patches` it made before returning
+ * (grouped under the action instead of separate `patch` entries; a failed call also has `error`). Patches made later, such as
+ * after an `await` or from an rxMethod pipeline, appear as ordinary `patch` entries. `name` identifies the store in the panel; give each live store its own
  * (a second store with the same name replaces the first). Without the devtools hook on the page it does nothing.
  *
  *     class CartStore extends signalStore(withState({ ... }), withDevtools("Cart")) {}
@@ -242,16 +283,188 @@ export function withDevtools<In extends StoreShape>(name: string): StoreFeature<
       last = untracked(source);
       handle = hook.registerInspector(name, { label: name, snapshot: () => untracked(source) });
     });
+    // The action being run (outermost method call), collecting the patches it makes synchronously.
+    let frame: { patches: Array<Record<string, unknown>> } | undefined;
     h.persist.push((next) => {
       if (!handle) return;
       const changes: Record<string, unknown> = {};
       for (const key of Object.keys(next)) if (!Object.is(next[key], last[key])) changes[key] = next[key];
       last = next;
-      if (Object.keys(changes).length > 0) handle.log("patch", changes);
+      if (Object.keys(changes).length === 0) return;
+      if (frame) frame.patches.push(changes);
+      else handle.log("patch", changes);
+    });
+    h.actions.push((method, args, run) => {
+      if (!handle || frame) return run(); // not registered, or nested in an action already being logged
+      const own = (frame = { patches: [] });
+      let error: unknown;
+      let failed = false;
+      try {
+        return run();
+      } catch (e) {
+        failed = true;
+        error = e;
+        throw e;
+      } finally {
+        frame = undefined;
+        const entry: Record<string, unknown> = { name: method, args: args.map((a) => summarize(a)), patches: own.patches };
+        if (failed) entry.error = error instanceof Error ? error.message : String(error);
+        handle.log("action", entry);
+      }
     });
     h.onDestroy.push(() => {
       handle?.dispose();
       handle = undefined;
+    });
+    return store;
+  }) as never;
+}
+
+/** The part of the Web Storage API `withStorage` uses. `localStorage`, `sessionStorage` and a hand-written adapter all fit. */
+export interface StorageLike {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem?(key: string): void;
+}
+
+export interface WithStorageOptions<S> {
+  /** Which state keys to persist. Default: every key the store has when the feature runs. */
+  keys?: ReadonlyArray<keyof S & string>;
+  /** `"local"` (default), `"session"`, or any `StorageLike`. When the storage is missing or throws (SSR, private mode, blocked cookies) the feature does nothing. */
+  storage?: "local" | "session" | StorageLike | (() => StorageLike | undefined);
+  /** Schema version of the saved data (default 0). Data saved under another version goes to `migrate`, or is discarded without one. */
+  version?: number;
+  /** Turns data saved under an older (or newer) `version` into the current shape. Return the state to restore; throw to discard it. */
+  migrate?: (saved: Record<string, unknown>, savedVersion: number) => Record<string, unknown>;
+  /** Milliseconds to wait after the last change before writing (default 100). `0` writes synchronously on every change. */
+  debounce?: number;
+  /** Apply changes other tabs make to the same key (the `storage` event). Default false. */
+  sync?: boolean;
+}
+
+function resolveStorage(option: WithStorageOptions<never>["storage"]): StorageLike | undefined {
+  try {
+    if (option === undefined || option === "local") return (globalThis as { localStorage?: StorageLike }).localStorage;
+    if (option === "session") return (globalThis as { sessionStorage?: StorageLike }).sessionStorage;
+    return typeof option === "function" ? option() : option;
+  } catch {
+    return undefined; // accessing localStorage can throw (SecurityError)
+  }
+}
+
+/**
+ * Saves chosen state keys to `localStorage` (or `sessionStorage`, or any `StorageLike`) and restores them when the store
+ * is created. The saved value is JSON: `{ v: version, state: { ...picked keys } }` under `key`, so only JSON-friendly
+ * state (no Dates, Maps or class instances) round-trips. Writes are debounced and flushed when the store is destroyed
+ * and when the page is hidden. Only keys the store declares are restored; values are not validated, so use `version` and
+ * `migrate` when the shape changes. Storage that is missing or throws (SSR, private browsing, quota) is skipped silently.
+ *
+ * Restoring happens after all features are applied and before `onInit`. When combined with `withHotState`, list
+ * `withStorage` first so the in-session hot state wins over the saved copy.
+ *
+ *     class Prefs extends signalStore(withState({ theme: "light", draft: "" }), withStorage("prefs", { keys: ["theme"], version: 2 })) {}
+ */
+export function withStorage<In extends StoreShape>(key: string, options: WithStorageOptions<In["state"]> = {}): StoreFeature<In, EmptyShape> {
+  return ((store: object) => {
+    const h = hooks(store);
+    const storage = resolveStorage(options.storage as never);
+    if (!storage) return store;
+    const version = options.version ?? 0;
+    const delay = options.debounce ?? 100;
+    const source = state(store);
+    let keys: string[] = [];
+    let written: Record<string, unknown> = {};
+    let pending: Record<string, unknown> | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let applying = false;
+
+    const read = (raw: string | null): Record<string, unknown> | undefined => {
+      if (raw === null) return undefined;
+      try {
+        const parsed = JSON.parse(raw) as { v?: unknown; state?: unknown };
+        if (!isPlainObject(parsed) || !isPlainObject(parsed.state)) return undefined;
+        const savedVersion = typeof parsed.v === "number" ? parsed.v : 0;
+        if (savedVersion === version) return parsed.state;
+        return options.migrate ? options.migrate(parsed.state, savedVersion) : undefined;
+      } catch {
+        return undefined; // corrupt JSON or a throwing migrate: start from the initial state
+      }
+    };
+    const load = (): Record<string, unknown> | undefined => {
+      try {
+        return read(storage.getItem(key));
+      } catch {
+        return undefined;
+      }
+    };
+    const apply = (saved: Record<string, unknown>): boolean => {
+      const current = untracked(source);
+      const next: Record<string, unknown> = { ...current };
+      let changed = false;
+      for (const k of keys) {
+        if (k in saved && !Object.is(saved[k], current[k])) {
+          next[k] = saved[k];
+          changed = true;
+        }
+      }
+      if (changed) source.set(next);
+      return changed;
+    };
+    const flush = () => {
+      if (timer !== undefined) clearTimeout(timer);
+      timer = undefined;
+      const snapshot = pending;
+      pending = undefined;
+      if (!snapshot) return;
+      const picked: Record<string, unknown> = {};
+      for (const k of keys) picked[k] = snapshot[k];
+      try {
+        storage.setItem(key, JSON.stringify({ v: version, state: picked }));
+        written = picked;
+      } catch {
+        // quota exceeded, storage went away, or unserialisable state: keep running without persistence
+      }
+    };
+
+    h.ready.push(() => {
+      const current = untracked(source);
+      keys = (options.keys as string[] | undefined)?.filter((k) => k in current) ?? Object.keys(current);
+      const saved = load();
+      if (saved) apply(saved);
+      written = Object.fromEntries(keys.map((k) => [k, untracked(source)[k]]));
+    });
+    h.persist.push((next) => {
+      if (applying || keys.every((k) => Object.is(next[k], written[k]))) return;
+      pending = next;
+      if (delay <= 0) flush();
+      else if (timer === undefined) timer = setTimeout(flush, delay);
+    });
+
+    const target = (globalThis as { addEventListener?: typeof addEventListener; removeEventListener?: typeof removeEventListener });
+    const onHide = () => flush();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== key || (e.storageArea && e.storageArea !== (storage as unknown))) return;
+      const saved = e.newValue === null ? undefined : read(e.newValue);
+      if (!saved) return;
+      applying = true;
+      try {
+        if (apply(saved)) {
+          const now = untracked(source);
+          written = Object.fromEntries(keys.map((k) => [k, now[k]]));
+          for (const fn of h.persist) fn(now);
+        }
+      } finally {
+        applying = false;
+      }
+    };
+    h.onInit.push(() => {
+      target.addEventListener?.("pagehide", onHide);
+      if (options.sync) target.addEventListener?.("storage", onStorage as never);
+    });
+    h.onDestroy.push(() => {
+      flush();
+      target.removeEventListener?.("pagehide", onHide);
+      target.removeEventListener?.("storage", onStorage as never);
     });
     return store;
   }) as never;
@@ -278,7 +491,7 @@ type Feature = (store: never) => unknown;
 
 function assemble(store: object, features: Feature[]): void {
   Object.defineProperty(store, stateKey, { value: signal<Record<string, unknown>>({}) });
-  const h: Hooks = { onInit: [], onDestroy: [], ready: [], persist: [] };
+  const h: Hooks = { onInit: [], onDestroy: [], ready: [], persist: [], actions: [] };
   hooksOf.set(store, h);
   for (const feature of features) feature(store as never);
   for (const fn of h.ready) untracked(fn);

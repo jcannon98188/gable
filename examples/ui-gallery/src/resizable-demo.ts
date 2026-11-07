@@ -46,9 +46,47 @@ export class ResizableDemo {
             </ui-resizable-panel>
           </ui-resizable-panel-group>
         </section>
+
+        <section class="flex flex-col gap-3">
+          <h2 class="text-lg font-medium">Right to left</h2>
+          <p class="text-sm text-muted-foreground">In an RTL group the first panel sits on the right, and dragging or pressing the arrow keys follows the reading direction.</p>
+          <ui-resizable-panel-group direction="horizontal" dir="rtl" label="RTL workspace" class="h-40 rounded-lg border" [(layout)]="rtlLayout">
+            <ui-resizable-panel [defaultSize]="30" [minSize]="15">
+              <div class="p-4 text-sm">First (right)</div>
+            </ui-resizable-panel>
+            <ui-resizable-handle [withHandle]="true" label="Resize RTL panels"></ui-resizable-handle>
+            <ui-resizable-panel [defaultSize]="70" [minSize]="15">
+              <div class="p-4 text-sm">Second (left)</div>
+            </ui-resizable-panel>
+          </ui-resizable-panel-group>
+          <p class="text-sm text-muted-foreground" id="rtl-layout">{{ rtlText() }}</p>
+        </section>
+
+        <section class="flex flex-col gap-3">
+          <h2 class="text-lg font-medium">Cascading resize</h2>
+          <p class="text-sm text-muted-foreground">Drag the first handle past the middle panel's minimum: the middle panel shrinks to its minimum, then the drag carries on into the next panel.</p>
+          <ui-resizable-panel-group direction="horizontal" label="Cascade" class="h-32 rounded-lg border" [(layout)]="cascadeLayout">
+            <ui-resizable-panel [defaultSize]="34" [minSize]="10">
+              <div class="p-4 text-sm">A</div>
+            </ui-resizable-panel>
+            <ui-resizable-handle label="Resize A and B"></ui-resizable-handle>
+            <ui-resizable-panel [defaultSize]="33" [minSize]="20">
+              <div class="p-4 text-sm">B (min 20)</div>
+            </ui-resizable-panel>
+            <ui-resizable-handle label="Resize B and C"></ui-resizable-handle>
+            <ui-resizable-panel [defaultSize]="33" [minSize]="10">
+              <div class="p-4 text-sm">C</div>
+            </ui-resizable-panel>
+          </ui-resizable-panel-group>
+          <p class="text-sm text-muted-foreground" id="cascade-layout">{{ cascadeText() }}</p>
+        </section>
       </main>
     `,
   };
   layout = signal<number[]>([]);
+  rtlLayout = signal<number[]>([]);
+  cascadeLayout = signal<number[]>([]);
+  rtlText = computed(() => `Layout: ${this.rtlLayout().map((n) => Math.round(n)).join(' / ')}`);
+  cascadeText = computed(() => `Layout: ${this.cascadeLayout().map((n) => Math.round(n)).join(' / ')}`);
   layoutText = computed(() => `Layout: ${this.layout().map((n) => Math.round(n)).join(' / ')}`);
 }

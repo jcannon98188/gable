@@ -3,7 +3,7 @@ import { email, form, minLength, required } from '@gable/core/forms';
 import {
   CollapsibleTrigger, DialogTrigger, HoverCardTrigger, MenuTrigger, PopoverTrigger, UiAccordion, UiAccordionItem, UiAlert, UiAlertDescription, UiAlertDialog, UiAlertTitle, UiAvatar, UiBadge,
   UiBreadcrumb, UiBreadcrumbItem, UiBreadcrumbLink, UiBreadcrumbList, UiBreadcrumbPage, UiBreadcrumbSeparator, UiButton, UiCard, UiCardContent, UiCardDescription, UiCardFooter, UiCardHeader,
-  UiCardTitle, UiCheckbox, UiCollapsible, UiCombobox, UiContextMenu, UiDialog, UiDropdownMenu, UiField, UiFieldControl, UiForm, UiHoverCard, UiInput, UiLabel, UiPagination, UiPopover,
+  UiCardTitle, UiCheckbox, UiCollapsible, UiCombobox, UiMultiCombobox, UiContextMenu, UiDialog, UiDropdownMenu, UiField, UiFieldControl, UiForm, UiHoverCard, UiInput, UiLabel, UiPagination, UiPopover,
   UiProgress, UiRadioGroup, UiScrollArea, UiSelect, UiSeparator, UiSheet, UiSkeleton, UiSlider, UiSwitch, UiTab, UiTable, UiTableBody, UiTableCaption, UiTableCell, UiTableHead,
   UiTableHeader, UiTableRow, UiTabs, UiTextarea, UiToggle, UiToggleGroup, UiTooltip, type MenuEntry, type SelectItem,
 } from '@gable/ui';
@@ -24,7 +24,7 @@ export class Gallery {
       UiButton, UiDialog, DialogTrigger, UiPopover, PopoverTrigger, UiTabs, UiTab, UiTooltip, UiSelect,
       UiLabel, UiInput, UiTextarea, UiCheckbox, UiSwitch, UiRadioGroup, UiSlider, UiToggle, UiToggleGroup, UiBadge, UiCard, UiCardHeader, UiCardTitle, UiCardDescription, UiCardContent, UiCardFooter,
       UiAlert, UiAlertTitle, UiAlertDescription, UiSeparator, UiSkeleton, UiProgress, UiAvatar, UiAccordion, UiAccordionItem, UiCollapsible, CollapsibleTrigger, UiDropdownMenu, MenuTrigger,
-      UiContextMenu, UiCombobox, UiAlertDialog, UiSheet, UiTable, UiTableHeader, UiTableBody, UiTableRow, UiTableHead, UiTableCell, UiTableCaption, UiBreadcrumb, UiBreadcrumbList,
+      UiContextMenu, UiCombobox, UiMultiCombobox, UiAlertDialog, UiSheet, UiTable, UiTableHeader, UiTableBody, UiTableRow, UiTableHead, UiTableCell, UiTableCaption, UiBreadcrumb, UiBreadcrumbList,
       UiBreadcrumbItem, UiBreadcrumbLink, UiBreadcrumbPage, UiBreadcrumbSeparator, UiPagination, UiScrollArea, UiHoverCard, HoverCardTrigger, UiForm, UiField, UiFieldControl,
     ],
     template: html`
@@ -126,6 +126,8 @@ export class Gallery {
             <ui-slider [(value)]="volume" [max]="100" [step]="5"></ui-slider>
             <p class="text-sm text-muted-foreground">Agree: {{ agree() }}, airplane: {{ airplane() }}, plan: {{ plan() }}, volume: {{ volume() }}</p>
             <ui-combobox [items]="fruit" [(value)]="fruitValue" placeholder="Search fruit..."></ui-combobox>
+            <ui-multi-combobox label="Toppings" [items]="fruit" [(value)]="toppings" placeholder="Add fruit..."></ui-multi-combobox>
+            <p class="text-sm text-muted-foreground" id="toppings">Picked: {{ toppingsText() }}</p>
           </div>
         </section>
 
@@ -222,6 +224,8 @@ export class Gallery {
   name = signal('Pedro Duarte');
   fruit = FRUIT;
   fruitValue = signal('');
+  toppings = signal<string[]>(['apple']);
+  toppingsText = computed(() => this.toppings().join(', ') || 'nothing');
   chosenLabel = computed(() => this.fruitValue() || 'nothing');
   tab = signal('');
 

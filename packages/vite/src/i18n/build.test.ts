@@ -122,6 +122,28 @@ describe("baked builds", () => {
     }
   });
 
+  it("bakes plural, select, number and date forms of code messages with no ICU parser in the bundle", { timeout: 90_000 }, async () => {
+    const app = i18nApp({ locales: ["fr"], bake: { onMissing: "source" } }, {
+      fr: {
+        [messageId("{0} items", "")]: "{0, plural, one {# objet} other {# objets}}",
+      },
+    });
+    const withForms = `${APP}
+export const label = (i18n: { t(s: TemplateStringsArray, ...v: unknown[]): string }, n: number) => i18n.t\`\${n} items\`;
+(globalThis as Record<string, unknown>).label = label;
+`;
+    writeFileSync(join(app.root, "src/app.ts"), withForms);
+    try {
+      await app.run();
+      const fr = bundleOf(join(app.root, "dist/fr"));
+      expect(fr).toContain("Intl.PluralRules");
+      expect(fr).toContain("objet");
+      expect(fr).not.toMatch(/provideI18n|setLocale|selectordinal|formatMessage|parseMessage|class I18n|MessageSyntaxError/);
+    } finally {
+      app.remove();
+    }
+  });
+
   it("fails the build for a missing translation by default, naming it",{ timeout: 90_000 }, async () => {
     const app = i18nApp({}, { fr: { [messageId("Welcome", "page title")]: "Bienvenue" }, de: {} });
     try {

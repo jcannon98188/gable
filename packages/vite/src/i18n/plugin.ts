@@ -131,6 +131,7 @@ export function gableI18n(options: GableI18nOptions): Plugin {
         const rel = file.startsWith(root) ? file.slice(root.length + 1) : file;
         const target = locale === sourceLocale ? undefined : catalogFor(locale);
         const result = bakeSource(code, rel, {
+          locale,
           translate: (msgId) => (target ? target[msgId] : undefined),
           missing: (info) => {
             if (!target || onMissing === "source") return;

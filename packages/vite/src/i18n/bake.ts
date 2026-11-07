@@ -1,7 +1,7 @@
 // Baking: rewrites the marked text of `html` templates and `i18n` tagged templates to one locale's translations,
 // and removes the markers, so the output needs no catalog and no locale switching.
 import MagicString, { type SourceMap } from "magic-string";
-import { extractTemplateMessages, messageFromParts, messageFromStrings, messageId, parseMarker, parseMessage, type MessageNode } from "@gable/core/tooling";
+import { dateFormatOptions, extractTemplateMessages, messageFromParts, messageFromStrings, messageId, numberFormatOptions, parseMarker, parseMessage, type MessageNode } from "@gable/core/tooling";
 import { assertNoEscapes } from "./extract.js";
 import { DYNAMIC_CALL, cook, lineOf, scanTemplates } from "./scan.js";
 
@@ -10,6 +10,8 @@ export interface BakeOptions {
   translate(id: string): string | undefined;
   /** Called for each message with no translation; the source text is used. */
   missing(info: { id: string; message: string; description: string; location: string }): void;
+  /** The locale being baked: plural rules and number and date formats of code messages are lowered for it. Default `en`. */
+  locale?: string;
 }
 
 export interface BakeResult {
@@ -29,6 +31,20 @@ export function dynamicCalls(code: string): number[] {
 }
 
 const VALUE_HELPER = `const __gableValue = (v) => (typeof v === "function" && v.length === 0 ? v() : v);\n`;
+/**
+ * Helpers for plural, select, number and date forms in code messages. Each is a few lines over `Intl`; a module gets
+ * only the ones its messages use, so no ICU parser or I18n service is shipped.
+ */
+const FORM_HELPERS = {
+  num: `const __gableNum = (l, o, v) => { const n = Number(v); return v == null ? "" : Number.isNaN(n) ? String(v) : new Intl.NumberFormat(l, o).format(n); };
+`,
+  date: `const __gableDate = (l, o, v) => { const d = v instanceof Date ? v : new Date(v); return v == null ? "" : Number.isNaN(d.getTime()) ? String(v) : new Intl.DateTimeFormat(l, o).format(d); };
+`,
+  plural: `const __gablePlural = (l, t, n) => (Number.isNaN(n) ? "other" : new Intl.PluralRules(l, { type: t }).select(n));
+`,
+} as const;
+type FormHelper = keyof typeof FORM_HELPERS;
+
 export const BAKE_PRELUDE = `import { computed as __gableComputed } from "@gable/core";\n${VALUE_HELPER}`;
 
 /** Bakes one module. Returns the same code when there is nothing to do. */
@@ -38,6 +54,8 @@ export function bakeSource(code: string, file: string, options: BakeOptions): Ba
   let count = 0;
   let needsComputed = false;
   let needsValue = false;
+  const helpers = new Set<FormHelper>();
+  const locale = options.locale ?? "en";
   const apply = (e: Edit, offset = 0) => (e.text === "" ? s.remove(e.start + offset, e.end + offset) : s.overwrite(e.start + offset, e.end + offset, e.text));
 
   for (const hit of scanTemplates(code)) {
@@ -54,7 +72,7 @@ export function bakeSource(code: string, file: string, options: BakeOptions): Ba
       const { message, marker } = messageFromStrings(hit.raw.map(cook), hit.raw);
       const id = marker.id ?? messageId(message, marker.description);
       const exprs = hit.holes.map((h) => code.slice(h.start, h.end).trim());
-      const text = renderTranslation(id, message, marker.description, where, options, exprs, "code");
+      const text = renderTranslation(id, message, marker.description, where, options, exprs, "code", locale, helpers);
       needsValue = true;
       if (hit.tag === "t") {
         // `inject(I18n).t`...`` is a plain string read at the call, so it becomes a plain template literal.
@@ -67,7 +85,7 @@ export function bakeSource(code: string, file: string, options: BakeOptions): Ba
     }
   }
   if (count === 0) return { code, count };
-  s.prepend(needsComputed ? BAKE_PRELUDE : needsValue ? VALUE_HELPER : "");
+  s.prepend((needsComputed ? BAKE_PRELUDE : needsValue ? VALUE_HELPER : "") + [...helpers].map((h) => FORM_HELPERS[h]).join(""));
   return { code: s.toString(), map: s.generateMap({ source: file, hires: "boundary", includeContent: true }), count };
 }
 
@@ -87,7 +105,17 @@ function applyEdits(source: string, edits: Edit[]): string {
  * The translation (or the source message) of one id as text to put inside a template literal. `exprs` are the source
  * texts of the placeholders: in `html` mode they come back as `{{ expr }}`, in `code` mode as `${expr}` holes.
  */
-function renderTranslation(id: string, message: string, description: string, where: string, options: BakeOptions, exprs: readonly string[], target: "html" | "code"): string {
+function renderTranslation(
+  id: string,
+  message: string,
+  description: string,
+  where: string,
+  options: BakeOptions,
+  exprs: readonly string[],
+  target: "html" | "attr" | "code",
+  locale = "en",
+  helpers: Set<FormHelper> = new Set(),
+): string {
   let text = options.translate(id);
   if (text === undefined) {
     options.missing({ id, message, description, location: where });
@@ -99,21 +127,79 @@ function renderTranslation(id: string, message: string, description: string, whe
   } catch (error) {
     throw new Error(`${where}: translation of message ${id} is not valid: ${(error as Error).message}`);
   }
+  if (target === "code") return lower(nodes, { id, where, exprs, locale: JSON.stringify(locale), helpers }, null, 0);
   let out = "";
   for (const node of nodes) {
     if (typeof node === "string") {
       if (target === "html" && (node.includes("<") || node.includes("{{"))) {
         throw new Error(`${where}: translation of message ${id} contains "<" or "{{", which cannot be baked into template text`);
       }
-      out += node.replace(/\\|`|\$\{/g, (m) => `\\${m}`);
+      out += escapeText(node);
     } else if (node.kind === "arg" && /^\d+$/.test(node.name)) {
       const expr = exprs[Number(node.name)];
       if (expr === undefined) throw new Error(`${where}: translation of message ${id} uses {${node.name}}, but the message has only ${exprs.length} placeholder(s)`);
-      out += target === "html" ? `{{ ${expr} }}` : `\${__gableValue(${expr})}`;
+      out += `{{ ${expr} }}`;
     } else {
       throw new Error(
-        `${where}: translation of message ${id} uses plural, select, number or date forms, which a baked build cannot format without the i18n runtime; use the runtime mode for it, or write the translation with plain placeholders`,
+        `${where}: translation of message ${id} uses plural, select, number or date forms, which cannot be baked into an html template or attribute (templates cannot call functions); use the runtime mode for it, write the translation with plain placeholders, or produce the text with the i18n tag in code`,
       );
+    }
+  }
+  return out;
+}
+
+const escapeText = (text: string) => text.replace(/\\|`|\$\{/g, (m) => `\\${m}`);
+
+interface Lowering {
+  id: string;
+  where: string;
+  exprs: readonly string[];
+  /** The locale as a JS string literal. */
+  locale: string;
+  helpers: Set<FormHelper>;
+}
+
+/**
+ * Lowers a code message to the inside of a template literal. Plain text and placeholders stay as they are; plural,
+ * select, number and date forms become inline expressions over `Intl` (the locale and the formats are known at build
+ * time), so nothing parses ICU at runtime. `pound` is the expression `#` stands for inside a plural branch.
+ */
+function lower(nodes: readonly MessageNode[], ctx: Lowering, pound: string | null, depth: number): string {
+  const arg = (name: string): string => {
+    const expr = /^\d+$/.test(name) ? ctx.exprs[Number(name)] : undefined;
+    if (expr === undefined) throw new Error(`${ctx.where}: translation of message ${ctx.id} uses {${name}}, but the message has only ${ctx.exprs.length} placeholder(s)`);
+    return `__gableValue(${expr})`;
+  };
+  const branch = (cases: Record<string, MessageNode[]>, key: string, p: string | null) => "`" + lower(cases[key]!, ctx, p, depth + 1) + "`";
+  const hole = (expr: string) => "${" + expr + "}";
+  const json = JSON.stringify;
+  let out = "";
+  for (const node of nodes) {
+    if (typeof node === "string") out += escapeText(node);
+    else if (node.kind === "pound") out += pound === null ? "#" : hole(pound);
+    else if (node.kind === "arg") out += hole(arg(node.name));
+    else if (node.kind === "number") {
+      ctx.helpers.add("num");
+      out += hole(`__gableNum(${ctx.locale}, ${json(numberFormatOptions(node.style)) ?? "undefined"}, ${arg(node.name)})`);
+    } else if (node.kind === "date" || node.kind === "time") {
+      ctx.helpers.add("date");
+      out += hole(`__gableDate(${ctx.locale}, ${json(dateFormatOptions(node.kind, node.style))}, ${arg(node.name)})`);
+    } else if (node.kind === "select") {
+      const s = `__s${depth}`;
+      let chain = branch(node.cases, "other", pound);
+      for (const key of Object.keys(node.cases).reverse()) if (key !== "other") chain = `${s} === ${json(key)} ? ${branch(node.cases, key, pound)} : ${chain}`;
+      out += hole(`((${s}) => ${chain})(String(${arg(node.name)} ?? ""))`);
+    } else {
+      ctx.helpers.add("plural");
+      ctx.helpers.add("num");
+      const [v, a, k] = [`__v${depth}`, `__a${depth}`, `__k${depth}`];
+      const inner = `__gableNum(${ctx.locale}, undefined, ${a})`;
+      let chain = branch(node.cases, "other", inner);
+      const keys = Object.keys(node.cases).filter((key) => key !== "other");
+      for (const key of keys.filter((x) => !x.startsWith("=")).reverse()) chain = `${k} === ${json(key)} ? ${branch(node.cases, key, inner)} : ${chain}`;
+      for (const key of keys.filter((x) => x.startsWith("=")).reverse()) chain = `"=" + ${v} === ${json(key)} ? ${branch(node.cases, key, inner)} : ${chain}`;
+      const type = node.kind === "plural" ? "cardinal" : "ordinal";
+      out += hole(`((${v}) => { const ${a} = ${v} - ${node.offset}; const ${k} = __gablePlural(${ctx.locale}, "${type}", ${a}); return ${chain}; })(Number(${arg(node.name)}))`);
     }
   }
   return out;
@@ -197,7 +283,7 @@ export function bakeHtmlEdits(source: string, where: string, options: BakeOption
       const target = attrs.find((t) => t.name === a.name.slice(5));
       const info = next();
       if (!target || target.value === undefined) continue; // the parser has already rejected this
-      const text = renderTranslation(info.id, info.message, info.description, where, options, [], "code");
+      const text = renderTranslation(info.id, info.message, info.description, where, options, [], "attr");
       let quote = target.quote;
       if (text.includes(quote)) {
         quote = quote === '"' ? "'" : '"';

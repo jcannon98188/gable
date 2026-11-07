@@ -23,7 +23,7 @@ const counter = (v: { template?: string; step?: number; triple?: boolean; hmr?: 
     signal,
     computed,
     setupLog,
-  ) as new () => any;
+  ) as { new (): any; meta: any };
 };
 let setupLog: string[] = [];
 
@@ -78,7 +78,7 @@ describe("hotReplace: method-only edits reach dependents", () => {
         direct() { return this.fmt(0); }
         fmt(n) { return ${body}; }
       };`,
-    )((s: string[]) => ({ strings: Object.assign([...s], { raw: [...s] }), values: [] }), signal, computed) as new () => any;
+    )((s: string[]) => ({ strings: Object.assign([...s], { raw: [...s] }), values: [] }), signal, computed) as { new (): any; meta: any };
 
   it("re-evaluates a computed and a template binding that called the edited method, with no signal change", async () => {
     const fixture = mount(labelled("'A' + n"));

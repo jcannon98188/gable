@@ -63,6 +63,23 @@ describe("i18n-missing-translation", () => {
   });
 });
 
+describe("i18n-missing-translation in code", () => {
+  it("checks i18n tags and .t tags on the I18n service, and nothing else named t", async () => {
+    const { code, diagnostics } = await check("i18n-missing-code");
+    const at = (snippet: string) => where("i18n-missing-code", snippet);
+    const expected = [
+      [at("i18n`Inbox"), "Inbox ({0})", "c5d748f038bcd45e", "de"],
+      [at("i18n`Click"), "Click to refresh", "b1b3cbc6097ff8bd", "fr, de"],
+      [at("this.#i18n.t"), "{0} items", "2e8c7859ff2c78c7", "fr"],
+      [at("inject(I18n).t`All"), "All done", "a3fb90ba3a7b7424", "de"],
+    ] as const;
+    expect(diagnostics.map((d) => [d.rule, d.line, d.column, d.severity, d.message])).toEqual(
+      expected.map(([p, message, id, locales]) => ["i18n-missing-translation", p.line, p.column, "warn", `"${message}" (id ${id}) has no translation for ${locales}`]),
+    );
+    expect(code).toBe(0); // warnings only
+  });
+});
+
 describe("i18n-unmarked-text", () => {
   it("is off by default", async () => {
     expect((await check("i18n-pass")).diagnostics.filter((d) => d.rule === "i18n-unmarked-text")).toEqual([]);

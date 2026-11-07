@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { from } from "rxjs";
-import { effect, html, input, model, output, signal } from "@gable/core";
+import { type ComponentClass, effect, html, input, model, output, signal } from "@gable/core";
 import { mount } from "@gable/testing";
 
 class Badge {
@@ -122,7 +122,7 @@ describe("required input read too early", () => {
     class Parent {
       static meta = { selector: "app-parent", imports: [Child], template: html`<app-early></app-early>` };
     }
-    return String(mount(Parent).claimErrors()[0]?.error);
+    return String(mount(Parent as unknown as ComponentClass<Parent>).claimErrors()[0]?.error);
   };
 
   it("names a field initialiser read as setup and says inputs bind after setup", () => {

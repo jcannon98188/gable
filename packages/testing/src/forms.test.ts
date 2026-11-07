@@ -74,7 +74,7 @@ describe("sync rules", () => {
         max(p.age, 99);
         pattern(p.pw, /\d/);
         requiredTrue(p.terms);
-        validate(p.pw2, (v, { root }) => (v === root.pw() ? null : { kind: "mismatch" }));
+        validate(p.pw2, (v, { root }) => (v === (root as any).pw() ? null : { kind: "mismatch" }));
       }),
     );
   };
@@ -178,7 +178,7 @@ describe("composition and conditional state", () => {
   it("applies rules only while applyWhen's condition holds", () => {
     const f = host(() =>
       form(signal({ shipSame: true, street: "" }), (p) => {
-        applyWhen(p.street, ({ root }) => !root.shipSame(), (s) => required(s));
+        applyWhen(p.street, ({ root }) => !(root as any).shipSame(), (s) => required(s));
       }),
     ).instance.f;
     expect(f.street.state.errors()).toEqual([]);
@@ -191,7 +191,7 @@ describe("composition and conditional state", () => {
     const f = host(() =>
       form(model, (p) => {
         required(p.code);
-        disabled(p.code, ({ root }) => root.other() === "x");
+        disabled(p.code, ({ root }) => (root as any).other() === "x");
       }),
     ).instance.f;
     expect(f.code.state.disabled()).toBe(true);

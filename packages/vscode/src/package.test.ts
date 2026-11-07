@@ -12,18 +12,19 @@ import { packageExtension } from "../build.mjs";
 // bundled tsserver plugin is loaded from there as a global plugin.
 
 const require = createRequire(import.meta.url);
-const yauzl = require("yauzl") as typeof import("yauzl");
+// No @types/yauzl in the repo: the few members used here are typed loosely.
+const yauzl = require("yauzl") as any;
 
 function unzip(vsix: string, into: string): Promise<string[]> {
   return new Promise((resolve, reject) => {
     const names: string[] = [];
-    yauzl.open(vsix, { lazyEntries: true }, (err, zip) => {
+    yauzl.open(vsix, { lazyEntries: true }, (err: Error | null, zip: any) => {
       if (err) return reject(err);
       zip.on("error", reject).on("end", () => resolve(names));
-      zip.on("entry", (entry) => {
+      zip.on("entry", (entry: any) => {
         names.push(entry.fileName);
         if (entry.fileName.endsWith("/")) return zip.readEntry();
-        zip.openReadStream(entry, (e, stream) => {
+        zip.openReadStream(entry, (e: Error | null, stream: any) => {
           if (e) return reject(e);
           const target = path.join(into, entry.fileName);
           mkdirSync(path.dirname(target), { recursive: true });

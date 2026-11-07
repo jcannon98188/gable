@@ -57,3 +57,4 @@ export * from "./components/resizable.js";
 export * from "./components/button-group.js";
 export * from "./components/tree.js";
 export * from "./components/json-viewer.js";
+export { dateFnsLocaleNames, intlWeekStart, type DateLocaleLoader } from "./lib/date-locale.js";

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { bootstrap, html, inject } from "@gable/core";
+import { type ComponentClass, bootstrap, html, inject } from "@gable/core";
 import { whenFlushed } from "@gable/core/internal";
 import { Router, RouterOutlet, provideRouter, provideRouteTransitions, type Route } from "@gable/core/router";
 import { dom } from "./index.js";
@@ -25,7 +25,7 @@ const routes: Route[] = [
 ];
 
 let apps: Array<{ destroy(): void }> = [];
-function start(Component: new () => { router: Router }, extra = provideRouteTransitions({ all: false })) {
+function start(Component: ComponentClass<{ router: Router }>, extra = provideRouteTransitions({ all: false })) {
   window.history.replaceState(null, "", "/");
   const host = document.createElement("div");
   document.body.replaceChildren(host);
