@@ -15,6 +15,8 @@ import { EditState } from "./edit-state.js";
 import { SignalTimelineTab } from "./signal-timeline.js";
 import { NetworkPanel } from "./network-panel.js";
 import { StoragePanel } from "./storage-panel.js";
+import { MatrixPanel } from "./matrix-panel.js";
+import { MatrixState } from "./matrix-state.js";
 import { DEV_NOTE, PerfState, RATING_LABEL, elementText, formatBytes, formatMetric, formatMs } from "./perf-state.js";
 import { staleNote } from "./stale-canvas.js";
 
@@ -683,6 +685,7 @@ export class DrawerTabs {
   };
   state = inject(DesignerState);
   chrome = inject(ChromeState);
+  matrix = inject(MatrixState);
   a11y = inject(A11yState);
   perf = inject(PerfState);
   open = this.chrome.drawerOpen;
@@ -703,6 +706,7 @@ export class DrawerTabs {
       { value: "perf", label: "Performance", badge: this.perf.poor() + this.perf.needsWork(), err: this.perf.poor() > 0, warn: this.perf.poor() === 0 && this.perf.needsWork() > 0 },
       { value: "http", label: "Network", badge: 0, err: false, warn: false },
       { value: "storage", label: "Storage", badge: 0, err: false, warn: false },
+      { value: "matrix", label: "Matrix", badge: this.matrix.attention(), err: false, warn: this.matrix.attention() > 0 },
     ].map((t) => ({ ...t, selected: String(t.value === current), tabId: `drawer-tab-${t.value}` }));
   });
   /** Clicking the open tab closes the drawer; any other tab opens it there. */
@@ -717,7 +721,7 @@ export class DrawerBody {
   static meta = {
     selector: "app-drawer-body",
     host: { class: "drawer" },
-    imports: [DrawerTabs, CodeTab, ProblemsTab, HmrTab, SignalTimelineTab, AccessibilityTab, PerformanceTab, NetworkPanel, StoragePanel],
+    imports: [DrawerTabs, CodeTab, ProblemsTab, HmrTab, SignalTimelineTab, AccessibilityTab, PerformanceTab, NetworkPanel, StoragePanel, MatrixPanel],
     template: html`
       <app-drawer-tabs></app-drawer-tabs>
       <div class="dbody" role="tabpanel" [attr.aria-labelledby]="labelledBy()">
@@ -735,6 +739,8 @@ export class DrawerBody {
           <app-network-panel></app-network-panel>
         } @else if (tab() === 'storage') {
           <app-storage-panel></app-storage-panel>
+        } @else if (tab() === 'matrix') {
+          <app-matrix-panel></app-matrix-panel>
         } @else {
           <app-code-tab></app-code-tab>
         }

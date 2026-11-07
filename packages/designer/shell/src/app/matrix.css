@@ -1,0 +1,108 @@
+/* The Matrix tab (matrix-panel.ts): a grid of Scenario by breakpoint thumbnails, and the opened cell beside it. Built on shell.css's
+   .dbar, .chip, .fld, .callout and .empty. */
+.mx {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  height: 100%;
+}
+.mx.open {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.mx-grid {
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 10px;
+}
+.mx-table {
+  display: grid;
+  gap: 8px;
+  align-items: start;
+}
+.mx-head {
+  display: contents;
+}
+.mx-head > span {
+  color: var(--d-muted);
+  font-size: 11px;
+}
+.mx-scene {
+  min-width: 0;
+  padding-top: 2px;
+  font-size: 12px;
+}
+.mx-scene small {
+  display: block;
+  overflow: hidden;
+  color: var(--d-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mx-cell {
+  position: relative;
+  display: block;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--d-border);
+  border-radius: 6px;
+  background: var(--d-panel2);
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.mx-cell:focus-visible,
+.mx-cell.sel {
+  outline: 2px solid var(--d-accent, currentColor);
+  outline-offset: 1px;
+}
+.mx-cell[data-status="changed"],
+.mx-cell[data-status="markup"] {
+  border-color: var(--warn);
+}
+.mx-cell[data-status="error"] {
+  border-color: var(--err);
+}
+.mx-thumb {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 160px;
+  object-fit: cover;
+  object-position: top left;
+  background: #fff;
+}
+.mx-err {
+  display: block;
+  padding: 8px;
+  color: var(--err);
+  font-size: 11px;
+}
+.mx-tag {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+.mx-detail {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  border-left: 1px solid var(--d-border);
+}
+.mx-body {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 8px 10px;
+}
+.mx-shot {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--d-border);
+  background: #fff;
+}
+.mx-widths {
+  width: 160px;
+}
