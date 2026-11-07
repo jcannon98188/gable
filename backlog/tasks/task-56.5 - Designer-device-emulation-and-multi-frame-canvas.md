@@ -4,6 +4,7 @@ title: 'Designer: device emulation and multi-frame canvas'
 status: To Do
 assignee: []
 created_date: '2026-11-07T03:58:00Z'
+updated_date: '2026-11-07T04:24:00Z'
 labels:
   - needs-triage
 dependencies:
@@ -26,3 +27,15 @@ Designs must be checked on mobile, tablet and desktop. Chrome-style device mode 
 - [ ] #4 On other platforms synthetic touch events are used where possible, and unsupported emulation is labelled in the UI
 - [ ] #5 Escape hatch to open the page in the system browser against the same dev server
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-11-07T04:24:00Z
+
+---
+
+Spike finding: the agent only needs a cross-origin parent, so it carries over to emulation frames. WebView2 remote debugging must be enabled through additional_browser_args (env var ignored); the CDP check script is spikes/designer/cdp-check.mjs on branch t3/4cab3513.
+
+---
+<!-- COMMENTS:END -->

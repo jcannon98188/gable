@@ -4,7 +4,7 @@ title: 'Designer: source write-back, undo and structural edits'
 status: To Do
 assignee: []
 created_date: '2026-11-07T03:57:00Z'
-updated_date: '2026-11-07T04:06:00Z'
+updated_date: '2026-11-07T04:24:00Z'
 labels:
   - needs-triage
 dependencies:
@@ -28,3 +28,15 @@ Visual edits must land as small reviewable text patches so code and designer sta
 - [ ] #5 Edits keep the repo formatter output so diffs stay clean
 - [ ] #6 Dynamic expressions and bindings the designer cannot edit safely are displayed read-only and are never rewritten
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-11-07T04:24:00Z
+
+---
+
+Spike finding: the runtime parser only has element positions. Make @gable/template-format lossless parser the position authority (text, attributes, expressions), with the runtime pos as a handle (ordinal in that tree) so two parsers cannot drift. The runtime parser reads cooked strings[0], so backslash escapes shift offsets; CRLF files differ too. Parse the raw string.
+
+---
+<!-- COMMENTS:END -->

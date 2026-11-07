@@ -4,6 +4,7 @@ title: 'Designer: Tailwind mode'
 status: To Do
 assignee: []
 created_date: '2026-11-07T03:58:00Z'
+updated_date: '2026-11-07T04:24:00Z'
 labels:
   - needs-triage
 dependencies:
@@ -29,3 +30,15 @@ Gable is Tailwind-friendly, and in Tailwind projects the class list is the desig
 - [ ] #6 Searchable class palette with live hover preview and autocomplete for typed classes
 - [ ] #7 Inserted class order matches the repo formatter or prettier plugin
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-11-07T04:24:00Z
+
+---
+
+Spike finding: class tokens are static attributes, so they become mappable once attribute positions exist (see TASK-56.4 comment).
+
+---
+<!-- COMMENTS:END -->
