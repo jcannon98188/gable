@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@jason'
 created_date: 2026-11-05 04:20
-updated_date: '2026-11-07T03:29:00Z'
+updated_date: '2026-11-07T04:05:00Z'
 labels:
   - wayfinder:grilling
 dependencies: []
@@ -31,7 +31,9 @@ Amendment 3 (TASK-36): value expressions additionally allow strict comparison (=
 
 <!-- COMMENTS:BEGIN -->
 created: 2026-11-05 04:46
+
 ---
+
 Resolved with the user.
 
 **Template tag**: `` html`...` ``. Static structure is parsed once per call site (strings-array identity) and cached. `${}` holes are only plain JS values in attribute-value and child positions (e.g. fragments); all reactive logic is in expressions inside the template text. Parsing is lazy on first render; HMR invalidates by call-site identity (new module = new strings arrays).
@@ -42,20 +44,26 @@ Resolved with the user.
 **Bindings**: `[prop]`, `[attr.x]`, `[class.x]`, `[style.x]`, `(event)="handler($event)"`, `[(model)]="sig"`, `#ref`. Attribute directives exist (selector-matched, in `meta.imports`, can inject their host). No structural directives.
 **Pipes**: instantiated per binding in an injection context; pure by default (memoized), opt out with `static pure = false`. Built-in `async` pipe is always available (no import): binds Observables and Promises directly (`user$ | async`, `@if (user$ | async; as user)`), subscribes on bind, unsubscribes on destroy, resubscribes if the Observable changes, yields `undefined` before first emission (`async:initial` supplies a starting value), errors go to the app error handler. It uses the same observable-to-signal bridge as the interop API, so emissions ride the coalesced flush.
 **`@defer` is in v0**: with `@placeholder`, `@loading`, `@error`. Core triggers `when <expr>`, `on idle`, `on timer(ms)`; renderer-specific triggers (`on viewport`, `on interaction`, `on hover` for DOM) are supplied by the renderer. Deferrable dependencies are explicit: `lazy(() => import('./chart.js'), 'Chart')` in `meta.imports`, usable only inside `@defer` (otherwise a dev-time error, also reported by the language service).
+
 ---
 
 created: 2026-11-05 04:53
+
 ---
+
 Amendment (user): outside event bindings, templates contain no function calls except signal reads. This supersedes "calls with reference or literal args" in the expression rules above.
 
 **Allowed in value expressions** (bindings, interpolation, control-flow conditions, `@for` sources): property reads (`a.b`, `a?.b`), zero-argument signal reads (`count()`), literals, `!`, `??`, and pipes (pipe arguments are literals/references). No method calls, no calls with arguments.
 **Event bindings** `(event)="handler(arg)"` may still call handlers; arguments are references, literals or `$event`.
 **Where computed values live**: enhanced view models, i.e. computed signals that already include the derived value (e.g. a computed list of rows carrying `isSelected`, `label`), instead of fetching values through methods in the template.
 **Language service role**: diagnostics flag a disallowed call or operator in a value expression and offer quick-fix refactors that extract a computed signal (view-model field) on the component and replace the expression with its read. This is a v0 language-service requirement, not just an interpreter restriction.
+
 ---
 
 created: 2026-11-05 04:58
+
 ---
+
 Amendment 2 (user): pipes are removed entirely, and Observables/Promises bind directly. This supersedes the Pipes section, the built-in `async` pipe, and the "pipes" entries in the allowed-expression list above.
 
 **No pipes**: no `|` syntax, no pipe classes, no pipe entries in `meta.imports`. Formatting lives in computed signals calling plain functions (`dateLabel = computed(() => fmtDate(this.date()))`): declarative and unit-testable without a template.
@@ -63,5 +71,15 @@ Amendment 2 (user): pipes are removed entirely, and Observables/Promises bind di
 **Direct Observable and Promise binding**: a bare reference to an Observable or Promise (no call, no pipe) subscribes at bind time and yields the latest value. Signals keep call syntax (`count()`). E.g. `{{ user$ }}`, `@if (user$; as user) {...}`, `@for (item of items$; track item.id)`. A property path through a bare reference reads off the latest value (`user$.name`); before the first emission the whole path evaluates to `undefined` without throwing (`?.` semantics at every step). The language service types it as `T | undefined`.
 **Initial values and lifecycle**: `undefined` until first emission; authors use `startWith(...)`, a `BehaviorSubject`, or `user$ ?? fallback`. No `async:initial`. Subscribes when the binding is created, unsubscribes on destroy, resubscribes if the reference yields a different Observable. Errors go to the app error handler; a completed Observable keeps its last value. Uses the observable-to-signal bridge from the interop API, so emissions ride the coalesced flush.
 **Promises**: like an Observable emitting once: `undefined` until resolved, then the value; rejection goes to the error handler.
+
+---
+
+author: @claude
+created: 2026-11-07T04:05:00Z
+
+---
+
+Amended by TASK-30 (decision by user): `${}` holes in html templates are dropped. Templates are static strings only; reusable fragments are small components (plus content projection). The earlier lines saying holes carry fragments no longer apply. Revisit via a definition-site-scoped template-reference feature if custom cell/row renderers need it.
+
 ---
 <!-- COMMENTS:END -->

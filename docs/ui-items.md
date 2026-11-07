@@ -1,6 +1,6 @@
 # Items for Select, Combobox and Context Menu (TASK-24)
 
-Gable has no `<ng-template>`/`TemplateRef` by design (TASK-1.4): reusable fragments are `html` template values passed through `${}` holes, or small components. This note checks whether Select options, Combobox items and Context Menu items can be built with what exists, using prototype tests in `packages/ui-primitives` (`items-*.proto.test.ts`, helpers in `items-proto.fixtures.ts`).
+Gable has no `<ng-template>`/`TemplateRef` by design (TASK-1.4): reusable fragments are small components (`${}` holes were dropped, TASK-30). This note checks whether Select options, Combobox items and Context Menu items can be built with what exists, using prototype tests in `packages/ui-primitives` (`items-*.proto.test.ts`, helpers in `items-proto.fixtures.ts`).
 
 ## Recommendation
 
@@ -15,7 +15,7 @@ Gable has no `<ng-template>`/`TemplateRef` by design (TASK-1.4): reusable fragme
 
 | | Result | Notes |
 |---|---|---|
-| (a) `${}` template value rendered per item with its own context | **Not possible today** | `html` holes are not implemented: `parseTemplate` throws "holes (${}) are not supported yet" (`packages/core/src/template.ts`). Even once they exist, a hole renders a fixed fragment, and its expressions have no per-item context beyond what the declaring component's scope gives it; the design says context travels as a computed view model, which is exactly what (c) already does. So a `${}` item body would add nothing for the machine, only for sharing markup. A small component covers that today. |
+| (a) `${}` template value rendered per item with its own context | **Not supported (dropped, TASK-30)** | `html` holes throw in `parseTemplate` (`packages/core/src/template.ts`). A hole renders a fixed fragment, and its expressions have no per-item context beyond what the declaring component's scope gives it; the design says context travels as a computed view model, which is exactly what (c) already does. So a `${}` item body would add nothing for the machine, only for sharing markup. A small component covers that today. |
 | (b) slot items collected with `contentChildren` | **Works for static content, with costs** | `<ui-select><ui-option value="a" label="A"></ui-option></ui-select>` works: the select collects the option components into its machine collection, options apply `getItemProps`, arrows, disabled skipping, Enter and typeahead all pass. Costs: (1) a second source of truth (items live in content, the collection is derived from them, and the machine is created with an empty collection before content exists); (2) projected content is injected from the declaring component, so options cannot inject the select state and the select must push itself into each option (an effect writing an `owner` signal); (3) **core bug: `contentChildren` never sees content created after the first projection**, so options added later by `@for`/`@if` are not collected (removal is tracked). Cause: `registerEntry` relies on `withContentTarget` being active, which it is only during the initial build of projected nodes (`query.ts`, `view.ts`). Captured as `it.fails` in `items-slots.proto.test.ts`. (4) Zag treats an element whose `localName` matches `/textarea|select/` as editable and ignores typeahead on it, so a custom element tag like `ui-select-option` silently breaks typeahead (tested; name it `ui-option`). |
 | (c) items rendered from data with `@for` | **Works** | Select (in-memory renderer): roles, per-item context, open, arrows skipping disabled items, Enter selection, typeahead from collection labels, items added at runtime. Combobox (jsdom): filtering the collection from the input value, empty state, `aria-activedescendant`, arrow keys, Enter. Menu (jsdom): per-item directive from `@for`, disabled, click select, arrow navigation, typeahead, items added at runtime. |
 
@@ -39,7 +39,7 @@ Gable has no `<ng-template>`/`TemplateRef` by design (TASK-1.4): reusable fragme
 
 ## Decision needed from the user
 
-None. Options (c) and small components cover Select, Combobox and Context Menu without a language-level template-ref feature. Revisit only if a component needs to accept caller-supplied item markup that cannot be expressed as a small component or a data-driven view model; then the cheaper move is to implement `${}` holes (already designed in TASK-1.4) rather than add template refs.
+None. Options (c) and small components cover Select, Combobox and Context Menu without a language-level template-ref feature. Revisit only if a component needs to accept caller-supplied item markup that cannot be expressed as a small component or a data-driven view model; then add a template-reference feature scoped to its definition site; `${}` holes were dropped (TASK-30).
 
 ## Prototype tests
 

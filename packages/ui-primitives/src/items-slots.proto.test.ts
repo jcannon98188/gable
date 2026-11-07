@@ -10,11 +10,11 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 describe("(a) ${} template values as item bodies", () => {
-  it("html`` holes are not implemented in the runtime today, so a per-item template value cannot be rendered at all", () => {
+  it("html`` holes are dropped from the design (TASK-30), so a per-item template value cannot be rendered", () => {
     class Row {
       static meta = { selector: "app-root", template: html`<li>${html`<b>x</b>`}</li>` };
     }
-    expect(() => mount(Row)).toThrow(/holes \(\$\{\}\) are not supported yet/);
+    expect(() => mount(Row)).toThrow(/does not support \$\{\} holes/);
   });
 
   it("the small-component equivalent works: a row component with a view-model input renders the per-item context", async () => {
