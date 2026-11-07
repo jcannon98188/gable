@@ -233,7 +233,13 @@ describe("convergence (randomized)", () => {
       sync(peers[0]!, peers[2]!);
       for (let round = 0; round < 12; round++) {
         // Each round, peers edit independently (offline), then everyone exchanges state.
-        for (const p of peers) for (let i = 0; i < 4; i++) randomEdit(p, r);
+        for (const p of peers) {
+          for (let i = 0; i < 4; i++) {
+            randomEdit(p, r);
+            // Incremental sync must never drift from a full rebuild of the Yjs tree.
+            expect(yToDoc(p.ydoc.getXmlFragment("content"), schema).toJSON()).toEqual(p.json);
+          }
+        }
         for (let i = 0; i < peers.length; i++) for (let j = 0; j < peers.length; j++) if (i !== j) sync(peers[i]!, peers[j]!);
         const first = peers[0]!.json;
         for (const p of peers) {

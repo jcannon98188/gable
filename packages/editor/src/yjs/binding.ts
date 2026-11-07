@@ -1,7 +1,7 @@
 import type { EditorState, Transaction } from "@tiptap/pm/state";
 import { TextSelection } from "@tiptap/pm/state";
 import * as Y from "yjs";
-import { pmToYPos, updateYFragment, yToDoc, yToPmPos } from "./convert.js";
+import { DocCache, pmToYPos, syncChildren, updateYFragment, yToDoc, yToPmPos, type Seeds } from "./convert.js";
 
 /** The slice of an editor the binding needs. Lets the binding run (and be tested) without a DOM view. */
 export interface BindingHost {
@@ -36,6 +36,7 @@ export class YProseMirrorBinding {
   readonly origin = { binding: "gable-editor" };
   readonly undoManager: Y.UndoManager;
   readonly #host: BindingHost;
+  readonly #cache = new DocCache();
   #lastDoc: EditorState["doc"] | null = null;
   #applyingRemote = false;
   #ready = false;
@@ -50,7 +51,9 @@ export class YProseMirrorBinding {
       trackedOrigins: new Set([this.origin]),
       captureTimeout: options.captureTimeout ?? 500,
     });
-    this.#observer = (_events, tr) => {
+    this.#observer = (events, tr) => {
+      // Everything that changed (and its ancestors) is stale; local pushes re-seed what they verified afterwards.
+      for (const e of events) this.#cache.invalidate(e.target);
       if (tr.origin === this.origin) return;
       this.#applyRemote();
     };
@@ -78,8 +81,14 @@ export class YProseMirrorBinding {
     if (this.#applyingRemote || !this.#ready) return;
     const state = this.#host.state;
     if (state.doc !== this.#lastDoc) {
+      const previous = this.#lastDoc;
       this.#lastDoc = state.doc;
-      this.ydoc.transact(() => updateYFragment(this.fragment, state.doc), this.origin);
+      const seeds: Seeds = { els: [], texts: [] };
+      this.ydoc.transact(() => {
+        if (previous) syncChildren(this.fragment, previous, state.doc, seeds);
+        else updateYFragment(this.fragment, state.doc);
+      }, this.origin);
+      this.#cache.apply(seeds);
     }
     this.#storeSelection(state);
   }
@@ -112,7 +121,7 @@ export class YProseMirrorBinding {
   fromRelativePosition(rel: Y.RelativePosition): number | null {
     const abs = Y.createAbsolutePositionFromRelativePosition(rel, this.ydoc);
     if (!abs || !this.#sameField(abs.type)) return null;
-    return yToPmPos(abs.type, abs.index, this.#host.state.schema);
+    return yToPmPos(abs.type, abs.index, this.#host.state.schema, this.#cache);
   }
 
   #sameField(type: Y.AbstractType<any>): boolean {
@@ -141,7 +150,7 @@ export class YProseMirrorBinding {
   #applyRemote(initial = false): void {
     if (!this.#ready) return;
     const state = this.#host.state;
-    const next = yToDoc(this.fragment, state.schema);
+    const next = yToDoc(this.fragment, state.schema, this.#cache);
     if (next.eq(state.doc)) {
       this.#lastDoc = state.doc;
       return;
@@ -191,6 +200,6 @@ export class YProseMirrorBinding {
   private fromRelativePositionIn(doc: EditorState["doc"], rel: Y.RelativePosition): number | null {
     const abs = Y.createAbsolutePositionFromRelativePosition(rel, this.ydoc);
     if (!abs || !this.#sameField(abs.type)) return null;
-    return yToPmPos(abs.type, abs.index, doc.type.schema);
+    return yToPmPos(abs.type, abs.index, doc.type.schema, this.#cache);
   }
 }

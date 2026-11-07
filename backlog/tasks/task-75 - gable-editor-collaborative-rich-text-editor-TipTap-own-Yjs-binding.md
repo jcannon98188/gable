@@ -1,10 +1,10 @@
 ---
 id: TASK-75
 title: '@gable/editor: collaborative rich text editor (TipTap + own Yjs binding)'
-status: Done
+status: In Progress
 assignee: []
 created_date: '2026-11-07T06:33:00Z'
-updated_date: '2026-11-07T07:03:00Z'
+updated_date: '2026-11-07T15:22:00Z'
 labels:
   - editor
 dependencies: []
