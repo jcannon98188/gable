@@ -19,6 +19,7 @@ import { createControlServer } from "./server/mcp/control.js";
 import { readSession, removeSession, writeSession } from "./server/mcp/session-file.js";
 import { positionOf, projectFile, targetAt, unifiedDiff } from "./server/mcp/targets.js";
 import { TailwindService } from "./server/tailwind/api.js";
+import { checkProject } from "./server/projects.js";
 
 const FIXTURE = fileURLToPath(new URL("../test-fixtures/mcp-app", import.meta.url));
 // Copies live under the repo's node_modules (ignored by git) so the fixture's `@import "tailwindcss"` resolves.
@@ -132,7 +133,7 @@ async function connect(root: string) {
   let historyEvents = 0;
   const server = createControlServer({
     root,
-    info: { root, name: "mcp-fixture", previewUrl: "http://localhost:1", ready: true, error: null },
+    info: { root, name: "mcp-fixture", previewUrl: "http://localhost:1", ready: true, error: null, server: "running", installing: false, check: checkProject(root) },
     edits,
     tailwind: new TailwindService(root),
     bridge,
