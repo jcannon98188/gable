@@ -1,0 +1,1 @@
+{ "name": "@gable/store", "slug": "store", "version": "0.0.0", "description": "Signal-based stores.", "entryPoints": [{ "path": "@gable/store", "symbols": [{ "id": "store:createStore", "name": "createStore", "kind": "function", "signature": "function createStore<S>(state: S): Store<S>", "summary": "Creates a store.", "examples": [] }] }] }

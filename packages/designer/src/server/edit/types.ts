@@ -73,9 +73,15 @@ export type EditOp =
   | { op: "removeMock"; file: string; scene: string; index: number; expectUrl?: string }
   /**
    * Moves an element (static markup only) into a new component `name` in a file beside the template's, and uses it in its place.
-   * `all` also replaces the identical copies of the element in the same template.
+   * `all` also replaces the identical copies of the element in the same template. `props` also moves markup that reads the old
+   * component's state through plain signal reads (`title()`): each read becomes an `input` of the new component, bound where it was.
    */
-  | { op: "extract"; target: TargetRef; name: string; all?: boolean };
+  | { op: "extract"; target: TargetRef; name: string; all?: boolean; props?: boolean }
+  /**
+   * Renames a component class in every file that declares, imports or re-exports it (identifiers only, never strings), as one
+   * undo step. `selector` also renames its selector in its meta, the templates that use it and stylesheets that style the tag.
+   */
+  | { op: "renameComponent"; from: string; to: string; file?: string; selector?: string };
 
 export interface EditError {
   ok: false;
@@ -98,6 +104,8 @@ export interface EditDone {
   relocated?: boolean;
   /** Files the edit created (project-relative). */
   created?: string[];
+  /** Every file a multi-file edit (rename) changed (project-relative). */
+  changed?: string[];
   /** Something the edit could not carry over, said plainly (for example scoped styles that do not reach a new component). */
   note?: string;
 }
@@ -155,7 +163,9 @@ export interface NodeModel {
   extract?: ExtractCheck;
 }
 
-export type ExtractCheck = { ok: true; copies: number } | { ok: false; why: string };
+export type ExtractCheck =
+  | { ok: true; copies: number; /** Signal reads that become inputs (empty for static markup). */ props?: string[] }
+  | { ok: false; why: string; /** The element can be extracted with props: the signal reads that would become inputs. */ withProps?: { props: string[]; copies: number } };
 
 export type DescribeResult = NodeModel | EditError;
 

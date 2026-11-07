@@ -23,6 +23,7 @@ import { resolveNode, type NodeReport } from "./source.js";
 import { sceneIndex } from "./scene-index.js";
 import { editRouteConfig, listComponents, locateRouteConfig, type RouteEdit } from "./route-config.js";
 import { TailwindService, handleTailwindApi } from "./tailwind/api.js";
+import type { FindUsesQuery } from "./edit/refactor.js";
 import { handleTokenApi } from "./tokens/api.js";
 import { DevServer, ProjectLog, type DevServerStatus } from "./dev-server.js";
 import { checkProject, projectName, rememberProject, runInstall, type ProjectCheck } from "./projects.js";
@@ -366,6 +367,11 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
           const result = url.pathname.endsWith("undo") ? edits.undo() : edits.redo();
           broadcast("history", edits.history());
           return json(res, 200, result);
+        }
+        case "/api/refactor/uses": {
+          // Every use of a component or a CSS class (the Find uses dialog; edits/refactor.ts).
+          const q = JSON.parse(await readBody(req)) as FindUsesQuery;
+          return json(res, 200, edits.findUses(q));
         }
         case "/api/edit/history":
           return json(res, 200, edits.history());

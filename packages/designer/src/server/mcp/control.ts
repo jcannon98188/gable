@@ -23,6 +23,7 @@ import { registerHistoryTools } from "./history-tools.js";
 import { registerWhyTools } from "./why-tools.js";
 import type { CompileError } from "../compile-check.js";
 import { captureHeadless, captureLive, findBrowser, type Shot } from "./screenshot.js";
+import { registerRefactorTools } from "./refactor-tools.js";
 import { registerTokenTools } from "./token-tools.js";
 import { fileOfTarget, positionOf, projectFile, targetAt, unifiedDiff, type SourcePos } from "./targets.js";
 import { registerNetworkTools } from "./network-tools.js";
@@ -161,7 +162,8 @@ export function createControlServer(ctx: ControlContext): McpServer {
     const r = result();
     if (!r.ok) throw new ToolError(`${r.code}: ${r.error}`);
     if (r.noop) return { ok: true, label: r.label, file: r.file, noop: true, diff: "" };
-    const diff = unifiedDiff(r.file, file === r.file ? before : "", fileText(r.file));
+    // A multi-file edit (rename) reports the diff of its first file, the one the edit was made in; `changed` lists the rest.
+    const diff = r.changed ? (live.edits.history().last?.diff ?? "") : unifiedDiff(r.file, file === r.file ? before : "", fileText(r.file));
     ctx.historyChanged();
     let element: SourcePos | null = null;
     if (r.select) {
@@ -169,7 +171,17 @@ export function createControlServer(ctx: ControlContext): McpServer {
       // The shell selects the edited element again once HMR has re-rendered it, as it does after a UI edit.
       if (bridge.connected) void shell("reselect", r.select, 8000).catch(() => undefined);
     }
-    return { ok: true, label: r.label, file: r.file, ...(r.relocated ? { relocated: true } : {}), ...(element ? { element } : {}), diff };
+    return {
+      ok: true,
+      label: r.label,
+      file: r.file,
+      ...(r.relocated ? { relocated: true } : {}),
+      ...(r.created ? { created: r.created } : {}),
+      ...(r.changed ? { changed: r.changed } : {}),
+      ...(r.note ? { note: r.note } : {}),
+      ...(element ? { element } : {}),
+      diff,
+    };
   };
 
   const applyOp = async (pos: SourcePos | undefined, build: (t: TargetRef) => EditOp): Promise<Json> => {
@@ -584,6 +596,26 @@ export function createControlServer(ctx: ControlContext): McpServer {
   );
 
   server.registerTool(
+    "extract_component",
+    {
+      ...write(
+        "Extract a component",
+        "Moves the element into a new component `name` (a file beside the template's, selector app-<kebab-name>) and uses it in its place; every identical copy in the template with `all`. Static markup only, unless `props`: then every signal read it makes (`title()`, in a binding or {{ }}) becomes an `input.required` of the new component and is bound at the use (`[title]=\"title()\"`). Events, blocks, references and other expressions are refused with the reason (describe_element's `extract`-style check runs first). The inputs are typed unknown unless the field is declared with a built-in type; `note` says which. One undo step over both files.",
+      ),
+      inputSchema: {
+        target,
+        name: z.string().describe("PascalCase class name, e.g. ProductCard."),
+        all: z.boolean().optional().describe("Also replace the identical copies of the element in the same template."),
+        props: z.boolean().optional().describe("Carry signal reads over as inputs."),
+      },
+    },
+    guard(async ({ target: pos, name, all, props }) => {
+      const t = await resolveTarget(pos);
+      return commit(() => live.edits.apply({ op: "extract", target: t, name, ...(all ? { all } : {}), ...(props ? { props } : {}) }), fileOfTarget(live.root, t));
+    }),
+  );
+
+  server.registerTool(
     "set_component_meta",
     {
       ...write("Set component meta", "Sets a string property of the static meta of the component whose template holds the element."),
@@ -606,6 +638,8 @@ export function createControlServer(ctx: ControlContext): McpServer {
   );
 
   // Design tokens (CSS custom properties): list_tokens, get_token_usages, set_token.
+  // Refactors: find_uses, rename_component.
+  registerRefactorTools(server, { edits: () => live.edits, commit, read, write, guard });
   registerTokenTools(server, { root: () => live.root, edits: () => live.edits, tailwind: () => ctx.tailwind, commit, read, write, guard });
 
   server.registerTool(

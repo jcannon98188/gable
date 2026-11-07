@@ -1,0 +1,10 @@
+{
+  "name": "@fixture/demo",
+  "version": "1.2.3",
+  "description": "A tiny package used to test the API extractor.",
+  "exports": {
+    ".": { "types": "./types/index.d.ts", "import": "./types/index.js" },
+    "./extra": { "import": "./types/extra.js" },
+    "./theme.css": "./theme.css"
+  }
+}

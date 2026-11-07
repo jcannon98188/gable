@@ -153,6 +153,8 @@ export class CommandPalette {
     cmd("server.restart", "Restart the dev server", "Dialogs", () => void this.projects.restart(), { disabled: this.projects.installing() });
     if (this.projects.canInstall()) cmd("server.install", "Install the project's dependencies and start", "Dialogs", () => void this.projects.install(), { disabled: this.projects.installing() });
     cmd("dialog.extract", "Extract to component…", "Dialogs", () => chrome.dialog.set("extract"));
+    cmd("dialog.rename", "Rename component…", "Dialogs", () => chrome.dialog.set("rename"));
+    cmd("dialog.find-uses", "Find uses…", "Dialogs", () => chrome.dialog.set("find-uses"));
     cmd("dialog.scenario", "New Scenario…", "Dialogs", () => chrome.dialog.set("new-scenario"));
     if (s.target().kind === "page") cmd("route.add", "Add route…", "Dialogs", () => this.#addRoute(), { disabled: this.page.config() === null });
 

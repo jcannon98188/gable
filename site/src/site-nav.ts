@@ -1,9 +1,11 @@
 import { html, inject } from "@gable/core";
+import { DocLink } from "./docs/doc-link.js";
 import { ThemeStore } from "./theme.js";
 
 export class SiteNav {
   static meta = {
     selector: "site-nav",
+    imports: [DocLink],
     template: html`
 <nav class="nav">
 <a class="logo" href="#top"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20L12 4l9 16"></path><path d="M8 20l4-7 4 7"></path></svg>Gable</a>
@@ -13,6 +15,7 @@ export class SiteNav {
 <a href="#ui">gable-ui</a>
 <a href="#designer">Designer</a>
 <a href="#editor">Editor</a>
+<a docLink="/docs">Docs</a>
 <span style="flex: 1"></span>
 <button type="button" class="theme-btn" (click)="theme.toggle()" [attr.aria-label]="theme.label()" [attr.title]="theme.label()">
 @if (theme.theme() === 'dark') {

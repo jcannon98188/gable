@@ -1,0 +1,6 @@
+{
+  "packages": [
+    { "name": "@gable/core", "slug": "core", "version": "0.0.0", "description": "Components, signals, dependency injection and the router.", "entryPoints": ["@gable/core", "@gable/core/router"], "symbolCount": 4, "undocumentedCount": 0 },
+    { "name": "@gable/store", "slug": "store", "version": "0.0.0", "description": "Signal-based stores.", "entryPoints": ["@gable/store"], "symbolCount": 1, "undocumentedCount": 0 }
+  ]
+}

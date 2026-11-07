@@ -1,0 +1,78 @@
+{
+  "name": "@gable/core",
+  "slug": "core",
+  "version": "0.0.0",
+  "description": "Components, signals, dependency injection and the router.",
+  "entryPoints": [
+    {
+      "path": "@gable/core",
+      "symbols": [
+        {
+          "id": "core:signal",
+          "name": "signal",
+          "kind": "function",
+          "signature": "function signal<T>(initial: T, options?: SignalOptions<T>): WritableSignal<T>",
+          "summary": "Creates a **writable** signal. See [the store guide](./store.md) for `computed`.",
+          "remarks": "Read it by calling it: `count()`.\n\nWrite with `set` or `update`.",
+          "examples": ["const count = signal(0);\ncount.set(1);\nconsole.log(count());"],
+          "params": [
+            { "name": "initial", "type": "T", "description": "The first value.", "optional": false },
+            { "name": "options", "type": "SignalOptions<T>", "description": "An `equal` function.", "optional": true }
+          ],
+          "returns": { "type": "WritableSignal<T>", "description": "The signal." },
+          "typeParams": [{ "name": "T", "description": "The value type." }],
+          "see": ["computed"],
+          "sourceFile": "packages/core/src/signals.ts"
+        },
+        {
+          "id": "core:computed",
+          "name": "computed",
+          "kind": "function",
+          "signature": "function computed<T>(fn: () => T): ReadonlySignal<T>",
+          "summary": "Creates a derived, read-only signal.",
+          "examples": [],
+          "params": [{ "name": "fn", "type": "() => T", "description": "Computes the value.", "optional": false }],
+          "returns": { "type": "ReadonlySignal<T>", "description": "" }
+        },
+        {
+          "id": "core:oldThing",
+          "name": "oldThing",
+          "kind": "function",
+          "signature": "function oldThing(): void",
+          "summary": "Does the old thing.",
+          "deprecated": "Use `signal` instead.",
+          "examples": []
+        }
+      ]
+    },
+    {
+      "path": "@gable/core/router",
+      "symbols": [
+        {
+          "id": "core/router:Router",
+          "name": "Router",
+          "kind": "class",
+          "signature": "class Router",
+          "summary": "The router service.",
+          "examples": [],
+          "extends": ["Base"],
+          "sourceFile": "packages/core/src/router-state.ts",
+          "members": [
+            { "name": "url", "kind": "property", "signature": "readonly url: ReadonlySignal<string>", "summary": "The current URL.", "optional": false, "readonly": true, "static": false },
+            {
+              "name": "navigate",
+              "kind": "method",
+              "signature": "navigate(target: string | readonly unknown[], options?: NavigateOptions): Promise<NavigationOutcome>",
+              "summary": "Navigates to a URL.",
+              "optional": false,
+              "readonly": false,
+              "static": false,
+              "params": [{ "name": "target", "type": "string", "description": "Where to go.", "optional": false }],
+              "returns": { "type": "Promise<NavigationOutcome>", "description": "Resolves with the outcome." }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
