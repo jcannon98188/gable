@@ -297,6 +297,21 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
           else if (url.searchParams.has("refresh")) await s.runAnalysis();
           return json(res, 200, s.diagnostics);
         }
+        case "/api/diagnostics/fix": {
+          // The fix is the one the analysis found, never edits the client sends.
+          const { id, fix } = JSON.parse(await readBody(req)) as { id: string; fix?: number };
+          const d = s.diagnostics?.diagnostics.find((x) => x.id === id);
+          const f = d?.fixes?.[fix ?? 0];
+          if (!d || !f || !d.hash) return json(res, 200, { ok: false, code: "missing", error: "That problem has no quick fix any more. Refresh the problems." });
+          const result = edits.applyFix(d.file, d.hash, f.edits, f.title);
+          if (result.ok) {
+            broadcast("history", edits.history());
+            void s.runAnalysis();
+          }
+          return json(res, 200, result);
+        }
+        case "/api/edit/outline":
+          return json(res, 200, edits.outline(JSON.parse(await readBody(req)) as Pick<TargetRef, "raw" | "modulePath" | "file">));
         case "/api/resolve": {
           const report = JSON.parse(await readBody(req)) as NodeReport;
           return json(res, 200, resolveNode(root, report));

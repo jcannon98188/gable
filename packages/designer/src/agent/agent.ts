@@ -8,6 +8,7 @@ import { RUN_CONTEXT, runOptions, toReport, type AxeLike } from "./a11y.js";
 import {
   AXE_PATH,
   PROTOCOL_VERSION,
+  dropWhere,
   envelope,
   isOurs,
   takeSession,
@@ -16,6 +17,7 @@ import {
   type A11yReport,
   type AgentMethods,
   type CanvasDiagnostic,
+  type DropWhere,
   type Interaction,
   type HttpLogEntry,
   type PageScenarioInfo,
@@ -53,6 +55,10 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
   let selected: string | null = null;
   let hovered: string | null = null;
   let diagnostics: CanvasDiagnostic[] = [];
+  /** The node the shell cannot edit (hatched), another frame's selection (mirrored) and the drag-insert line. */
+  let readOnly: { id: string; label: string } | null = null;
+  let mirrored: { raw: string; start: number } | null = null;
+  let drop: { rect: DOMRect; where: DropWhere; tag: string } | null = null;
 
   const send = (message: DistributiveOmit<AgentMessage, "channel" | "v" | "nonce">) => parent.postMessage({ ...envelope(nonce), ...message }, shellOrigin);
 
@@ -98,6 +104,7 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
       });
     }
     selectionChrome();
+    overlays();
     const byNode = new Map<string, CanvasDiagnostic[]>();
     for (const d of diagnostics) {
       const node = designer.nodeAt(d.raw, d.offset);
@@ -150,6 +157,56 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
       box(`sact${a.action}`, new DOMRect(left + 2 + i * size, top + 2, size, 22), "color:#ededf0;font:500 13px/22px system-ui;text-align:center;border-radius:5px;cursor:pointer;pointer-events:auto", a.glyph, () => send({ type: "action", action: a.action, id: selected! }));
       boxes.get(`sact${a.action}`)!.title = a.title;
     });
+  }
+
+  // Read-only hatch (amber, as the design's States board), a mirrored selection from another frame, and the drag-insert line.
+  const WARN = "#f59e0b";
+  const chip = (bg: string) => `background:${bg};color:#1b1b1e;font:600 10px/16px ui-monospace,monospace;padding:0 5px;border-radius:3px;white-space:nowrap;overflow:hidden`;
+  const mirroredId = (): string | null => (mirrored ? (designer.nodeAt(mirrored.raw, mirrored.start)?.id ?? null) : null);
+  function overlays(): void {
+    if (readOnly) {
+      const label = "🔒 " + readOnly.label;
+      rectsOf(readOnly.id).forEach((r, i) => {
+        box(`ro${i}`, r, `outline:2px dashed ${WARN};outline-offset:1px;background:repeating-linear-gradient(135deg, rgba(251,191,36,.16) 0 6px, transparent 6px 12px)`);
+        const w = Math.min(label.length * 6.5 + 12, 240);
+        if (i === 0) box("rochip", new DOMRect(Math.max(0, r.right - w - 2), r.top + 2, w, 16), chip(WARN), label);
+      });
+    }
+    const m = mirroredId();
+    if (m && m !== selected) {
+      const tag = tagOf(m);
+      rectsOf(m).forEach((r, i) => {
+        box(`m${i}`, r, `border:2px dashed ${SEL};background:${SEL}0d`);
+        if (i === 0 && tag) box("mtag", new DOMRect(r.left, Math.max(0, r.top - 16), Math.min(tag.length * 7 + 10, 220), 16), tagStyle(0.6), tag);
+      });
+    }
+    if (drop) {
+      const r = drop.rect;
+      const line = (y: number) => box("dline", new DOMRect(r.left, y - 1.5, r.width, 3), `background:${SEL};border-radius:2px;box-shadow:0 0 0 1px #fff`);
+      if (drop.where === "before") line(r.top);
+      else if (drop.where === "after") line(r.bottom);
+      else (box("dbox", r, `border:2px dashed ${SEL};background:${SEL}14`), line(r.bottom - 6));
+      const text = `${drop.where === "last" ? "Inside" : drop.where === "before" ? "Before" : "After"} <${drop.tag}>`;
+      box("dchip", new DOMRect(r.left, Math.max(0, (drop.where === "after" ? r.bottom : r.top) - 18), text.length * 6.5 + 12, 16), `${tagStyle()};border-radius:3px`, text);
+    }
+  }
+
+  const VOID_TAGS = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr", "textarea", "select", "option"]);
+  function dropAt(x: number, y: number): { node: DesignNode; where: DropWhere } | null {
+    for (const el of document.elementsFromPoint(x, y)) {
+      if (layer.contains(el)) continue;
+      const node = designer.nodeOf(el) ?? chainOf(el)[0];
+      if (!node?.exact) continue;
+      const own = (designer.elementsOf(node.id) as Element[]).find((e) => e.isConnected && e.contains(el)) ?? el;
+      const rect = own.getBoundingClientRect();
+      const where = dropWhere(rect, y, !VOID_TAGS.has(own.localName));
+      drop = { rect, where, tag: node.tag };
+      redraw();
+      return { node, where };
+    }
+    drop = null;
+    redraw();
+    return null;
   }
 
   const place = (): { placed: number; unplaced: number } => {
@@ -248,6 +305,20 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     else if (dpr !== (nativeDpr?.get?.call(window) ?? 1)) Object.defineProperty(window, "devicePixelRatio", { configurable: true, get: () => dpr });
     else if (nativeDpr) Object.defineProperty(window, "devicePixelRatio", nativeDpr);
     return !touch || canTouch;
+  }
+
+  // Text scale: the root font size times the scale, measured from the page's own (so rem text and spacing follow).
+  let scaleStyle: HTMLStyleElement | null = null;
+  function scaleText(scale: number): void {
+    scaleStyle?.remove();
+    scaleStyle = null;
+    if (!(scale > 0) || scale === 1) return;
+    const base = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    scaleStyle = document.createElement("style");
+    scaleStyle.setAttribute("data-gable-designer-text-scale", "");
+    scaleStyle.textContent = `html { font-size: ${(base * scale).toFixed(3)}px !important; }`;
+    document.head.append(scaleStyle);
+    redraw();
   }
 
   // --- Tailwind mode's temporary preview (see `setPreview` in protocol.ts) ----------------------------------------------
@@ -411,7 +482,18 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
       return null;
     },
     setDiagnostics: ({ items }) => ((diagnostics = items), redraw(), place()),
-    setEmulation: ({ touch, dpr }) => ({ touchEvents: emulate(touch, dpr) }),
+    setEmulation: ({ touch, dpr, textScale }) => (scaleText(textScale ?? 1), { touchEvents: emulate(touch, dpr) }),
+    setReadOnly: ({ id, label }) => {
+      readOnly = id ? { id, label } : null;
+      redraw();
+      return { elements: rectsOf(id).length };
+    },
+    mirror: (p) => {
+      mirrored = p;
+      redraw();
+      return { elements: rectsOf(mirroredId()).length };
+    },
+    dropTarget: (p) => (p ? dropAt(p.x, p.y) : ((drop = null), redraw(), null)),
     setPreview: (p) => ({ elements: setPreview(p) }),
     replay: (interaction) => replay(interaction),
     scenes: () => sceneInfo(),

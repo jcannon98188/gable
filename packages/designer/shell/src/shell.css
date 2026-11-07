@@ -544,6 +544,36 @@ label.chip:has(input:focus-visible) {
   border-bottom: 1px solid var(--d-border);
   padding-bottom: 6px;
 }
+/* Drag-insert: the chip that follows the pointer from the Insert tab onto a frame. */
+/* While an Insert entry is dragged the frames ignore the pointer, so the shell keeps getting its moves. */
+.insert-dragging .frame iframe {
+  pointer-events: none;
+}
+.insert-dragging,
+.insert-dragging * {
+  cursor: grabbing !important;
+}
+.drag-ghost {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--d-accent);
+  color: var(--d-accent-fg);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(12px, 10px);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.3);
+}
+.drag-ghost .dim {
+  color: rgb(255 255 255 / 0.75);
+  font-weight: 500;
+}
 .side-foot {
   flex: none;
   padding: 6px 10px;
@@ -585,6 +615,31 @@ label.chip:has(input:focus-visible) {
 }
 .tr .trail {
   margin-left: auto;
+}
+/* The Structure tab's template outline: rows not rendered right now, and read-only blocks. */
+.outline-row.off {
+  opacity: 0.5;
+}
+.outline-row.ro {
+  color: var(--d-dim);
+  cursor: default;
+}
+.outline-row .chip {
+  flex: none;
+}
+/* Problems: the quick fixes strip above the table. */
+.fixes {
+  flex: none;
+  max-height: 40%;
+  overflow: auto;
+  border-bottom: 1px solid var(--d-border);
+}
+.fix-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, auto) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 2px 10px;
 }
 .mi {
   display: flex;
@@ -1016,6 +1071,10 @@ ui-virtual-table {
 .ctool .fld-scheme {
   flex: none;
   width: 72px;
+}
+.ctool .fld-text {
+  flex: none;
+  width: 66px;
 }
 .ctool .fld-preset {
   flex: none;

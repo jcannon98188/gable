@@ -4,7 +4,14 @@
 import { readFileSync } from "node:fs";
 import { relative } from "node:path";
 import { analyzeProject } from "@gable/language-service";
+import { hash } from "./edit/hunks.js";
 import { literalAt, sourceText } from "./source.js";
+
+/** A quick fix the language service offers, kept when all its edits are in the diagnostic's own file (offsets into it as stored). */
+export interface DiagnosticFix {
+  title: string;
+  edits: Array<{ start: number; length: number; newText: string }>;
+}
 
 export interface ProjectDiagnostic {
   id: string;
@@ -18,6 +25,10 @@ export interface ProjectDiagnostic {
   /** Set when the diagnostic lies inside a template literal. */
   raw?: string;
   offset?: number;
+  /** Quick fixes, best first; applied by `/api/diagnostics/fix` only while the file is still `hash`. */
+  fixes?: DiagnosticFix[];
+  /** Hash of the file as it was analysed (set with `fixes`). */
+  hash?: string;
 }
 
 export interface AnalysisOutput {
@@ -32,6 +43,7 @@ export function analyze(root: string): AnalysisOutput {
     let src = cache.get(d.file);
     if (!src) cache.set(d.file, (src = sourceText(readFileSync(d.file, "utf8"))));
     const at = literalAt(src, d.start);
+    const fixes = (d.fixes ?? []).filter((f) => f.edits.length > 0 && f.edits.every((e) => e.file === d.file)).map((f): DiagnosticFix => ({ title: f.title, edits: f.edits.map((e) => ({ start: e.start, length: e.length, newText: e.newText })) }));
     return {
       id: `d${i}`,
       file: relative(root, d.file).replaceAll("\\", "/"),
@@ -41,6 +53,7 @@ export function analyze(root: string): AnalysisOutput {
       rule: d.rule,
       message: d.message,
       ...(at ? { raw: at.raw, offset: at.offset } : {}),
+      ...(fixes.length ? { fixes, hash: hash(src.original) } : {}),
     };
   });
   return { diagnostics, configErrors: result.configErrors };

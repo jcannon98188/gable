@@ -56,6 +56,10 @@ export class TailwindState {
   breakpoints = computed<Breakpoint[]>(() => this.enabled()?.breakpoints ?? []);
 
   analysis = signal<AnalyzeResult | null>(null);
+  /** Classes of the list that override each other outright: the Style panel says which one applies and offers removing the other. */
+  conflicts = computed(() => (this.writable() ? (this.analysis()?.conflicts ?? []) : []));
+  /** While a class is previewed: what writing it would replace (the plan is a dry run; nothing is written). */
+  replaces = signal<{ token: string; removed: string[] } | null>(null);
   notice = signal<string | null>(null);
   busy = signal(false);
 
@@ -202,13 +206,18 @@ export class TailwindState {
     const id = this.state.picked()?.node.id;
     const seq = ++this.#previewSeq;
     if (!id || tokens.length === 0) return this.clearPreview();
-    const { css } = await this.state.api<{ css: string }>("/api/tailwind/css", { tokens }).catch(() => ({ css: "" }));
+    const [{ css }, plan] = await Promise.all([
+      this.state.api<{ css: string }>("/api/tailwind/css", { tokens }).catch(() => ({ css: "" })),
+      tokens.length === 1 && this.writable() ? this.state.api<PlanResult>("/api/tailwind/plan", { ...this.#ctx(), token: tokens[0] }).catch(() => null) : null,
+    ]);
     if (seq !== this.#previewSeq) return;
+    this.replaces.set(plan?.ok && plan.added && plan.removed.length ? { token: plan.token, removed: plan.removed } : null);
     await this.#setPreview({ id, addClasses: tokens, css, mark: false, dark: false });
   }
 
   clearPreview(): void {
     this.#previewSeq++;
+    this.replaces.set(null);
     void this.#applyForced();
   }
 

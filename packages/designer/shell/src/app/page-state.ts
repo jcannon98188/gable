@@ -33,6 +33,55 @@ export function routeUrl(paths: readonly string[]): string {
   return "/" + segments.join("/");
 }
 
+/**
+ * The URLs page mode visited, for Back and Forward. The shell keeps it rather than calling the iframe's `history.back()`:
+ * the frame's session history is joint with the shell's own (and with the other frames'), so going back there could leave
+ * the Designer. A traversal is remembered until the router reports the URL, so arriving there does not cut the forward list.
+ */
+export class NavHistory {
+  static readonly MAX = 50;
+  #list: string[] = [];
+  #at = -1;
+  #traversing: string | null = null;
+
+  get entries(): readonly string[] {
+    return this.#list;
+  }
+  get index(): number {
+    return this.#at;
+  }
+  get canBack(): boolean {
+    return this.#at > 0;
+  }
+  get canForward(): boolean {
+    return this.#at < this.#list.length - 1;
+  }
+
+  /** The router is at `url` now. A new URL drops the forward entries; the one a traversal went to does not. */
+  visit(url: string): void {
+    if (!url) return;
+    const traversing = this.#traversing;
+    this.#traversing = null;
+    if (traversing === url || this.#list[this.#at] === url) return;
+    this.#list = [...this.#list.slice(0, this.#at + 1), url].slice(-NavHistory.MAX);
+    this.#at = this.#list.length - 1;
+  }
+
+  back(): string | null {
+    return this.#go(-1);
+  }
+  forward(): string | null {
+    return this.#go(1);
+  }
+  #go(step: number): string | null {
+    const next = this.#at + step;
+    if (next < 0 || next >= this.#list.length) return null;
+    this.#at = next;
+    this.#traversing = this.#list[next]!;
+    return this.#traversing;
+  }
+}
+
 type Shown = { path: string; component: string; title: string; redirectTo: string; children: Shown[] | "lazy" | null; active: boolean; at: number[] | null };
 
 const fromRuntime = (nodes: readonly RouteNode[], at: number[] = []): Shown[] =>
@@ -101,6 +150,21 @@ export class PageState {
   /** Page mode has a router, or it would show nothing to navigate. */
   hasRouter = computed(() => this.router() !== null);
   url = computed(() => this.router()?.url ?? "");
+
+  /** Back and forward over the URLs visited (see `NavHistory`). `#navTick` makes the plain object's state readable as signals. */
+  readonly history = new NavHistory();
+  #navTick = signal(0);
+  canBack = computed(() => (this.#navTick(), this.history.canBack));
+  canForward = computed(() => (this.#navTick(), this.history.canForward));
+  backTitle = computed(() => (this.#navTick(), this.history.canBack ? `Back to ${this.history.entries[this.history.index - 1]}` : "Back"));
+  forwardTitle = computed(() => (this.#navTick(), this.history.canForward ? `Forward to ${this.history.entries[this.history.index + 1]}` : "Forward"));
+  trackHistory = effect(() => {
+    const url = this.url();
+    untracked(() => {
+      this.history.visit(url);
+      this.#navTick.update((n) => n + 1);
+    });
+  });
 
   rows = computed<RouteRow[]>(() => {
     const router = this.router();
@@ -194,6 +258,18 @@ export class PageState {
 
   go(): Promise<void> {
     return this.navigate(this.urlText());
+  }
+
+  back(): Promise<void> {
+    const url = this.history.back();
+    this.#navTick.update((n) => n + 1);
+    return url ? this.navigate(url) : Promise.resolve();
+  }
+
+  forward(): Promise<void> {
+    const url = this.history.forward();
+    this.#navTick.update((n) => n + 1);
+    return url ? this.navigate(url) : Promise.resolve();
   }
 
   chooseScenario(value: string): void {

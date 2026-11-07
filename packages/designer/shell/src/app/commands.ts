@@ -3,6 +3,7 @@
 // value, so the template only passes a string.
 import { computed, html, inject } from "@gable/core";
 import { fuzzyFilter, UiCommandDialog, type CommandItem } from "../components/ui/command.js";
+import { TEXT_SCALES } from "../../../src/devices.js";
 import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";
 import { EditState } from "./edit-state.js";
@@ -84,6 +85,7 @@ export class CommandPalette {
     cmd("env.scheme.auto", "Color scheme: auto", "Environment", () => emulate({ colorScheme: "auto" }));
     cmd("env.scheme.light", "Color scheme: light", "Environment", () => emulate({ colorScheme: "light" }));
     cmd("env.scheme.dark", "Color scheme: dark", "Environment", () => emulate({ colorScheme: "dark" }));
+    for (const scale of TEXT_SCALES) cmd(`env.text.${scale}`, `Text size: ${Math.round(scale * 100)}%`, "Environment", () => emulate({ textScale: scale }), { disabled: (config.emulation.textScale ?? 1) === scale });
 
     const picked = s.picked();
     const node = this.edit.node();
@@ -120,6 +122,8 @@ export class CommandPalette {
     for (const [value, label, open, selector, press] of reachable) cmd(value, label, "Element", () => this.#reach(open, selector, press));
     if (s.target().kind === "page") {
       cmd("page.reload", "Reload the page", "Element", () => this.#press('[data-part="page-reload"]'));
+      cmd("page.back", this.page.backTitle(), "Go to", () => void this.page.back(), { disabled: !this.page.canBack() });
+      cmd("page.forward", this.page.forwardTitle(), "Go to", () => void this.page.forward(), { disabled: !this.page.canForward() });
       for (const item of this.page.scenarioItems()) cmd(`page.scenario.${item.value}`, `Page Scenario: ${item.label}`, "Go to", () => this.page.chooseScenario(item.value));
     }
     if (s.target().kind === "page") cmd("page.url", "Go to a URL", "Element", () => this.#reach(device, '[aria-label="URL"]'));
@@ -135,6 +139,10 @@ export class CommandPalette {
     }
     for (const f of ["all", "error", "warning"]) {
       cmd(`problems.filter.${f}`, `Problems: show ${f === "all" ? "all" : `${f}s`}`, "Panels", () => this.#reach(() => chrome.showDrawer("problems"), `[data-problems-filter="${f}"]`, true));
+    }
+    for (const d of s.analysis()?.diagnostics ?? []) {
+      const fix = d.fixes?.[0];
+      if (fix) cmd(`problems.fix.${d.id}`, `Fix: ${fix.title}`, "Panels", () => void this.edit.fix(d.id, 0), { keywords: [d.rule, s.relative(d.file)], disabled: this.edit.busy() });
     }
     cmd("hmr.clear", "Clear the HMR timeline", "Panels", () => this.#reach(() => chrome.showDrawer("hmr"), '[data-part="hmr-clear"]', true));
     cmd("drawer.toggle", chrome.drawerOpen() ? "Collapse the drawer" : "Open the drawer", "Panels", () => chrome.toggleDrawer());

@@ -10,6 +10,21 @@ export interface Emulation {
   colorScheme: ColorScheme;
   reducedMotion: boolean;
   userAgent: string | null;
+  /**
+   * Text size as a factor of the page's own (the agent multiplies the root font size, so rem-based type follows; px does
+   * not). Absent means 1.
+   */
+  textScale?: number;
+}
+
+/** The text sizes the environment row offers (as the OS text-size settings go). */
+export const TEXT_SCALES = [0.85, 1, 1.15, 1.3, 1.5, 2] as const;
+
+/** A text scale from anywhere (settings, the URL, a select), as a factor between 0.5 and 3; 1 when it is not a number. */
+export function clampTextScale(value: unknown): number {
+  const n = typeof value === "string" ? Number(value) : typeof value === "number" ? value : NaN;
+  if (!Number.isFinite(n) || n <= 0) return 1;
+  return Math.round(Math.min(3, Math.max(0.5, n)) * 100) / 100;
 }
 
 export const NO_EMULATION: Emulation = { touch: false, colorScheme: "auto", reducedMotion: false, userAgent: null };
@@ -177,6 +192,7 @@ export function sanitizeSettings(value: unknown): ProjectSettings {
     colorScheme: e?.colorScheme === "light" || e?.colorScheme === "dark" ? e.colorScheme : "auto",
     reducedMotion: e?.reducedMotion === true,
     userAgent: typeof e?.userAgent === "string" && e.userAgent ? e.userAgent.slice(0, 500) : null,
+    ...(clampTextScale(e?.textScale) !== 1 ? { textScale: clampTextScale(e?.textScale) } : {}),
   });
   const text = (s: unknown, fallback: string) => (typeof s === "string" && s.trim() ? s.trim().slice(0, 60) : fallback);
   const num = (n: unknown, fallback: number) => clamp(whole(Number(n), fallback), MIN_SIZE, MAX_SIZE);

@@ -3,6 +3,7 @@
 import { computed, effect, inject, signal, untracked } from "@gable/core";
 import { ToastService } from "../components/ui/toast.js";
 import type { DescribeResult, EditOp, EditResult, HistoryInfo, NodeModel, PaletteEntry, TargetRef } from "../../../src/server/edit/types.js";
+import type { DesignNode } from "@gable/core/designer";
 import { DesignerState } from "./designer-state.js";
 
 export class EditState {
@@ -36,7 +37,11 @@ export class EditState {
   external = computed(() => this.history().external);
 
   target(): TargetRef | null {
-    const n = this.state.picked()?.node;
+    return EditState.targetOf(this.state.picked()?.node ?? null);
+  }
+
+  /** The handle the backend edits a rendered template node by; null when its positions do not map to the file. */
+  static targetOf(n: DesignNode | null): TargetRef | null {
     if (!n || !n.exact) return null;
     return { raw: n.raw, start: n.start, tag: n.tag, modulePath: n.component?.source?.path };
   }
@@ -85,6 +90,18 @@ export class EditState {
   async apply(op: EditOp): Promise<EditResult | null> {
     if (this.busy()) return null;
     return this.#run(() => this.state.api<EditResult>("/api/edit/apply", op));
+  }
+
+  /** Runs an edit of another element than the selected one (a drop from the Insert tab lands where it was dropped). */
+  async editAt(target: TargetRef, build: (target: TargetRef) => EditOp): Promise<void> {
+    if (this.busy()) return;
+    await this.#run(() => this.state.api<EditResult>("/api/edit/apply", build(target)));
+  }
+
+  /** Applies a quick fix the analysis found (Problems tab): written as one edit, so the toast's Undo and Ctrl+Z take it back. */
+  async fix(id: string, fix = 0): Promise<void> {
+    if (this.busy()) return;
+    await this.#run(() => this.state.api<EditResult>("/api/diagnostics/fix", { id, fix }));
   }
 
   async undo(): Promise<void> {

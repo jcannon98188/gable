@@ -2,7 +2,10 @@
 // display-ready rows in a `computed` and the template just lays them out.
 import { computed, effect, html, inject, signal, untracked } from "@gable/core";
 import type { Preview, TreeNode } from "@gable/core/devtools";
+import type { OutlineRow } from "../../../src/server/edit/outline.js";
 import type { PaletteEntry } from "../../../src/server/edit/types.js";
+
+type OutlineResult = { ok: true; file: string; line: number; rows: OutlineRow[] } | { ok: false; error: string };
 import { UiButton } from "../components/ui/button.js";
 import { UiJsonViewer } from "../components/ui/json-viewer.js";
 import { UiSelect } from "../components/ui/select.js";
@@ -10,6 +13,7 @@ import { UiToggleGroup, type ToggleGroupItem } from "../components/ui/toggle-gro
 import { UiTooltip } from "../components/ui/tooltip.js";
 import { UiTree, type TreeNode as UiTreeNode } from "../components/ui/tree.js";
 import { UiIcon } from "../lib/ui/icon.js";
+import { InsertDrag } from "./canvas-overlays.js";
 import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";
 import { EditState } from "./edit-state.js";
@@ -99,6 +103,145 @@ export class ComponentTree {
   });
 }
 
+/**
+ * The selected element's template as an outline (TASK-56.12): elements with their classes, bindings and `{{ }}` text, and the
+ * control-flow blocks, which are read-only (what they render is decided at runtime). Rows not rendered right now are dimmed.
+ * Clicking a row selects its element on the canvas; hovering highlights it.
+ */
+export class TemplateOutline {
+  static meta = {
+    selector: "app-template-outline",
+    host: { class: "block" },
+    // TODO(gable-ui): UiTree rows cannot carry chips and trailing notes, so plain rows stand in for a richer tree.
+    template: html`
+      @for (r of rows(); track r.key) {
+        @if (r.block) {
+          <div class="tr outline-row ro" [style.padding-left]="r.indent" data-part="outline-row" [attr.data-kind]="r.kind" [attr.title]="r.title">
+            <span class="mono truncate">{{ r.label }}</span>
+            @if (r.detail) {
+              <span class="chip warn trail">{{ r.detail }}</span>
+            }
+          </div>
+        } @else {
+          <button
+            class="tr outline-row"
+            [class.sel]="r.selected"
+            [class.off]="r.hidden"
+            [style.padding-left]="r.indent"
+            data-part="outline-row"
+            [attr.data-kind]="r.kind"
+            [attr.data-start]="r.start"
+            [attr.aria-current]="r.current"
+            [attr.title]="r.title"
+            (click)="choose(r.start)"
+            (pointerenter)="hover(r.start)"
+            (pointerleave)="unhover()"
+          >
+            <span class="mono truncate">{{ r.label }}</span>
+            @for (c of r.chips; track c) {
+              <span class="chip mono">{{ c }}</span>
+            }
+            @if (r.detail) {
+              <span class="dim trail">{{ r.detail }}</span>
+            }
+          </button>
+        }
+      }
+      @if (note()) {
+        <div class="empty">{{ note() }}</div>
+      }
+    `,
+  };
+  state = inject(DesignerState);
+  edit = inject(EditState);
+  outline = signal<OutlineResult | null>(null);
+  /** Starts of the elements rendered right now (the rest are under an `@if` that is false, or an empty `@for`). */
+  rendered = signal<Set<number> | null>(null);
+  #raw = "";
+  #liveSeq = 0;
+  #hoverSeq = 0;
+
+  load = effect(() => {
+    const node = this.state.picked()?.node ?? null;
+    this.edit.history();
+    untracked(() => void this.#load(node && node.exact ? node : null));
+  });
+  /** Template changes re-render nodes; which rows are live is asked again after each update. */
+  live = effect(() => {
+    this.state.hmr();
+    this.state.flushes();
+    const o = this.outline();
+    untracked(() => void this.#live(o && o.ok ? o.rows : []));
+  });
+
+  async #load(node: { raw: string; component: { source: { path: string } | null } | null } | null): Promise<void> {
+    if (!node) {
+      this.#raw = "";
+      return this.outline.set(null);
+    }
+    this.#raw = node.raw;
+    const r = await this.state
+      .api<OutlineResult>("/api/edit/outline", { raw: node.raw, modulePath: node.component?.source?.path })
+      .catch((e: unknown): OutlineResult => ({ ok: false, error: String(e) }));
+    if (this.#raw === node.raw) this.outline.set(r);
+  }
+
+  async #live(rows: OutlineRow[]): Promise<void> {
+    const seq = ++this.#liveSeq;
+    const raw = this.#raw;
+    const elements = rows.filter((r) => r.kind === "element").slice(0, 120);
+    const found = await Promise.all(elements.map((r) => this.state.preview.call("nodeAt", { raw, offset: r.start }).catch(() => null)));
+    if (seq !== this.#liveSeq) return;
+    this.rendered.set(new Set(elements.filter((r, i) => (found[i]?.elements ?? 0) > 0 && found[i]!.start === r.start).map((r) => r.start)));
+  }
+
+  rows = computed(() => {
+    const o = this.outline();
+    if (!o || !o.ok) return [];
+    const picked = this.state.picked()?.node;
+    const live = this.rendered();
+    return o.rows.map((r, i) => {
+      const selected = !!picked && r.kind === "element" && picked.start === r.start;
+      const hidden = r.kind === "element" && !!live && !live.has(r.start);
+      return {
+        key: `${i}:${r.start}`,
+        kind: r.kind,
+        block: r.kind !== "element",
+        start: r.start,
+        label: r.label,
+        detail: r.detail,
+        chips: r.interpolations,
+        indent: `${8 + r.depth * 12}px`,
+        selected,
+        current: selected ? "true" : null,
+        hidden,
+        title: r.kind === "element" ? (hidden ? "Not rendered right now" : `Select <${r.tag}>`) : "Decided at runtime: read-only here",
+      };
+    });
+  });
+  note = computed(() => {
+    const o = this.outline();
+    if (!this.state.picked()) return "Select an element to see its template.";
+    if (!o) return "";
+    return o.ok ? (o.rows.length ? "" : "This template is empty.") : o.error;
+  });
+
+  async choose(start: number): Promise<void> {
+    const node = await this.state.preview.call("nodeAt", { raw: this.#raw, offset: start }).catch(() => null);
+    if (node && node.start === start) await this.state.preview.call("selectNode", { id: node.id }).catch(() => undefined);
+  }
+
+  unhover(): void {
+    void this.hover(-1);
+  }
+
+  async hover(start: number): Promise<void> {
+    const seq = ++this.#hoverSeq;
+    const node = start >= 0 ? await this.state.preview.call("nodeAt", { raw: this.#raw, offset: start }).catch(() => null) : null;
+    if (seq === this.#hoverSeq) await this.state.preview.call("hoverNode", { id: node && node.start === start ? node.id : null }).catch(() => undefined);
+  }
+}
+
 /** The injector tree: each injector with the Providers behind its Tokens. */
 export class InjectorTree {
   static meta = {
@@ -148,7 +291,7 @@ export class StructurePanel {
   static meta = {
     selector: "app-structure-panel",
     host: { class: "side" },
-    imports: [ComponentTree, UiButton, UiIcon, UiSelect, UiTooltip],
+    imports: [ComponentTree, TemplateOutline, UiButton, UiIcon, UiSelect, UiTooltip],
     template: html`
       <div class="min-h-0 flex-1 overflow-auto">
         @if (showFiles()) {
@@ -157,6 +300,15 @@ export class StructurePanel {
             <div class="pad">
               <ui-select triggerClass="fld-select w-full" placeholder="Pick a scenes file" [items]="fileItems()" [(value)]="filePick"></ui-select>
             </div>
+          </div>
+        }
+        @if (picked()) {
+          <div class="sec" aria-label="Template" data-part="template-outline">
+            <div class="sec-h">
+              Template
+              <span class="mono dim truncate">{{ templateOf() }}</span>
+            </div>
+            <app-template-outline></app-template-outline>
           </div>
         }
         <div class="sec">
@@ -200,6 +352,8 @@ export class StructurePanel {
   state = inject(DesignerState);
   chrome = inject(ChromeState);
   isComponentMode = computed(() => this.state.target().kind === "component");
+  picked = computed(() => !!this.state.picked()?.node.exact);
+  templateOf = computed(() => this.state.picked()?.node.component?.name ?? "");
   showFiles = computed(() => this.isComponentMode() && this.state.sceneFiles().length > 0);
   fileItems = computed(() => this.state.sceneFiles().map((path) => ({ value: path, label: path.split("/").pop() ?? path })));
   filePick = signal("");
@@ -262,7 +416,7 @@ export class InsertPanel {
         @for (g of groups(); track g.title) {
           <div class="sec-h">{{ g.title }}</div>
           @for (p of g.entries; track p.key) {
-            <button class="mi" [disabled]="noSelection()" [attr.title]="p.snippet" (click)="insert(p.name, p.group)">
+            <button class="mi" [attr.title]="p.snippet" [attr.data-insert]="p.name" (pointerdown)="dragStart($event, p.name, p.group)" (click)="insert(p.name, p.group)">
               <span class="truncate">{{ p.name }}</span>
               @if (p.tag) {
                 <span class="mono dim truncate">{{ p.tag }}</span>
@@ -275,9 +429,16 @@ export class InsertPanel {
         }
       </div>
       <div class="side-foot">{{ footer() }}</div>
+      @if (drag.ghost(); as g) {
+        <div class="drag-ghost" data-part="drag-ghost" [style.left]="g.left" [style.top]="g.top">
+          <span>{{ g.name }}</span>
+          <span class="dim">{{ g.where }}</span>
+        </div>
+      }
     `,
   };
   edit = inject(EditState);
+  drag = inject(InsertDrag);
   query = signal("");
   sources: ToggleGroupItem[] = [
     { value: "gable-ui", label: "gable-ui" },
@@ -311,11 +472,17 @@ export class InsertPanel {
   });
   none = computed(() => this.entries().length === 0);
   noneText = computed(() => (this.query().trim() ? "Nothing matches that search." : this.source()[0] === "gable-ui" ? "This project has no gable-ui components installed." : "This project has no components of its own yet."));
-  footer = computed(() => (this.noSelection() ? "Select an element on the canvas to insert next to it." : "Click an entry, or press Enter on it, to insert."));
+  footer = computed(() => (this.noSelection() ? "Drag onto a frame, or select an element to insert next to it." : "Drag onto a frame, or press Enter to insert next to the selection."));
+
+  dragStart(e: PointerEvent, name: string, group: string): void {
+    this.drag.start(e, this.edit.palette().find((p) => p.name === name && p.group === group));
+  }
 
   insert(name: string, group: string): void {
+    if (this.drag.takeClick()) return;
     const entry = this.edit.palette().find((p) => p.name === name && p.group === group);
     if (!entry) return;
+    if (this.noSelection()) return void this.edit.notice.set({ ok: false, text: `Select an element first, or drag ${name} onto a frame.` });
     const where = this.where() as "before" | "after" | "first" | "last";
     void this.edit.edit((target) => ({ op: "insert", target, where, snippet: entry.snippet, component: entry.component }));
   }

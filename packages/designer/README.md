@@ -160,6 +160,39 @@ headless Edge/Chromium, drives both dialogs, undoes both edits, puts the project
 node packages/designer/e2e/writers-check.mjs [--browser <path to msedge/chrome>]
 ```
 
+## Canvas and panel polish
+
+- **Read-only hatch.** An element the panels cannot edit (the edit service refuses its template, or Tailwind mode meets a
+  `{{ }}` class list) is drawn on the canvas with an amber dashed outline, a diagonal hatch and a lock chip naming why. The
+  agent draws it (`setReadOnly`); the shell decides when (`CanvasOverlays` in `shell/src/app/canvas-overlays.ts`).
+- **Class conflicts.** `/api/tailwind/analyze` also returns `conflicts`: pairs of classes in the list that override each other
+  outright at the same variants (`p-2 p-8`, `md:p-4 md:p-8`; not `px-2 p-4`). The design system's class order picks the
+  winner. The Style tab shows a callout per pair with **Remove** for the losing class, and while a class is previewed it says
+  which classes applying it would replace (a dry run of `plan`).
+- **Text size.** The device bar's **Aa** select scales the frame's root font size (85% to 200%), so rem-based type follows; px
+  sizes do not. It is part of the frame's emulation and saved with it (`textScale`, left out at 100%).
+- **Sync selection.** With Sync on, the selected element is outlined in every other frame that renders it, and the device bar
+  says in how many (`li.todo selected in 2 of 3 frames`). Agent method `mirror`.
+- **Back and Forward** (page mode) go through the URLs the router reported, kept by the shell (`NavHistory` in
+  `page-state.ts`), not the iframe's `history`, whose session history is shared with the shell's.
+- **Drag insert.** Drag an Insert entry onto a frame: the agent finds the element under the pointer (`dropTarget`) and draws
+  the insertion line; before or after it, or inside it at the end when the pointer is in its middle half. The drop is an ordinary
+  `insert` edit (one undo step). Escape cancels. Clicking an entry still inserts at the selection.
+- **Quick fixes.** Language service diagnostics with a fix in the same file show a **Fix** button in the Problems tab (and a
+  command). `/api/diagnostics/fix` takes only the diagnostic's id: the server applies its own copy of the fix, and only while the
+  file still has the hash it was analysed at, as one undoable edit.
+- **Template outline.** With an element selected, Structure lists its component's template (`/api/edit/outline`): elements
+  with their classes and bindings, `{{ }}` text, and `@if`/`@for` blocks, which are read-only. Elements not rendered right
+  now are dimmed; a row click selects that element, hovering highlights it.
+
+The agent methods (`setReadOnly`, `mirror`, `dropTarget`, `textScale` in `setEmulation`) are additive, so `PROTOCOL_VERSION`
+is unchanged. The driven check spawns nothing itself; run it against todomvc and against ui-gallery:
+
+```
+node packages/designer/e2e/polish-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port> --project examples/todomvc
+node packages/designer/e2e/polish-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port> --tailwind examples/ui-gallery/src/gallery.ts
+```
+
 ## Page mode
 
 The default target runs the whole app with its router. The bar above the canvas has a URL field (type a route and press Go),
