@@ -1,9 +1,10 @@
 ---
 id: TASK-75.12
 title: 'Editor: bubble toolbar positioning'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-07T15:21:00Z'
+updated_date: '2026-11-07T15:34:00Z'
 labels:
   - editor
 dependencies: []
