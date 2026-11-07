@@ -1,5 +1,5 @@
 import { COMPONENT_OVERRIDES, DEFER_BLOCKS, flushSync, hasPendingFlush, instantiate, whenFlushed, type DeferHandle, type MountedComponent } from "@gable/core/internal";
-import { ErrorHandler, type Injector, type ComponentClass, type ErrorContext, type ErrorSource, type LazyEntry, type Provider } from "@gable/core";
+import { ErrorHandler, I18n, provideI18n, type I18nOptions, type Injector, type ComponentClass, type ErrorContext, type ErrorSource, type LazyEntry, type Provider } from "@gable/core";
 import { applyUpdate, type HotResult } from "@gable/core/hmr";
 import { createTestInjector, httpTesting } from "./injector.js";
 import { HttpBackend } from "@gable/core/http";
@@ -27,6 +27,12 @@ export interface MountOptions {
   /** Providers for the root injector; override any Token. */
   providers?: Provider[];
   /**
+   * Starts the in-memory `I18n` service in a locale with catalogs, e.g. `{ locale: "fr", catalogs: { fr: { [id]: "Bonjour" } } }`
+   * (see `messageId` in `@gable/core/i18n`, or use explicit `@@id`s). Missing translations are collected in
+   * `fixture.i18n.missing` instead of warning on the console.
+   */
+  i18n?: I18nOptions;
+  /**
    * `[[Child, Stub]]`: for this test only, replaces an imported component or a `lazy()` entry.
    * The stub must declare the selector of what it replaces (a lazy entry may be replaced by a component).
    */
@@ -49,6 +55,8 @@ export interface Fixture<T extends object> {
   readonly instance: T;
   /** The root injector (providers, overrides and the collecting ErrorHandler included). */
   readonly injector: Injector;
+  /** The root `I18n` service: `await fixture.i18n.setLocale("de")` then `flush()`, or `register` a catalog, to test translated UI. */
+  readonly i18n: I18n;
   /** The host element node. */
   readonly root: TestNode;
   /** Every live `@defer` block, in creation order: drive each with `trigger()`, read its `state`, await `settle()`. */
@@ -194,7 +202,7 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
   }
   const defer: DeferHandle[] = [];
   hookCleanup();
-  const injector = createTestInjector([{ provide: DEFER_BLOCKS, useValue: defer }, { provide: ErrorHandler, useClass: Collector }, { provide: COMPONENT_OVERRIDES, useValue: new Map(options.overrides ?? []) }, ...(options.providers ?? [])]);
+  const injector = createTestInjector([{ provide: DEFER_BLOCKS, useValue: defer }, { provide: ErrorHandler, useClass: Collector }, ...provideI18n({ onMissing: () => {}, ...options.i18n }), { provide: COMPONENT_OVERRIDES, useValue: new Map(options.overrides ?? []) }, ...(options.providers ?? [])]);
   const mounted = instantiate(Component, { renderer, parent: container, injector });
   // Overlay content (portals) lives under the mounted host, so fixture queries and serialisation see it.
   (renderer as Partial<TestRenderer>).setOverlayContainer?.(mounted.host);
@@ -230,6 +238,9 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
       return mounted.instance;
     },
     injector,
+    get i18n() {
+      return injector.get(I18n)!;
+    },
     root: mounted.host,
     defer,
     get http() {

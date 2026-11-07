@@ -7,6 +7,7 @@ import { closest, findIdentifier, hasValueModel, inCallee, isFieldType, isObserv
 import { callSignalFix, extractFix, type Fix, type FixEnv } from "./fixes.js";
 import { templateRules } from "./file-rules.js";
 import { a11yRules } from "./a11y-rules.js";
+import { i18nRules } from "./i18n-rules.js";
 import { projectRules, sourceRules } from "./source-rules.js";
 import { componentMetaRules } from "./meta-rules.js";
 import { scanTemplate, ScanError, type ExprKind, type Src } from "./scan.js";
@@ -109,6 +110,7 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
       const add = (start: number, length: number, rule: RuleId, message: string) => raw.push({ file: sf.fileName, start, length, rule, message });
       templateRules(model, base.getTypeChecker(), add);
       a11yRules(model, add);
+      i18nRules(model, add);
     }
     if (models.length) files.set(norm(sf.fileName), { sf, models, observed: new Set(), syntax: new Map() });
   }

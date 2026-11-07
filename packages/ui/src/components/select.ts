@@ -5,7 +5,7 @@ import {
   UiSelectContent,
   UiSelectItem,
   UiSelectPositioner,
-  UiSelectTrigger,
+  UiProps,
   UiSelectValueText,
   selectCollection,
   type SelectItem,
@@ -35,16 +35,17 @@ const ITEM =
  *
  * Arrow keys, Home and End move the highlight (skipping disabled options), Enter or a click picks it, typing jumps to a
  * matching label, Escape closes. The list is portalled, sized to the trigger and kept on screen; `data-state` animates it.
- * `value` is the selected option's value, or an empty string for none.
+ * The trigger is named by its text (the selected label or the placeholder), which is exposed as `aria-label`; pass `label` (aria-label) or `labelledBy` (an element id) for a
+ * better name. `value` is the selected option's value, or an empty string for none.
  */
 export class UiSelect {
   static meta = {
     selector: "ui-select",
     host: { class: "inline-block" },
     providers: [SelectState],
-    imports: [UiPortal, UiSelectTrigger, UiSelectValueText, UiSelectPositioner, UiSelectContent, UiSelectItem, UiIcon],
+    imports: [UiPortal, UiProps, UiSelectValueText, UiSelectPositioner, UiSelectContent, UiSelectItem, UiIcon],
     template: html`
-      <button uiSelectTrigger [attr.class]="triggerClasses()">
+      <button [uiProps]="triggerProps()" [attr.class]="triggerClasses()">
         <span uiSelectValueText class="truncate">{{ text() }}</span>
         <svg uiIcon="chevron-down" class="size-4 opacity-50"></svg>
       </button>
@@ -72,6 +73,10 @@ export class UiSelect {
   value = model("");
   placeholder = input<string>("Select...");
   disabled = input<boolean>(false);
+  /** Accessible name for the trigger (`aria-label`). Without it, and without `labelledBy`, the trigger is named by its text (the selected label or the placeholder). */
+  label = input<string>("");
+  /** Id of the element that labels the trigger (`aria-labelledby`). */
+  labelledBy = input<string>("");
   /** Extra classes for the trigger button; they win over the defaults (`w-full`). */
   triggerClass = input<string>("");
   triggerClasses = computed(() => cn(TRIGGER, this.triggerClass()));
@@ -86,6 +91,8 @@ export class UiSelect {
     disabled: this.disabled(),
     positioning: { placement: "bottom-start", sameWidth: true, offset: { mainAxis: 4 } },
   }));
+  /** Zag points `aria-labelledby` at a label part this component does not render, which leaves the button unnamed; use ours, else `label`, else the shown text. */
+  triggerProps = computed(() => ({ ...this.select.api().getTriggerProps(), "aria-labelledby": this.labelledBy() || undefined, "aria-label": this.labelledBy() ? undefined : this.label() || this.text() }));
   /** Templates cannot call `getItemState`, so each option's context (selected, highlighted, disabled) is a computed row. */
   rows = computed(() => {
     const api = this.select.api();

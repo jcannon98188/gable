@@ -28,6 +28,7 @@
     "@gable/ui-primitives": "0.0.0",
     "@zag-js/combobox": "^1.47.0",
     "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
     "lucide": "^1.70.0",
     "tailwind-merge": "^3.7.0"
   },

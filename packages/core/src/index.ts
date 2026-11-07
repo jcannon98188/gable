@@ -17,6 +17,8 @@ export type { ComponentRef, CreateComponentOptions, BootstrapOptions, InputValue
 export { ErrorHandler } from "./errors.js";
 export { ErrorBoundary } from "./error-boundary.js";
 export { hotState } from "./hot-state.js";
+export { I18n, i18n, provideI18n } from "./i18n.js";
+export type { I18nOptions, CatalogSource, CatalogLoader, MissingTranslation } from "./i18n.js";
 import { DEV } from "./dev-hooks.js";
 import { installDevtools } from "./devtools.js";
 // Dev, in a browser: the global hook the devtools extension connects to. Dead code (and so the module) in production.

@@ -26,10 +26,10 @@ export class UiPagination {
           </li>
           @for (row of rows(); track row.key) {
             <li>
-              @if (row.isPage) {
+              @if (row.type === 'page') {
                 <button [uiProps]="row.props" [attr.class]="row.classes">{{ row.value }}</button>
               }
-              @if (row.isEllipsis) {
+              @if (row.type === 'ellipsis') {
                 <span [uiProps]="row.props" class="flex size-9 items-center justify-center"><svg uiIcon="ellipsis" class="size-4"></svg><span class="sr-only">More pages</span></span>
               }
             </li>
@@ -60,20 +60,18 @@ export class UiPagination {
   nextProps = computed(() => this.state.api().getNextTriggerProps());
   prevClasses = computed(() => cn(buttonVariants({ variant: "ghost", size: "default", class: "gap-1 px-2.5 sm:pl-2.5" }), this.state.api().previousPage === null && "pointer-events-none opacity-50"));
   nextClasses = computed(() => cn(buttonVariants({ variant: "ghost", size: "default", class: "gap-1 px-2.5 sm:pr-2.5" }), this.state.api().nextPage === null && "pointer-events-none opacity-50"));
-  // TODO(TASK-36): isPage/isEllipsis could become one `type` compared in the template once `===` is supported.
   rows = computed(() => {
     const api = this.state.api();
     return api.pages.map((entry, index) =>
       entry.type === "page"
         ? {
             key: `p${entry.value}`,
-            isPage: true,
-            isEllipsis: false,
+            type: "page" as const,
             value: entry.value,
             props: api.getItemProps(entry),
             classes: buttonVariants({ variant: entry.value === api.page ? "outline" : "ghost", size: "icon" }),
           }
-        : { key: `e${index}`, isPage: false, isEllipsis: true, value: 0, props: api.getEllipsisProps({ index }), classes: "" },
+        : { key: `e${index}`, type: "ellipsis" as const, value: 0, props: api.getEllipsisProps({ index }), classes: "" },
     );
   });
 }

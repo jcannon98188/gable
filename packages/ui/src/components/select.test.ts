@@ -11,6 +11,15 @@ const FRUIT: SelectItem[] = [
   { value: "date", label: "Date" },
 ];
 
+class Named {
+  static meta = {
+    selector: "named-root",
+    imports: [UiSelect],
+    template: html`<ui-select [items]="fruit()" label="Fruit" class="a"></ui-select><ui-select [items]="fruit()" labelledBy="lbl" class="b"></ui-select>`,
+  };
+  fruit = signal(FRUIT);
+}
+
 class App {
   static meta = {
     selector: "app-root",
@@ -36,6 +45,19 @@ const setup = async () => {
 };
 
 describe("Select", () => {
+  it("names the trigger: no dangling aria-labelledby, aria-label and labelledBy pass through", async () => {
+    const { trigger } = await setup();
+    expect(trigger().attrs["aria-labelledby"]).toBeUndefined();
+    expect(trigger().attrs["aria-label"]).toBe("Pick a fruit");
+    const f = mount(Named, { providers: provideTestDom(), advanceTimers: (ms) => vi.advanceTimersByTimeAsync(ms) });
+    await f.settle();
+    const [a, b] = f.queryAll("[role=combobox]");
+    expect(a!.attrs["aria-label"]).toBe("Fruit");
+    expect(a!.attrs["aria-labelledby"]).toBeUndefined();
+    expect(b!.attrs["aria-labelledby"]).toBe("lbl");
+    expect(b!.attrs["aria-label"]).toBeUndefined();
+  });
+
   it("renders the placeholder, a hidden list in the overlay root, and one option per item", async () => {
     const { f, trigger, list, option } = await setup();
     expect(f.textOf(trigger())).toContain("Pick a fruit");

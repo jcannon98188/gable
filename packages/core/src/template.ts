@@ -1,5 +1,6 @@
 import { DEV } from "./dev-hooks.js";
 import { parseExpression, parseHandler, type Expr, type HandlerExpr } from "./expression.js";
+import { messageFromParts, messageId, parseMarker } from "./i18n-message.js";
 
 export type BindingKind = "prop" | "attr" | "class" | "style";
 
@@ -13,6 +14,8 @@ export interface ElementNode {
   models: Array<{ name: string; expr: Expr }>;
   /** `#name` template refs. */
   refs: string[];
+  /** Static attributes marked `i18n-<name>`: translated against the catalog (they are not in `attrs`). */
+  i18nAttrs?: Array<{ name: string; value: string; i18n: I18nInfo }>;
   children: TemplateNode[];
   /** Dev only: where this element sits in its template's source string (offsets into `strings[0]`), and which template. */
   pos?: SourcePos;
@@ -65,7 +68,19 @@ export interface LetNode {
   expr: Expr;
 }
 
-export type TemplateNode = ElementNode | IfNode | ForNode | SwitchNode | DeferNode | LetNode | { type: "text"; parts: Array<string | Expr> };
+/** A translatable message found in a template: the element text of an `i18n` element, or an `i18n-<attr>` value. */
+export interface I18nInfo {
+  /** The explicit `@@id`, or the id derived from `message` and `description`. */
+  id: string;
+  /** Source-language message: `{0}`, `{1}`... stand for the `{{ }}` expressions in order. */
+  message: string;
+  description: string;
+  /** The expression text behind each placeholder. */
+  placeholders: string[];
+}
+
+export type TextNode = { type: "text"; parts: Array<string | Expr>; /** Set on the text of an `i18n` element. */ i18n?: I18nInfo };
+export type TemplateNode = ElementNode | IfNode | ForNode | SwitchNode | DeferNode | LetNode | TextNode;
 
 /** The result of the `html` tag: the call site's static strings plus its `${}` values. */
 export interface TemplateResult {
@@ -297,6 +312,26 @@ class Parser {
     }
   }
 
+  /** `<p i18n="...">text {{ x }}</p>`: the element's only child, a text run, becomes a message. */
+  private markElementText(el: ElementNode, marker: string, openEnd: number): void {
+    const text = el.children[0];
+    if (el.children.length === 0) return;
+    if (el.children.length > 1 || text!.type !== "text") {
+      throw new Error(`<${el.tag} i18n> may only contain text and {{ }} interpolations (put i18n on the inner elements instead)`);
+    }
+    const raw = this.source.slice(openEnd, this.source.lastIndexOf("</", this.i));
+    const strings: string[] = [];
+    const placeholders: string[] = [];
+    let last = 0;
+    for (const m of raw.matchAll(/\{\{([\s\S]*?)\}\}/g)) {
+      strings.push(raw.slice(last, m.index));
+      placeholders.push(m[1]!.trim());
+      last = m.index! + m[0].length;
+    }
+    strings.push(raw.slice(last));
+    text.i18n = i18nInfo(marker, strings, placeholders);
+  }
+
   private parseElement(lt: number): ElementNode {
     const src = this.source;
     const nameMatch = /^<([A-Za-z][\w-]*)/.exec(src.slice(lt));
@@ -305,6 +340,8 @@ class Parser {
     const el: ElementNode = { type: "element", tag, attrs: [], bindings: [], events: [], models: [], refs: [], children: [] };
     let p = lt + nameMatch[0].length;
     let selfClosing = false;
+    let marker: string | undefined;
+    const attrMarkers: Array<{ attr: string; value: string }> = [];
     for (;;) {
       while (/\s/.test(src[p] ?? "")) p++;
       if (p >= src.length) throw new Error(`Unterminated <${tag}> in template`);
@@ -321,14 +358,38 @@ class Parser {
       const m = ATTR.exec(src);
       if (!m) throw new Error(`Bad attribute in <${tag}>`);
       p = ATTR.lastIndex;
-      addAttribute(el, m[1]!, m[2] ?? m[3] ?? "");
+      const value = m[2] ?? m[3] ?? "";
+      if (m[1] === "i18n") marker = value;
+      else if (m[1]!.startsWith("i18n-") && m[1]!.length > 5) attrMarkers.push({ attr: m[1]!.slice(5), value });
+      else addAttribute(el, m[1]!, value);
+    }
+    for (const { attr, value } of attrMarkers) {
+      const at = el.attrs.findIndex((a) => a.name === attr);
+      if (at === -1) {
+        throw new Error(`i18n-${attr} on <${tag}> needs a static ${attr}="..." attribute to translate (bindings such as [${attr}] are not translatable)`);
+      }
+      const text = el.attrs.splice(at, 1)[0]!.value;
+      (el.i18nAttrs ??= []).push({ name: attr, value: text, i18n: i18nInfo(value, [text], []) });
     }
     this.i = p;
     const openEnd = p;
     if (!selfClosing && !VOID.has(tag)) el.children = this.parseChildren("element", tag);
+    if (marker !== undefined) this.markElementText(el, marker, openEnd);
     if (this.tpl) el.pos = { start: lt, openEnd, end: this.i, tpl: this.tpl };
     return el;
   }
+}
+
+/** The translatable info of a marker and the static pieces of a message (placeholders are the gaps). */
+function i18nInfo(markerValue: string, strings: string[], placeholders: string[]): I18nInfo {
+  const marker = parseMarker(markerValue);
+  const parts: Array<string | { placeholder: true }> = [];
+  strings.forEach((s, i) => {
+    if (i > 0) parts.push({ placeholder: true });
+    parts.push(s);
+  });
+  const message = messageFromParts(parts);
+  return { id: marker.id ?? messageId(message, marker.description), message, description: marker.description, placeholders };
 }
 
 export const BLOCK_START = /^@(?:if|else|for|empty|switch|case|default|let|defer|placeholder|loading|error)\b/;

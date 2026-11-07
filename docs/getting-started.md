@@ -296,6 +296,8 @@ Runs `tsc --noEmit` and then `gable-check`, which type-checks the `html` templat
 
 Accessibility lint rules for templates (`a11y-img-alt`, `a11y-control-name`, `a11y-aria-valid`, `a11y-click-key`, `a11y-tabindex-positive`, `a11y-heading-order`, `a11y-autofocus`) warn by default and are described in `docs/accessibility.md`.
 
+Marker rules for i18n (`i18n-attr-missing`, `i18n-not-translatable`, `i18n-marker-syntax`, `i18n-empty`) are described in `docs/i18n.md`.
+
 Store-specific rules (`store-write-outside-patch`, `store-method-in-template`, `store-outside-injection-context`) are described in `docs/store.md`.
 
 `gable-check` also checks each `static meta` against `ComponentMeta`, since TypeScript cannot type a class’s static side without a base class or decorator. The `gable/component-meta` rule reports unknown keys (`selectr`), values of the wrong type, `imports` entries that are not components or `lazy()` entries, and a missing `selector`; its quick fix adds `satisfies ComponentMeta` (and the import), which hands the same check to the compiler. You can write it yourself by ending the initialiser with `satisfies ComponentMeta` (a type import from `@gable/core`). Once a meta has `satisfies ComponentMeta` or a type annotation, the rule stays out of the way. Set its severity, or turn it off, under `rules` in the plugin entry: `{ "name": "@gable/language-service", "rules": { "component-meta": "warn" } }`.

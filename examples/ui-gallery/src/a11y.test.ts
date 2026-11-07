@@ -14,7 +14,6 @@ describe('gallery accessibility (axe-core under jsdom)', () => {
     document.body.innerHTML = '<div id="app"></div>';
     app = bootstrap(Gallery, { renderer: dom(), target: '#app' });
     await whenFlushed();
-    // Known real violations, tracked in TASK-55 (unnamed Select trigger, Alert heading order); remove once fixed.
-    await expectNoA11yViolations(document.getElementById('app')!, { disableRules: ['button-name', 'heading-order'] });
+    await expectNoA11yViolations(document.getElementById('app')!);
   });
 });

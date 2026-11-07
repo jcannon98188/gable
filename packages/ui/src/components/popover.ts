@@ -38,7 +38,7 @@ export class UiPopover {
       <slot name="trigger"></slot>
       <ui-portal>
         <div uiPopoverPositioner>
-          <div uiPopoverContent [attr.class]="contentClasses()"><slot></slot></div>
+          <div uiPopoverContent [attr.class]="contentClasses()" [attr.aria-label]="labelAttr()"><slot></slot></div>
         </div>
       </ui-portal>
     `,
@@ -52,6 +52,9 @@ export class UiPopover {
   /** Extra classes for the panel; they win over the defaults (`w-72`). */
   contentClass = input<string>("");
   contentClasses = computed(() => cn(CONTENT, this.contentClass()));
+  /** Accessible name of the panel (a dialog needs one). */
+  label = input<string>("");
+  labelAttr = computed(() => this.label() || null);
 
   state = inject(PopoverState).bind(() => ({
     open: this.open(),

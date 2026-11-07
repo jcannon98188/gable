@@ -1,10 +1,11 @@
 ---
 id: TASK-58
 title: 'Vite plugin: i18n extraction and baked per-locale builds'
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-11-07T04:10:00Z'
-updated_date: '2026-11-07T04:10:00Z'
+updated_date: '2026-11-07T04:47:00Z'
 labels:
   - vite
   - i18n
@@ -22,10 +23,28 @@ Optional build-time transform in packages/vite, for people who want Angular-styl
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Extraction writes a catalog from templates and tagged templates, with descriptions
-- [ ] #2 A baked build per locale contains translated static text and no i18n runtime
-- [ ] #3 Placeholder reordering in translations is honored when baking
-- [ ] #4 Dev server uses the runtime path and HMR is unaffected
-- [ ] #5 Missing translations fail or warn per plugin option
-- [ ] #6 docs/i18n.md covers both modes
+- [x] #1 Extraction writes a catalog from templates and tagged templates, with descriptions
+- [x] #2 A baked build per locale contains translated static text and no i18n runtime
+- [x] #3 Placeholder reordering in translations is honored when baking
+- [x] #4 Dev server uses the runtime path and HMR is unaffected
+- [x] #5 Missing translations fail or warn per plugin option
+- [x] #6 docs/i18n.md covers both modes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. gableI18n plugin (packages/vite/src/i18n): scanner, extraction, catalogs, baking. 2. Per-locale Vite environments for baked output, runtime stripped. 3. Unit + vite build tests. 4. docs/i18n.md.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+gableI18n plugin in packages/vite/src/i18n (scan, extract, catalogs, bake, plugin), exported from @gable/vite. Baked locales are Vite environments i18n_<locale> built by a custom builder.buildApp into <outDir>/<locale>/; core's i18n-view is stubbed in baked builds so no I18n service or ICU formatter ships. Baked translations support plain placeholders only (plural/select/number/date fail the build, use runtime). Extraction writes core-format JSON (translations, untranslated, obsolete) or XLIFF. Tests: vitest packages/vite packages/core packages/language-service 177/177; tsc packages/vite clean. Not done: language-service i18n-missing-translation rule (needs catalog paths in gable-check config and scanner text positions; left to a follow-up); the .t method on I18n is not extracted or baked; no source map for baked modules; <html lang> per output not set.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added gableI18n (@gable/vite): extraction of html-template markers and i18n tagged templates to catalogs (JSON or XLIFF, merging with new/obsolete tracking), and baked per-locale builds (dist/<locale>/) that rewrite translated text and attributes with placeholder reordering, strip markers and the i18n runtime, with onMissing error|warn|source. Dev (serve) never transforms, so runtime path and HMR are unchanged. Unit tests (scan, extraction, bake, catalog merge) and vite build integration tests (two locales, missing-translation modes, extraction, dev) pass; docs/i18n.md covers both modes. Follow-ups: language-service missing-translation rule, ICU forms in baked builds, .t extraction.
+<!-- SECTION:FINAL_SUMMARY:END -->

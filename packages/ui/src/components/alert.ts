@@ -32,6 +32,9 @@ export class UiAlert {
 export class UiAlertTitle {
   static meta = { selector: "[uiAlertTitle]" };
   class = input<string>("");
+  /** Optional heading level: sets `role="heading"` and `aria-level`. By default the title is plain text, so it never breaks the page's heading order. */
+  level = input<number | null>(null);
+  private attrs = bindProps(() => (this.level() ? { role: "heading", "aria-level": this.level() } : null));
   private apply = useHostClass(() => cn("col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight", this.class()));
 }
 export class UiAlertDescription {

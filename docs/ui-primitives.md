@@ -105,7 +105,7 @@ The engine (`createVirtualizer`, `virtual-core.ts`) is plain signals with no DOM
 
 ## gable-ui (`packages/ui`, `@gable/ui`)
 
-Button, Dialog, Popover, Tabs, Tooltip, Select, Sortable, Label, Input, Textarea, Checkbox, Switch, Radio Group, Slider, Toggle, Toggle Group, Badge, Card, Alert, Separator, Skeleton, Progress, Avatar, Accordion, Collapsible, Dropdown Menu, Context Menu, Combobox, Alert Dialog, Sheet, Table, Breadcrumb, Pagination, Scroll Area, Hover Card, Virtual List, Virtual Table, and Form and Field, in the shadcn neutral style (Tailwind v4, `tw-animate-css`, lucide icons, CSS variables in `theme.css`). One file per component in `src/components`, helpers (`cn`, `variants`, `useHostClass`, `UiIcon`) in `src/lib`, so a component can be copied into an app. Templates cannot call functions, so variant classes are computed view models (`variants()` is a small cva). `data-state="open|closed"` drives the enter and exit animations; the exit runs because `usePresence` delays `hidden`. A `class`/`*Class` input merges over the defaults with `tailwind-merge`. The package is private for now (`"gablePack": true` makes `scripts/pack-local.mjs` pack it). `registry-meta.ts` lists each component file with its npm, component and lib dependencies (a test keeps it in step with the imports). Machines are exposed as `*State` classes in `@gable/ui-primitives` (`machines.ts`); `[uiProps]` and `[uiPopup]` spread a computed Zag prop bag onto an element, so a template can render any part. Stateful parts that live in projected content (accordion items, menu and collapsible triggers) are wired by the parent with `contentChild` plus an effect that hands them the state (the owner push). Form controls follow the `[field]` convention (`value` model, `invalid`/`disabled`, `touched` output). `ui-form` + `ui-field` + `uiFieldControl` add labels, descriptions and error text over `Form<T>`: `<ui-field [state]="form.email.state">` (a field itself would be a bare signal in a template). `examples/ui-gallery` shows them all: `npm run pack:local examples/ui-gallery`, then in that folder `npm install` and `npm run dev`.
+Button, Dialog, Popover, Tabs, Tooltip, Select, Sortable, Label, Input, Textarea, Checkbox, Switch, Radio Group, Slider, Toggle, Toggle Group, Badge, Card, Alert, Separator, Skeleton, Progress, Avatar, Accordion, Collapsible, Dropdown Menu, Context Menu, Combobox, Alert Dialog, Sheet, Drawer, Table, Breadcrumb, Pagination, Scroll Area, Hover Card, Virtual List, Virtual Table, and Form and Field, in the shadcn neutral style (Tailwind v4, `tw-animate-css`, lucide icons, CSS variables in `theme.css`). One file per component in `src/components`, helpers (`cn`, `variants`, `useHostClass`, `UiIcon`) in `src/lib`, so a component can be copied into an app. Templates cannot call functions, so variant classes are computed view models (`variants()` is a small cva). `data-state="open|closed"` drives the enter and exit animations; the exit runs because `usePresence` delays `hidden`. A `class`/`*Class` input merges over the defaults with `tailwind-merge`. The package is private for now (`"gablePack": true` makes `scripts/pack-local.mjs` pack it). `registry-meta.ts` lists each component file with its npm, component and lib dependencies (a test keeps it in step with the imports). Machines are exposed as `*State` classes in `@gable/ui-primitives` (`machines.ts`); `[uiProps]` and `[uiPopup]` spread a computed Zag prop bag onto an element, so a template can render any part. Stateful parts that live in projected content (accordion items, menu and collapsible triggers) are wired by the parent with `contentChild` plus an effect that hands them the state (the owner push). Form controls follow the `[field]` convention (`value` model, `invalid`/`disabled`, `touched` output). `ui-form` + `ui-field` + `uiFieldControl` add labels, descriptions and error text over `Form<T>`: `<ui-field [state]="form.email.state">` (a field itself would be a bare signal in a template). `examples/ui-gallery` shows them all: `npm run pack:local examples/ui-gallery`, then in that folder `npm install` and `npm run dev`.
 
 ## Testing
 
@@ -154,3 +154,53 @@ Pointer-event based (not HTML5 drag and drop), with a keyboard alternative and s
 **Limits.** Vertical and horizontal lists only (no wrapping grids); one drag at a time; items must be descendants of their list (`[data-sortable-id]`), nested sortables are separate lists; custom drag preview is `preview: "none"` or a function (programmatic `useDraggable` / `useSortable`). Not yet verified: feel in real browsers and with a screen reader (jsdom covers the logic with mocked rects).
 
 **Try it.** `npm run pack:local examples/ui-gallery`, then in that folder `npm install` and `npm run dev`, and open `/dnd.html` (a second page of the gallery, dev server only): a sortable playlist with grips, a three-column kanban and a draggable with a drop zone. Tests: `dnd.dom.test.ts` (primitives), `sortable.dom.test.ts` (ui) and `src/dnd-examples.test.ts` (gallery), all jsdom with mocked layout.
+
+## Toast (TASK-47)
+
+`ToastService` (root scoped) is the API and `<ui-toaster>` the region, both in `packages/ui/src/components/toast.ts`. Zag's toast machine was not used: it needs a store plus a region and adds a dependency for what is a list signal, a few timers and `[uiPresence]`.
+
+```ts
+toast = inject(ToastService);
+this.toast.success("Saved", { description: "Your changes are live." });
+this.toast.error("Upload failed", { action: { label: "Retry", onClick: () => this.upload() } });
+this.toast.promise(save(), { loading: "Saving...", success: "Saved", error: (e) => `Failed: ${e}` });
+this.toast.dismiss(id); // or dismiss() for all
+```
+
+```html
+<ui-toaster position="bottom-right" [limit]="5"></ui-toaster>
+```
+
+- Put one `<ui-toaster>` in the app. It renders through `<ui-portal>` (the overlay root), as a labelled region ("Notifications").
+- `show`, `success`, `error`, `info`, `warning`, `loading`, `promise` return the toast id (`promise` returns the promise). Reusing an `id` updates a toast in place. Default duration 4000 ms; `0`/`Infinity` and loading toasts stay until dismissed.
+- Announcements go through `LiveAnnouncer` (errors assertive, the rest polite), so a toast is spoken even though it is inserted after the page loaded. The visible toasts carry no live role of their own, to avoid a double announcement.
+- Hovering or focusing the region calls `pause()`; leaving calls `resume()` and each toast keeps the time it had left.
+- Items use `[uiPresence]` with `data-state` animations (`animate-in`/`animate-out`, off under `motion-reduce`), so a dismissed toast stays mounted until its exit has played.
+- Not included: swipe to dismiss, stacking/collapsing, a keyboard shortcut to focus the region.
+
+## Carousel: `useCarousel`
+
+Behaviour for a CSS scroll-snap carousel (`<ui-carousel>` is built on it; Zag's carousel machine was not used, see below). The viewport scrolls natively and snaps; `useCarousel({ count, loop?, autoplay? })` finds `[data-carousel-viewport]` and its `[data-carousel-slide]` descendants under the host and returns `index`, `playing`, `autoplaying`, `reducedMotion`, `canPrev`, `canNext` (signals) and `goTo`, `prev`, `next`, `toggle`.
+
+- The in-view slide is the one whose start edge is nearest the viewport's (read on the captured `scroll` event). While `goTo` scrolls, intermediate slides are ignored until the target is reached or 700 ms pass.
+- Left/Right/Home/End from anywhere inside the host (not from inputs). Horizontal and left-to-right only.
+- Autoplay (`autoplay` is a delay in ms) pauses while the pointer is over the host or keyboard focus (`:focus-visible`) is inside it, when the document is hidden, and never runs under `prefers-reduced-motion` (scrolling is then not smooth). `toggle()` is the user's play/pause (WCAG 2.2.2). `autoplaying` is true only while a timer is really advancing; the component uses it to set `aria-live` to `off` and otherwise `polite`.
+- DOM only: under the in-memory renderer it tracks `index` and `playing` and touches nothing.
+
+## Drawer drag: `useDrawerDrag` / `uiDrawerDrag` (TASK-48)
+
+Drag-to-dismiss and snap points for an edge panel (`drawer-drag.ts`). `<ui-drawer>` in gable-ui is a Dialog (focus trap, scroll lock, Escape, backdrop and `usePresence` animation all come from the dialog machine and layer) with this on its panel.
+
+```html
+<div uiDrawerDrag side="bottom" [open]="open()" [snapPoints]="[0.4, 1]" [activeSnap]="snap()" (dismiss)="open.set(false)" (snapChange)="snap.set($event)">...</div>
+```
+
+- **`DrawerDragEngine`** has no DOM and no signals: `start`, `move`, `end` take `{ x, y, time }` samples and it calls `onMove(offset, dragging)`, `onSnap(fraction)` and `onDismiss()`. Test it with plain numbers (`drawer-drag.dom.test.ts`).
+- A press becomes a drag after 4px along the axis (mostly across the axis abandons it); dragging toward the open side is rubber-banded. On release, speed over the last 100ms decides first (above 0.4px/ms moves one snap point in that direction, past the lowest one dismisses), otherwise the nearest snap point wins, and dismissal needs the panel dragged half way below the lowest snap point. Snap points are visible fractions, ascending (`[0.4, 1]`).
+- **`useDrawerDrag`** listens for pointer events on the host (pointer capture; mouse, touch and pen) and writes an inline `transform` and `transition`. A press on a form control, button, link or `[data-drawer-no-drag]`, or inside a scroller not at its edge, never drags. Give the grab area `touch-action: none`, or a touch scrolls instead.
+- After a drag dismissal the host has `data-dragged` and sits off screen with a `transition`; the owner closes and `usePresence` waits for that transition, so CSS should drop its exit animation (`data-[dragged]:data-[state=closed]:animate-none`). Opening again (`[open]` true) clears it.
+- Limits: the panel jumps when closed by Escape while resting at a snap point below full (the exit animation restarts from the natural position); no drag-linked backdrop fade; no nested-drawer scaling.
+
+## Resizable panels: `ResizeEngine` (TASK-53)
+
+`ResizeEngine` (`resize.ts`) is the logic of a resizable panel group with no DOM: panel sizes as percentages that always total 100 (`sizes()` signal), `configure(panels, savedLayout?)`, pointer drags (`startDrag(handle, pos, containerPx)`, `dragTo(pos)`, `endDrag()`) and keys (`key(handle, "ArrowRight" | "Home" | "End" | "Enter")`). A handle moves its two neighbours only, inside each panel's `minSize`/`maxSize`; a `collapsible` panel dragged past halfway below its minimum snaps to `collapsedSize` and back out the same way, and remembers its size for `expand`. `handleState(i)` gives the `aria-valuenow/min/max` of the panel before the handle (the ARIA window splitter pattern; Enter toggles a collapsible neighbour, arrows never leave a panel between collapsed and minimum). Test it with plain calls, no pointer events needed; `ui-resizable-panel-group`, `ui-resizable-panel` and `ui-resizable-handle` in gable-ui wire it to pointer events (the group's pixel size is read at pointer-down), `[(layout)]` and an optional `autoSaveId` (localStorage, guarded). Limits: a handle never cascades into panels beyond its neighbours, and panels are matched to handles by creation order.

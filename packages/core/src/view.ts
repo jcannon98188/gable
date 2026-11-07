@@ -13,6 +13,7 @@ import { parseSelector, matchesNode } from "./select.js";
 import { viewOf, type Content, type ViewContext } from "./view-context.js";
 import { keepContentTarget, registerEntry, withContentTarget } from "./query.js";
 import { buildDefer } from "./defer.js";
+import { bindI18nAttrs, buildI18nText } from "./i18n-view.js";
 import { bindCustomField, bindNativeField, isCustomControl } from "./field-binding.js";
 import type { ElementNode, ForNode, IfNode, SwitchNode, TemplateNode } from "./template.js";
 
@@ -39,7 +40,7 @@ export function buildNodes<N>(nodes: TemplateNode[], renderer: Renderer<N>, env:
 function buildNode<N>(node: TemplateNode, renderer: Renderer<N>, env: Env, parent: N, before: N | null): Part<N> {
   switch (node.type) {
     case "text":
-      return buildText(node.parts, renderer, env, parent, before);
+      return node.i18n ? buildI18nText(node.parts, node.i18n, renderer, env, parent, before) : buildText(node.parts, renderer, env, parent, before);
     case "element":
       return buildElement(node, renderer, env, parent, before);
     case "if":
@@ -213,6 +214,7 @@ function buildElementOf<N>(
     };
 
     for (const { name, value } of node.attrs) inputFor(name)?.set(value);
+    if (node.i18nAttrs) bindI18nAttrs(node.i18nAttrs, env, (name, value) => (inputFor(name) ? inputFor(name)!.set(value) : renderer.setAttribute(el, name, value)));
     let field: Expr | undefined;
     for (const binding of node.bindings) {
       if (binding.kind === "prop" && binding.name === "field") {

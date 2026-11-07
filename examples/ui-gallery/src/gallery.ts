@@ -148,7 +148,7 @@ export class Gallery {
             <div uiCardContent>Card content.</div>
             <div uiCardFooter><button uiButton>Deploy</button></div>
           </div>
-          <div uiAlert class="max-w-sm"><h5 uiAlertTitle>Heads up!</h5><div uiAlertDescription>You can add components to your app.</div></div>
+          <div uiAlert class="max-w-sm"><div uiAlertTitle>Heads up!</div><div uiAlertDescription>You can add components to your app.</div></div>
           <div uiSeparator></div>
           <div class="flex items-center gap-3">
             <ui-avatar src="/none.png" alt="Ada" fallback="AL"></ui-avatar>

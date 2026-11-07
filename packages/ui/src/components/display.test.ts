@@ -27,6 +27,7 @@ class App {
       <span uiBadge variant="destructive" class="x-badge">New</span>
       <div uiCard class="x-card"><div uiCardHeader><h3 uiCardTitle>Title</h3><p uiCardDescription>Desc</p></div><div uiCardContent>Body</div><div uiCardFooter>Foot</div></div>
       <div uiAlert variant="destructive" class="x-alert"><div uiAlertTitle>Oops</div><div uiAlertDescription>Bad</div></div>
+      <div uiAlert class="x-alert2"><div uiAlertTitle [level]="3" class="x-t3">Lvl</div></div>
       <div uiSeparator class="x-sep"></div>
       <div uiSeparator orientation="vertical" [decorative]="false" class="x-vsep"></div>
       <div uiSkeleton class="x-skel h-4"></div>
@@ -44,6 +45,13 @@ const start = async () => {
 };
 
 describe("display components", () => {
+  it("renders the alert title as plain text unless given a level", async () => {
+    const f = await start();
+    expect(f.query(".x-alert [uiAlertTitle]")?.attrs.role).toBeUndefined();
+    expect(f.query(".x-t3")!.attrs.role).toBe("heading");
+    expect(f.query(".x-t3")!.attrs["aria-level"]).toBe("3");
+  });
+
   it("style their elements and let the element's class win conflicts", async () => {
     const f = await start();
     expect(f.query(".x-input")!.attrs.class).toContain("rounded-md");

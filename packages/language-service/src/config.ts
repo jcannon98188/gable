@@ -38,6 +38,10 @@ export const RULES = {
   "a11y-tabindex-positive": "warn",
   "a11y-heading-order": "warn",
   "a11y-autofocus": "warn",
+  "i18n-attr-missing": "error",
+  "i18n-not-translatable": "error",
+  "i18n-marker-syntax": "error",
+  "i18n-empty": "warn",
 } as const satisfies Record<string, Severity>;
 
 export type RuleId = keyof typeof RULES;

@@ -22,3 +22,6 @@ export * from "./dnd-announce.js";
 export * from "./dnd-manager.js";
 export * from "./dnd.js";
 export * from "./dnd-sortable.js";
+export * from "./carousel.js";
+export * from "./drawer-drag.js";
+export * from "./resize.js";

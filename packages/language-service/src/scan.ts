@@ -67,6 +67,8 @@ export interface LetNode {
 export interface TextNode {
   type: "text";
   exprs: Src[];
+  /** Whether the run has static text besides its `{{ }}` interpolations. */
+  hasText: boolean;
 }
 export type TNode = ElementNode | IfNode | ForNode | SwitchNode | DeferNode | LetNode | TextNode;
 
@@ -132,7 +134,7 @@ class Scanner {
         i = close + 2;
       }
       // Static text is kept (with no expressions) so rules can tell an element has content.
-      if (exprs.length || raw.trim() !== "") out.push({ type: "text", exprs });
+      if (exprs.length || raw.trim() !== "") out.push({ type: "text", exprs, hasText: raw.replace(/\{\{[\s\S]*?\}\}/g, "").trim() !== "" });
     };
     while (this.i < s.length) {
       const text = this.scanText(context === "block");
