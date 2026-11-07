@@ -56,7 +56,7 @@ export class DesignerState {
   placement = signal<{ placed: number; unplaced: number }>({ placed: 0, unplaced: 0 });
   flushes = signal(0);
 
-  /** Component tree rows with their depth (flat; see the TODO in the tree panel). */
+  /** Component tree rows with their depth. */
   rows = computed(() => {
     const nodes = this.tree();
     const children = new Map<string | null, TreeNode[]>();

@@ -1,5 +1,6 @@
 import { computed, effect, html, inject, signal, untracked, viewChild } from "@gable/core";
 import { UiBadge } from "../components/ui/badge.js";
+import { UiResizableHandle, UiResizablePanel, UiResizablePanelGroup } from "../components/ui/resizable.js";
 import { UiTab, UiTabs } from "../components/ui/tabs.js";
 import { UiToggleGroup, type ToggleGroupItem } from "../components/ui/toggle-group.js";
 import { UiTooltip } from "../components/ui/tooltip.js";
@@ -38,8 +39,7 @@ export class Canvas {
 export class Shell {
   static meta = {
     selector: "app-root",
-    imports: [Canvas, ComponentTree, InjectorTree, ScenesPanel, Inspector, Problems, HmrTimeline, UiTabs, UiTab, UiToggleGroup, UiBadge, UiTooltip],
-    // TODO(gable-ui): ResizablePanelGroup (TASK-53). The three columns are fixed widths until it exists.
+    imports: [Canvas, ComponentTree, InjectorTree, ScenesPanel, Inspector, Problems, HmrTimeline, UiTabs, UiTab, UiToggleGroup, UiBadge, UiTooltip, UiResizablePanelGroup, UiResizablePanel, UiResizableHandle],
     template: html`
       <div class="grid h-screen grid-rows-[auto_1fr] bg-background text-foreground">
         <header class="flex items-center gap-3 border-b px-3 py-2">
@@ -49,23 +49,25 @@ export class Shell {
           <span uiBadge variant="outline" uiTooltip="Connection to the preview agent">{{ state.connection() }}</span>
           <span class="text-sm text-muted-foreground">{{ sceneTitle() }}</span>
         </header>
-        <div class="grid min-h-0 grid-cols-[18rem_1fr_24rem]">
-          <aside class="min-h-0 overflow-auto border-r p-2">
+        <ui-resizable-panel-group class="min-h-0" autoSaveId="designer-panels" label="Designer panels">
+          <ui-resizable-panel class="min-h-0 overflow-auto p-2" [defaultSize]="20" [minSize]="12" [maxSize]="40">
             <ui-tabs [(value)]="left">
               <ui-tab value="components" label="Components"><app-component-tree></app-component-tree></ui-tab>
               <ui-tab value="injectors" label="Injectors"><app-injector-tree></app-injector-tree></ui-tab>
               <ui-tab value="scenes" label="Scenes"><app-scenes-panel></app-scenes-panel></ui-tab>
             </ui-tabs>
-          </aside>
-          <main class="min-h-0 min-w-0"><app-canvas></app-canvas></main>
-          <aside class="min-h-0 overflow-auto border-l p-2">
+          </ui-resizable-panel>
+          <ui-resizable-handle [withHandle]="true"></ui-resizable-handle>
+          <ui-resizable-panel class="min-h-0 min-w-0" [minSize]="25"><app-canvas></app-canvas></ui-resizable-panel>
+          <ui-resizable-handle [withHandle]="true"></ui-resizable-handle>
+          <ui-resizable-panel class="min-h-0 overflow-auto p-2" [defaultSize]="26" [minSize]="15" [maxSize]="45">
             <ui-tabs [(value)]="right">
               <ui-tab value="inspector" label="Inspector"><app-inspector></app-inspector></ui-tab>
               <ui-tab value="problems" label="Problems"><app-problems></app-problems></ui-tab>
               <ui-tab value="hmr" label="HMR"><app-hmr-timeline></app-hmr-timeline></ui-tab>
             </ui-tabs>
-          </aside>
-        </div>
+          </ui-resizable-panel>
+        </ui-resizable-panel-group>
       </div>
     `,
   };
