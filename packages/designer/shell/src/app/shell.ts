@@ -6,41 +6,14 @@ import { UiToggleGroup, type ToggleGroupItem } from "../components/ui/toggle-gro
 import { UiTooltip } from "../components/ui/tooltip.js";
 import { DesignerState } from "./designer-state.js";
 import { EditPanel } from "./edit-panel.js";
+import { FrameBoard } from "./frame-board.js";
 import { ComponentTree, HmrTimeline, InjectorTree, Inspector, Problems, ScenesPanel } from "./panels.js";
-
-/** The preview iframe. The state loads the project's page (or the component-mode host) into it and speaks the protocol with it. */
-export class Canvas {
-  static meta = {
-    selector: "app-canvas",
-    host: { class: "relative block h-full" },
-    template: html`
-      <iframe #frame title="Preview" class="size-full border-0 bg-white"></iframe>
-      @if (message()) {
-        <div class="absolute inset-0 flex items-center justify-center bg-background/80 p-6 text-center text-sm text-muted-foreground">{{ message() }}</div>
-      }
-    `,
-  };
-  state = inject(DesignerState);
-  frame = viewChild<HTMLIFrameElement>("frame");
-  load = effect(() => {
-    const frame = this.frame();
-    const url = this.state.frameUrl();
-    if (frame && url) untracked(() => this.state.attachFrame(frame, url));
-  });
-  message = computed(() => {
-    const s = this.state;
-    if (s.error()) return s.error();
-    if (s.incompatible()) return s.incompatible();
-    if (!s.project()?.ready) return "Starting the project's dev server…";
-    return null;
-  });
-}
 
 /** The Designer window: a toolbar, the panels on the left and right, and the canvas in the middle. */
 export class Shell {
   static meta = {
     selector: "app-root",
-    imports: [Canvas, ComponentTree, InjectorTree, ScenesPanel, Inspector, EditPanel, Problems, HmrTimeline, UiTabs, UiTab, UiToggleGroup, UiBadge, UiTooltip, UiResizablePanelGroup, UiResizablePanel, UiResizableHandle],
+    imports: [FrameBoard, ComponentTree, InjectorTree, ScenesPanel, Inspector, EditPanel, Problems, HmrTimeline, UiTabs, UiTab, UiToggleGroup, UiBadge, UiTooltip, UiResizablePanelGroup, UiResizablePanel, UiResizableHandle],
     template: html`
       <div class="grid h-screen grid-rows-[auto_1fr] bg-background text-foreground">
         <header class="flex items-center gap-3 border-b px-3 py-2">
@@ -59,7 +32,7 @@ export class Shell {
             </ui-tabs>
           </ui-resizable-panel>
           <ui-resizable-handle [withHandle]="true"></ui-resizable-handle>
-          <ui-resizable-panel class="min-h-0 min-w-0" [minSize]="25"><app-canvas></app-canvas></ui-resizable-panel>
+          <ui-resizable-panel class="min-h-0 min-w-0" [minSize]="25"><app-frame-board></app-frame-board></ui-resizable-panel>
           <ui-resizable-handle [withHandle]="true"></ui-resizable-handle>
           <ui-resizable-panel class="min-h-0 overflow-auto p-2" [defaultSize]="26" [minSize]="15" [maxSize]="45">
             <ui-tabs [(value)]="right">

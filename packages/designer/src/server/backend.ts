@@ -12,6 +12,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import type { AnalysisOutput } from "./analyze-worker.js";
 import { EditService } from "./edit/service.js";
 import type { EditOp, TargetRef } from "./edit/types.js";
+import { CdpEmulator } from "./cdp.js";
+import { handleDeviceApi } from "./device-api.js";
 import { resolveNode, type NodeReport } from "./source.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -22,6 +24,8 @@ export interface BackendOptions {
   shellDir?: string;
   port?: number;
   previewPort?: number;
+  /** The webview's Chrome DevTools Protocol port (Windows WebView2 in the desktop app): enables device emulation. */
+  cdpPort?: number;
 }
 
 export interface ProjectInfo {
@@ -104,6 +108,8 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
     info.error ??= "The project's Vite did not start in time.";
   };
   void probe();
+
+  const cdp = options.cdpPort ? new CdpEmulator(options.cdpPort) : null;
 
   // --- diagnostics -------------------------------------------------------------
   let diagnostics: (AnalysisOutput & { at: number; running?: boolean }) | null = null;
@@ -221,6 +227,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
           req.on("close", () => clients.delete(res));
           return;
       }
+      if (await handleDeviceApi({ root, previewUrl, cdp, json, readBody }, req, res, url)) return;
       return json(res, 404, { error: "no such endpoint" });
     }
 
@@ -247,6 +254,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
       clearTimeout(debounce);
       watcher.close();
       for (const c of clients) c.end();
+      cdp?.close();
       vite?.kill();
       await new Promise<void>((ok) => server.close(() => ok()));
     },

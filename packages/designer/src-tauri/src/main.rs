@@ -13,18 +13,35 @@ use tauri::{WebviewUrl, WebviewWindowBuilder};
 
 struct Backend(Mutex<Option<Child>>);
 
+// Device emulation on Windows runs over the Chrome DevTools Protocol: WebView2 gets a debugging port (only the
+// `additional_browser_args` route works; the env var is ignored) and the Node backend, which is the CDP client, is told it.
+// `GABLE_CDP_PORT=<n>` picks the port, `GABLE_CDP_PORT=0` turns it off. Other platforms have no CDP and the Designer says so.
+fn cdp_port() -> Option<u16> {
+    if !cfg!(windows) {
+        return None;
+    }
+    match std::env::var("GABLE_CDP_PORT").ok().and_then(|p| p.parse::<u16>().ok()) {
+        Some(0) => None,
+        Some(p) => Some(p),
+        None => std::net::TcpListener::bind("127.0.0.1:0").ok().and_then(|l| l.local_addr().ok()).map(|a| a.port()),
+    }
+}
+
 fn main() {
     let project = std::env::args().nth(1).unwrap_or_else(|| {
         eprintln!("usage: gable-designer <projectDir>");
         std::process::exit(2);
     });
+    let cdp = cdp_port();
     let package = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
     tauri::Builder::default()
         .setup(move |app| {
-            let mut child = Command::new("node")
-                .arg(package.join("dist/server/cli.js"))
-                .arg(&project)
-                .arg("--watch-stdin")
+            let mut command = Command::new("node");
+            command.arg(package.join("dist/server/cli.js")).arg(&project).arg("--watch-stdin");
+            if let Some(port) = cdp {
+                command.arg("--cdp-port").arg(port.to_string());
+            }
+            let mut child = command
                 .stdin(Stdio::piped())
                 .stdout(Stdio::piped())
                 .spawn()?;
@@ -51,8 +68,7 @@ fn main() {
                 let mut win = WebviewWindowBuilder::new(&handle, "main", WebviewUrl::External(url.parse().unwrap()))
                     .title("Gable Designer")
                     .inner_size(1440.0, 900.0);
-                // Test hook: lets a script drive the real WebView2 over CDP.
-                if let Ok(port) = std::env::var("GABLE_CDP_PORT") {
+                if let Some(port) = cdp {
                     win = win.additional_browser_args(&format!(
                         "--remote-debugging-port={port} --disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection"
                     ));
