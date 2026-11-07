@@ -1,15 +1,51 @@
 // The panels. Templates only read signals (the language service enforces it), so each panel turns the Designer state into
 // display-ready rows in a `computed` and the template just lays them out.
 import { computed, effect, html, inject, signal, untracked } from "@gable/core";
-import type { TreeNode } from "@gable/core/devtools";
+import type { Preview, TreeNode } from "@gable/core/devtools";
 import { UiBadge } from "../components/ui/badge.js";
 import { UiButton } from "../components/ui/button.js";
+import { UiJsonViewer } from "../components/ui/json-viewer.js";
 import { UiSeparator } from "../components/ui/separator.js";
 import { UiTooltip } from "../components/ui/tooltip.js";
+import { UiVirtualList, type VirtualListItem } from "../components/ui/virtual-list.js";
 import { UiTree, type TreeNode as UiTreeNode } from "../components/ui/tree.js";
 import { DesignerState } from "./designer-state.js";
 
 type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
+
+/** The devtools Preview (JSON-safe, size-bounded) as a plain value the JSON viewer can walk; left-out children become a "…" entry. */
+export function previewValue(p: Preview): unknown {
+  switch (p.t) {
+    case "number":
+    case "boolean":
+      return JSON.parse(p.s);
+    case "null":
+      return null;
+    case "string":
+      try {
+        return JSON.parse(p.s);
+      } catch {
+        return p.s;
+      }
+    case "array":
+    case "set": {
+      const out: unknown[] = (p.children ?? []).map(([, c]) => previewValue(c));
+      if (p.more) out.push(`… ${p.more} more`);
+      return p.children ? out : p.s;
+    }
+    case "object":
+    case "map": {
+      if (!p.children) return p.s;
+      const out: Record<string, unknown> = {};
+      for (const [k, c] of p.children) out[k] = previewValue(c);
+      if (p.more) out["…"] = `${p.more} more`;
+      return out;
+    }
+    default:
+      return p.s;
+  }
+}
+const isStructured = (p: Preview) => !!p.children && p.children.length > 0;
 
 /** The component tree: a gable-ui Tree (expand/collapse, roving focus, arrow keys). Selecting a row selects that component. */
 export class ComponentTree {
@@ -165,7 +201,7 @@ export class Inspector {
   static meta = {
     selector: "app-inspector",
     host: { class: "block" },
-    imports: [UiBadge, UiSeparator],
+    imports: [UiBadge, UiSeparator, UiJsonViewer],
     template: html`
       <div class="flex flex-col gap-3 p-3 text-sm">
         @if (node().show) {
@@ -187,16 +223,30 @@ export class Inspector {
             <div class="text-xs text-muted-foreground">{{ comp().selector }}</div>
             <h4 class="mt-2 text-xs font-medium">Inputs</h4>
             @for (s of comp().inputs; track s.id) {
-              <div class="flex items-baseline justify-between gap-3">
-                <span class="font-mono">{{ s.name }}</span>
-                <span class="truncate font-mono text-xs">{{ s.value }}</span>
+              <div class="flex flex-col gap-1">
+                <div class="flex items-baseline justify-between gap-3">
+                  <span class="font-mono">{{ s.name }}</span>
+                  @if (!s.structured) {
+                    <span class="truncate font-mono text-xs">{{ s.value }}</span>
+                  }
+                </div>
+                @if (s.structured) {
+                  <ui-json-viewer class="font-mono text-xs" [value]="s.data" [label]="s.name" [rootLabel]="s.name" treeClass="max-h-48"></ui-json-viewer>
+                }
               </div>
             }
             <h4 class="mt-2 text-xs font-medium">Signals</h4>
             @for (s of comp().signals; track s.id) {
-              <div class="flex items-baseline justify-between gap-3">
-                <span class="font-mono">{{ s.name }} <span class="text-xs text-muted-foreground">{{ s.kind }}</span></span>
-                <span class="truncate font-mono text-xs">{{ s.value }}</span>
+              <div class="flex flex-col gap-1">
+                <div class="flex items-baseline justify-between gap-3">
+                  <span class="font-mono">{{ s.name }} <span class="text-xs text-muted-foreground">{{ s.kind }}</span></span>
+                  @if (!s.structured) {
+                    <span class="truncate font-mono text-xs">{{ s.value }}</span>
+                  }
+                </div>
+                @if (s.structured) {
+                  <ui-json-viewer class="font-mono text-xs" [value]="s.data" [label]="s.name" [rootLabel]="s.name" treeClass="max-h-48"></ui-json-viewer>
+                }
               </div>
             }
           </section>
@@ -224,7 +274,7 @@ export class Inspector {
   comp = computed(() => {
     const c = this.state.component();
     if (!c) return { show: false, name: "", selector: "", inputs: [], signals: [] };
-    const row = (s: (typeof c.signals)[number]) => ({ id: s.id, name: s.name, kind: s.kind, value: s.value.s });
+    const row = (s: (typeof c.signals)[number]) => ({ id: s.id, name: s.name, kind: s.kind, value: s.value.s, structured: isStructured(s.value), data: isStructured(s.value) ? previewValue(s.value) : undefined });
     return { show: true, name: c.name, selector: c.selector, inputs: c.inputs.map(row), signals: c.signals.map(row) };
   });
   hint = computed(() => !this.node().show && !this.comp().show);
@@ -235,7 +285,7 @@ export class Problems {
   static meta = {
     selector: "app-problems",
     host: { class: "block" },
-    imports: [UiBadge, UiButton, UiTooltip],
+    imports: [UiButton, UiTooltip, UiVirtualList],
     template: html`
       <div class="flex flex-col gap-2 p-2 text-sm">
         <div class="flex items-center justify-between">
@@ -245,20 +295,12 @@ export class Problems {
         @for (e of configErrors(); track e) {
           <p class="rounded-md border border-destructive/50 p-2 text-destructive">{{ e }}</p>
         }
-        @for (d of items(); track d.id) {
-          <div class="flex flex-col gap-0.5 rounded-md border p-2">
-            <div class="flex items-center gap-2">
-              <span uiBadge [variant]="d.variant">{{ d.severity }}</span>
-              <span class="font-mono text-xs">{{ d.rule }}</span>
-            </div>
-            <span>{{ d.message }}</span>
-            <span class="font-mono text-xs text-muted-foreground">{{ d.where }}</span>
-          </div>
-        }
+        <ui-virtual-list class="h-[calc(100vh-12rem)] min-h-40" [items]="rows()" [itemSize]="52" [(value)]="selected" label="Problems"></ui-virtual-list>
       </div>
     `,
   };
   state = inject(DesignerState);
+  selected = signal<string | number | null>(null);
   configErrors = computed(() => this.state.analysis()?.configErrors ?? []);
   items = computed(() =>
     (this.state.analysis()?.diagnostics ?? []).map((d) => ({
@@ -270,6 +312,8 @@ export class Problems {
       where: `${d.file}:${d.line}:${d.column}`,
     })),
   );
+  /** One virtual-list row per diagnostic: the message, then severity, rule and location. */
+  rows = computed<VirtualListItem[]>(() => this.items().map((d) => ({ id: d.id, label: d.message, description: `${d.severity} · ${d.rule} · ${d.where}` })));
   summary = computed(() => {
     if (!this.state.analysis()) return "Analyzing…";
     const total = this.items().length;
@@ -288,31 +332,15 @@ export class HmrTimeline {
   static meta = {
     selector: "app-hmr-timeline",
     host: { class: "block" },
-    imports: [UiBadge],
+    imports: [UiVirtualList],
     template: html`
-      <ol class="flex flex-col gap-2 p-2 text-sm">
-        @for (entry of entries(); track entry.seq) {
-          <li class="flex flex-col gap-1 rounded-md border p-2">
-            <div class="flex items-center justify-between text-xs text-muted-foreground">
-              <span>#{{ entry.seq }} {{ entry.status }}</span>
-              <span>{{ entry.time }}</span>
-            </div>
-            @for (c of entry.changes; track c.name) {
-              <div class="flex items-center gap-2">
-                <span uiBadge [variant]="c.variant">{{ c.label }}</span>
-                <span class="font-mono">{{ c.name }}</span>
-              </div>
-            }
-            <span class="text-xs text-muted-foreground">{{ entry.modules }}</span>
-            @for (e of entry.errors; track e) {
-              <span class="text-destructive">{{ e }}</span>
-            }
-          </li>
-        }
+      <div class="flex flex-col gap-2 p-2 text-sm">
         @if (none()) {
           <p class="p-2 text-muted-foreground">Edit a source file and the hot updates appear here.</p>
+        } @else {
+          <ui-virtual-list class="h-[calc(100vh-9rem)] min-h-40" [items]="rows()" [itemSize]="52" [(value)]="selected" label="Hot updates, newest first"></ui-virtual-list>
         }
-      </ol>
+      </div>
     `,
   };
   state = inject(DesignerState);
@@ -327,4 +355,13 @@ export class HmrTimeline {
     })),
   );
   none = computed(() => this.entries().length === 0);
+  selected = signal<string | number | null>(null);
+  /** Row per hot update: "#seq status" with the time, then what each changed class did and the modules. */
+  rows = computed<VirtualListItem[]>(() =>
+    this.entries().map((e) => ({
+      id: e.seq,
+      label: `#${e.seq} ${e.status} · ${e.time}${e.errors.length ? ` · ${e.errors.join("; ")}` : ""}`,
+      description: [...e.changes.map((c) => `${c.label} ${c.name}`), e.modules].filter(Boolean).join(" · "),
+    })),
+  );
 }
