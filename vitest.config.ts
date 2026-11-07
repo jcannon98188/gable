@@ -27,6 +27,7 @@ export default defineConfig({
       { find: /^@gable\/ui-primitives\/testing$/, replacement: src("ui-primitives/src/testing.ts") },
       { find: /^@gable\/ui$/, replacement: src("ui/src/index.ts") },
       { find: /^@gable\/store$/, replacement: src("store/src/index.ts") },
+      { find: /^@gable\/editor$/, replacement: src("editor/src/index.ts") },
       { find: /^@gable\/renderer-dom$/, replacement: src("renderer-dom/src/index.ts") },
       { find: /^@gable\/template-format$/, replacement: src("template-format/src/index.ts") },
       { find: /^@gable\/prettier-plugin$/, replacement: src("prettier-plugin/src/index.ts") },
