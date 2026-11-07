@@ -14,6 +14,8 @@ import {
   type AgentMethods,
   type CanvasDiagnostic,
   type Interaction,
+  type HttpLogEntry,
+  type PageScenarioInfo,
   type Request,
   type SceneInfo,
 } from "../protocol.js";
@@ -29,6 +31,10 @@ interface SceneHost {
 declare global {
   // eslint-disable-next-line no-var
   var __GABLE_SCENES__: SceneHost | undefined;
+  // eslint-disable-next-line no-var
+  var __GABLE_PAGE_SCENARIO__: PageScenarioInfo | undefined;
+  // eslint-disable-next-line no-var
+  var __GABLE_DESIGNER_HTTP__: HttpLogEntry[] | undefined;
 }
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
@@ -280,6 +286,8 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     setEmulation: ({ touch, dpr }) => ({ touchEvents: emulate(touch, dpr) }),
     replay: (interaction) => replay(interaction),
     scenes: () => sceneInfo(),
+    pageScenario: () => globalThis.__GABLE_PAGE_SCENARIO__ ?? null,
+    httpLog: () => [...(globalThis.__GABLE_DESIGNER_HTTP__ ?? [])],
     mountScene: ({ name }) => {
       if (!globalThis.__GABLE_SCENES__) throw new Error("This page is not a component-mode host.");
       globalThis.__GABLE_SCENES__.mount(name);

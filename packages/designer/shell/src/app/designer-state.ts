@@ -1,7 +1,7 @@
 import { computed, signal } from "@gable/core";
 import type { ComponentDetail, HmrEntry, InjectorDetail, InjectorNode, TreeNode } from "@gable/core/devtools";
 import type { DesignNode } from "@gable/core/designer";
-import type { CanvasDiagnostic, SceneInfo } from "../../../src/protocol.js";
+import { SCENARIO_PARAM, type CanvasDiagnostic, type SceneInfo } from "../../../src/protocol.js";
 import type { ProjectInfo } from "../../../src/server/backend.js";
 import type { ProjectDiagnostic } from "../../../src/server/analyze-worker.js";
 import type { SourceRange } from "../../../src/server/source.js";
@@ -43,6 +43,10 @@ export class DesignerState {
 
   target = signal<Target>({ kind: "page" });
   scene = signal<string | null>(null);
+  /** Page mode: the Scenario (scenes file and scene) applied to the real app, or none. Changing it reloads the frame. */
+  pageScenario = signal<{ scenes: string; name: string } | null>(null);
+  /** Counts router events from the agent (navigations), so page-mode panels know to refresh. */
+  routerTick = signal(0);
   mode = signal<"select" | "interact">("select");
   connection = signal<Connection>("connecting");
   incompatible = signal<string | null>(null);
@@ -79,7 +83,13 @@ export class DesignerState {
     const project = this.project();
     if (!project?.ready) return null;
     const t = this.target();
-    if (t.kind === "page") return project.previewUrl;
+    if (t.kind === "page") {
+      const s = this.pageScenario();
+      if (!s) return project.previewUrl;
+      const u = new URL(project.previewUrl);
+      u.searchParams.set(SCENARIO_PARAM, `${s.scenes}|${s.name}`);
+      return u.href;
+    }
     // The scene is not part of the URL: switching scenes mounts in place, so the page (and the agent) keep running.
     const q = new URLSearchParams({ scenes: t.scenes });
     return `${project.previewUrl}__gable-designer/component?${q}`;
@@ -248,7 +258,8 @@ export class DesignerState {
 
   #refreshTimer: ReturnType<typeof setTimeout> | undefined;
   #onEvent(event: Extract<AgentEvent, { type: "event" }>["event"]): void {
-    if (event.type === "tree") void this.preview.call("tree", undefined).then((t) => this.tree.set(t));
+    if (event.type === "router") this.routerTick.update((n) => n + 1);
+    else if (event.type === "tree") void this.preview.call("tree", undefined).then((t) => this.tree.set(t));
     else if (event.type === "injectors") void this.refreshInjectors();
     else if (event.type === "hmr") {
       void this.preview.call("hmrLog", undefined).then((l) => this.hmr.set(l));

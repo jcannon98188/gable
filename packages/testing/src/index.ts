@@ -2,7 +2,7 @@ import { COMPONENT_OVERRIDES, DEFER_BLOCKS, flushSync, hasPendingFlush, instanti
 import { ErrorHandler, type InputValues, I18n, provideI18n, type I18nOptions, type Injector, type ComponentClass, type ErrorContext, type ErrorSource, type LazyEntry, type Provider } from "@gable/core";
 import { applyUpdate, type HotResult } from "@gable/core/hmr";
 import { createTestInjector, httpTesting } from "./injector.js";
-import { HttpBackend } from "@gable/core/http";
+import { HttpBackend, mockHttp } from "@gable/core/http";
 import { HttpTestingBackend } from "./http.js";
 import type { Renderer } from "@gable/core/renderer";
 import type { ComponentScenes } from "@gable/core/tooling";
@@ -328,12 +328,13 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
 }
 /**
  * Mounts one Scene of a `*.scenes.ts` file (its default export): the component with the scene's inputs, and the scene's
- * providers on top of the test injector. Extra `options.providers` go after the scene's, so a test can still override.
+ * providers on top of the test injector. A scene's `http` mocks replace the recording HTTP backend (so `fixture.http` is not available for it). Extra `options.providers` go after the scene's, so a test can still override.
  */
 export function mountScene<T extends object>(scenes: ComponentScenes<T>, name: string, options: Omit<MountOptions<T>, "inputs"> = {}): Fixture<T> {
   const scene = scenes.scenes[name];
   if (!scene) throw new Error(`No scene "${name}" for ${scenes.component.name}. Scenes: ${Object.keys(scenes.scenes).join(", ") || "(none)"}.`);
-  return mount(scenes.component, { ...options, inputs: scene.inputs, providers: [...(scene.providers ?? []), ...(options.providers ?? [])] });
+  const mocks = scene.http ? mockHttp(scene.http) : [];
+  return mount(scenes.component, { ...options, inputs: scene.inputs, providers: [...mocks, ...(scene.providers ?? []), ...(options.providers ?? [])] });
 }
 
 export type { ComponentScenes, Scene } from "@gable/core/tooling";

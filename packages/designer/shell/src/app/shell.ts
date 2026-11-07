@@ -7,13 +7,14 @@ import { UiTooltip } from "../components/ui/tooltip.js";
 import { DesignerState } from "./designer-state.js";
 import { EditPanel } from "./edit-panel.js";
 import { FrameBoard } from "./frame-board.js";
+import { HttpPanel, PageBar, RoutesPanel } from "./page-mode.js";
 import { ComponentTree, HmrTimeline, InjectorTree, Inspector, Problems, ScenesPanel } from "./panels.js";
 
 /** The Designer window: a toolbar, the panels on the left and right, and the canvas in the middle. */
 export class Shell {
   static meta = {
     selector: "app-root",
-    imports: [FrameBoard, ComponentTree, InjectorTree, ScenesPanel, Inspector, EditPanel, Problems, HmrTimeline, UiTabs, UiTab, UiToggleGroup, UiBadge, UiTooltip, UiResizablePanelGroup, UiResizablePanel, UiResizableHandle],
+    imports: [FrameBoard, PageBar, RoutesPanel, HttpPanel, ComponentTree, InjectorTree, ScenesPanel, Inspector, EditPanel, Problems, HmrTimeline, UiTabs, UiTab, UiToggleGroup, UiBadge, UiTooltip, UiResizablePanelGroup, UiResizablePanel, UiResizableHandle],
     template: html`
       <div class="grid h-screen grid-rows-[auto_1fr] bg-background text-foreground">
         <header class="flex items-center gap-3 border-b px-3 py-2">
@@ -28,17 +29,19 @@ export class Shell {
             <ui-tabs [(value)]="left">
               <ui-tab value="components" label="Components"><app-component-tree></app-component-tree></ui-tab>
               <ui-tab value="injectors" label="Injectors"><app-injector-tree></app-injector-tree></ui-tab>
+              <ui-tab value="routes" label="Routes"><app-routes-panel></app-routes-panel></ui-tab>
               <ui-tab value="scenes" label="Scenes"><app-scenes-panel></app-scenes-panel></ui-tab>
             </ui-tabs>
           </ui-resizable-panel>
           <ui-resizable-handle [withHandle]="true"></ui-resizable-handle>
-          <ui-resizable-panel class="min-h-0 min-w-0" [minSize]="25"><app-frame-board></app-frame-board></ui-resizable-panel>
+          <ui-resizable-panel class="grid min-h-0 min-w-0 grid-rows-[auto_1fr]" [minSize]="25"><app-page-bar></app-page-bar><app-frame-board></app-frame-board></ui-resizable-panel>
           <ui-resizable-handle [withHandle]="true"></ui-resizable-handle>
           <ui-resizable-panel class="min-h-0 overflow-auto p-2" [defaultSize]="26" [minSize]="15" [maxSize]="45">
             <ui-tabs [(value)]="right">
               <ui-tab value="inspector" label="Inspector"><app-inspector></app-inspector></ui-tab>
               <ui-tab value="edit" label="Edit"><app-edit-panel></app-edit-panel></ui-tab>
               <ui-tab value="problems" label="Problems"><app-problems></app-problems></ui-tab>
+              <ui-tab value="http" label="HTTP"><app-http-panel></app-http-panel></ui-tab>
               <ui-tab value="hmr" label="HMR"><app-hmr-timeline></app-hmr-timeline></ui-tab>
             </ui-tabs>
           </ui-resizable-panel>

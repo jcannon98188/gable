@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { InjectionToken, html, inject, input } from "@gable/core";
+import { Http } from "@gable/core/http";
+import { toSignal } from "@gable/core/rxjs";
+import { map } from "rxjs";
 import type { ComponentScenes } from "@gable/core/tooling";
 import { mountScene } from "./index.js";
 
@@ -31,5 +34,23 @@ describe("mountScene", () => {
 
   it("names the scenes when asked for a missing one", () => {
     expect(() => mountScene(scenes, "Nope")).toThrow(/Scenes: Default, Named/);
+  });
+});
+
+describe("mountScene with http mocks", () => {
+  class Loader {
+    static meta = { selector: "app-loader", template: html`<p>{{ text() }}</p>` };
+    http = inject(Http);
+    text = toSignal(this.http.get<{ name: string }>("/api/me").pipe(map((r) => r.name)), { initialValue: "…" });
+  }
+  const loaderScenes = {
+    component: Loader,
+    scenes: { Ada: { http: [{ url: "/api/me", reply: { body: { name: "Ada" } } }] } },
+  } satisfies ComponentScenes<Loader>;
+
+  it("answers the component's HTTP calls from the scene's mocks, without answering by hand", async () => {
+    const f = mountScene(loaderScenes, "Ada");
+    await f.settle();
+    expect(f.text()).toBe("Ada");
   });
 });

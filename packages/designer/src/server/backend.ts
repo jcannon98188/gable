@@ -15,6 +15,8 @@ import type { EditOp, TargetRef } from "./edit/types.js";
 import { CdpEmulator } from "./cdp.js";
 import { handleDeviceApi } from "./device-api.js";
 import { resolveNode, type NodeReport } from "./source.js";
+import { sceneIndex } from "./scene-index.js";
+import { editRouteConfig, listComponents, locateRouteConfig, type RouteEdit } from "./route-config.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -220,6 +222,21 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
           return json(res, 200, edits.history());
         case "/api/edit/palette":
           return json(res, 200, edits.palette());
+        case "/api/scene-index":
+          return json(res, 200, sceneIndex(root));
+        case "/api/routes":
+          return json(res, 200, { config: locateRouteConfig(root), components: listComponents(root) });
+        case "/api/routes/edit": {
+          // The file is the one the server finds, never one the client names.
+          const config = locateRouteConfig(root);
+          if (!config) return json(res, 404, { error: "This project has no route config." });
+          try {
+            const result = editRouteConfig(root, config.file, JSON.parse(await readBody(req)) as RouteEdit);
+            return json(res, 200, { file: result.file, routes: result.routes });
+          } catch (e) {
+            return json(res, 400, { error: e instanceof Error ? e.message : String(e) });
+          }
+        }
         case "/api/events":
           res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive" });
           res.write(": ok\n\n");

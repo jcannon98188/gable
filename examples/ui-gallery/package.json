@@ -14,7 +14,8 @@
   "dependencies": {
     "@gable/core": "file:vendor/gable-core-0.0.0.tgz",
     "@gable/renderer-dom": "file:vendor/gable-renderer-dom-0.0.0.tgz",
-    "@gable/ui": "file:vendor/gable-ui-0.0.0.tgz"
+    "@gable/ui": "file:vendor/gable-ui-0.0.0.tgz",
+    "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "@gable/language-service": "file:vendor/gable-language-service-0.0.0.tgz",

@@ -13,6 +13,7 @@ export { extractTemplateMessages } from "./i18n-extract.js";
 import type { InputValues } from "./app.js";
 import type { ComponentClass } from "./component.js";
 import type { Provider } from "./di.js";
+import type { HttpMock } from "./http.js";
 
 /** One situation of a Component: its inputs and the providers that replace what it injects. */
 export interface Scene<T extends object> {
@@ -21,6 +22,10 @@ export interface Scene<T extends object> {
   inputs?: InputValues<T>;
   /** Added to a fresh root injector, so they override anything the Component would otherwise get. */
   providers?: Provider[];
+  /** HTTP calls answered without a network: installed as the HTTP backend, under `providers`. See `mockHttp` in `@gable/core/http`. */
+  http?: HttpMock[];
+  /** Page mode (the Designer): the route the app opens at. Ignored when a single Component is mounted. */
+  url?: string;
 }
 
 /** The default export of a `*.scenes.ts` file. */

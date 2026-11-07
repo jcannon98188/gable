@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Observable, firstValueFrom, map, of } from "rxjs";
-import { html, inject, type Provider } from "@gable/core";
+import { createInjector, html, inject, type Provider } from "@gable/core";
 import { toSignal } from "@gable/core/rxjs";
-import { Http, HttpBackend, HttpError, withInterceptors, type HttpInterceptor } from "@gable/core/http";
+import { Http, HttpBackend, HttpError, mockHttp, withInterceptors, type HttpInterceptor, type HttpMock } from "@gable/core/http";
 import { createTestInjector, httpTesting, mount } from "@gable/testing";
 
 function setup(providers: Provider[] = []) {
@@ -245,5 +245,41 @@ describe("default fetch backend", () => {
     const pending = caught(real().get("/s", { signal: ctl.signal }));
     ctl.abort();
     expect(await pending).toMatchObject({ kind: "abort" });
+  });
+});
+
+describe("mockHttp (declarative mocks)", () => {
+  const run = (mocks: HttpMock[], call: (http: Http) => Observable<unknown>, options?: Parameters<typeof mockHttp>[1]) => {
+    const injector = createInjector([...mockHttp(mocks, options)]);
+    return injector.run(() => call(inject(Http)));
+  };
+
+  it("answers by method and url (exact, prefix and RegExp); first match wins", async () => {
+    const mocks: HttpMock[] = [
+      { method: "GET", url: "/api/todos", reply: { body: [1, 2] } },
+      { url: "/api/users/*", reply: (req) => ({ body: { url: req.url } }) },
+      { url: /\/search\?q=ab/, reply: { body: "found" } },
+    ];
+    expect(await firstValueFrom(run(mocks, (h) => h.get("/api/todos?x=1")))).toEqual([1, 2]);
+    expect(await firstValueFrom(run(mocks, (h) => h.get("/api/users/7")))).toEqual({ url: "/api/users/7" });
+    expect(await firstValueFrom(run(mocks, (h) => h.get("/search", { params: { q: "ab" } })))).toBe("found");
+  });
+
+  it("maps a non-2xx status to an HttpError, supports errors and delays, and 404s an unmatched request", async () => {
+    const seen: string[] = [];
+    const options = { onRequest: (e: { method: string; url: string; mock: number; outcome: string }) => seen.push(`${e.method} ${e.url} ${e.mock} ${e.outcome}`) };
+    const mocks: HttpMock[] = [
+      { url: "/fail", reply: { status: 500, body: "x" } },
+      { url: "/down", reply: { error: "network" } },
+      { url: "/slow", reply: { body: "late", delay: 20 } },
+    ];
+    const boom = (await caught(run(mocks, (h) => h.get("/fail"), options))) as HttpError;
+    expect([boom.kind, boom.status, boom.body]).toEqual(["status", 500, "x"]);
+    expect(((await caught(run(mocks, (h) => h.get("/down"), options))) as HttpError).kind).toBe("network");
+    expect(await firstValueFrom(run(mocks, (h) => h.get("/slow"), options))).toBe("late");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    expect(((await caught(run(mocks, (h) => h.get("/nothing"), options))) as HttpError).status).toBe(404);
+    warn.mockRestore();
+    expect(seen).toEqual(["GET /fail 0 500", "GET /down 1 network", "GET /slow 2 200", "GET /nothing -1 404"]);
   });
 });
