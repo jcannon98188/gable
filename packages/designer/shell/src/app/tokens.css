@@ -1,0 +1,83 @@
+/* The Tokens tab (tokens-panel.ts): one block per token, its light/dark values, definitions and uses. Built on shell.css's
+   .sec, .prop, .fld, .chip, .cls and .sw. */
+.tok-src {
+  padding-bottom: 4px;
+  font-size: 11px;
+}
+.tok {
+  padding: 2px 0 4px;
+}
+.tok + .tok {
+  border-top: 1px solid var(--d-border);
+}
+.tok.open {
+  background: var(--d-panel2);
+}
+.tok-h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 0 10px;
+}
+.tok-name {
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--d-fg);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tok-uses {
+  flex: none;
+  margin-left: auto;
+}
+.tok-val {
+  min-height: 28px;
+}
+.tok-detail {
+  padding-bottom: 4px;
+}
+.tok-def {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+  padding: 2px 10px;
+}
+.tok-def.lost .tok-ctx,
+.tok-def.lost .fld {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+.tok-ctx {
+  color: var(--d-muted);
+  font-size: 11px;
+}
+.tok-use {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, auto);
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  min-height: 24px;
+  padding: 0 10px;
+  text-align: left;
+}
+.tok-use:hover {
+  background: var(--d-hover);
+}
+.tok-at {
+  font-size: 11px;
+}
+.tok-chip {
+  cursor: pointer;
+}
+.tok-chip .sw {
+  width: 10px;
+  height: 10px;
+}

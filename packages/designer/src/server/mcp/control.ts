@@ -20,6 +20,7 @@ import type { ControlCommands, FramePatch, FrameRect, SelectionSnapshot, ShellSn
 import type { ShellBridge } from "./bridge.js";
 import type { CompileError } from "../compile-check.js";
 import { captureHeadless, captureLive, findBrowser, type Shot } from "./screenshot.js";
+import { registerTokenTools } from "./token-tools.js";
 import { fileOfTarget, positionOf, projectFile, targetAt, unifiedDiff, type SourcePos } from "./targets.js";
 
 export interface ControlContext {
@@ -597,6 +598,9 @@ export function createControlServer(ctx: ControlContext): McpServer {
       return commit(() => live.edits.apply({ op: "setCss", file: f.rel, selector, property, value }), f.rel);
     }),
   );
+
+  // Design tokens (CSS custom properties): list_tokens, get_token_usages, set_token.
+  registerTokenTools(server, { root: () => live.root, edits: () => live.edits, tailwind: () => ctx.tailwind, commit, read, write, guard });
 
   server.registerTool(
     "edit_classes",

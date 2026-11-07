@@ -20,6 +20,7 @@ import { resolveNode, type NodeReport } from "./source.js";
 import { sceneIndex } from "./scene-index.js";
 import { editRouteConfig, listComponents, locateRouteConfig, type RouteEdit } from "./route-config.js";
 import { TailwindService, handleTailwindApi } from "./tailwind/api.js";
+import { handleTokenApi } from "./tokens/api.js";
 import { DevServer, ProjectLog, type DevServerStatus } from "./dev-server.js";
 import { checkProject, projectName, rememberProject, runInstall, type ProjectCheck } from "./projects.js";
 import { handleProjectApi } from "./project-api.js";
@@ -382,6 +383,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
       }
       if (await control.handleShell(req, res, url, readBody, json)) return;
       if (await handleTailwindApi({ service: tailwind, cdp, json, readBody }, req, res, url)) return;
+      if (await handleTokenApi({ root, tailwind, json, readBody }, req, res, url)) return;
       if (await handleDeviceApi({ root, previewUrl, cdp, json, readBody }, req, res, url)) return;
       const projectApi = { root: () => root, dataDir: data, log: () => s.log.text(), open: switchProject, install, restart: async () => (await s.server.restart(), s.info()), json, readBody };
       if (await handleProjectApi(projectApi, req, res, url)) return;

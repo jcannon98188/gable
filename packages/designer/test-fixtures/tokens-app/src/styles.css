@@ -1,0 +1,32 @@
+@import "tailwindcss";
+@import "@gable/ui/theme.css";
+
+/* The fixture's own tokens: a light value with a .dark pair, an OS-dark value and a theme switch. */
+:root {
+  --brand: #ff0066;
+  --space-card: 16px;
+}
+
+.dark {
+  --brand: #ff6699;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --space-card: 20px;
+  }
+}
+
+[data-theme="ocean"] {
+  --brand: #0066ff;
+}
+
+@theme inline {
+  --color-brand: var(--brand);
+}
+
+.card {
+  padding: var(--space-card);
+  border: 2px solid var(--brand);
+  border-radius: var(--radius);
+}

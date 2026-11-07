@@ -17,6 +17,7 @@ import { EditPanel } from "./edit-panel.js";
 import { EditState } from "./edit-state.js";
 import { TailwindPanel } from "./tailwind-panel.js";
 import { TailwindState } from "./tailwind-state.js";
+import { TokensPanel } from "./tokens-panel.js";
 import { DeviceBar, FrameBoard } from "./frame-board.js";
 import { RoutesPanel } from "./page-mode.js";
 import { InsertPanel, Inspector, StructurePanel } from "./panels.js";
@@ -132,7 +133,7 @@ export class TopBar {
 export class Shell {
   static meta = {
     selector: "app-root",
-    imports: [TopBar, DeviceBar, FrameBoard, DrawerBody, DrawerTabs, StructurePanel, InsertPanel, RoutesPanel, Inspector, EditPanel, TailwindPanel, CommandPalette, Dialogs, UiToaster, UiTabs, UiTab, UiResizablePanelGroup, UiResizablePanel, UiResizableHandle],
+    imports: [TopBar, DeviceBar, FrameBoard, DrawerBody, DrawerTabs, StructurePanel, InsertPanel, RoutesPanel, Inspector, EditPanel, TailwindPanel, TokensPanel, CommandPalette, Dialogs, UiToaster, UiTabs, UiTab, UiResizablePanelGroup, UiResizablePanel, UiResizableHandle],
     template: html`
       <div class="grid h-screen grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden">
         <app-top-bar></app-top-bar>
@@ -169,6 +170,7 @@ export class Shell {
             <div class="side">
               <ui-tabs class="ptabs" [(value)]="chrome.right">
                 <ui-tab value="style" label="Style"><app-tailwind-panel></app-tailwind-panel></ui-tab>
+                <ui-tab value="tokens" label="Tokens"><app-tokens-panel></app-tokens-panel></ui-tab>
                 <ui-tab value="content" label="Content"><app-edit-panel></app-edit-panel></ui-tab>
                 <ui-tab value="inspector" label="Inspector"><app-inspector></app-inspector></ui-tab>
               </ui-tabs>

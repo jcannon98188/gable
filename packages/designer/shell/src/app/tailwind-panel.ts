@@ -13,6 +13,7 @@ import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";
 import { EditState } from "./edit-state.js";
 import { TailwindState } from "./tailwind-state.js";
+import { ElementTokens } from "./tokens-panel.js";
 
 const SECTIONS: Array<{ id: ControlDef["section"]; title: string }> = [
   { id: "layout", title: "Layout" },
@@ -31,7 +32,7 @@ export class TailwindPanel {
   static meta = {
     selector: "app-tailwind-panel",
     host: { class: "block" },
-    imports: [UiButton, UiCommand, UiIcon, UiToggleGroup, UiTooltip],
+    imports: [UiButton, UiCommand, UiIcon, UiToggleGroup, UiTooltip, ElementTokens],
     // TODO(gable-ui): native <input> and plain <button> rows below stand in for an Input with a clear button and a swatch/scale grid.
     template: html`
       @if (tw.offMessage(); as why) {
@@ -161,6 +162,8 @@ export class TailwindPanel {
             }
           </div>
         </div>
+
+        <app-element-tokens></app-element-tokens>
 
         <div class="sec" aria-label="Class palette">
           <div class="sec-h">Add a class</div>

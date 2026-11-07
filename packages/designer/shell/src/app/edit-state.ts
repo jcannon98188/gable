@@ -119,7 +119,8 @@ export class EditState {
       this.notice.set(r.ok ? { ok: true, text: r.label + (r.relocated ? " (found its place after the file changed)" : "") } : { ok: false, text: r.error });
       this.#announce(r);
       if (r.ok && r.select) await this.#reselect(r.select);
-      else if (r.ok) this.model.set(null);
+      // A stylesheet edit (a design token) leaves the selected element as it is.
+      else if (r.ok && !/.css$/i.test(r.file)) this.model.set(null);
       return r;
     } catch (e) {
       const text = e instanceof Error ? e.message : String(e);
