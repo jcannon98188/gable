@@ -32,6 +32,8 @@ export const LIB_META: LibMeta[] = [
   { name: "host-class", file: "host-class.ts", dependencies: ["@gable/core"], lib: [] },
   { name: "icon", file: "icon.ts", dependencies: ["@gable/core", "lucide"], lib: ["cn"] },
   { name: "placement", file: "placement.ts", dependencies: [], lib: [] },
+  { name: "highlight", file: "highlight.ts", dependencies: [], lib: [] },
+  { name: "diff", file: "diff.ts", dependencies: [], lib: [] },
   { name: "date-locale", file: "date-locale.ts", dependencies: ["@gable/core", "date-fns"], lib: [] },
 ];
 
@@ -467,5 +469,13 @@ export const COMPONENT_META: ComponentMeta[] = [
     dependencies: ["@gable/core"],
     registryDependencies: ["tree"],
     lib: ["cn", "host-class"],
+  },
+  {
+    name: "code-block",
+    files: ["code-block.ts"],
+    exports: ["UiCodeBlock"],
+    dependencies: ["@gable/core"],
+    registryDependencies: ["button"],
+    lib: ["cn", "diff", "highlight", "host-class", "icon"],
   },
 ];
