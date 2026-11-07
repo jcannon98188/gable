@@ -1176,6 +1176,14 @@ ui-virtual-table {
   min-height: 140px;
   resize: vertical;
 }
+/* Storage panel: one row per item or cookie (name, value, attributes, actions); the log filter. */
+.st-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1.4fr) max-content;
+}
+.st-filter,
+.net-filter {
+  width: 180px;
+}
 .hmr-row {
   grid-template-columns: 60px minmax(0, 1fr) minmax(0, 2fr);
 }

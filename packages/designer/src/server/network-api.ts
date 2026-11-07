@@ -8,6 +8,7 @@ import { OFFLINE_NEEDS_CDP, type SceneMocks } from "../network.js";
 import type { CdpEmulator } from "./cdp.js";
 import { readMocks } from "./edit/mocks.js";
 import type { EditError } from "./edit/types.js";
+import { handleStorageApi } from "./storage-api.js";
 
 export interface NetworkApiContext {
   root: string;
@@ -29,9 +30,10 @@ export function mocksOf(root: string, file: string): MocksResult {
   return "ok" in scenes ? scenes : { ok: true, file: "/" + rel.split(sep).join("/"), scenes };
 }
 
-/** Handles `/api/network/*` and `/api/mocks`; returns false for any other path. */
+/** Handles `/api/network/*`, `/api/mocks` and the Storage panel's `/api/storage/*`; returns false for any other path. */
 export async function handleNetworkApi(ctx: NetworkApiContext, req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
   const { json } = ctx;
+  if (url.pathname.startsWith("/api/storage/")) return handleStorageApi(ctx, req, res, url);
   switch (url.pathname) {
     case "/api/mocks": {
       json(res, 200, mocksOf(ctx.root, url.searchParams.get("file") ?? ""));

@@ -1,5 +1,5 @@
 // The bottom drawer: the selected element's source and the last patch, the project's problems, the hot-update timeline,
-// accessibility, performance, and the network (network-panel.ts). The tab strip stays when the drawer is closed, so its badges can still be read.
+// accessibility, performance, the network (network-panel.ts) and storage (storage-panel.ts). The tab strip stays when the drawer is closed, so its badges can still be read.
 import { computed, effect, html, inject, signal, untracked } from "@gable/core";
 import { CPU_RATES, NETWORK_PROFILES, type Throttle } from "../../../src/devices.js";
 import type { PerfElement, PerfMetric } from "../../../src/protocol.js";
@@ -13,6 +13,7 @@ import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";
 import { EditState } from "./edit-state.js";
 import { NetworkPanel } from "./network-panel.js";
+import { StoragePanel } from "./storage-panel.js";
 import { DEV_NOTE, PerfState, RATING_LABEL, elementText, formatBytes, formatMetric, formatMs } from "./perf-state.js";
 import { staleNote } from "./stale-canvas.js";
 
@@ -698,7 +699,8 @@ export class DrawerTabs {
       { value: "hmr", label: "HMR timeline", badge: 0, err: false, warn: false },
       { value: "a11y", label: "Accessibility", badge: this.a11y.violations(), err: this.a11y.severe(), warn: !this.a11y.severe() && this.a11y.violations() > 0 },
       { value: "perf", label: "Performance", badge: this.perf.poor() + this.perf.needsWork(), err: this.perf.poor() > 0, warn: this.perf.poor() === 0 && this.perf.needsWork() > 0 },
-      { value: "http", label: "HTTP", badge: 0, err: false, warn: false },
+      { value: "http", label: "Network", badge: 0, err: false, warn: false },
+      { value: "storage", label: "Storage", badge: 0, err: false, warn: false },
     ].map((t) => ({ ...t, selected: String(t.value === current), tabId: `drawer-tab-${t.value}` }));
   });
   /** Clicking the open tab closes the drawer; any other tab opens it there. */
@@ -713,7 +715,7 @@ export class DrawerBody {
   static meta = {
     selector: "app-drawer-body",
     host: { class: "drawer" },
-    imports: [DrawerTabs, CodeTab, ProblemsTab, HmrTab, AccessibilityTab, PerformanceTab, NetworkPanel],
+    imports: [DrawerTabs, CodeTab, ProblemsTab, HmrTab, AccessibilityTab, PerformanceTab, NetworkPanel, StoragePanel],
     template: html`
       <app-drawer-tabs></app-drawer-tabs>
       <div class="dbody" role="tabpanel" [attr.aria-labelledby]="labelledBy()">
@@ -727,6 +729,8 @@ export class DrawerBody {
           <app-performance-tab></app-performance-tab>
         } @else if (tab() === 'http') {
           <app-network-panel></app-network-panel>
+        } @else if (tab() === 'storage') {
+          <app-storage-panel></app-storage-panel>
         } @else {
           <app-code-tab></app-code-tab>
         }

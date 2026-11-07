@@ -2,7 +2,7 @@
 // the network condition put on them (slow, error, offline), recording real responses and saving them as a Scenario, and the
 // mocks of the Scenario that answers the frame now, editable in place. Everything shown comes from the page or the source.
 import { computed, effect, html, inject, signal, untracked } from "@gable/core";
-import { conditionLabel, mocksFromRecording, type MockInfo, type NetworkCondition, type NetworkEntry } from "../../../src/network.js";
+import { conditionLabel, filterEntries, type EntryFilter, isFailed, mocksFromRecording, type MockInfo, type NetworkCondition, type NetworkEntry } from "../../../src/network.js";
 import { UiButton } from "../components/ui/button.js";
 import { UiDialog } from "../components/ui/dialog.js";
 import { UiJsonViewer } from "../components/ui/json-viewer.js";
@@ -60,6 +60,13 @@ export class NetworkPanel {
       <div class="dbar">
         <span class="dim truncate" data-part="net-summary" [attr.title]="summary()">{{ summary() }}</span>
         <span class="spacer"></span>
+        <input class="fld net-filter" placeholder="Filter URLs" aria-label="Filter requests by URL, method or initiator" data-part="net-filter" [value]="logFilter()" (input)="logFilter.set($event.currentTarget.value)" />
+        <select class="fld" aria-label="Kind of request" data-part="net-kind" (change)="logKind.set($event.currentTarget.value)">
+          @for (k of kindOptions; track k.value) {
+            <option [value]="k.value" [selected]="k.value === logKind()">{{ k.label }}</option>
+          }
+        </select>
+        <ui-switch data-part="net-failed" [(value)]="failedOnly">Failed only</ui-switch>
         <span class="dim mono" data-part="net-count">{{ counts() }}</span>
         <button uiButton variant="ghost" size="sm" class="btn sm" data-part="net-clear" [disabled]="!ready()" (click)="net.clear()">Clear log</button>
       </div>
@@ -97,7 +104,11 @@ export class NetworkPanel {
           @if (rows().length) {
             <ui-virtual-table class="min-h-0 flex-1" data-part="net-log" [columns]="columns" [rows]="rows()" rowKey="id" [rowHeight]="26" label="Requests"></ui-virtual-table>
           } @else {
-            <div class="empty" data-part="net-empty"><strong>No requests yet</strong>The page's fetch and XMLHttpRequest calls, and the requests a Scenario's mocks answer, appear here as the app makes them.</div>
+            @if (hasEntries()) {
+              <div class="empty" data-part="net-empty"><strong>No request matches the filters</strong>Clear the filter, the kind or Failed only to see the others.</div>
+            } @else {
+              <div class="empty" data-part="net-empty"><strong>No requests yet</strong>The page's fetch and XMLHttpRequest calls, and the requests a Scenario's mocks answer, appear here as the app makes them.</div>
+            }
           }
         </div>
         <div>
@@ -230,9 +241,21 @@ export class NetworkPanel {
     if (this.state.target().kind === "component") return a ? `Component mode: scene ${a.scene}'s mocks answer its requests.` : "Component mode.";
     return a ? `Scenario ${a.scene}: its mocks answer the app's HTTP calls; anything else goes to the network.` : "No scenario: the app talks to its real backend. Record it, or pick a scenario in the Routes tab.";
   });
+  // The log's filters: text (URL, method, initiator), the kind of request, and failed requests only.
+  logFilter = signal("");
+  logKind = signal("");
+  failedOnly = signal(false);
+  kindOptions = [
+    { value: "", label: "All kinds" },
+    { value: "fetch", label: "fetch" },
+    { value: "xhr", label: "XHR" },
+    { value: "mock", label: "Mocked" },
+  ];
+  #shown = computed(() => filterEntries(this.net.snapshot()?.entries ?? [], { text: this.logFilter(), kind: this.logKind() as EntryFilter["kind"], failed: this.failedOnly() }));
+  hasEntries = computed(() => (this.net.snapshot()?.entries.length ?? 0) > 0);
   rows = computed(() => {
     const origin = this.#origin();
-    return (this.net.snapshot()?.entries ?? []).map((e) => logRow(e, origin));
+    return this.#shown().map((e) => logRow(e, origin));
   });
   #origin = computed(() => {
     try {
@@ -244,8 +267,10 @@ export class NetworkPanel {
   counts = computed(() => {
     const s = this.net.snapshot();
     if (!s) return "";
-    const failed = s.entries.filter((e) => e.status === 0 || (e.status ?? 0) >= 400 || e.mock === -1).length;
-    return `${s.entries.length} request${s.entries.length === 1 ? "" : "s"}${failed ? `, ${failed} failed` : ""}${s.dropped ? ` (${s.dropped} older dropped)` : ""}`;
+    const failed = s.entries.filter(isFailed).length;
+    const shown = this.#shown().length;
+    const of = shown === s.entries.length ? "" : `${shown} of `;
+    return `${of}${s.entries.length} request${s.entries.length === 1 ? "" : "s"}${failed ? `, ${failed} failed` : ""}${s.dropped ? ` (${s.dropped} older dropped)` : ""}`;
   });
 
   // --- the condition: the controls follow the frame's condition, and a change applies it --------------------------------

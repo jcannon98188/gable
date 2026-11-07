@@ -7,6 +7,7 @@ import type { ComponentDetail, HmrEntry, RouterInfo, TreeNode } from "@gable/cor
 import type { DesignNode } from "@gable/core/designer";
 import type { ColorScheme } from "./devices.js";
 import type { NetworkCommand, NetworkCommandResult } from "./network.js";
+import type { StorageCommand, StorageCommandResult } from "./storage.js";
 import type { HttpLogEntry, PageScenarioInfo, PerfReport, SceneInfo } from "./protocol.js";
 import type { SourceRange } from "./server/source.js";
 
@@ -88,6 +89,8 @@ export interface ControlCommands {
   performance: { params: { reload?: boolean }; result: PerfResult };
   /** The Network panel: a frame's requests, its network condition, recording real responses. */
   network: { params: NetworkCommand; result: NetworkCommandResult };
+  /** The Storage panel: a frame's localStorage, sessionStorage and cookies, read and edited. */
+  storage: { params: StorageCommand; result: StorageCommandResult };
 }
 
 export interface PerfResult {

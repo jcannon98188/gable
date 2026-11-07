@@ -6,7 +6,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import type { ControlCommands } from "../../control-protocol.js";
-import { mocksFromRecording, type MockReplyPatch, type NetworkCommandResult, type RecordedResponse } from "../../network.js";
+import { filterEntries, mocksFromRecording, type EntryFilter, type MockReplyPatch, type NetworkCommandResult, type RecordedResponse } from "../../network.js";
 import type { EditService } from "../edit/service.js";
 import type { EditResult } from "../edit/types.js";
 import { mocksOf } from "../network-api.js";
@@ -36,16 +36,18 @@ function brief(r: RecordedResponse, bodies: boolean) {
 }
 
 /** The snapshot as an agent reads it: the condition and recording first, then the requests (the newest last). */
-function network(r: NetworkCommandResult, limit: number) {
+function network(r: NetworkCommandResult, limit: number, filter: EntryFilter = {}) {
   const s = r.snapshot;
-  const entries = s.entries.slice(-limit);
+  const matching = filterEntries(s.entries, filter);
+  const entries = matching.slice(-limit);
   return {
     frame: r.frame,
     condition: s.condition,
     recording: s.recording,
     ...(r.note ? { note: r.note } : {}),
     requests: entries.map((e) => ({ kind: e.kind, method: e.method, url: e.url, status: e.status, ...(e.statusText ? { statusText: e.statusText } : {}), ms: e.duration === null ? null : Math.round(e.duration), size: e.size, contentType: e.contentType, initiator: e.initiator, ...(e.error ? { error: e.error } : {}), ...(e.conditioned ? { conditioned: e.conditioned } : {}), ...(e.mock !== undefined ? { mock: e.mock } : {}) })),
-    ...(s.entries.length > entries.length || s.dropped ? { omitted: s.entries.length - entries.length + s.dropped } : {}),
+    ...(matching.length > entries.length || s.dropped ? { omitted: matching.length - entries.length + s.dropped } : {}),
+    ...(matching.length < s.entries.length ? { filteredOut: s.entries.length - matching.length } : {}),
   };
 }
 
@@ -62,9 +64,16 @@ export function registerNetworkTools(kit: NetworkToolKit): void {
     "get_network",
     {
       ...read("Get network", "A frame's API requests as the Network panel shows them (fetch and XMLHttpRequest calls, and requests a Scenario's mocks answered: method, absolute URL, status, time, size, content type, the app code that made it), with the frame's network condition and recording state. Status null is pending; 0 failed without a response (see error). The Designer's own and Vite's requests are not listed."),
-      inputSchema: { frame, limit: z.number().int().min(1).max(500).default(100).describe("Return the last N requests."), clear: z.boolean().default(false).describe("Empty the log after reading it.") },
+      inputSchema: {
+        frame,
+        limit: z.number().int().min(1).max(500).default(100).describe("Return the last N requests."),
+        clear: z.boolean().default(false).describe("Empty the log after reading it."),
+        filter: z.string().optional().describe("Only requests whose URL or initiator contains this text, or whose method is it."),
+        kind: z.enum(["fetch", "xhr", "mock"]).optional(),
+        failed: z.boolean().optional().describe("Only failed requests (no response, a 4xx/5xx status, or no mock matched)."),
+      },
     },
-    guard(async ({ frame: id, limit, clear }) => network(await shell("network", { action: "get", frame: id, clear }), limit)),
+    guard(async ({ frame: id, limit, clear, filter, kind, failed }) => network(await shell("network", { action: "get", frame: id, clear }), limit, { text: filter, kind, failed })),
   );
 
   server.registerTool(

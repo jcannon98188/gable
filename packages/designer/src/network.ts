@@ -66,6 +66,27 @@ export interface NetworkEntry {
   mock?: number;
 }
 
+/** Failed: no response, an error status, or no mock matched. */
+export const isFailed = (e: NetworkEntry): boolean => e.status === 0 || (e.status ?? 0) >= 400 || e.mock === -1;
+
+export interface EntryFilter {
+  /** Text in the URL, the method or the initiator (case-insensitive). */
+  text?: string;
+  kind?: NetworkEntry["kind"] | "";
+  failed?: boolean;
+}
+
+/** The log entries the Network panel's (and get_network's) filters keep. */
+export function filterEntries(entries: NetworkEntry[], f: EntryFilter): NetworkEntry[] {
+  const text = (f.text ?? "").trim().toLowerCase();
+  return entries.filter(
+    (e) =>
+      (!f.kind || e.kind === f.kind) &&
+      (!f.failed || isFailed(e)) &&
+      (!text || e.url.toLowerCase().includes(text) || e.method.toLowerCase() === text || (e.initiator ?? "").toLowerCase().includes(text)),
+  );
+}
+
 /** One real response kept while recording: what a mock needs to answer the same request the same way. */
 export interface RecordedResponse {
   id: number;

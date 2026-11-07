@@ -7,6 +7,7 @@ import type { DesignerHook, DesignNode } from "@gable/core/designer";
 import { RUN_CONTEXT, runOptions, toReport, type AxeLike } from "./a11y.js";
 import { GableCounter, PerfCollector, domSize, settled } from "./perf.js";
 import { startNetwork, throttled } from "./network.js";
+import { startStorage } from "./storage.js";
 import {
   AXE_PATH,
   PROTOCOL_VERSION,
@@ -474,6 +475,8 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
   const isDesigner = (url: string) => url.startsWith(agentDir) || url.includes("/__gable-designer/") || url.includes("/@id/__x00__gable-designer");
   // The page's requests, the network condition and recording (see network.ts): installed before the app's code runs.
   const network = startNetwork(window, isDesigner, throttled(() => send({ type: "activity", what: "network" }), 250));
+  // Its storage and cookies (see storage.ts): the page's writes are reported so the Storage panel stays live.
+  const storage = startStorage(window, throttled(() => send({ type: "activity", what: "storage" }), 250));
 
   async function measure(): Promise<PerfReport> {
     await settled(document);
@@ -504,6 +507,7 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
 
   const handlers: { [M in keyof AgentMethods]?: (p: AgentMethods[M]["params"]) => AgentMethods[M]["result"] | Promise<AgentMethods[M]["result"]> } = {
     ...network.handlers,
+    ...storage.handlers,
     setMode: ({ mode: next }) => {
       mode = next;
       designer.muted = next === "select";

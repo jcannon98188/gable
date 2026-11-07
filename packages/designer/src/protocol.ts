@@ -5,6 +5,7 @@
 import type { ComponentDetail, DevtoolsEvent, DevtoolsMethods, HmrEntry } from "@gable/core/devtools";
 import type { DesignNode } from "@gable/core/designer";
 import type { NetworkMethods } from "./network.js";
+import type { StorageMethods } from "./storage.js";
 
 /** Bumped on any incompatible change. The agent refuses a shell that speaks another version, and says so. */
 export const PROTOCOL_VERSION = 1;
@@ -76,7 +77,7 @@ interface Envelope {
 // --- shell to agent --------------------------------------------------------
 
 /** Everything the shell can ask of the agent: the devtools methods plus the design ones. */
-export interface AgentMethods extends DevtoolsMethods, NetworkMethods {
+export interface AgentMethods extends DevtoolsMethods, NetworkMethods, StorageMethods {
   /** `select`: clicks pick elements and the app does not see them. `interact`: the app behaves normally. */
   setMode: { params: { mode: "select" | "interact" }; result: true };
   /** Selects a template node (as clicking its element would), or clears with `null`. */
