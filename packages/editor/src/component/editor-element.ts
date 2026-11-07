@@ -1,6 +1,7 @@
 import { computed, effect, html, input, model, signal, untracked, viewChild } from "@gable/core";
 import { currentScope } from "@gable/core/internal";
 import { UiToggle } from "@gable/ui";
+import type { Editor } from "@tiptap/core";
 import type * as Y from "yjs";
 import { GableEditor } from "../editor.js";
 import { corePlugin } from "../core-plugin.js";
@@ -100,6 +101,8 @@ export class GableEditorElement {
 
   /** The underlying editor once mounted, for plugins and apps that need more than the template exposes. */
   editor = signal<GableEditor | null>(null);
+  /** The TipTap editor itself, written out for bindings such as `[(tiptap)]="ed"` next to `<gable-comments [editor]="ed()">`. */
+  tiptap = model<Editor | null>(null);
   toolbar = signal<ToolbarItemState[]>([]);
   focusId = signal<string>("");
   bubble = signal<{ style: string } | null>(null);
@@ -168,12 +171,14 @@ export class GableEditorElement {
       ed.destroy();
     };
     this.editor.set(ed);
+    this.tiptap.set(ed.editor);
   }
 
   private teardown(): void {
     this.stop?.();
     this.stop = null;
     this.editor.set(null);
+    this.tiptap.set(null);
   }
 
   private placeBubble(ed: GableEditor, el: HTMLElement): void {

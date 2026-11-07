@@ -150,6 +150,7 @@ export function commentsPlugin(options: CommentsOptions): EditorPlugin {
           const { from, to, empty } = editor.state.selection;
           if (!binding || empty || !text.trim()) return null;
           const id = newId();
+          active = id; // set before the transaction so the observer redraws with it highlighted
           ydoc.transact(() => {
             const t = new Y.Map<unknown>();
             t.set("from", Y.relativePositionToJSON(binding.toRelativePosition(from, 0)));
@@ -161,7 +162,6 @@ export function commentsPlugin(options: CommentsOptions): EditorPlugin {
             t.set("messages", messages);
             threadsMap.set(id, t);
           }, "comments");
-          active = id;
           return id;
         },
         reply: (id, text) => (text.trim() ? withThread(id, (t) => (t.get("messages") as Y.Array<CommentMessage>).push([message(text)])) : false),

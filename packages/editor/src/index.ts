@@ -12,3 +12,5 @@ export * from "./plugins/image.js";
 export * from "./yjs/awareness.js";
 export * from "./yjs/provider.js";
 export * from "./component/presence.js";
+export * from "./plugins/comments.js";
+export * from "./component/comments-panel.js";
