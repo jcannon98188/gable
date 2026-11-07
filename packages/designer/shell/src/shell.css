@@ -246,15 +246,13 @@ body {
   border-bottom: 1px solid var(--d-border);
 }
 .logo {
-  display: grid;
   flex: none;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  background: var(--d-accent);
-  color: var(--d-accent-fg);
-  font-weight: 700;
+  width: 24px;
+  height: 24px;
+  stroke: #d97706;
+}
+.dark .logo {
+  stroke: #fbbf24;
 }
 .ctool {
   display: flex;

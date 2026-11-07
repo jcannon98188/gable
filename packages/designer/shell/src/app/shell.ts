@@ -30,7 +30,7 @@ export class TopBar {
     imports: [UiButton, UiIcon, UiToggleGroup, UiTooltip],
     template: html`
       <header class="bar">
-        <span class="logo" aria-hidden="true">G</span>
+        <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20L12 4l9 16"></path><path d="M8 20l4-7 4 7"></path></svg>
         <strong class="sr-only">Gable Designer</strong>
         <button uiButton variant="ghost" size="sm" class="btn" uiTooltip="Open a project" (click)="chrome.dialog.set('open-project')">{{ projectName() }}<svg uiIcon="chevron-down" class="ico-sm dim"></svg></button>
         @if (modified(); as text) {
