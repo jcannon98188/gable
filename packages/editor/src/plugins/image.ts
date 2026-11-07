@@ -1,6 +1,7 @@
-import { Extension, type Editor } from "@tiptap/core";
+import { Extension, Node, type Editor } from "@tiptap/core";
 import { Image } from "@tiptap/extension-image";
-import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { NodeSelection, Plugin, PluginKey, TextSelection, type EditorState } from "@tiptap/pm/state";
+import { Y_SYNC_META } from "../yjs/binding.js";
 import { definePlugin } from "../plugin.js";
 
 /** Turns a picked/pasted/dropped file into a URL the image can load from. Return the final URL. */
@@ -33,6 +34,82 @@ export async function insertUploadedImage(editor: Editor, file: File, upload: Im
   }
 }
 
+/** The figure around the selection (a caret in its caption, or the image selected), if any. */
+function figureAround(state: EditorState): { pos: number; node: import("@tiptap/pm/model").Node } | null {
+  const { $from } = state.selection;
+  for (let d = $from.depth; d > 0; d--) if ($from.node(d).type.name === "figure") return { pos: $from.before(d), node: $from.node(d) };
+  return null;
+}
+
+/** A transaction that wraps every image still carrying a caption attribute in a figure, or null when there is none. */
+function legacyCaptions(state: EditorState) {
+  const found: { pos: number; node: import("@tiptap/pm/model").Node }[] = [];
+  state.doc.descendants((node, pos, parent) => {
+    if (node.type.name === "image" && node.attrs.caption && parent?.type.name !== "figure") found.push({ pos, node });
+  });
+  if (!found.length) return null;
+  const tr = state.tr;
+  const { figure: figType, figcaption: capType } = state.schema.nodes;
+  for (const { pos, node } of found.reverse()) {
+    const image = node.type.create({ ...node.attrs, caption: "" }, null, node.marks);
+    tr.replaceWith(pos, pos + node.nodeSize, figType!.create(null, [image, capType!.create(null, state.schema.text(String(node.attrs.caption)))]));
+  }
+  return tr.setMeta("addToHistory", false);
+}
+
+/** `<figure><img><figcaption>…</figcaption></figure>`: an image with a caption that is ordinary, editable rich text. */
+const figure = Node.create({
+  name: "figure",
+  group: "block",
+  content: "image figcaption",
+  isolating: true,
+  draggable: true,
+  parseHTML: () => [{ tag: "figure" }],
+  renderHTML: () => ["figure", { class: "m-0 my-2" }, 0],
+});
+
+const figcaption = Node.create({
+  name: "figcaption",
+  content: "inline*",
+  isolating: true,
+  parseHTML: () => [{ tag: "figcaption" }],
+  renderHTML: () => ["figcaption", { class: "text-center text-sm text-muted-foreground" }, 0],
+  addKeyboardShortcuts() {
+    return {
+      // A caption is one line: Enter leaves it for the paragraph after the figure.
+      Enter: ({ editor }) => {
+        const { state } = editor;
+        if (state.selection.$from.parent.type.name !== "figcaption") return false;
+        const fig = figureAround(state);
+        if (!fig) return false;
+        const end = fig.pos + fig.node.nodeSize;
+        const para = state.schema.nodes.paragraph!;
+        const tr = state.tr;
+        if (state.doc.resolve(end).nodeAfter?.type !== para) tr.insert(end, para.create());
+        editor.view.dispatch(tr.setSelection(TextSelection.near(tr.doc.resolve(end + 1))).scrollIntoView());
+        return true;
+      },
+    };
+  },
+  onCreate() {
+    const tr = legacyCaptions(this.editor.state);
+    if (tr) this.editor.view.dispatch(tr);
+  },
+  addProseMirrorPlugins() {
+    // Documents from before figures kept the caption in an attribute on the image. Convert them when they are loaded or
+    // edited locally (never from Yjs: peers converting the same image concurrently would each create a figure).
+    return [
+      new Plugin({
+        key: new PluginKey("gable-legacy-captions"),
+        appendTransaction: (trs, _old, state) => {
+          if (!trs.some((t) => t.docChanged) || trs.some((t) => t.getMeta(Y_SYNC_META))) return null;
+          return legacyCaptions(state);
+        },
+      }),
+    ];
+  },
+});
+
 function resizableImage(options: ImagePluginOptions) {
   const min = options.minWidth ?? 48;
   return Image.extend({
@@ -64,8 +141,45 @@ function resizableImage(options: ImagePluginOptions) {
             commands.updateAttributes("image", { width: width == null ? null : Math.max(min, Math.round(width)) }),
         setImageCaption:
           (caption: string) =>
-          ({ commands }) =>
-            commands.updateAttributes("image", { caption }),
+          ({ state, tr, dispatch }) => {
+            const fig = figureAround(state);
+            if (fig) {
+              // Replace the caption's content.
+              const start = fig.pos + 1 + fig.node.firstChild!.nodeSize + 1;
+              const end = fig.pos + fig.node.nodeSize - 1;
+              if (dispatch) tr.replaceWith(start, end, caption ? state.schema.text(caption) : []);
+              return true;
+            }
+            const sel = state.selection;
+            if (!(sel instanceof NodeSelection) || sel.node.type.name !== "image") return false;
+            if (dispatch) {
+              const { figure: figType, figcaption: capType } = state.schema.nodes;
+              const image = sel.node.type.create({ ...sel.node.attrs, caption: "" });
+              tr.replaceWith(sel.from, sel.to, figType!.create(null, [image, capType!.create(null, caption ? state.schema.text(caption) : null)]));
+              tr.setSelection(NodeSelection.create(tr.doc, sel.from + 1));
+            }
+            return true;
+          },
+        toggleImageCaption:
+          () =>
+          ({ state, tr, dispatch }) => {
+            const fig = figureAround(state);
+            if (fig) {
+              if (dispatch) {
+                tr.replaceWith(fig.pos, fig.pos + fig.node.nodeSize, fig.node.firstChild!);
+                tr.setSelection(NodeSelection.create(tr.doc, fig.pos));
+              }
+              return true;
+            }
+            const sel = state.selection;
+            if (!(sel instanceof NodeSelection) || sel.node.type.name !== "image") return false;
+            if (dispatch) {
+              const { figure: figType, figcaption: capType } = state.schema.nodes;
+              tr.replaceWith(sel.from, sel.to, figType!.create(null, [sel.node, capType!.create()]));
+              tr.setSelection(TextSelection.create(tr.doc, sel.from + 1 + sel.node.nodeSize + 1));
+            }
+            return true;
+          },
         setImageAlt:
           (alt: string) =>
           ({ commands }) =>
@@ -74,13 +188,14 @@ function resizableImage(options: ImagePluginOptions) {
     },
     addNodeView() {
       return ({ node: initial, getPos, editor }) => {
-        const doc = editor.view.dom.ownerDocument;
-        const figure = doc.createElement("figure");
+        const doc = (editor.options.element as HTMLElement | undefined)?.ownerDocument ?? document; // the view does not exist yet while the first content renders
+        const figure = doc.createElement("div");
         figure.className = "relative m-0 inline-block max-w-full";
         figure.setAttribute("data-image-figure", "");
         const img = doc.createElement("img");
         img.className = "block max-w-full h-auto";
-        const caption = doc.createElement("figcaption");
+        // Only for documents that still carry the caption in an attribute (see the legacy conversion on the figcaption node).
+        const caption = doc.createElement("div");
         caption.className = "text-center text-sm text-muted-foreground";
         const handle = doc.createElement("span");
         handle.setAttribute("data-resize-handle", "");
@@ -156,7 +271,10 @@ declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     gableImage: {
       setImageWidth: (width: number | null) => ReturnType;
+      /** Give the selected image (or the figure the caret is in) a caption with this text. */
       setImageCaption: (caption: string) => ReturnType;
+      /** Wrap the selected image in a figure with an empty caption and move into it, or unwrap it again. */
+      toggleImageCaption: () => ReturnType;
       setImageAlt: (alt: string) => ReturnType;
       /** Upload through the plugin's uploader and insert the result. Returns true when an upload started. */
       uploadImage: (file: File) => ReturnType;
@@ -208,7 +326,7 @@ export function imagePlugin(options: ImagePluginOptions = {}) {
   return definePlugin({
     name: "image",
     requires: ["core"],
-    extensions: [resizableImage(options), uploads],
+    extensions: [resizableImage(options), figure, figcaption, uploads],
     toolbar: [
       {
         id: "image",
@@ -235,10 +353,9 @@ export function imagePlugin(options: ImagePluginOptions = {}) {
         label: "Image caption",
         group: "image",
         order: 23,
-        input: { kind: "text", label: "Caption" },
-        run: () => false,
-        runWith: (e, caption) => e.chain().focus().setImageCaption(caption).run(),
-        isEnabled: (e) => e.isActive("image"),
+        run: (e) => e.chain().focus().toggleImageCaption().run(),
+        isActive: (e) => e.isActive("figcaption") || figureAround(e.state) != null,
+        isEnabled: (e) => e.isActive("image") || figureAround(e.state) != null,
       },
     ],
   });

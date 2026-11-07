@@ -57,13 +57,50 @@ describe("imagePlugin", () => {
     ed.editor.commands.setImageWidth(10); // clamped to the minimum
     ed.editor.commands.setImageWidth(300);
     item(ed, "imageAlt").runWith!(ed.editor, "a cat");
-    item(ed, "imageCaption").runWith!(ed.editor, "Figure 1");
+    ed.editor.commands.setImageCaption("Figure 1");
     const img = ed.editor.view.dom.querySelector("img")!;
     expect(img.getAttribute("src")).toBe("https://x/y.png");
     expect(img.getAttribute("width")).toBe("300");
     expect(img.getAttribute("alt")).toBe("a cat");
     expect(ed.editor.view.dom.querySelector("figcaption")!.textContent).toBe("Figure 1");
-    expect(ed.editor.getHTML()).toContain('data-caption="Figure 1"');
+    expect(ed.editor.getHTML()).toMatch(new RegExp("<figure[^>]*><img [^>]*><figcaption[^>]*>Figure 1</figcaption></figure>"));
+    ed.destroy();
+  });
+
+  it("toggles a caption on and off from the toolbar and edits it in place", () => {
+    const ed = make([imagePlugin()], "<p>x</p>");
+    item(ed, "image").runWith!(ed.editor, "https://x/y.png");
+    selectImage(ed);
+    const toggle = item(ed, "imageCaption");
+    expect(toggle.isEnabled!(ed.editor)).toBe(true);
+    expect(toggle.isActive!(ed.editor)).toBe(false);
+    toggle.run(ed.editor);
+    expect(toggle.isActive!(ed.editor)).toBe(true);
+    expect(ed.editor.isActive("figcaption")).toBe(true); // the caret is in the empty caption
+    ed.editor.commands.insertContent("A bold caption");
+    expect(ed.editor.view.dom.querySelector("figcaption")!.textContent).toBe("A bold caption");
+    toggle.run(ed.editor); // off: the image stays, the caption goes
+    expect(ed.editor.view.dom.querySelector("figcaption")).toBeNull();
+    expect(ed.editor.view.dom.querySelector("figure")).toBeNull();
+    expect(ed.editor.view.dom.querySelector("img")).not.toBeNull();
+    ed.destroy();
+  });
+
+  it("Enter in a caption moves to the paragraph after the figure", () => {
+    const ed = make([imagePlugin()], "<p>x</p>");
+    item(ed, "image").runWith!(ed.editor, "https://x/y.png");
+    selectImage(ed);
+    item(ed, "imageCaption").run(ed.editor);
+    ed.editor.view.someProp("handleKeyDown", (h) => h(ed.editor.view, new KeyboardEvent("keydown", { key: "Enter" })));
+    expect(ed.editor.state.selection.$from.parent.type.name).toBe("paragraph");
+    ed.destroy();
+  });
+
+  it("loads documents that kept the caption in an attribute as a figure", async () => {
+    const ed = make([imagePlugin()], '<p>x</p><img src="https://x/y.png" data-caption="Old caption">');
+    await tick(); // the conversion runs when the editor reports it is created
+    expect(ed.editor.view.dom.querySelector("figcaption")!.textContent).toBe("Old caption");
+    expect(ed.editor.getHTML()).not.toContain("data-caption");
     ed.destroy();
   });
 
@@ -118,10 +155,19 @@ describe("tables and images over Yjs", () => {
     item(a, "image").runWith!(a.editor, "https://x/y.png");
     selectImage(a);
     a.editor.commands.setImageWidth(200);
-    item(a, "imageCaption").runWith!(a.editor, "cap");
+    a.editor.commands.setImageCaption("cap");
     expect(b.editor.getJSON()).toEqual(a.editor.getJSON());
+    expect(b.editor.view.dom.querySelector("figcaption")!.textContent).toBe("cap");
+    // b edits the caption in place; a sees it
+    let capEnd = -1;
+    b.editor.state.doc.descendants((n, pos) => {
+      if (n.type.name === "figcaption") capEnd = pos + n.nodeSize - 1;
+    });
+    b.editor.commands.setTextSelection(capEnd);
+    b.editor.commands.insertContent("!");
+    expect(a.editor.view.dom.querySelector("figcaption")!.textContent).toBe("cap!");
     expect(b.editor.view.dom.querySelectorAll("tr").length).toBe(4);
-    expect(findNode(b.editor.getJSON(), "image")!.attrs).toMatchObject({ width: 200, caption: "cap" });
+    expect(findNode(b.editor.getJSON(), "image")!.attrs).toMatchObject({ width: 200 });
 
     // b types into a cell while a adds a column
     b.editor.commands.setTextSelection(b.editor.view.dom.querySelector("td") ? 8 : 1);
