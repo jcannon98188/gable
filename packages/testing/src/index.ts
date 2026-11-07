@@ -1,10 +1,11 @@
 import { COMPONENT_OVERRIDES, DEFER_BLOCKS, flushSync, hasPendingFlush, instantiate, whenFlushed, type DeferHandle, type MountedComponent } from "@gable/core/internal";
-import { ErrorHandler, type Injector, type ComponentClass, type ErrorContext, type ErrorSource, type LazyEntry, type Provider } from "@gable/core";
+import { ErrorHandler, type InputValues, type Injector, type ComponentClass, type ErrorContext, type ErrorSource, type LazyEntry, type Provider } from "@gable/core";
 import { applyUpdate, type HotResult } from "@gable/core/hmr";
 import { createTestInjector, httpTesting } from "./injector.js";
 import { HttpBackend } from "@gable/core/http";
 import { HttpTestingBackend } from "./http.js";
 import type { Renderer } from "@gable/core/renderer";
+import type { ComponentScenes } from "@gable/core/tooling";
 import { Router, provideRouter, type NavigateOptions, type NavigationOutcome, type Route, type RouterAccessibilityOptions } from "@gable/core/router";
 import type { TestPlatform } from "./platform.js";
 import { createTestRenderer, type TestRenderer, createTestRoot, query, queryAll, serialize, textContent, type TestNode } from "./renderer.js";
@@ -21,9 +22,11 @@ export interface ErrorReport {
   context: ErrorContext;
 }
 
-export interface MountOptions {
+export interface MountOptions<T extends object = object> {
   /** Defaults to the in-memory test renderer. */
   renderer?: Renderer<TestNode>;
+  /** Values for the component's inputs (`input()` and `model()` fields) at creation. */
+  inputs?: InputValues<T>;
   /** Providers for the root injector; override any Token. */
   providers?: Provider[];
   /**
@@ -182,7 +185,7 @@ const tick = async () => {
 };
 let fixtures = 0;
 
-export function mount<T extends object>(Component: ComponentClass<T>, options: MountOptions = {}): Fixture<T> {
+export function mount<T extends object>(Component: ComponentClass<T>, options: MountOptions<T> = {}): Fixture<T> {
   const renderer = options.renderer ?? createTestRenderer();
   const container = createTestRoot();
   (renderer as Partial<TestRenderer>).setOverlayContainer?.(container);
@@ -195,7 +198,7 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
   const defer: DeferHandle[] = [];
   hookCleanup();
   const injector = createTestInjector([{ provide: DEFER_BLOCKS, useValue: defer }, { provide: ErrorHandler, useClass: Collector }, { provide: COMPONENT_OVERRIDES, useValue: new Map(options.overrides ?? []) }, ...(options.providers ?? [])]);
-  const mounted = instantiate(Component, { renderer, parent: container, injector });
+  const mounted = instantiate(Component, { renderer, parent: container, injector, inputs: options.inputs as Record<string, unknown> | undefined });
   // Overlay content (portals) lives under the mounted host, so fixture queries and serialisation see it.
   (renderer as Partial<TestRenderer>).setOverlayContainer?.(mounted.host);
   let destroyed = false;
@@ -312,6 +315,18 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
   live.add(fixture);
   return fixture;
 }
+/**
+ * Mounts one Scene of a `*.scenes.ts` file (its default export): the component with the scene's inputs, and the scene's
+ * providers on top of the test injector. Extra `options.providers` go after the scene's, so a test can still override.
+ */
+export function mountScene<T extends object>(scenes: ComponentScenes<T>, name: string, options: Omit<MountOptions<T>, "inputs"> = {}): Fixture<T> {
+  const scene = scenes.scenes[name];
+  if (!scene) throw new Error(`No scene "${name}" for ${scenes.component.name}. Scenes: ${Object.keys(scenes.scenes).join(", ") || "(none)"}.`);
+  return mount(scenes.component, { ...options, inputs: scene.inputs, providers: [...(scene.providers ?? []), ...(options.providers ?? [])] });
+}
+
+export type { ComponentScenes, Scene } from "@gable/core/tooling";
+
 export { createTestInjector } from "./injector.js";
 export { HttpTestingBackend, TestRequest } from "./http.js";
 export type { RequestMatch } from "./http.js";
