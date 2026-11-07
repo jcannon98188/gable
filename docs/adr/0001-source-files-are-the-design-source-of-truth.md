@@ -1,0 +1,3 @@
+# Designer edits source files; it has no design model of its own
+
+The Designer applies visual edits as minimal text patches to the project's own templates, static meta and CSS, and relies on HMR to show the result. We rejected a separate design model (such as JSON) that generates code: it would create two sources of truth, break round-tripping with hand-written code, and lock projects into the tool. Because Templates have no holes, a Template is static text that can be parsed and patched losslessly; dynamic expressions the Designer cannot edit safely are shown read-only and never rewritten. Undo is a reverse patch.

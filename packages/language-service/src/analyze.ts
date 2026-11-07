@@ -269,12 +269,19 @@ function findTemplates(sf: ts.SourceFile, tag: string, onError: OnError): Templa
   return models;
 }
 
-/** `${}` holes are blanked out of the scanned text (never parsed inside) and returned as plain TS expressions. */
+/** `${}` holes are not part of Gable templates (TASK-30): each one is reported, and the template is not scanned further. */
 function scanLiteral(sf: ts.SourceFile, classNode: ts.ClassDeclaration, placement: { insertAt: number; indent: string }, literal: ts.TemplateLiteral, onError: OnError): TemplateModel | undefined {
   const bodyStart = literal.getStart(sf) + 1;
   const holes: Src[] = [];
   let text = sf.text.slice(bodyStart, literal.end - 1);
   if (ts.isTemplateExpression(literal)) {
+    let reported = false;
+    for (const span of literal.templateSpans) {
+      const start = span.expression.getStart(sf) - 2;
+      onError(start, span.literal.getStart(sf) - start + 1, "`${}` holes are not supported in templates; use a small component for reusable markup");
+      reported = true;
+    }
+    if (reported) return undefined;
     let before: ts.TemplateHead | ts.TemplateMiddle = literal.head;
     for (const span of literal.templateSpans) {
       const holeStart = before.end - 2;

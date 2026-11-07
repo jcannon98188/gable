@@ -136,3 +136,21 @@ _Avoid_: Sub-package, plugin, module
 **Lockstep release**:
 All Gable npm packages share one version number and are published together, so any set of Gable packages at the same version is guaranteed to work together.
 _Avoid_: Fixed versioning, synchronized release
+
+## Designer
+
+**Designer**:
+The standalone visual editor for Gable apps, used by developers and non-developers alike. It edits the project's source files and never holds a design of its own.
+_Avoid_: Builder, studio, WYSIWYG, editor
+
+**Preview agent**:
+The dev-only code inside a previewed app that reports its Component tree, live Signal values and the source location of each rendered node to the Designer.
+_Avoid_: Inspector, bridge, probe
+
+**Scenario**:
+A named set of Component inputs and provider overrides that places a Component in one situation, such as empty, loading or error, so the Designer can show it in isolation. Scenarios are written in the project's source beside the Component.
+_Avoid_: Story, preset, mock
+
+**Frame**:
+One preview of the app at a chosen device size and environment inside the Designer's canvas. Several Frames can be shown at once, and each runs its own instance of the app.
+_Avoid_: Viewport, device, artboard

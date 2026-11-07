@@ -4,6 +4,7 @@ title: 'Designer: source write-back, undo and structural edits'
 status: To Do
 assignee: []
 created_date: '2026-11-07T03:57:00Z'
+updated_date: '2026-11-07T04:06:00Z'
 labels:
   - needs-triage
 dependencies:
@@ -23,7 +24,7 @@ Visual edits must land as small reviewable text patches so code and designer sta
 - [ ] #1 A dev-server endpoint applies minimal patches to template text, static meta and CSS, and HMR updates the canvas
 - [ ] #2 Text, attribute and binding edits work, with a binding picker listing existing typed signals
 - [ ] #3 Insert from a palette of gable-ui and project components, move, delete, and wrap in @if/@for
-- [ ] #4 Opaque ${} holes and dynamic expressions are displayed read-only and are never rewritten
-- [ ] #5 Undo and redo apply reverse patches, including after external edits to the file are detected
-- [ ] #6 Edits keep the repo formatter output so diffs stay clean
+- [ ] #4 Undo and redo apply reverse patches, including after external edits to the file are detected
+- [ ] #5 Edits keep the repo formatter output so diffs stay clean
+- [ ] #6 Dynamic expressions and bindings the designer cannot edit safely are displayed read-only and are never rewritten
 <!-- AC:END -->

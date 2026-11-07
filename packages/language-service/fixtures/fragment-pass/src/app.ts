@@ -1,13 +1,10 @@
 import { html, signal } from "@gable/core";
 
-const accent = "text-red-500";
-
 export class Box {
   static meta = {
     selector: "x-box",
     template: html`
-      <div class="p-2 text-red-500 ${accent}" [class.font-bold]="bold()" [class]="classes()">{{ bold() }}</div>
-      <div title="x-${accent}"></div>
+      <div class="p-2 text-red-500" [class.font-bold]="bold()" [class]="classes()">{{ bold() }}</div>
     `,
   };
   bold = signal(true);

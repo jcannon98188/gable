@@ -79,7 +79,7 @@ describe("module-level signals and subjects", () => {
 });
 
 describe("non-literal Tailwind class fragments", () => {
-  it("passes literal class names, bindings and holes standing alone", async () => {
+  it("passes literal class names and bindings", async () => {
     expect((await check("fragment-pass")).diagnostics).toEqual([]);
   });
 
@@ -281,5 +281,13 @@ describe("accessibility rules", () => {
   it("honours severity configuration", async () => {
     const { diagnostics } = await check("a11y-fail");
     expect(new Set(diagnostics.map((d) => d.rule)).size).toBe(7);
+  });
+});
+
+describe("template holes", () => {
+  it("reports a ${} hole as a template-syntax error (TASK-30)", async () => {
+    const { diagnostics } = await check("fragment-fail");
+    const holes = diagnostics.filter((d) => d.rule === "template-syntax" && /holes/.test(d.message));
+    expect(holes.length).toBe(2);
   });
 });
