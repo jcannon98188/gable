@@ -125,6 +125,18 @@ export interface AgentMethods extends DevtoolsMethods, NetworkMethods, StorageMe
   httpLog: { params: void; result: HttpLogEntry[] };
   /** Runs the accessibility checker (axe-core, loaded on first use) on the page as it is now. Added after version 1 shipped; additive. */
   a11y: { params: void; result: A11yReport };
+  /** The page’s keyboard focus order (Tab stops with names, roles and order problems). Added after version 1 shipped; additive. */
+  focusOrder: { params: void; result: FocusOrderReport };
+  /** The page’s accessibility tree (roles, names, states); `id` starts from a template node, absent for the whole page. Additive. */
+  a11yTree: { params: { id?: string | null }; result: A11yTreeReport };
+  /** Moves focus as Tab would, `steps` times, reporting each stop, its focus indicator and any focus trap. Additive. */
+  focusStep: { params: { to: "next" | "prev" | "first" | "last" | { id: string }; steps?: number }; result: FocusStepResult };
+  /**
+   * What the canvas overlay draws for accessibility: the numbered focus order, and keyboard-only mode (the page does not take
+   * mouse input, so only the keyboard can operate it; the focused element is always outlined). Lasts as long as the page.
+   * Additive.
+   */
+  a11yView: { params: { focusOrder?: boolean; keyboardOnly?: boolean }; result: { focusOrder: boolean; keyboardOnly: boolean } };
   /**
    * The page's performance as the browser measured it (Performance Timeline: paint, LCP, layout shifts, long tasks, event
    * timing, navigation and resource timing), plus DOM size and what the devtools hook counts. Waits for the page's `load`
@@ -304,6 +316,74 @@ export interface A11yCheck {
   selector: string;
   /** The template node that renders the element (or its nearest ancestor that a template renders); null when no template does. */
   node: { id: string; tag: string; component: string | null } | null;
+}
+
+/** One Tab stop. */
+export interface FocusEntry {
+  /** 1-based position in the order Tab visits. */
+  index: number;
+  tag: string;
+  role: string;
+  /** The accessible name ("" when it has none). */
+  name: string;
+  /** The `tabindex` attribute, if the element has one. */
+  tabindex: number | null;
+  /** In the frame’s CSS pixels. */
+  box: { left: number; top: number; width: number; height: number };
+  focused: boolean;
+  warnings: Array<"positive-tabindex" | "no-name" | "aria-hidden" | "jumps-back">;
+  node: { id: string; tag: string; component: string | null } | null;
+}
+
+export interface FocusOrderReport {
+  url: string;
+  mode: "page" | "component";
+  stops: FocusEntry[];
+  /** Focusable by script or click but not by Tab (`tabindex="-1"`). */
+  scripted: Array<{ tag: string; role: string; name: string; tabindex: number; node: FocusEntry["node"] }>;
+  /** Elements that act as controls (a control `role`, an inline click handler) but that the keyboard cannot reach. */
+  unreachable: Array<{ tag: string; role: string; name: string; reason: string; node: FocusEntry["node"] }>;
+  /** The stop that has focus now (its `index`). */
+  focused: number | null;
+  activeElement: { tag: string; name: string; node: FocusEntry["node"] } | null;
+  notes: string[];
+}
+
+export interface A11yTreeNode {
+  /** The ARIA role, or `text` for a run of text. */
+  role: string;
+  name: string;
+  states: Record<string, string | number | boolean>;
+  /** In the Tab order. */
+  focusable: boolean;
+  warnings: string[];
+  node: { id: string; tag: string; component: string | null } | null;
+  children: A11yTreeNode[];
+}
+
+export interface A11yTreeReport {
+  url: string;
+  mode: "page" | "component";
+  /** The template node the tree starts at; null for the whole page. */
+  root: { id: string; tag: string } | null;
+  nodes: number;
+  truncated: boolean;
+  /** Controls and images that need a name and have none. */
+  unnamed: number;
+  headingSkips: number;
+  tree: A11yTreeNode[];
+  notes: string[];
+}
+
+export interface FocusStepResult {
+  visited: Array<{ index: number; tag: string; role: string; name: string; /** Focusing it changes how it looks (outline, shadow, border, background, underline). */ indicator: boolean; node: FocusEntry["node"] }>;
+  /** How many Tab stops the page has. */
+  stops: number;
+  /** Why the run was cut short: focus is held by something else, or it cycles without reaching the rest. */
+  trapped: string | null;
+  /** Focus went past the last stop (or before the first) and wrapped. */
+  wrapped: boolean;
+  note: string;
 }
 
 export interface PageScenarioInfo {

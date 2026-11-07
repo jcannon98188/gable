@@ -26,6 +26,7 @@ import { registerTokenTools } from "./token-tools.js";
 import { fileOfTarget, positionOf, projectFile, targetAt, unifiedDiff, type SourcePos } from "./targets.js";
 import { registerNetworkTools } from "./network-tools.js";
 import { registerStorageTools } from "./storage-tools.js";
+import { registerA11yTools } from "./a11y-tools.js";
 
 export interface ControlContext {
   root: string;
@@ -698,6 +699,7 @@ export function createControlServer(ctx: ControlContext): McpServer {
   const kit = { server, shell, commit, live, read, write, guard, fail: (message: string): never => { throw new ToolError(message); } };
   registerNetworkTools(kit);
   registerStorageTools(kit);
+  registerA11yTools(kit);
 
   return server;
 }

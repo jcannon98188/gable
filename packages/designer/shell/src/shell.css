@@ -1365,3 +1365,35 @@ ui-virtual-table {
   max-height: 50vh;
   min-height: 160px;
 }
+/* Focus & tree tab (TASK-56.26): a row per Tab stop, and the accessibility tree as an indented outline. */
+.focus-row {
+  grid-template-columns: 34px 92px minmax(0, 1fr) minmax(0, max-content);
+  cursor: pointer;
+}
+.focus-row:hover,
+.focus-row[aria-current="true"] {
+  background: var(--d-hover);
+}
+.focus-row .elink {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tree-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 24px;
+  padding-right: 8px;
+  cursor: pointer;
+}
+.tree-row:hover {
+  background: var(--d-hover);
+}
+.tree-row .tree-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -5,6 +5,7 @@
 import type { DevtoolsEvent, GableDevtoolsHook } from "@gable/core/devtools";
 import type { DesignerHook, DesignNode } from "@gable/core/designer";
 import { RUN_CONTEXT, runOptions, toReport, type AxeLike } from "./a11y.js";
+import { a11yTree, focusOrder, focusOrderOf, nameOf, stepFocus, tabOrder, type NodeRef } from "./a11y-depth.js";
 import { GableCounter, PerfCollector, domSize, settled } from "./perf.js";
 import { SignalState } from "./signal-state.js";
 import { startNetwork, throttled } from "./network.js";
@@ -113,6 +114,7 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     }
     selectionChrome();
     overlays();
+    a11yOverlay();
     const byNode = new Map<string, CanvasDiagnostic[]>();
     for (const d of diagnostics) {
       const node = designer.nodeAt(d.raw, d.offset);
@@ -171,6 +173,69 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
   const WARN = "#f59e0b";
   const chip = (bg: string) => `background:${bg};color:#1b1b1e;font:600 10px/16px ui-monospace,monospace;padding:0 5px;border-radius:3px;white-space:nowrap;overflow:hidden`;
   const mirroredId = (): string | null => (mirrored ? (designer.nodeAt(mirrored.raw, mirrored.start)?.id ?? null) : null);
+  // Accessibility view: the numbered focus order and keyboard-only mode (see a11y-depth.ts). The numbers are the Tab stops in
+  // the order Tab visits them; amber marks a stop with an order problem, and the focused element is always outlined.
+  let a11yFocusOrder = false;
+  let a11yKeyboardOnly = false;
+  const A11Y = "#0d9488";
+  function a11yOverlay(): void {
+    if (!a11yFocusOrder && !a11yKeyboardOnly) return;
+    const active = document.activeElement && document.activeElement !== document.body && !layer.contains(document.activeElement) ? document.activeElement : null;
+    if (a11yFocusOrder) {
+      const order = tabOrder(document);
+      const report = focusOrderOf(document, { nodeOf: nodeFor, mode: pageMode(), url: location.href }, order);
+      let last: DOMRect | null = null;
+      for (const stop of report.stops) {
+        const el = order[stop.index - 1];
+        if (!el) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 && r.height === 0) continue;
+        const bad = stop.warnings.length > 0;
+        const color = bad ? WARN : A11Y;
+        box(`fo${stop.index}`, r, `outline:1.5px dashed ${color};outline-offset:1px`);
+        box(`fn${stop.index}`, new DOMRect(Math.max(0, r.left - 9), Math.max(0, r.top - 9), 20, 18), `background:${color};color:#fff;font:700 11px/18px system-ui;text-align:center;border-radius:9px`, String(stop.index));
+        if (last) {
+          // A line from the previous stop to this one, so the order reads as a path.
+          const x1 = last.left + last.width / 2, y1 = last.top + last.height / 2, x2 = r.left + r.width / 2, y2 = r.top + r.height / 2;
+          const len = Math.hypot(x2 - x1, y2 - y1);
+          box(`fl${stop.index}`, new DOMRect(x1, y1, len, 0), `border-top:1.5px solid ${A11Y}66;transform-origin:0 0;transform:rotate(${Math.atan2(y2 - y1, x2 - x1)}rad)`);
+        }
+        last = r;
+      }
+    }
+    if (active) {
+      const r = active.getBoundingClientRect();
+      box("focus", r, `outline:3px solid ${A11Y};outline-offset:2px;border-radius:2px`);
+      const name = nameOf(active).slice(0, 40);
+      const text = `Focus: <${active.tagName.toLowerCase()}>${name ? ` "${name}"` : " (no name)"}`;
+      box("focuschip", new DOMRect(r.left, Math.max(0, r.top - 18), Math.min(text.length * 6.5 + 12, 280), 16), `${tagStyle()};background:${A11Y};border-radius:3px`, text);
+    }
+  }
+  const pageMode = (): "page" | "component" => (globalThis.__GABLE_SCENES__ ? "component" : "page");
+  /** The template node that renders the element, or its nearest ancestor that one renders. */
+  const nodeFor = (el: Element): NodeRef | null => {
+    for (let e: Element | null = el; e; e = e.parentElement) {
+      const n = designer.nodeOf(e);
+      if (n) return { id: n.id, tag: n.tag, component: n.component?.name ?? null };
+    }
+    return null;
+  };
+  // Keyboard-only mode: the page takes no mouse input in interact mode, so only the keyboard can operate it.
+  for (const type of ["click", "dblclick", "mousedown", "mouseup", "pointerdown", "pointerup", "touchstart", "auxclick", "contextmenu"]) {
+    document.addEventListener(
+      type,
+      (e) => {
+        if (!a11yKeyboardOnly || mode !== "interact" || !e.isTrusted || (e.target instanceof Node && layer.contains(e.target))) return;
+        // Enter and Space on a focused button make a click too (detail 0): that is the keyboard, and it stays.
+        if (type === "click" && (e as MouseEvent).detail === 0) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      },
+      true,
+    );
+  }
+  for (const type of ["focusin", "focusout"]) document.addEventListener(type, () => (a11yFocusOrder || a11yKeyboardOnly) && redraw(), true);
+
   function overlays(): void {
     if (readOnly) {
       const label = "🔒 " + readOnly.label;
@@ -545,6 +610,30 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     pageScenario: () => globalThis.__GABLE_PAGE_SCENARIO__ ?? null,
     httpLog: () => [...(globalThis.__GABLE_DESIGNER_HTTP__ ?? [])],
     a11y: () => checkA11y(),
+    focusOrder: () => focusOrder(document, { nodeOf: nodeFor, mode: pageMode(), url: location.href }),
+    a11yTree: ({ id }) => {
+      const root = id ? ((designer.elementsOf(id)[0] as Element | undefined) ?? null) : null;
+      if (id && !root) throw new Error("That template node is not rendered.");
+      const n = id ? designer.nodeOf(root!) : null;
+      return a11yTree(document, { nodeOf: nodeFor, mode: pageMode(), url: location.href, root, rootNode: n ? { id: n.id, tag: n.tag } : null });
+    },
+    focusStep: ({ to, steps }) => {
+      let target: "next" | "prev" | "first" | "last" | { element: Element };
+      if (typeof to === "object") {
+        const el = (designer.elementsOf(to.id)[0] as Element | undefined) ?? null;
+        if (!el) throw new Error("That template node is not rendered.");
+        target = { element: el };
+      } else target = to;
+      const result = stepFocus(document, { to: target, steps: Math.max(1, Math.min(steps ?? 1, 500)), nodeOf: nodeFor });
+      redraw();
+      return result;
+    },
+    a11yView: ({ focusOrder: f, keyboardOnly: k }) => {
+      if (f !== undefined) a11yFocusOrder = f;
+      if (k !== undefined) a11yKeyboardOnly = k;
+      redraw();
+      return { focusOrder: a11yFocusOrder, keyboardOnly: a11yKeyboardOnly };
+    },
     performance: () => measure(),
     reload: () => reload(),
     setSignalValue: ({ id, text, force }) => signalState.set(id, text, force),

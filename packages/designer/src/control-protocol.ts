@@ -6,7 +6,7 @@
 import type { ComponentDetail, HistoryInfo, HmrEntry, RouterInfo, TravelResult, TreeNode } from "@gable/core/devtools";
 import type { DesignNode } from "@gable/core/designer";
 import type { ColorScheme } from "./devices.js";
-import type { HttpLogEntry, PageScenarioInfo, PerfReport, SceneInfo, SceneStateReport, SignalPin, SignalWriteResult } from "./protocol.js";
+import type { A11yReport, A11yTreeReport, FocusOrderReport, FocusStepResult, HttpLogEntry, PageScenarioInfo, PerfReport, SceneInfo, SceneStateReport, SignalPin, SignalWriteResult } from "./protocol.js";
 import type { NetworkCommand, NetworkCommandResult } from "./network.js";
 import type { StorageCommand, StorageCommandResult } from "./storage.js";
 import type { SourceRange } from "./server/source.js";
@@ -95,6 +95,28 @@ export interface ControlCommands {
   network: { params: NetworkCommand; result: NetworkCommandResult };
   /** The Storage panel: a frame's localStorage, sessionStorage and cookies, read and edited. */
   storage: { params: StorageCommand; result: StorageCommandResult };
+  /** Accessibility of the selected frame (TASK-56.26): the checker report, focus order, accessibility tree, stepping focus and the canvas view. */
+  a11y: { params: A11yCommand; result: A11yCommandResult };
+}
+
+/** What the `a11y` command does. `view` sets the canvas overlay and keyboard-only mode (the Focus & tree panel shows them). */
+export type A11yCommand =
+  | { action: "report"; rerun?: boolean }
+  | { action: "focusOrder" }
+  | { action: "tree"; id?: string }
+  | { action: "step"; to: "next" | "prev" | "first" | "last" | { id: string }; steps?: number }
+  | { action: "view"; focusOrder?: boolean; keyboardOnly?: boolean };
+
+export interface A11yCommandResult {
+  frame: { name: string; width: number; height: number };
+  /** The canvas view after the command. */
+  view: { focusOrder: boolean; keyboardOnly: boolean };
+  report?: A11yReport | null;
+  /** Why the checker report is missing. */
+  error?: string | null;
+  focus?: FocusOrderReport;
+  tree?: A11yTreeReport;
+  step?: FocusStepResult;
 }
 
 /** What the `history` command does: report, travel (to a step; `start`: before the first; `live`: the newest), clear, record. */
