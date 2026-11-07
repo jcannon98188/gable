@@ -4,7 +4,7 @@ title: 'Designer: Tailwind mode'
 status: To Do
 assignee: []
 created_date: '2026-11-07T03:58:00Z'
-updated_date: '2026-11-07T05:22:00Z'
+updated_date: '2026-11-07T05:53:00Z'
 labels:
   - needs-triage
 dependencies:
@@ -47,6 +47,14 @@ created: 2026-11-07T05:22:00Z
 ---
 
 From TASK-56.3 (merged): the shell theme and Tailwind are a separate build from the previewed project, so they cannot collide.
+
+---
+
+created: 2026-11-07T05:53:00Z
+
+---
+
+From TASK-56.4 (merged): parseTemplateTree(rawTemplate) gives elements with start/nameEnd/openEnd/closeStart and attrInfo[] {name,nameEnd,valueStart,valueEnd,quote,start,end}; edit via {op:"setAttr",target,name:"class",value} / removeAttr, setBinding for [class.x]; result {ok,label,file,select} or {ok:false,code,error}. Dynamic class values ({{ }} or bindings) are read-only. From TASK-56.5 (merged): read FrameSet.selected, selectedWidth, selectedBreakpoint in packages/designer/shell/src/app/frames.ts; breakpoints are Tailwind v4 defaults in devices.ts (TAILWIND_BREAKPOINTS), replace with the project own. CDP can force pseudo-states on WebView2 (src/server/cdp.ts is the client).
 
 ---
 <!-- COMMENTS:END -->
