@@ -1,58 +1,65 @@
 // The panels. Templates only read signals (the language service enforces it), so each panel turns the Designer state into
 // display-ready rows in a `computed` and the template just lays them out.
-import { computed, html, inject } from "@gable/core";
+import { computed, effect, html, inject, signal, untracked } from "@gable/core";
+import type { TreeNode } from "@gable/core/devtools";
 import { UiBadge } from "../components/ui/badge.js";
 import { UiButton } from "../components/ui/button.js";
 import { UiSeparator } from "../components/ui/separator.js";
 import { UiTooltip } from "../components/ui/tooltip.js";
+import { UiTree, type TreeNode as UiTreeNode } from "../components/ui/tree.js";
 import { DesignerState } from "./designer-state.js";
 
 type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
 
-/**
- * The component tree.
- * TODO(gable-ui): TreeView. This is a flat list indented by depth; it has no expand/collapse, roving focus or arrow-key
- * navigation until gable-ui has a tree component.
- */
+/** The component tree: a gable-ui Tree (expand/collapse, roving focus, arrow keys). Selecting a row selects that component. */
 export class ComponentTree {
   static meta = {
     selector: "app-component-tree",
     host: { class: "block" },
+    imports: [UiTree],
     template: html`
-      <div class="flex flex-col gap-px p-2" role="tree" aria-label="Component tree">
-        @for (row of rows(); track row.id) {
-          <button
-            class="flex w-full items-center gap-2 rounded-sm px-2 py-1 text-left text-sm hover:bg-accent"
-            role="treeitem"
-            [attr.aria-level]="row.level"
-            [attr.aria-selected]="row.selected"
-            [style.padding-left]="row.indent"
-            [class.bg-accent]="row.selected"
-            (click)="state.selectComponent(row.id)"
-          >
-            <span class="font-medium">{{ row.name }}</span>
-            <span class="truncate text-xs text-muted-foreground">{{ row.selector }}</span>
-          </button>
-        }
-        @if (empty()) {
-          <p class="p-2 text-sm text-muted-foreground">No components yet.</p>
-        }
-      </div>
+      @if (empty()) {
+        <p class="p-2 text-sm text-muted-foreground">No components yet.</p>
+      } @else {
+        <ui-tree class="p-2" [nodes]="nodes()" [(expanded)]="expanded" [(selected)]="selected" selectionMode="single" label="Component tree"></ui-tree>
+      }
     `,
   };
   state = inject(DesignerState);
-  rows = computed(() => {
-    const selected = this.state.component()?.id;
-    return this.state.rows().map(({ node, depth }) => ({
-      id: node.id,
-      name: node.name,
-      selector: node.selector,
-      level: depth + 1,
-      indent: `${depth * 14 + 8}px`,
-      selected: node.id === selected,
-    }));
+  nodes = computed(() => {
+    const children = new Map<string | null, TreeNode[]>();
+    for (const n of this.state.tree()) children.set(n.parent, [...(children.get(n.parent) ?? []), n]);
+    const build = (parent: string | null): UiTreeNode[] =>
+      (children.get(parent) ?? []).map((n) => {
+        const kids = build(n.id);
+        return { id: n.id, label: n.name, description: n.selector, ...(kids.length ? { children: kids } : {}) };
+      });
+    return build(null);
   });
-  empty = computed(() => this.rows().length === 0);
+  empty = computed(() => this.nodes().length === 0);
+  expanded = signal<string[]>([]);
+  selected = signal<string[]>([]);
+  seen = new Set<string>();
+  /** Branches start open: a component is expanded the first time it appears; collapsing it afterwards is the user's call. */
+  openNew = effect(() => {
+    const fresh = this.state.tree().filter((n) => !this.seen.has(n.id));
+    if (!fresh.length) return;
+    for (const n of fresh) this.seen.add(n.id);
+    untracked(() => this.expanded.update((e) => [...e, ...fresh.map((n) => n.id)]));
+  });
+  /** The inspector's component (picked on the canvas or in the tree) is the tree's selection. */
+  fromState = effect(() => {
+    const id = this.state.component()?.id;
+    untracked(() => {
+      if (this.selected()[0] !== id) this.selected.set(id ? [id] : []);
+    });
+  });
+  toState = effect(() => {
+    const id = this.selected()[0];
+    untracked(() => {
+      if (id && id !== this.state.component()?.id) void this.state.selectComponent(id);
+    });
+  });
 }
 
 /** The injector tree: each injector with the Providers behind its Tokens. */
