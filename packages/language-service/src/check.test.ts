@@ -222,6 +222,7 @@ describe("gable-check", () => {
         "expression-syntax",
         "expression-syntax",
         "expression-syntax",
+        "expression-syntax",
       ]);
       const numeric = where("fixes", "{{ n + 1 }}", 3);
       const unfixable = (diagnostics as Fixed[]).filter((d) => !d.fixes?.length);
@@ -249,16 +250,21 @@ describe("gable-check", () => {
 
       it("extracts computed view-model signals onto the component and rewrites the template", () => {
         expect(fixedSource).toContain("<p>{{ count() }}</p>");
-        expect(fixedSource).toContain("readonly countView = computed(() => this.count() + 1);");
-        expect(fixedSource).toContain("<p>{{ countView() }}</p>");
-        expect(fixedSource).toContain("readonly labelView = computed(() => this.label(this.count()));");
-        expect(fixedSource).toContain("readonly shoutView = computed(() => this.shout());");
+        expect(fixedSource).toContain("readonly countText = computed(() => this.count() + 1);");
+        expect(fixedSource).toContain("<p>{{ countText() }}</p>");
+        expect(fixedSource).toContain("readonly labelText = computed(() => this.label(this.count()));");
+        expect(fixedSource).toContain("readonly shoutText = computed(() => this.shout());");
         expect(fixedSource).toContain('import { html, signal, computed } from "@gable/core";');
+      });
+
+      it("names an extracted signal after the binding it feeds", () => {
+        expect(fixedSource).toContain("readonly ariaExpanded = computed(() => this.count() ? 'true' : 'false');");
+        expect(fixedSource).toContain('[attr.aria-expanded]="ariaExpanded()"');
       });
 
       it("turns an Observable into a signal for the derived value", () => {
         expect(fixedSource).toContain("readonly user = toSignal(this.user$);");
-        expect(fixedSource).toContain(`readonly userView = computed(() => this.user()?.name + '!');`);
+        expect(fixedSource).toContain(`readonly userText = computed(() => this.user()?.name + '!');`);
         expect(fixedSource).toContain('import { toSignal } from "@gable/core/rxjs";');
       });
 

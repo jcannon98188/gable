@@ -16,6 +16,7 @@ export class Fixable {
       <p>{{ label(count()) }}</p>
       <p>{{ shout() }}</p>
       <p>{{ user$.name + '!' }}</p>
+      <button [attr.aria-expanded]="count() ? 'true' : 'false'">more</button>
       @for (todo of todos(); track todo.id) {
         <li>{{ todo.title + (todo.done ? ' (done)' : '') }}</li>
         <li>{{ describe(todo) }}</li>

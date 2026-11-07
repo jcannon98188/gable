@@ -98,6 +98,13 @@ function uniqueName(preferred: string, existing: ts.Type | undefined, claimed: S
   return name;
 }
 
+/** A readable member name: the binding target when there is one (`aria-expanded` gives `ariaExpanded`), else the first member read with a `Text` suffix, else `value`. */
+function suggestName(hint: string | undefined, member: string | undefined): string {
+  const target = hint?.replace(/^(attr|class|style)\./, "");
+  if (target && /^[A-Za-z][\w-]*$/.test(target)) return target.replace(/-+([a-z])/g, (_, c: string) => c.toUpperCase()).replace(/^[A-Z]/, (c) => c.toLowerCase());
+  return `${(member ?? "value").replace(/\$$/, "")}Text`;
+}
+
 /** Extract a value expression into a computed view-model signal (see the file header). */
 export function extractFix(file: string, site: Site, env: FixEnv): Fix | undefined {
   const text = site.expr.text;
@@ -189,7 +196,7 @@ export function extractFix(file: string, site: Site, env: FixEnv): Fix | undefin
     return { title: `Extract "${text}" into the rows view model "${rowsName}"`, edits };
   }
 
-  const name = uniqueName(`${(members[0]?.name ?? "value").replace(/\$$/, "")}View`, cls, claimed);
+  const name = uniqueName(suggestName(site.hint, members[0]?.name), cls, claimed);
   replaceSite.newText = `${name}()`;
   edits.push(replaceSite, { file, start: insertAt, length: 0, newText: lines(...members_, `readonly ${name} = ${computed.local}(() => ${body});`) });
   return { title: `Extract "${text}" into the computed signal "${name}"`, edits };

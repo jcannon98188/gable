@@ -92,6 +92,8 @@ export interface Site {
   /** The innermost enclosing `@for`, when the expression is in its body. */
   loop?: LoopInfo;
   model: TemplateModel;
+  /** The binding target the expression feeds (`aria-expanded`, `disabled`), for naming an extracted signal; absent in text. */
+  hint?: string;
 }
 
 export interface TemplateModel {
@@ -185,8 +187,8 @@ export function emit(
     return "unknown";
   };
 
-  function expression(e: Src, kind: Group["kind"], locals: ReadonlySet<string>, open: string, close: string, extractable = true, rule?: RuleId): void {
-    if (kind === "value" && extractable) sites.push({ expr: e, locals, loop, model });
+  function expression(e: Src, kind: Group["kind"], locals: ReadonlySet<string>, open: string, close: string, extractable = true, rule?: RuleId, hint?: string): void {
+    if (kind === "value" && extractable) sites.push({ expr: e, locals, loop, model, hint });
     if (kind !== "hole" && !isValid(e, kind as ExprKind)) return;
     const group: Group = { kind, rule, parts: [], srcStart: e.start, srcEnd: e.start + e.text.length, refs: [], genStart: 0, genEnd: 0 };
     const add = (text: string, src?: number): Part => {
@@ -271,7 +273,7 @@ export function emit(
               if (comp) controls.push({ tag: node.tag, tagStart: node.tagStart, component: probe(`declare const __cc_${controls.length}: ${comp};\n`) });
             } else if (e.kind === "model") expression(e, "model", locals, `__w<__Prop<${instanceType(node.tag)}, __El<${tag}>, ${JSON.stringify(e.name)}>>(`, ");\n");
             else if (e.name === "routerLink") expression(e, "value", locals, "__link(", ");\n", true, "router-link-type");
-            else expression(e, "value", locals, "void (", ");\n");
+            else expression(e, "value", locals, "void (", ");\n", true, undefined, e.name);
           }
           push("{\n");
           nodes(node.children, locals);
