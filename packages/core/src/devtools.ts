@@ -62,6 +62,8 @@ export interface TreeNode {
   host: string;
   /** Id of the component's own injector, when it has one. */
   injector: string | null;
+  /** What tells this instance apart from its siblings: the host's id, aria-label or a snippet of its text. Empty when none. */
+  label: string;
 }
 
 export interface SourceInfo {
@@ -554,11 +556,18 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
     return h && typeof h === "object" ? String(h.tagName ?? h.tag ?? h.nodeName ?? "node").toLowerCase() : "node";
   };
 
+  const hostLabel = (host: unknown): string => {
+    const h = host as any;
+    if (!h || typeof h.getAttribute !== "function") return "";
+    const text = String(h.getAttribute("aria-label") ?? h.getAttribute("id") ?? h.textContent ?? "").replace(/s+/g, " ").trim();
+    return text.length > 24 ? `${text.slice(0, 24)}…` : text;
+  };
+
   const selectorOf = (Class: Function): string => String((Class as any).meta?.selector ?? "");
 
   function treeNode(c: Comp): TreeNode {
     const inj = c.injector ? injByObj.get(c.injector) : undefined;
-    return { id: c.id, parent: c.parent?.id ?? null, name: className(c.Class), selector: selectorOf(c.Class), host: hostTag(c.host), injector: inj?.id ?? null };
+    return { id: c.id, parent: c.parent?.id ?? null, name: className(c.Class), selector: selectorOf(c.Class), host: hostTag(c.host), injector: inj?.id ?? null, label: hostLabel(c.host) };
   }
 
   function sourceOf(Class: Function): SourceInfo | null {

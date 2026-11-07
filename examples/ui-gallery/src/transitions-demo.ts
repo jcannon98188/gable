@@ -42,6 +42,9 @@ class About {
 /** Pages are animated by the outlet's `transition`; `about` opts out. */
 export const transitionRoutes: Route[] = [
   { path: '', component: Home },
+  // The page itself is served at /transitions.html (or /transitions), which must match too.
+  { path: 'transitions.html', component: Home },
+  { path: 'transitions', component: Home },
   { path: 'inbox', component: Inbox },
   { path: 'about', component: About, transition: false },
 ];
