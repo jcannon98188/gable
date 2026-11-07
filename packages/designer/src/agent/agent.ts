@@ -403,6 +403,13 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     selectNode: ({ id }) => (select(id), true),
     hoverNode: ({ id }) => ((hovered = id), redraw(), true),
     nodeAt: ({ raw, offset }) => designer.nodeAt(raw, offset),
+    nodeBySelector: ({ selector }) => {
+      for (let el = document.querySelector(selector); el; el = el.parentElement) {
+        const node = designer.nodeOf(el);
+        if (node) return node;
+      }
+      return null;
+    },
     setDiagnostics: ({ items }) => ((diagnostics = items), redraw(), place()),
     setEmulation: ({ touch, dpr }) => ({ touchEvents: emulate(touch, dpr) }),
     setPreview: (p) => ({ elements: setPreview(p) }),

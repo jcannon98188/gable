@@ -23,6 +23,7 @@ import { DevServer, ProjectLog, type DevServerStatus } from "./dev-server.js";
 import { checkProject, projectName, rememberProject, runInstall, type ProjectCheck } from "./projects.js";
 import { handleProjectApi } from "./project-api.js";
 import { dataDir } from "./settings.js";
+import { createControlPlane } from "./mcp/plane.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -36,6 +37,8 @@ export interface BackendOptions {
   cdpPort?: number;
   /** Where recent projects are kept (tests); the platform's data directory by default. */
   dataDir?: string;
+  /** Where the MCP session file is written (the user data directory by default); `false` writes none. */
+  mcpSessionDir?: string | false;
 }
 
 export interface ProjectInfo {
@@ -55,6 +58,8 @@ export interface Backend {
   readonly url: string;
   readonly token: string;
   readonly previewUrl: string;
+  /** The MCP control plane for agents (streamable HTTP; `Authorization: Bearer <token>`). */
+  readonly mcp: { url: string; token: string };
   close(): Promise<void>;
 }
 
@@ -192,6 +197,30 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
   let session = openSession(resolve(options.root));
   session.server.start();
 
+  // The MCP control plane follows the open project: its context reads whichever session is current.
+  const control = createControlPlane({
+    get root() {
+      return session.root;
+    },
+    get info() {
+      return session.info();
+    },
+    get edits() {
+      return session.edits;
+    },
+    get tailwind() {
+      return session.tailwind;
+    },
+    cdpPort: options.cdpPort ?? null,
+    sessionDir: options.mcpSessionDir,
+    diagnostics: async (refresh) => {
+      const s = session;
+      if (!s.diagnostics || refresh) await s.runAnalysis();
+      return s.diagnostics!;
+    },
+    historyChanged: () => broadcast("history", session.edits.history()),
+  });
+
   /** Closes the open project and opens `root` behind the same server; every shell is told to reload. */
   async function switchProject(root: string): Promise<ProjectInfo> {
     const previous = session;
@@ -250,6 +279,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
       res.setHeader("access-control-allow-headers", "authorization, content-type");
     }
     if (req.method === "OPTIONS") return void ((res.statusCode = 204), res.end());
+    if (await control.handleMcp(req, res, url)) return;
 
     if (url.pathname.startsWith("/api/")) {
       const bearer = req.headers.authorization === `Bearer ${token}` || url.searchParams.get("token") === token;
@@ -310,6 +340,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
           req.on("close", () => clients.delete(res));
           return;
       }
+      if (await control.handleShell(req, res, url, readBody, json)) return;
       if (await handleTailwindApi({ service: tailwind, cdp, json, readBody }, req, res, url)) return;
       if (await handleDeviceApi({ root, previewUrl, cdp, json, readBody }, req, res, url)) return;
       const projectApi = { root: () => root, dataDir: data, log: () => s.log.text(), open: switchProject, install, restart: async () => (await s.server.restart(), s.info()), json, readBody };
@@ -331,12 +362,15 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
   await new Promise<void>((ok) => server.listen(port, "127.0.0.1", ok));
   actualPort = (server.address() as { port: number }).port;
   origin = `http://127.0.0.1:${actualPort}`;
+  control.listening(origin);
 
   return {
     url: origin,
     token,
     previewUrl,
+    mcp: { url: control.url, token: control.mcp.token },
     async close() {
+      await control.close();
       for (const c of clients) c.end();
       cdp?.close();
       await session.close();

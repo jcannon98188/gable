@@ -9,6 +9,7 @@ import { UiTooltip } from "../components/ui/tooltip.js";
 import { UiIcon } from "../lib/ui/icon.js";
 import { ChromeState } from "./chrome-state.js";
 import { CommandPalette } from "./commands.js";
+import { ControlChannel } from "./control-channel.js";
 import { DesignerState } from "./designer-state.js";
 import { Dialogs } from "./dialogs.js";
 import { DrawerBody, DrawerTabs } from "./drawer.js";
@@ -60,6 +61,8 @@ export class TopBar {
   state = inject(DesignerState);
   chrome = inject(ChromeState);
   edit = inject(EditState);
+  /** Lets an agent drive this window over MCP (TASK-56.13). */
+  control = inject(ControlChannel);
 
   targets: ToggleGroupItem[] = [
     { value: "component", label: "Component" },

@@ -8,6 +8,13 @@ import { fileURLToPath } from "node:url";
 import { startBackend } from "./backend.js";
 import { projectProblem, recentProjects, rememberProject } from "./projects.js";
 
+// `gable-designer mcp <projectDir>`: the MCP control plane over stdio (see mcp/stdio.ts). It runs until its client closes
+// stdin and exits from there, so nothing below runs in that mode.
+if (process.argv[2] === "mcp") {
+  await (await import("./mcp/stdio.js")).main(process.argv.slice(3));
+  await new Promise<never>(() => undefined);
+}
+
 const args = process.argv.slice(2);
 const flag = (name: string) => {
   const i = args.indexOf(name);
@@ -29,7 +36,7 @@ if (problem) console.error(`[designer] ${problem}`);
 else rememberProject(root);
 
 const backend = await startBackend({ root, shellDir: shell, port: port ? Number(port) : undefined, previewPort: previewPort ? Number(previewPort) : undefined, cdpPort: cdpPort ? Number(cdpPort) : undefined });
-console.log(`GABLE_DESIGNER_READY ${JSON.stringify({ url: backend.url, token: backend.token, previewUrl: backend.previewUrl })}`);
+console.log(`GABLE_DESIGNER_READY ${JSON.stringify({ url: backend.url, token: backend.token, previewUrl: backend.previewUrl, mcp: backend.mcp })}`);
 console.error(`[designer] ${backend.url}/  (open it in a browser; the Tauri window does the same)`);
 const stop = () => void backend.close().then(() => process.exit(0));
 process.on("SIGINT", stop);

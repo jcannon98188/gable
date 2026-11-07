@@ -84,6 +84,8 @@ export interface AgentMethods extends DevtoolsMethods {
   hoverNode: { params: { id: string | null }; result: true };
   /** The template node of a source offset in a template literal whose text is `raw`, if it is rendered. */
   nodeAt: { params: { raw: string; offset: number }; result: DesignNode | null };
+  /** The template node of the first element matching a CSS selector (or its nearest ancestor that has one). */
+  nodeBySelector: { params: { selector: string }; result: DesignNode | null };
   /** The diagnostics to show on the canvas; each is located by the template literal text and an offset into it. */
   setDiagnostics: { params: { items: CanvasDiagnostic[] }; result: { placed: number; unplaced: number } };
   /** What the page itself emulates for its frame: touch events from the mouse, and the pixel ratio scripts read. */
