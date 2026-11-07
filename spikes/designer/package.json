@@ -1,7 +1,0 @@
-{
-  "name": "gable-designer-spike",
-  "private": true,
-  "type": "module",
-  "description": "THROWAWAY spike: designer shell + preview agent. Not shipped, not a workspace.",
-  "scripts": { "dev": "node server.mjs ../../examples/todomvc", "test": "node verify.mjs" }
-}
