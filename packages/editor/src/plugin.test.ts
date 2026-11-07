@@ -74,6 +74,8 @@ describe("GableEditor", () => {
     const ed = new GableEditor({ plugins: [corePlugin, p] });
     ed.attachYDoc(new Y.Doc());
     ed.destroy();
-    expect(log).toEqual(["attach:true", "dispose"]);
+    const ed2 = new GableEditor({ plugins: [corePlugin, p], ydoc: new Y.Doc() });
+    ed2.destroy();
+    expect(log).toEqual(["attach:true", "dispose", "attach:true", "dispose"]);
   });
 });

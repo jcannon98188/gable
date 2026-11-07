@@ -4,6 +4,8 @@ import { collectToolbar, resolvePlugins, type EditorPlugin, type ToolbarItem } f
 
 export interface GableEditorOptions extends Partial<Omit<EditorOptions, "extensions">> {
   plugins: readonly EditorPlugin[];
+  /** Shared document; when given, every plugin's `yjs` hook runs against it right after construction. */
+  ydoc?: Y.Doc;
 }
 
 /** A TipTap editor assembled from plugins. Works headless: omit `element` and no view is mounted. */
@@ -14,16 +16,17 @@ export class GableEditor {
   #disposers: Array<() => void> = [];
 
   constructor(options: GableEditorOptions) {
-    const { plugins, ...rest } = options;
+    const { plugins, ydoc, ...rest } = options;
     this.plugins = resolvePlugins(plugins);
     this.toolbar = collectToolbar(this.plugins);
     this.editor = new Editor({
       ...rest,
       extensions: this.plugins.flatMap((p) => [...(p.extensions ?? [])]),
     });
+    if (ydoc) this.attachYDoc(ydoc);
   }
 
-  /** Attach a Y.Doc: runs every plugin's `yjs` hook. The document binding itself is TASK-75.2. */
+  /** Attach a Y.Doc: runs every plugin's `yjs` hook. Plugins keep extra shared state (comments, suggestions) next to the document. */
   attachYDoc(ydoc: Y.Doc): void {
     for (const p of this.plugins) {
       const dispose = p.yjs?.({ ydoc, editor: this.editor });
