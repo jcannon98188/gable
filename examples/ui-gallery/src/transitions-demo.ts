@@ -62,17 +62,17 @@ export class TransitionsDemo {
     // Not scoped: the rules style the routed pages, which are other components.
     encapsulation: 'none' as const,
     styles: `
-      app-root nav { display: flex; gap: 1rem; padding: 1rem; }
-      app-root a.on { font-weight: 600; text-decoration: underline; }
-      app-root router-outlet { display: grid; padding: 1rem; overflow: hidden; }
-      app-root router-outlet > * { grid-area: 1 / 1; }
-      app-root router-outlet > [data-state='open'] { animation: demo-in 250ms ease-out; }
-      app-root router-outlet > [data-state='closed'] { animation: demo-out 250ms ease-in forwards; }
-      app-root .row { animation: demo-in 200ms ease-out; display: flex; gap: .5rem; }
-      app-root .row[data-state='closed'] { animation: demo-out 200ms ease-in forwards; }
+      nav { display: flex; gap: 1rem; padding: 1rem; }
+      a.on { font-weight: 600; text-decoration: underline; }
+      router-outlet { display: grid; padding: 1rem; overflow: hidden; }
+      router-outlet > * { grid-area: 1 / 1; }
+      router-outlet > [data-state='open'] { animation: demo-in 250ms ease-out; }
+      router-outlet > [data-state='closed'] { animation: demo-out 250ms ease-in forwards; }
+      .row { animation: demo-in 200ms ease-out; display: flex; gap: .5rem; }
+      .row[data-state='closed'] { animation: demo-out 200ms ease-in forwards; }
       @keyframes demo-in { from { opacity: 0; transform: translateX(16px); } }
       @keyframes demo-out { to { opacity: 0; transform: translateX(-16px); } }
-      @media (prefers-reduced-motion: reduce) { app-root * { animation-duration: 1ms !important; } }
+      @media (prefers-reduced-motion: reduce) { * { animation-duration: 1ms !important; } }
     `,
     template: html`
       <nav>
