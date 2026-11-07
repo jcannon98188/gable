@@ -18,7 +18,7 @@ export class CarouselDemo {
             @for (step of steps; track step) {
               <ui-carousel-item>
                 <div class="p-1">
-                  <ui-card class="flex aspect-video items-center justify-center text-4xl font-semibold">{{ step }}</ui-card>
+                  <div uiCard class="flex aspect-video items-center justify-center text-4xl font-semibold">{{ step }}</div>
                 </div>
               </ui-carousel-item>
             }
@@ -33,7 +33,7 @@ export class CarouselDemo {
             @for (step of steps; track step) {
               <ui-carousel-item>
                 <div class="p-1">
-                  <ui-card class="flex aspect-video items-center justify-center text-4xl font-semibold">{{ step }}</ui-card>
+                  <div uiCard class="flex aspect-video items-center justify-center text-4xl font-semibold">{{ step }}</div>
                 </div>
               </ui-carousel-item>
             }
