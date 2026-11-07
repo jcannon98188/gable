@@ -23,6 +23,16 @@ export class ChartDemo {
 
         <div uiCard>
           <div uiCardHeader>
+            <h2 uiCardTitle>Stacked bar chart</h2>
+            <p uiCardDescription>Click a legend entry to hide a series</p>
+          </div>
+          <div uiCardContent>
+            <ui-chart type="bar" label="Visitors by month, stacked" [data]="months" xKey="month" [series]="visitors" [height]="260" [stacked]="true"></ui-chart>
+          </div>
+        </div>
+
+        <div uiCard>
+          <div uiCardHeader>
             <h2 uiCardTitle>Line chart</h2>
             <p uiCardDescription>The same data as lines</p>
           </div>

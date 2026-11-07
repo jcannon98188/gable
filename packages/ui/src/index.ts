@@ -54,3 +54,6 @@ export * from "./components/chart.js";
 export * from "./components/calendar.js";
 export * from "./components/date-picker.js";
 export * from "./components/resizable.js";
+export * from "./components/button-group.js";
+export * from "./components/tree.js";
+export * from "./components/json-viewer.js";

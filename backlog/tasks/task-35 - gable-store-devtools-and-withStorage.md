@@ -4,7 +4,7 @@ title: '@gable/store: devtools and withStorage'
 status: To Do
 assignee: []
 created_date: '2026-11-07T03:12:00Z'
-updated_date: '2026-11-07T03:49:00Z'
+updated_date: '2026-11-07T05:01:00Z'
 labels:
   - store
   - needs-triage
@@ -31,4 +31,6 @@ Later work: a devtools integration (state and action history) and a withStorage 
 Devtools for stores should plug into the general devtools instrumentation task (TASK-45) rather than building a separate panel.
 
 Devtools plug-in point (from TASK-45): stores need no dependency on core internals. In dev, call globalThis.__GABLE_DEVTOOLS_HOOK__?.registerInspector(id, { label, snapshot: () => state }) and use the returned handle.log(type, data) for each action or change. Guard with the DEV flag so production drops it. The extension's Stores tab then shows the snapshot and history. See docs/devtools.md.
+
+Done: withDevtools(name) in @gable/store (store.ts): dev-gated (__GABLE_DEV__), registers via globalThis.__GABLE_DEVTOOLS_HOOK__.registerInspector, logs a 'patch' entry (changed keys) per changing patchState, disposes on store destroy; tests in packages/store/src/devtools.test.ts; docs/store.md and docs/devtools.md. Remaining: withStorage and action-level history (see follow-ups).
 <!-- SECTION:NOTES:END -->

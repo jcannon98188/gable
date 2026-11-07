@@ -1,0 +1,7 @@
+{
+  "extends": "../tsconfig.fixture.json",
+  "compilerOptions": {
+    "plugins": [{ "name": "@gable/language-service", "rules": { "i18n-unmarked-text": "warn" } }]
+  },
+  "include": ["src"]
+}

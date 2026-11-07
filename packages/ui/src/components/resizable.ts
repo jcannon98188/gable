@@ -1,4 +1,5 @@
 import { computed, contentChildren, effect, html, injectHost, input, model, signal, untracked } from "@gable/core";
+import { currentScope } from "@gable/core/internal";
 import { ResizeEngine, bindProps, type ResizePanelConfig } from "@gable/ui-primitives";
 import { UiIcon } from "../lib/icon.js";
 import { cn } from "../lib/cn.js";
@@ -9,6 +10,20 @@ const num = (value: unknown, fallback?: number) => {
   const n = typeof value === "string" && value.trim() !== "" ? Number(value) : value;
   return typeof n === "number" && Number.isFinite(n) ? n : fallback;
 };
+
+/** Sorts items by the position of their host elements in the document (stable; items not in a document keep their order). */
+function byDocumentOrder<T>(items: readonly T[], el: (item: T) => Node | undefined): T[] {
+  return items
+    .map((item, index) => ({ item, index, node: el(item) }))
+    .sort((a, b) => {
+      if (!a.node || !b.node || a.node === b.node || typeof a.node.compareDocumentPosition !== "function") return a.index - b.index;
+      const rel = a.node.compareDocumentPosition(b.node);
+      if (rel & 4) return -1; // b follows a
+      if (rel & 2) return 1; // b precedes a
+      return a.index - b.index;
+    })
+    .map((x) => x.item);
+}
 
 /** What a handle needs from its group (projected content cannot inject the group, so the group hands itself over). */
 export interface ResizableOwner {
@@ -40,6 +55,8 @@ export class UiResizablePanel {
   /** An id for the panel (the handle's `aria-controls` points at it); generated when not set. */
   id = input<string>("");
 
+  /** The panel's element, for ordering panels by where they sit in the page. */
+  el = injectHost<HTMLElement>().host as HTMLElement | undefined;
   /** Set by the group. */
   size = signal(0);
   collapsed = signal(false);
@@ -87,6 +104,7 @@ export class UiResizableHandle {
   label = input<string>("Resize");
   class = input<string>("");
 
+  el = injectHost<HTMLElement>().host as HTMLElement | undefined;
   /** Set by the group. */
   owner = signal<ResizableOwner | null>(null);
   index = signal(-1);
@@ -160,9 +178,12 @@ export class UiResizableHandle {
  * that name and restores it on the next visit (guarded: storage that is unavailable or full is skipped). A layout bound
  * through `layout` wins over a saved one.
  *
- * Panels and handles are matched by order of creation: put a handle between each pair of panels. Panels added later by
- * `@if` or `@for` are appended in the order they are created, so keep a group's panels static or re-render the group.
- * Nested groups work: each group manages the panels written directly in it.
+ * Panels and handles are matched by their order in the document: put a handle between each pair of panels. Panels added
+ * or removed later by `@if` or `@for` are re-registered in place (a childList observer re-reads the order, including
+ * when items are reordered), and the layout is recomputed from the defaults for the new set of panels. Nested groups
+ * work: each group manages the panels written directly in it. When a handle's neighbour is at its minimum, a drag
+ * carries on into the next panel. In a right-to-left horizontal group (`dir="rtl"` on the group or an ancestor) panels
+ * run right to left and pointer drags and the arrow keys are mirrored.
  */
 export class UiResizablePanelGroup {
   static meta = { selector: "ui-resizable-panel-group", template: html`<slot></slot>` };
@@ -177,10 +198,35 @@ export class UiResizablePanelGroup {
   layout = model<number[]>([]);
   class = input<string>("");
 
-  panels = contentChildren(UiResizablePanel);
-  handles = contentChildren(UiResizableHandle);
-  engine = new ResizeEngine({ direction: () => this.direction(), keyboardStep: () => num(this.keyboardStep(), 10)! });
-  private host = injectHost().host as { getBoundingClientRect?: () => { width: number; height: number } };
+  private registered = contentChildren(UiResizablePanel);
+  private registeredHandles = contentChildren(UiResizableHandle);
+  /** Bumped when the group's children change, so the document order is read again. */
+  private shuffle = signal(0);
+  panels = computed(() => {
+    this.shuffle();
+    return byDocumentOrder(this.registered(), (p) => p.el);
+  });
+  handles = computed(() => {
+    this.shuffle();
+    return byDocumentOrder(this.registeredHandles(), (h) => h.el);
+  });
+  engine = new ResizeEngine({ direction: () => this.direction(), keyboardStep: () => num(this.keyboardStep(), 10)!, rtl: () => this.rtl() });
+  private host = injectHost().host as HTMLElement & { getBoundingClientRect?: () => { width: number; height: number } };
+  private watch = (() => {
+    const MO = this.host?.ownerDocument?.defaultView?.MutationObserver;
+    if (!MO || !this.host) return;
+    const observer = new MO(() => this.shuffle.update((n) => n + 1));
+    observer.observe(this.host, { childList: true });
+    currentScope()?.onDispose(() => observer.disconnect());
+  })();
+  /** True when this is a horizontal group laid out right to left. */
+  private rtl = (): boolean => {
+    const host = this.host;
+    if (!host || this.direction() !== "horizontal") return false;
+    const dir = host.closest?.("[dir]")?.getAttribute("dir");
+    if (dir) return dir.toLowerCase() === "rtl";
+    return host.ownerDocument?.defaultView?.getComputedStyle?.(host)?.direction === "rtl";
+  };
 
   private classes = useHostClass(() => cn("group/resizable flex h-full w-full data-[direction=vertical]:flex-col", this.class()));
   private attrs = bindProps(() => ({ role: "group", "aria-label": this.label() || undefined, "data-direction": this.direction() }));

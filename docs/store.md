@@ -41,10 +41,11 @@ Templates read signals only: `{{ store.remaining() }}`, `{{ store.user.name() }}
 | `withHooks({ onInit, onDestroy })` or `withHooks((store) => ({ ... }))` | Lifecycle (below). May be used several times. |
 | `patchState(store, ...updaters)` | The only way to write state. Each updater is a partial object or `(state) => partial`; applied in order, committed as one write. |
 | `withHotState(import.meta, key, { reset? })` | Keeps state across hot module updates (dev only). See "HMR". |
+| `withDevtools(name)` | Shows the store in the Gable devtools Stores tab (dev only): its state, plus a `patch` history entry (changed keys and values) for every `patchState` that changes something. See `docs/devtools.md`. |
 | `getState(store)` | The current state as a plain object (a tracked read). |
 | `DeepSignal`, `SignalStoreOf`, `StoreFeature`, `StateSignals`, `WritableStateSource` | Types. |
 
-Not in this package yet (separate tasks): devtools, `withStorage`. Also not provided: `withProps`, `watchState`, `withLinkedState`, a `providedIn` option.
+Not in this package yet (separate tasks): `withStorage`, action-level devtools history. Also not provided: `withProps`, `watchState`, `withLinkedState`, a `providedIn` option.
 
 ## Scope and DI
 

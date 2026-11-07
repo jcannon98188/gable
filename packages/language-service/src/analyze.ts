@@ -110,7 +110,7 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
       const add = (start: number, length: number, rule: RuleId, message: string) => raw.push({ file: sf.fileName, start, length, rule, message });
       templateRules(model, base.getTypeChecker(), add);
       a11yRules(model, add);
-      i18nRules(model, add);
+      i18nRules(model, add, config);
     }
     if (models.length) files.set(norm(sf.fileName), { sf, models, observed: new Set(), syntax: new Map() });
   }

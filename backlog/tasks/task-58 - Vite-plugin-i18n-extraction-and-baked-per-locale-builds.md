@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-07T04:10:00Z'
-updated_date: '2026-11-07T04:47:00Z'
+updated_date: '2026-11-07T05:04:00Z'
 labels:
   - vite
   - i18n
@@ -41,6 +41,8 @@ Optional build-time transform in packages/vite, for people who want Angular-styl
 
 <!-- SECTION:NOTES:BEGIN -->
 gableI18n plugin in packages/vite/src/i18n (scan, extract, catalogs, bake, plugin), exported from @gable/vite. Baked locales are Vite environments i18n_<locale> built by a custom builder.buildApp into <outDir>/<locale>/; core's i18n-view is stubbed in baked builds so no I18n service or ICU formatter ships. Baked translations support plain placeholders only (plural/select/number/date fail the build, use runtime). Extraction writes core-format JSON (translations, untranslated, obsolete) or XLIFF. Tests: vitest packages/vite packages/core packages/language-service 177/177; tsc packages/vite clean. Not done: language-service i18n-missing-translation rule (needs catalog paths in gable-check config and scanner text positions; left to a follow-up); the .t method on I18n is not extracted or baked; no source map for baked modules; <html lang> per output not set.
+
+Second pass: inject(I18n).t tagged templates (receiver is inject(I18n) or a name containing i18n) are extracted and baked to plain template literals; dynamic calls (i18n.t(...), .translate(...)) stay runtime with a once-per-call plugin warning. <html lang> is set per locale output through transformIndexHtml (bake.htmlLang: false disables). Baked modules now carry source maps via magic-string (added as a dependency of @gable/vite; it is already in Vite's tree; package-lock updated). Decision: ICU plural/select/number/date stay a clear build error in baked mode (html templates cannot call functions, so lowering would mean synthesising computed fields; the runtime handles them in a few KB); recorded in docs/i18n.md and filed as TASK-69 (low). i18n-ignore is removed from baked templates. Verified with unit tests and build integration tests (html lang, .t baking, source map files).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

@@ -11,3 +11,4 @@ export { whenFlushed, flushSync, hasPendingFlush } from "./signals.js";
 export { reportError } from "./errors.js";
 export { INJECTOR } from "./di.js";
 export { holdRemoval } from "./removal.js";
+export { computedExitDuration } from "./exit-duration.js";

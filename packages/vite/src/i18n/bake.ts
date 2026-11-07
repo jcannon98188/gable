@@ -1,8 +1,9 @@
 // Baking: rewrites the marked text of `html` templates and `i18n` tagged templates to one locale's translations,
 // and removes the markers, so the output needs no catalog and no locale switching.
+import MagicString, { type SourceMap } from "magic-string";
 import { extractTemplateMessages, messageFromParts, messageFromStrings, messageId, parseMarker, parseMessage, type MessageNode } from "@gable/core/tooling";
 import { assertNoEscapes } from "./extract.js";
-import { cook, lineOf, scanTemplates } from "./scan.js";
+import { DYNAMIC_CALL, cook, lineOf, scanTemplates } from "./scan.js";
 
 export interface BakeOptions {
   /** Looks up the translation of a message id. `undefined` means there is none. */
@@ -13,18 +14,31 @@ export interface BakeOptions {
 
 export interface BakeResult {
   code: string;
+  /** A source map for the rewritten code (absent when nothing changed). */
+  map?: SourceMap;
   /** How many messages were rewritten. */
   count: number;
 }
 
-export const BAKE_PRELUDE = `import { computed as __gableComputed } from "@gable/core";\nconst __gableValue = (v) => (typeof v === "function" && v.length === 0 ? v() : v);\n`;
+/** Lines (1-based) of calls on the I18n service that a baked build cannot translate: `i18n.t(...)`, `.translate(...)`, not the tag form. */
+export function dynamicCalls(code: string): number[] {
+  if (!/i18n/i.test(code)) return [];
+  const lines: number[] = [];
+  for (const m of code.matchAll(DYNAMIC_CALL)) lines.push(lineOf(code, m.index));
+  return lines;
+}
+
+const VALUE_HELPER = `const __gableValue = (v) => (typeof v === "function" && v.length === 0 ? v() : v);\n`;
+export const BAKE_PRELUDE = `import { computed as __gableComputed } from "@gable/core";\n${VALUE_HELPER}`;
 
 /** Bakes one module. Returns the same code when there is nothing to do. */
 export function bakeSource(code: string, file: string, options: BakeOptions): BakeResult {
   if (!code.includes("i18n")) return { code, count: 0 };
-  const edits: Edit[] = [];
+  const s = new MagicString(code);
   let count = 0;
-  let needsPrelude = false;
+  let needsComputed = false;
+  let needsValue = false;
+  const apply = (e: Edit, offset = 0) => (e.text === "" ? s.remove(e.start + offset, e.end + offset) : s.overwrite(e.start + offset, e.end + offset, e.text));
 
   for (const hit of scanTemplates(code)) {
     const line = lineOf(code, hit.start);
@@ -33,25 +47,31 @@ export function bakeSource(code: string, file: string, options: BakeOptions): Ba
       if (hit.holes.length > 0 || !hit.raw[0]!.includes("i18n")) continue;
       const raw = hit.raw[0]!;
       assertNoEscapes(raw, file, line);
-      const baked = bakeHtml(raw, where, options);
+      const baked = bakeHtmlEdits(raw, where, options);
       count += baked.count;
-      if (baked.html !== raw) edits.push({ start: hit.start, end: hit.end, text: baked.html });
+      for (const e of baked.edits) apply(e, hit.start);
     } else {
       const { message, marker } = messageFromStrings(hit.raw.map(cook), hit.raw);
       const id = marker.id ?? messageId(message, marker.description);
       const exprs = hit.holes.map((h) => code.slice(h.start, h.end).trim());
       const text = renderTranslation(id, message, marker.description, where, options, exprs, "code");
-      edits.push({ start: hit.tagStart, end: hit.end + 1, text: `__gableComputed(() => \`${text}\`)` });
-      needsPrelude = true;
+      needsValue = true;
+      if (hit.tag === "t") {
+        // `inject(I18n).t`...`` is a plain string read at the call, so it becomes a plain template literal.
+        apply({ start: hit.tagStart, end: hit.end + 1, text: `\`${text}\`` });
+      } else {
+        needsComputed = true;
+        apply({ start: hit.tagStart, end: hit.end + 1, text: `__gableComputed(() => \`${text}\`)` });
+      }
       count++;
     }
   }
-  if (edits.length === 0) return { code, count };
-  const out = applyEdits(code, edits);
-  return { code: needsPrelude ? BAKE_PRELUDE + out : out, count };
+  if (count === 0) return { code, count };
+  s.prepend(needsComputed ? BAKE_PRELUDE : needsValue ? VALUE_HELPER : "");
+  return { code: s.toString(), map: s.generateMap({ source: file, hires: "boundary", includeContent: true }), count };
 }
 
-interface Edit {
+export interface Edit {
   start: number;
   end: number;
   text: string;
@@ -113,6 +133,12 @@ const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input"
 
 /** Bakes the markers of one template's source text. */
 export function bakeHtml(source: string, where: string, options: BakeOptions): { html: string; count: number } {
+  const { edits, count } = bakeHtmlEdits(source, where, options);
+  return { html: applyEdits(source, edits), count };
+}
+
+/** The edits (offsets into `source`) that bake one template's markers. */
+export function bakeHtmlEdits(source: string, where: string, options: BakeOptions): { edits: Edit[]; count: number } {
   const expected = extractTemplateMessages(source);
   const edits: Edit[] = [];
   let found = 0;
@@ -163,6 +189,10 @@ export function bakeHtml(source: string, where: string, options: BakeOptions): {
 
     // Attribute order follows the parser: i18n-<attr> messages come in attribute order, before the element text.
     for (const a of attrs) {
+      if (a.name === "i18n-ignore") {
+        edits.push({ start: a.start, end: a.end, text: "" });
+        continue;
+      }
       if (!a.name.startsWith("i18n-") || a.name.length <= 5) continue;
       const target = attrs.find((t) => t.name === a.name.slice(5));
       const info = next();
@@ -201,7 +231,7 @@ export function bakeHtml(source: string, where: string, options: BakeOptions): {
     edits.push({ start: openEnd, end: close, text: renderTranslation(id, message, info.description, where, options, exprs, "html") });
   }
   if (found !== expected.length) throw new Error(`${where}: the build found ${found} i18n messages, the template parser ${expected.length}`);
-  return { html: applyEdits(source, edits), count: found };
+  return { edits, count: found };
 }
 
 /** Offset of the next `<` outside `{{ }}`, or -1. */

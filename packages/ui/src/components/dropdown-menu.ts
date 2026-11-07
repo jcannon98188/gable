@@ -20,7 +20,7 @@ export type MenuEntry =
   | { type?: "item"; value: string; label: string; disabled?: boolean; destructive?: boolean; shortcut?: string }
   | { type: "checkbox"; value: string; label: string; checked: boolean; disabled?: boolean; shortcut?: string }
   | { type: "radio-group"; name: string; label: string; value: string; items: MenuRadioItem[] }
-  | { type: "submenu"; value: string; label: string; entries: MenuEntry[] }
+  | { type: "submenu"; value: string; label: string; entries: MenuEntry[]; disabled?: boolean }
   | { type: "label"; label: string }
   | { type: "separator" };
 
@@ -36,6 +36,7 @@ const DESTRUCTIVE = "text-destructive data-[highlighted]:bg-destructive/10 data-
 /** A rendered line: the template cannot call prop getters, so every part is precomputed; `kind` picks the markup. */
 export interface MenuRow {
   key: string;
+  disabled: boolean;
   kind: "item" | "checkbox" | "radio-group" | "submenu" | "label" | "separator";
   label: string;
   shortcut: string;
@@ -65,6 +66,7 @@ export function menuRows(
   return entries.map((entry, index) => {
     const base: MenuRow = {
       key: entry.type === "radio-group" ? `group-${entry.name}` : "value" in entry ? entry.value : `${entry.type}-${index}`,
+      disabled: entry.type === "submenu" ? !!entry.disabled : false,
       kind: "item",
       label: "label" in entry ? entry.label : "",
       shortcut: "shortcut" in entry ? (entry.shortcut ?? "") : "",
@@ -95,16 +97,86 @@ export function menuRows(
 }
 
 /**
+ * The lines of a menu or submenu, rendered from entries. The dropdown, the context menu and every submenu use this one
+ * component for their panel contents, so the row markup lives here only. It renders a `ui-menu-sub` for a submenu entry,
+ * and `ui-menu-sub` renders `ui-menu-rows` for its own entries: the two reference each other, so `UiMenuSub` is added to
+ * this component's imports after both classes exist. Internal: not used on its own.
+ */
+export class UiMenuRows {
+  static meta: ComponentMeta = {
+    selector: "ui-menu-rows",
+    host: { class: "contents", role: "none" },
+    imports: [UiProps, UiIcon],
+    template: html`
+      @for (row of rows(); track row.key) {
+        @if (row.kind === 'separator') {
+          <div [uiProps]="row.props" [attr.class]="row.classes"></div>
+        }
+        @if (row.kind === 'label') {
+          <div [attr.class]="row.classes">{{ row.label }}</div>
+        }
+        @if (row.kind === 'item') {
+          <div [uiProps]="row.props" [attr.class]="row.classes">
+            {{ row.label }}
+            @if (row.shortcut) {
+              <span class="ml-auto text-xs tracking-widest text-muted-foreground">{{ row.shortcut }}</span>
+            }
+          </div>
+        }
+        @if (row.kind === 'checkbox') {
+          <div [uiProps]="row.props" [attr.class]="row.classes">
+            <span [uiProps]="row.indicatorProps" class="absolute left-2 flex size-3.5 items-center justify-center"><svg uiIcon="check" class="size-4"></svg></span>
+            {{ row.label }}
+          </div>
+        }
+        @if (row.kind === 'radio-group') {
+          <div [uiProps]="row.props">
+            <div [uiProps]="row.labelProps" [attr.class]="row.classes">{{ row.label }}</div>
+            @for (option of row.options; track option.key) {
+              <div [uiProps]="option.props" [attr.class]="option.classes">
+                <span [uiProps]="option.indicatorProps" class="absolute left-2 flex size-3.5 items-center justify-center"><svg uiIcon="circle" class="size-2 fill-current"></svg></span>
+                {{ option.label }}
+              </div>
+            }
+          </div>
+        }
+        @if (row.kind === 'submenu') {
+          <ui-menu-sub [parent]="state()" [value]="row.key" [label]="row.label" [disabled]="row.disabled" [entries]="row.entries" (selected)="selected.emit($event)" (checkedChange)="checkedChange.emit($event)" (radioChange)="radioChange.emit($event)"></ui-menu-sub>
+        }
+      }
+    `,
+  };
+
+  /** The menu these lines belong to. */
+  state = input<MenuState | null>(null);
+  entries = input<MenuEntry[]>([]);
+  selected = output<string>();
+  checkedChange = output<{ value: string; checked: boolean }>();
+  radioChange = output<{ group: string; value: string }>();
+  rows = computed(() => {
+    const state = this.state();
+    if (!state) return [];
+    return menuRows(
+      this.entries(),
+      state.api(),
+      (value, checked) => this.checkedChange.emit({ value, checked }),
+      (group, value) => this.radioChange.emit({ group, value }),
+    );
+  });
+}
+
+/**
  * A submenu inside a menu: the trigger line (with a chevron) and its own panel. The menus render it for a `submenu` entry;
  * it is not used on its own. ArrowRight (or Enter) on the trigger opens it, ArrowLeft or Escape closes it and returns to
- * the trigger. Its outputs bubble up to the root menu's outputs.
+ * the trigger. A `disabled` submenu entry shows a dimmed line that cannot be highlighted or opened. Its outputs bubble up
+ * to the root menu's outputs.
  */
 export class UiMenuSub {
   static meta: ComponentMeta = {
     selector: "ui-menu-sub",
     host: { class: "contents", role: "none" },
     providers: [MenuState],
-    imports: [UiPortal, UiPopup, UiProps, UiIcon, UiMenuSub],
+    imports: [UiPortal, UiPopup, UiProps, UiIcon, UiMenuRows],
     template: html`
       <div [uiProps]="triggerProps()" [attr.class]="triggerClasses">
         {{ label() }}
@@ -113,42 +185,7 @@ export class UiMenuSub {
       <ui-portal>
         <div [uiProps]="positionerProps()">
           <div [uiPopup]="contentProps()" [popupOpen]="open()" [attr.class]="contentClasses">
-            @for (row of rows(); track row.key) {
-              @if (row.kind === 'separator') {
-                <div [uiProps]="row.props" [attr.class]="row.classes"></div>
-              }
-              @if (row.kind === 'label') {
-                <div [attr.class]="row.classes">{{ row.label }}</div>
-              }
-              @if (row.kind === 'item') {
-                <div [uiProps]="row.props" [attr.class]="row.classes">
-                  {{ row.label }}
-                  @if (row.shortcut) {
-                    <span class="ml-auto text-xs tracking-widest text-muted-foreground">{{ row.shortcut }}</span>
-                  }
-                </div>
-              }
-              @if (row.kind === 'checkbox') {
-                <div [uiProps]="row.props" [attr.class]="row.classes">
-                  <span [uiProps]="row.indicatorProps" class="absolute left-2 flex size-3.5 items-center justify-center"><svg uiIcon="check" class="size-4"></svg></span>
-                  {{ row.label }}
-                </div>
-              }
-              @if (row.kind === 'radio-group') {
-                <div [uiProps]="row.props">
-                  <div [uiProps]="row.labelProps" [attr.class]="row.classes">{{ row.label }}</div>
-                  @for (option of row.options; track option.key) {
-                    <div [uiProps]="option.props" [attr.class]="option.classes">
-                      <span [uiProps]="option.indicatorProps" class="absolute left-2 flex size-3.5 items-center justify-center"><svg uiIcon="circle" class="size-2 fill-current"></svg></span>
-                      {{ option.label }}
-                    </div>
-                  }
-                </div>
-              }
-              @if (row.kind === 'submenu') {
-                <ui-menu-sub [parent]="state" [label]="row.label" [entries]="row.entries" (selected)="selected.emit($event)" (checkedChange)="checkedChange.emit($event)" (radioChange)="radioChange.emit($event)"></ui-menu-sub>
-              }
-            }
+            <ui-menu-rows [state]="state" [entries]="entries()" (selected)="selected.emit($event)" (checkedChange)="checkedChange.emit($event)" (radioChange)="radioChange.emit($event)"></ui-menu-rows>
           </div>
         </div>
       </ui-portal>
@@ -157,7 +194,10 @@ export class UiMenuSub {
 
   /** The menu this one opens from. */
   parent = input<MenuState | null>(null);
+  /** The submenu entry's value (its id among the parent's items). */
+  value = input<string>("");
   label = input<string>("");
+  disabled = input<boolean>(false);
   entries = input<MenuEntry[]>([]);
   selected = output<string>();
   checkedChange = output<{ value: string; checked: boolean }>();
@@ -170,17 +210,15 @@ export class UiMenuSub {
     positioning: { placement: "right-start" as const, offset: { mainAxis: 2, crossAxis: -4 } },
   }));
   open = computed(() => this.state.api().open);
-  triggerProps = computed(() => this.parent()?.api().getTriggerItemProps(this.state.api()) ?? null);
+  triggerProps = computed(() => {
+    const parent = this.parent()?.api();
+    if (!parent) return null;
+    // Disabled: a plain disabled item of the parent (skipped by arrow keys and typeahead, never opens the child).
+    if (this.disabled()) return { ...parent.getItemProps({ value: this.value(), disabled: true, valueText: this.label() }), "aria-haspopup": "menu" } as PropBag;
+    return parent.getTriggerItemProps(this.state.api());
+  });
   positionerProps = computed(() => this.state.api().getPositionerProps());
   contentProps = computed(() => this.state.api().getContentProps());
-  rows = computed(() =>
-    menuRows(
-      this.entries(),
-      this.state.api(),
-      (value, checked) => this.checkedChange.emit({ value, checked }),
-      (group, value) => this.radioChange.emit({ group, value }),
-    ),
-  );
   private link = effect(() => {
     const parent = this.parent();
     if (!parent) return;
@@ -190,6 +228,7 @@ export class UiMenuSub {
     });
   });
 }
+(UiMenuRows.meta.imports as unknown[]).push(UiMenuSub);
 
 /** Marks the element that opens a dropdown menu: `<button slot="trigger" menuTrigger uiButton>Open</button>`. */
 export class MenuTrigger {
@@ -217,48 +256,13 @@ export class UiDropdownMenu {
     selector: "ui-dropdown-menu",
     host: { class: "inline-block" },
     providers: [MenuState],
-    imports: [UiPortal, UiPopup, UiProps, UiIcon, UiMenuSub],
+    imports: [UiPortal, UiPopup, UiProps, UiMenuRows],
     template: html`
       <slot name="trigger"></slot>
       <ui-portal>
         <div [uiProps]="positionerProps()">
           <div [uiPopup]="contentProps()" [popupOpen]="open()" [attr.class]="contentClasses()">
-            @for (row of rows(); track row.key) {
-              @if (row.kind === 'separator') {
-                <div [uiProps]="row.props" [attr.class]="row.classes"></div>
-              }
-              @if (row.kind === 'label') {
-                <div [attr.class]="row.classes">{{ row.label }}</div>
-              }
-              @if (row.kind === 'item') {
-                <div [uiProps]="row.props" [attr.class]="row.classes">
-                  {{ row.label }}
-                  @if (row.shortcut) {
-                    <span class="ml-auto text-xs tracking-widest text-muted-foreground">{{ row.shortcut }}</span>
-                  }
-                </div>
-              }
-              @if (row.kind === 'checkbox') {
-                <div [uiProps]="row.props" [attr.class]="row.classes">
-                  <span [uiProps]="row.indicatorProps" class="absolute left-2 flex size-3.5 items-center justify-center"><svg uiIcon="check" class="size-4"></svg></span>
-                  {{ row.label }}
-                </div>
-              }
-              @if (row.kind === 'radio-group') {
-                <div [uiProps]="row.props">
-                  <div [uiProps]="row.labelProps" [attr.class]="row.classes">{{ row.label }}</div>
-                  @for (option of row.options; track option.key) {
-                    <div [uiProps]="option.props" [attr.class]="option.classes">
-                      <span [uiProps]="option.indicatorProps" class="absolute left-2 flex size-3.5 items-center justify-center"><svg uiIcon="circle" class="size-2 fill-current"></svg></span>
-                      {{ option.label }}
-                    </div>
-                  }
-                </div>
-              }
-              @if (row.kind === 'submenu') {
-                <ui-menu-sub [parent]="state" [label]="row.label" [entries]="row.entries" (selected)="selected.emit($event)" (checkedChange)="checkedChange.emit($event)" (radioChange)="radioChange.emit($event)"></ui-menu-sub>
-              }
-            }
+            <ui-menu-rows [state]="state" [entries]="entries()" (selected)="selected.emit($event)" (checkedChange)="checkedChange.emit($event)" (radioChange)="radioChange.emit($event)"></ui-menu-rows>
           </div>
         </div>
       </ui-portal>
@@ -286,7 +290,6 @@ export class UiDropdownMenu {
   }));
   positionerProps = computed(() => this.state.api().getPositionerProps());
   contentProps = computed(() => this.state.api().getContentProps());
-  rows = computed(() => menuRows(this.entries(), this.state.api(), (value, checked) => this.checkedChange.emit({ value, checked }), (group, value) => this.radioChange.emit({ group, value })));
   trigger = contentChild(MenuTrigger);
   private link = effect(() => this.trigger()?.owner.set(this.state));
 }

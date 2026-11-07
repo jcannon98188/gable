@@ -45,6 +45,7 @@ class App {
         { value: "dark", label: "Dark" },
       ],
     },
+    { type: "submenu", value: "archive", label: "Archive", disabled: true, entries: [{ value: "zip", label: "Zip" }] },
   ]);
   onCheck(e: { value: string; checked: boolean }) {
     const flip = (list: MenuEntry[]): MenuEntry[] => list.map((x) => (x.type === "checkbox" && x.value === e.value ? { ...x, checked: e.checked } : x.type === "submenu" ? { ...x, entries: flip(x.entries) } : x));
@@ -152,6 +153,28 @@ describe("menu submenus", () => {
     expect(app.picked()).toBe("mastodon");
   });
 
+});
+
+describe("disabled submenu triggers", () => {
+  it("is a disabled menuitem that never opens and is skipped by keyboard navigation", async () => {
+    await boot(App);
+    await open();
+    const archive = trigger("Archive");
+    expect(archive.getAttribute("aria-disabled")).toBe("true");
+    expect(archive.hasAttribute("data-disabled")).toBe(true);
+    pointer(archive, "pointermove");
+    await settle();
+    key(archive, "ArrowRight");
+    archive.click();
+    await settle();
+    expect(archive.getAttribute("aria-expanded")).not.toBe("true");
+    expect($$("[role=menu]").filter(isOpen)).toHaveLength(1);
+    const menu = $("[role=menu][data-state=open]");
+    menu.focus();
+    key(menu, "End");
+    await settle();
+    expect($("[role=menuitemradio][data-highlighted]").textContent).toContain("Dark");
+  });
 });
 
 describe("menu radio items", () => {

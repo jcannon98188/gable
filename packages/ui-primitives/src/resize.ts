@@ -20,6 +20,8 @@ export interface ResizeEngineOptions {
   direction: () => ResizeDirection;
   /** Percentage of the group one arrow key press moves a handle. Default 10. */
   keyboardStep?: () => number;
+  /** True when a horizontal group runs right to left: drags and the arrow keys are mirrored. Default false. */
+  rtl?: () => boolean;
   /** Called after every change of the layout. */
   onLayout?(sizes: number[]): void;
 }
@@ -75,7 +77,10 @@ export function initialSizes(configs: readonly ResizePanelConfig[]): number[] {
  * between neighbouring panels. Feed it pointer positions (`startDrag`, `dragTo`, `endDrag`) with the group's size in
  * pixels, or keys (`key`); read `sizes()` and `handleState(i)`.
  *
- * - A handle moves its two neighbours only; each stays inside its `minSize`/`maxSize`.
+ * - A handle moves its two neighbours within their `minSize`/`maxSize`. When the neighbour in the direction of the drag
+ *   is at its minimum, the drag (and an arrow key) carries on into the panel beyond it, as react-resizable-panels does
+ *   (Home, End and `resize` with an infinite delta stay with the two neighbours).
+ * - A horizontal group in RTL mirrors pointer drags and the arrow keys.
  * - A collapsible panel dragged below its minimum snaps to `collapsedSize` once past the halfway point, and back to its
  *   minimum when dragged out of it again. A collapsed panel remembers its size for `expand`.
  * - Keys follow the ARIA window splitter: arrows along the group's axis move the handle by `keyboardStep`, Home and End
@@ -155,12 +160,13 @@ export class ResizeEngine {
   }
 
   /** Moves a handle by `delta` percent from `base` (the layout when the gesture began). */
-  private move(handle: number, base: readonly number[], delta: number, snap: boolean): void {
+  private move(handle: number, base: readonly number[], delta: number, snap: boolean, cascade = false): void {
     const b = this.bounds(handle, snap, base);
     if (!b) return;
     const { lo, hi, total, l, r } = b;
     if (lo > hi + EPS) return;
-    let left = clamp(base[handle]! + delta, lo, hi);
+    const target = clamp(base[handle]! + delta, lo, hi);
+    let left = target;
     const inRange = (n: number) => n >= lo - EPS && n <= hi + EPS;
     const snapTo = (n: Norm, size: number) => (size < n.min - EPS ? (snap ? (size < (n.collapsed + n.min) / 2 ? n.collapsed : n.min) : size <= n.collapsed + EPS ? (delta > 0 ? n.min : n.collapsed) : n.min) : size);
     if (l.collapsible && left < l.min - EPS) {
@@ -174,7 +180,31 @@ export class ResizeEngine {
     const next = [...base];
     next[handle] = round(left);
     next[handle + 1] = round(total - left);
+    const rest = base[handle]! + delta - target;
+    if (cascade && Number.isFinite(delta) && Math.abs(rest) > EPS && left === target) this.cascade(next, handle, rest, l, r);
     this.commit(next);
+  }
+
+  /**
+   * The drag asked for `rest` percent more than the two neighbours could give. Positive: the panel before the handle grows
+   * and the panels after its neighbour shrink in turn (down to their minimums); negative: the mirror image.
+   */
+  private cascade(next: number[], handle: number, rest: number, l: Norm, r: Norm): void {
+    const grow = rest > 0 ? handle : handle + 1;
+    const room = (rest > 0 ? l.max : r.max) - next[grow]!;
+    const order: number[] = [];
+    if (rest > 0) for (let k = handle + 2; k < next.length; k++) order.push(k);
+    else for (let k = handle - 1; k >= 0; k--) order.push(k);
+    const avail = (k: number) => Math.max(0, next[k]! - normalise(this.configs[k]!).min);
+    let take = Math.min(Math.abs(rest), Math.max(0, room), order.reduce((sum, k) => sum + avail(k), 0));
+    if (take <= EPS) return;
+    next[grow] = round(next[grow]! + take);
+    for (const k of order) {
+      const part = Math.min(take, avail(k));
+      next[k] = round(next[k]! - part);
+      take -= part;
+      if (take <= EPS) break;
+    }
   }
 
   /** Starts a pointer drag of a handle at pointer position `pos` (client x for horizontal groups, y for vertical), in a group `containerPx` pixels long. */
@@ -186,7 +216,8 @@ export class ResizeEngine {
   dragTo(pos: number): void {
     const d = this.drag;
     if (!d || d.containerPx <= 0) return;
-    this.move(d.handle, d.base, ((pos - d.start) / d.containerPx) * 100, true);
+    const sign = this.mirrored() ? -1 : 1;
+    this.move(d.handle, d.base, (sign * ((pos - d.start) / d.containerPx)) * 100, true, true);
   }
 
   endDrag(): void {
@@ -194,9 +225,13 @@ export class ResizeEngine {
     this.active.set(false);
   }
 
+  private mirrored(): boolean {
+    return this.o.direction() === "horizontal" && !!this.o.rtl?.();
+  }
+
   /** Moves a handle by a percentage, without snapping to collapse. */
   resize(handle: number, delta: number): void {
-    this.move(handle, untracked(this.store), delta, false);
+    this.move(handle, untracked(this.store), delta, false, true);
   }
 
   /** Sets one panel's size, taking from or giving to its neighbour (the next panel, or the previous one for the last). */
@@ -235,14 +270,15 @@ export class ResizeEngine {
   /** Handles a key on a handle; returns true when the key is one the splitter uses (so the caller prevents default). */
   key(handle: number, key: string): boolean {
     const horizontal = this.o.direction() === "horizontal";
+    const mirrored = this.mirrored();
     const step = this.o.keyboardStep?.() ?? 10;
     const base = untracked(this.store);
     if (handle < 0 || handle + 1 >= base.length) return false;
     switch (key) {
-      case horizontal ? "ArrowLeft" : "ArrowUp":
+      case horizontal ? (mirrored ? "ArrowRight" : "ArrowLeft") : "ArrowUp":
         this.resize(handle, -step);
         return true;
-      case horizontal ? "ArrowRight" : "ArrowDown":
+      case horizontal ? (mirrored ? "ArrowLeft" : "ArrowRight") : "ArrowDown":
         this.resize(handle, step);
         return true;
       case "Home":

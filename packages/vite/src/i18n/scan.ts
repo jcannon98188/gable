@@ -3,8 +3,9 @@
 // regex literals and nested template literals, so a backtick inside any of those is not mistaken for a template.
 
 export interface TemplateHit {
-  tag: "html" | "i18n";
-  /** Offset of the tag identifier. */
+  /** `t` is the tag of `inject(I18n).t` (a member of something named like the I18n service); `tagStart` then covers the whole receiver. */
+  tag: "html" | "i18n" | "t";
+  /** Offset of the tag identifier (for `t`: of the receiver, e.g. the `this` of `this.#i18n.t`). */
   tagStart: number;
   /** Offset just after the opening backtick. */
   start: number;
@@ -16,10 +17,15 @@ export interface TemplateHit {
   raw: string[];
 }
 
+/** The receiver of an `.t` tag call that is taken to be the I18n service: `inject(I18n)`, or a (possibly private) name containing "i18n". */
+const T_RECEIVER = /(?:(?:\bthis\s*\.\s*)?#?[\w$]*i18n[\w$]*|\binject\s*\(\s*I18n\s*\))\s*\??\.\s*$/i;
+/** A call (not a tagged template) of the service that a baked build cannot translate. */
+export const DYNAMIC_CALL = /(?:#?[\w$]*i18n[\w$]*|\binject\s*\(\s*I18n\s*\))\s*\??\.\s*(?:t|translate)\s*\(/gi;
+
 const IDENT_END = /[A-Za-z_$][\w$]*$/;
 const REGEX_PREV = new Set(["(", ",", "=", ":", "[", "!", "&", "|", "?", "{", "}", ";", "+", "-", "*", "%", "<", ">", "~", "^"]);
 
-export function scanTemplates(code: string, tags: readonly ("html" | "i18n")[] = ["html", "i18n"]): TemplateHit[] {
+export function scanTemplates(code: string, tags: readonly ("html" | "i18n" | "t")[] = ["html", "i18n", "t"]): TemplateHit[] {
   const hits: TemplateHit[] = [];
   let i = 0;
 
@@ -60,7 +66,16 @@ export function scanTemplates(code: string, tags: readonly ("html" | "i18n")[] =
     const before = code.slice(Math.max(0, i - 40), i);
     const ident = IDENT_END.exec(before)?.[0];
     const identStart = ident ? i - ident.length : -1;
-    const tagged = ident !== undefined && (tags as readonly string[]).includes(ident) && !/[.\w$]/.test(code[identStart - 1] ?? "");
+    let tagged = (ident === "html" || ident === "i18n") && (tags as readonly string[]).includes(ident) && !/[.\w$]/.test(code[identStart - 1] ?? "");
+    let tagAt = identStart;
+    if (ident === "t" && (tags as readonly string[]).includes("t")) {
+      const from = Math.max(0, identStart - 120);
+      const receiver = T_RECEIVER.exec(code.slice(from, identStart));
+      if (receiver) {
+        tagged = true;
+        tagAt = from + receiver.index;
+      }
+    }
     const start = i + 1;
     const holes: Array<{ start: number; end: number }> = [];
     const raw: string[] = [];
@@ -79,7 +94,7 @@ export function scanTemplates(code: string, tags: readonly ("html" | "i18n")[] =
       } else i++;
     }
     raw.push(code.slice(pieceStart, i));
-    if (tagged) hits.push({ tag: ident as "html" | "i18n", tagStart: identStart, start, end: i, holes, raw });
+    if (tagged) hits.push({ tag: ident as "html" | "i18n" | "t", tagStart: tagAt, start, end: i, holes, raw });
     i++;
   };
 

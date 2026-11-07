@@ -189,6 +189,8 @@ export interface DrawerDragOptions {
   /** Duration of the settle transition in ms. Default 300. */
   settleMs?: number;
   onSnap?(fraction: number): void;
+  /** How much of the panel is visible, 0 to 1, whenever it moves (a drag, a settle, a snap change, an exit). Drives a backdrop. */
+  onProgress?(visible: number, dragging: boolean): void;
   onDismiss(): void;
 }
 
@@ -196,8 +198,13 @@ export interface DrawerDragHandle {
   readonly dragging: ReadonlySignal<boolean>;
   /** The snap fraction the panel rests at. */
   readonly snap: ReadonlySignal<number>;
-  /** Positions the panel at a snap fraction without animation (on open). A fraction of 1 clears the inline transform. */
-  setSnap(fraction: number): void;
+  /** Positions the panel at a snap fraction without animation (on open; a fraction of 1 clears the inline transform), or animated (`animate`, a snap change while open). */
+  setSnap(fraction: number, animate?: boolean): void;
+  /**
+   * Call when the drawer closes without a drag (Escape, a button): from a snap point below full, slides the panel out from where
+   * it rests instead of letting the CSS exit animation restart from the natural position. At full height it does nothing (the CSS exit runs).
+   */
+  exit(): void;
   /** Clears everything the drag put on the host. */
   reset(): void;
 }
@@ -267,6 +274,7 @@ export function useDrawerDrag<N = unknown>(options: DrawerDragOptions, target: {
 
   // The panel's size can change while open (content, resize): measure when a gesture starts and use it until it ends.
   let measured = 0;
+  let exited = false;
   const engine = new DrawerDragEngine({
     side: options.side,
     size: () => measured,
@@ -279,12 +287,14 @@ export function useDrawerDrag<N = unknown>(options: DrawerDragOptions, target: {
       if (dragging() !== isDragging) dragging.set(isDragging);
       renderer.setStyle(host, "transition", isDragging ? "none" : settle);
       renderer.setStyle(host, "transform", transform(`${sign() * offset}px`));
+      options.onProgress?.(measured > 0 ? Math.max(0, 1 - offset / measured) : 1, isDragging);
     },
     onSnap(fraction) {
       snap.set(fraction);
       options.onSnap?.(fraction);
     },
     onDismiss() {
+      exited = true;
       renderer.setAttribute(host, "data-dragged", "");
       options.onDismiss();
     },
@@ -349,16 +359,39 @@ export function useDrawerDrag<N = unknown>(options: DrawerDragOptions, target: {
   return {
     dragging,
     snap,
-    setSnap(fraction) {
+    setSnap(fraction, animate = false) {
       untracked(() => {
-        clear();
+        exited = false;
+        const to = transform(`${sign() * (1 - fraction) * 100}%`);
+        if (animate) {
+          renderer.setAttribute(host, "data-dragging", null);
+          renderer.setAttribute(host, "data-dragged", null);
+          renderer.setStyle(host, "transition", settle);
+          renderer.setStyle(host, "transform", to);
+        } else {
+          clear();
+          if (fraction < 1) renderer.setStyle(host, "transform", to);
+        }
         engine.fraction = fraction;
         snap.set(fraction);
-        if (fraction < 1) renderer.setStyle(host, "transform", transform(`${sign() * (1 - fraction) * 100}%`));
+        options.onProgress?.(fraction, false);
+      });
+    },
+    exit() {
+      untracked(() => {
+        if (exited) return;
+        exited = true;
+        if (engine.fraction >= 1) return;
+        renderer.setAttribute(host, "data-dragging", null);
+        renderer.setAttribute(host, "data-dragged", "");
+        renderer.setStyle(host, "transition", settle);
+        renderer.setStyle(host, "transform", transform(`${sign() * 100}%`));
+        options.onProgress?.(0, false);
       });
     },
     reset() {
       untracked(() => {
+        exited = false;
         clear();
         dragging.set(false);
       });
@@ -380,17 +413,23 @@ export class UiDrawerDrag {
   enabled = input<boolean>(true);
   dismiss = output<void>();
   snapChange = output<number>();
+  /** The visible fraction of the panel (0 to 1) and whether a drag is in progress, on every move. */
+  progress = output<{ value: number; dragging: boolean }>();
   handle = useDrawerDrag({
     side: () => this.side(),
     snapPoints: () => this.snapPoints(),
     enabled: () => this.enabled(),
     onDismiss: () => this.dismiss.emit(),
     onSnap: (fraction) => this.snapChange.emit(fraction),
+    onProgress: (value, dragging) => this.progress.emit({ value, dragging }),
   });
+  private wasOpen = false;
   private arm = effect(() => {
     const open = this.open();
     const snaps = [...this.snapPoints()].sort((a, b) => a - b);
     const wanted = this.activeSnap() ?? snaps[snaps.length - 1] ?? 1;
-    if (open) this.handle.setSnap(wanted);
+    if (open) this.handle.setSnap(wanted, this.wasOpen);
+    else if (this.wasOpen) this.handle.exit();
+    this.wasOpen = open;
   });
 }

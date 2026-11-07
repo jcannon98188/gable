@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import type { Plugin } from "vite";
-import { bakeSource } from "./bake.js";
+import { bakeSource, dynamicCalls } from "./bake.js";
 import { catalogPath, readCatalogFile, writeCatalogs } from "./catalogs.js";
 import { extractProject } from "./extract.js";
 import { existsSync } from "node:fs";
@@ -30,8 +30,9 @@ export interface GableI18nOptions {
    * missing message, `"warn"` warns and uses the source text, `"source"` silently uses the source text.
    * `stripRuntime` (default `true`) also replaces core's marker renderer (the I18n service and the ICU formatter)
    * with a stub, since no markers are left to render; set it to `false` if a dependency ships unbaked markers.
+   * `htmlLang` (default `true`) sets the `lang` attribute of `<html>` in each locale's `index.html`; `false` leaves it alone.
    */
-  bake?: boolean | { onMissing?: OnMissing; stripRuntime?: boolean };
+  bake?: boolean | { onMissing?: OnMissing; stripRuntime?: boolean; htmlLang?: boolean };
 }
 
 const PREFIX = "i18n_";
@@ -55,6 +56,7 @@ export function gableI18n(options: GableI18nOptions): Plugin {
   const catalogs = options.catalogs ?? "src/locales/messages.{locale}.json";
   const bake = options.bake === true ? {} : options.bake || undefined;
   const stripRuntime = !(bake && bake.stripRuntime === false);
+  const htmlLang = !(bake && bake.htmlLang === false);
   const onMissing: OnMissing = (bake && bake.onMissing) ?? "error";
   const extract = options.extract === false ? undefined : options.extract === true || options.extract === undefined ? {} : options.extract;
   const dirs = extract && "dirs" in extract && extract.dirs ? extract.dirs : ["src"];
@@ -64,6 +66,7 @@ export function gableI18n(options: GableI18nOptions): Plugin {
   let logger: { info(m: string): void; warn(m: string): void } = console as never;
   const translations = new Map<string, Record<string, string>>();
   const reported = new Set<string>();
+  const warnedDynamic = new Set<string>();
   const problems: string[] = [];
 
   const runExtract = () => {
@@ -140,12 +143,37 @@ export function gableI18n(options: GableI18nOptions): Plugin {
             } else problems.push(message);
           },
         });
+        for (const line of dynamicCalls(code)) {
+          const key = `${rel}:${line}`;
+          if (warnedDynamic.has(key)) continue;
+          warnedDynamic.add(key);
+          this.warn(
+            `[gable-i18n] ${key}: this call of the I18n service is dynamic, so it stays a runtime lookup and is not translated in the baked build. Use the tag form with a static template, t\`...\`, to bake it, or keep the runtime for it`,
+          );
+        }
         if (result.count === 0) return;
-        return { code: result.code, map: null };
+        return { code: result.code, map: result.map ?? null };
+      },
+    },
+    transformIndexHtml: {
+      order: "post",
+      handler(html) {
+        const name = (this as unknown as { environment?: { name: string } }).environment?.name; // present at runtime, missing from the hook's declared `this`
+        if (!bake || !htmlLang || !name?.startsWith(PREFIX)) return;
+        const locale = bakedLocales.find((l) => envName(l) === name);
+        return locale === undefined ? undefined : setHtmlLang(html, locale);
       },
     },
     buildEnd() {
       if (problems.length) this.error(problems.join("\n"));
     },
   };
+}
+
+/** Sets (or adds) the `lang` attribute of the `<html>` element. */
+export function setHtmlLang(html: string, locale: string): string {
+  return html.replace(/<html(\s[^>]*)?>/i, (_, attrs: string | undefined) => {
+    const rest = (attrs ?? "").replace(/\slang\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/i, "");
+    return `<html lang="${locale}"${rest}>`;
+  });
 }

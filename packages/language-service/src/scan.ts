@@ -69,6 +69,9 @@ export interface TextNode {
   exprs: Src[];
   /** Whether the run has static text besides its `{{ }}` interpolations. */
   hasText: boolean;
+  /** The run's source text as written (interpolations included) and its absolute offset. */
+  raw: string;
+  start: number;
 }
 export type TNode = ElementNode | IfNode | ForNode | SwitchNode | DeferNode | LetNode | TextNode;
 
@@ -134,7 +137,7 @@ class Scanner {
         i = close + 2;
       }
       // Static text is kept (with no expressions) so rules can tell an element has content.
-      if (exprs.length || raw.trim() !== "") out.push({ type: "text", exprs, hasText: raw.replace(/\{\{[\s\S]*?\}\}/g, "").trim() !== "" });
+      if (exprs.length || raw.trim() !== "") out.push({ type: "text", exprs, hasText: raw.replace(/\{\{[\s\S]*?\}\}/g, "").trim() !== "", raw, start: this.base + from });
     };
     while (this.i < s.length) {
       const text = this.scanText(context === "block");

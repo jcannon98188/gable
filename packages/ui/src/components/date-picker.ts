@@ -1,12 +1,15 @@
-import { computed, effect, html, input, model, output } from "@gable/core";
-import { format, type Locale } from "date-fns";
+import { computed, effect, html, input, model, output, signal } from "@gable/core";
+import { format, isAfter, isBefore, isValid, parse, startOfDay } from "date-fns";
 import { cn } from "../lib/cn.js";
 import { useHostClass } from "../lib/host-class.js";
 import { UiIcon } from "../lib/icon.js";
 import { UiButton } from "./button.js";
-import { UiCalendar, type CalendarMode, type DateRange, type WeekDay } from "./calendar.js";
+import { resolveLocale, UiCalendar, type CalendarMode, type CaptionLayout, type DateRange, type LocaleSource, type WeekDay } from "./calendar.js";
 import { PopoverTrigger, UiPopover } from "./popover.js";
 
+const INPUT =
+  "h-9 w-[200px] min-w-0 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20";
+const TYPEABLE_TRIGGER = "size-9 justify-center p-0 aria-invalid:border-destructive";
 const TRIGGER = "w-[240px] justify-start px-3 text-left font-normal data-[empty=true]:text-muted-foreground aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40";
 
 /**
@@ -22,6 +25,11 @@ const TRIGGER = "w-[240px] justify-start px-3 text-left font-normal data-[empty=
  * calendar; `displayFormat` is a date-fns pattern (default `PPP`, "November 6th, 2026") used for the button text, in the `locale`.
  * `name` renders a hidden input with the ISO date (`yyyy-MM-dd`; a range: `from/to`) for a native form post.
  *
+ * `typeable` (single mode) adds a text input beside a calendar button: type a date in the `displayFormat` pattern and it is parsed
+ * with date-fns when you press Enter or leave the box (an empty box clears the value). Text that does not parse, or names a day
+ * outside `min` / `max` or one `isDisabled` rejects, leaves the value alone and marks the input `aria-invalid`. `captionLayout="dropdown"`
+ * gives the calendar month and year dropdowns. `locale` can also be a function returning a (lazily loaded) date-fns locale.
+ *
  * Escape, an outside click and a pick close it and focus returns to the button. The button is named by its text (the date or
  * the placeholder); pass `label` to prefix a better accessible name ("Birthday: November 6th, 2026").
  */
@@ -30,6 +38,23 @@ export class UiDatePicker {
     selector: "ui-date-picker",
     imports: [UiPopover, PopoverTrigger, UiButton, UiIcon, UiCalendar],
     template: html`
+      @if (typeable()) {
+        <input
+          type="text"
+          autocomplete="off"
+          [attr.class]="inputClasses()"
+          [value]="inputText()"
+          [attr.placeholder]="placeholder()"
+          [attr.aria-label]="inputLabel()"
+          [attr.aria-invalid]="inputInvalid()"
+          [attr.readonly]="readonlyAttr()"
+          [disabled]="disabled()"
+          (input)="onType($event)"
+          (change)="commitDraft()"
+          (keydown)="onTypeKey($event)"
+          (blur)="onTypeBlur()"
+        />
+      }
       <ui-popover [(open)]="open" placement="bottom-start" contentClass="w-auto p-0" [label]="dialogLabel()">
         <button
           slot="trigger"
@@ -44,7 +69,9 @@ export class UiDatePicker {
           [attr.data-empty]="emptyAttr()"
         >
           <svg uiIcon="calendar"></svg>
-          <span class="truncate">{{ text() }}</span>
+          @if (!typeable()) {
+            <span class="truncate">{{ text() }}</span>
+          }
         </button>
         <ui-calendar
           [mode]="mode()"
@@ -54,6 +81,7 @@ export class UiDatePicker {
           [max]="max()"
           [isDisabled]="isDisabled()"
           [locale]="locale()"
+          [captionLayout]="captionLayout()"
           [weekStartsOn]="weekStartsOn()"
           [showOutsideDays]="showOutsideDays()"
           [today]="today()"
@@ -74,12 +102,16 @@ export class UiDatePicker {
   min = input<Date | null>(null);
   max = input<Date | null>(null);
   isDisabled = input<((day: Date) => boolean) | null>(null);
-  locale = input<Locale | undefined>(undefined);
+  locale = input<LocaleSource | undefined>(undefined);
+  /** Passed to the calendar: month and year dropdowns in its heading. */
+  captionLayout = input<CaptionLayout>("label");
   weekStartsOn = input<WeekDay | undefined>(undefined);
   showOutsideDays = input<boolean>(true);
   today = input<Date | null>(null);
   /** date-fns pattern of the date on the button. */
   displayFormat = input<string>("PPP");
+  /** Single mode: add a text input for typing the date in `displayFormat`. */
+  typeable = input<boolean>(false);
   placeholder = input<string>("Pick a date");
   /** Names the field for screen readers: the button reads "label: date". */
   label = input<string>("");
@@ -92,17 +124,35 @@ export class UiDatePicker {
   class = input<string>("");
   touched = output();
 
-  private apply = useHostClass(() => cn("inline-block", this.class()));
+  private apply = useHostClass(() => cn(this.typeable() ? "inline-flex items-center gap-1" : "inline-block", this.class()));
 
   dialogLabel = computed(() => this.label() || (this.mode() === "range" ? "Choose dates" : "Choose date"));
   blocked = computed(() => this.disabled() || this.readonly());
-  triggerClasses = computed(() => cn(TRIGGER, this.triggerClass()));
+  triggerClasses = computed(() => cn(this.typeable() ? TYPEABLE_TRIGGER : TRIGGER, this.triggerClass()));
   invalidAttr = computed(() => (this.invalid() ? "true" : null));
+  inputClasses = computed(() => cn(INPUT, this.triggerClass()));
+  readonlyAttr = computed(() => (this.readonly() ? "" : null));
+  inputLabel = computed(() => this.label() || "Date");
+  /** What the user is typing; `null` shows the value formatted. */
+  private draft = signal<string | null>(null);
+  private typedInvalid = signal(false);
+  inputInvalid = computed(() => (this.invalid() || this.typedInvalid() ? "true" : null));
+  inputText = computed(() => {
+    const draft = this.draft();
+    if (draft !== null) return draft;
+    const v = this.value();
+    return v ? format(v, this.displayFormat(), { locale: resolveLocale(this.locale()) }) : "";
+  });
+  private clearDraft = effect(() => {
+    this.value();
+    this.draft.set(null);
+    this.typedInvalid.set(false);
+  });
   private hasValue = computed(() => (this.mode() === "range" ? !!this.range().from : !!this.value()));
   emptyAttr = computed(() => (this.hasValue() ? "false" : "true"));
 
   text = computed(() => {
-    const opts = { locale: this.locale() };
+    const opts = { locale: resolveLocale(this.locale()) };
     const pattern = this.displayFormat();
     if (this.mode() === "single") {
       const v = this.value();
@@ -112,13 +162,56 @@ export class UiDatePicker {
     if (!from) return this.placeholder();
     return to ? `${format(from, pattern, opts)} - ${format(to, pattern, opts)}` : `${format(from, pattern, opts)} -`;
   });
-  buttonLabel = computed(() => (this.label() ? `${this.label()}: ${this.text()}` : null));
+  buttonLabel = computed(() => (this.typeable() ? this.dialogLabel() : this.label() ? `${this.label()}: ${this.text()}` : null));
   isoValue = computed(() => {
     const iso = (d: Date | null) => (d ? format(d, "yyyy-MM-dd") : "");
     if (this.mode() === "single") return iso(this.value());
     const { from, to } = this.range();
     return from ? `${iso(from)}/${iso(to)}` : "";
   });
+
+  onType(event: unknown): void {
+    this.draft.set((event as { target: { value: string } }).target.value);
+    this.typedInvalid.set(false);
+  }
+
+  onTypeKey(event: unknown): void {
+    const e = event as { key: string; isComposing?: boolean };
+    if (e.key === "Enter" && !e.isComposing) this.commitDraft();
+  }
+
+  onTypeBlur(): void {
+    this.commitDraft();
+    this.touched.emit();
+  }
+
+  /** Parses what was typed: empty clears, a valid allowed day is picked, anything else marks the input invalid. */
+  commitDraft(): void {
+    const text = this.draft();
+    if (text === null || this.blocked()) return;
+    if (!text.trim()) {
+      this.draft.set(null);
+      this.value.set(null);
+      return;
+    }
+    const day = parse(text.trim(), this.displayFormat(), this.today() ?? new Date(), { locale: resolveLocale(this.locale()) });
+    if (!isValid(day) || !this.allowed(day)) {
+      this.typedInvalid.set(true);
+      return;
+    }
+    this.typedInvalid.set(false);
+    this.draft.set(null);
+    const current = this.value();
+    this.value.set(current && startOfDay(current).getTime() === startOfDay(day).getTime() ? current : startOfDay(day));
+  }
+
+  private allowed(day: Date): boolean {
+    const min = this.min();
+    const max = this.max();
+    if (min && isBefore(startOfDay(day), startOfDay(min))) return false;
+    if (max && isAfter(startOfDay(day), startOfDay(max))) return false;
+    return !(this.isDisabled()?.(day) ?? false);
+  }
 
   private seen: string | undefined = undefined;
   /** A pick (the calendar writes the models) closes the popover: a day, or a complete range. */

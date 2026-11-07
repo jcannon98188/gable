@@ -175,3 +175,51 @@ describe("ResizeEngine state", () => {
     expect(e.sizes()).toEqual([50, 50]);
   });
 });
+
+describe("ResizeEngine cascading", () => {
+  const three = () => make([{ defaultSize: 40 }, { defaultSize: 30, minSize: 30 }, { defaultSize: 30, minSize: 10 }]).e;
+  it("a drag right carries into the panel beyond a neighbour that is at its minimum", () => {
+    const e = three();
+    drag(e, 0, 400, [500]);
+    expect(e.sizes()).toEqual([50, 30, 20]);
+    drag(e, 0, 500, [900]);
+    expect(e.sizes()).toEqual([60, 30, 10]);
+  });
+  it("a drag left carries into the panels before the handle", () => {
+    const e = make([{ defaultSize: 30, minSize: 10 }, { defaultSize: 30, minSize: 30 }, { defaultSize: 40 }]).e;
+    drag(e, 1, 600, [400]);
+    expect(e.sizes()).toEqual([10, 30, 60]);
+  });
+  it("stops when the growing panel is at its maximum, and arrow keys cascade too", () => {
+    const e = make([{ defaultSize: 40, maxSize: 45 }, { defaultSize: 30, minSize: 30 }, { defaultSize: 30 }]).e;
+    drag(e, 0, 400, [700]);
+    expect(e.sizes()).toEqual([45, 30, 25]);
+    const k = three();
+    expect(k.key(0, "ArrowRight")).toBe(true);
+    expect(k.sizes()).toEqual([50, 30, 20]);
+  });
+  it("Home and End stay with the two neighbours", () => {
+    const e = three();
+    e.key(0, "End");
+    expect(e.sizes()).toEqual([40, 30, 30]);
+  });
+});
+
+describe("ResizeEngine right to left", () => {
+  it("mirrors pointer drags and arrow keys of a horizontal group", () => {
+    const e = new ResizeEngine({ direction: () => "horizontal", rtl: () => true });
+    e.configure([{ defaultSize: 50 }, { defaultSize: 50 }]);
+    drag(e, 0, 500, [400]);
+    expect(e.sizes()).toEqual([60, 40]);
+    e.key(0, "ArrowLeft");
+    expect(e.sizes()).toEqual([70, 30]);
+    e.key(0, "ArrowRight");
+    expect(e.sizes()).toEqual([60, 40]);
+  });
+  it("leaves vertical groups alone", () => {
+    const e = new ResizeEngine({ direction: () => "vertical", rtl: () => true });
+    e.configure([{ defaultSize: 50 }, { defaultSize: 50 }]);
+    drag(e, 0, 500, [600]);
+    expect(e.sizes()).toEqual([60, 40]);
+  });
+});

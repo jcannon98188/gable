@@ -4,7 +4,7 @@ import { html, inject } from "@gable/core";
 import { PRESENCE_ENV } from "@gable/ui-primitives";
 import { expectNoA11yViolations } from "@gable/testing/a11y";
 import { $, $$, settle, useDomApp } from "../test-utils.js";
-import { ToastService, UiToaster } from "./toast.js";
+import { matchesHotkey, ToastService, UiToaster } from "./toast.js";
 
 class App {
   static meta = { selector: "app-root", imports: [UiToaster], template: html`<main><h1>App</h1></main><ui-toaster></ui-toaster>` };
@@ -33,5 +33,56 @@ describe("Toaster (jsdom)", () => {
     await settle();
     expect($$("section li")).toHaveLength(1);
     expect($("section li").textContent).toContain("Failed");
+  });
+});
+
+describe("Toaster swipe and hotkey (jsdom)", () => {
+  const press = (init: KeyboardEventInit) => document.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init }));
+
+  it("focuses the region on Alt+T and pauses timers", async () => {
+    const app = await boot(App, providers);
+    app.toast.info("Hello");
+    await settle();
+    press({ key: "t", code: "KeyT", altKey: true });
+    await settle();
+    expect(document.activeElement).toBe($("section[aria-label=Notifications]"));
+    press({ key: "t", code: "KeyT" }); // no modifier: nothing
+  });
+
+  it("matches hotkey specs exactly", () => {
+    expect(matchesHotkey({ key: "†", code: "KeyT", altKey: true }, "alt+t")).toBe(true);
+    expect(matchesHotkey({ key: "t", code: "KeyT", altKey: true, shiftKey: true }, "alt+t")).toBe(false);
+    expect(matchesHotkey({ key: "k", code: "KeyK", ctrlKey: true, shiftKey: true }, "ctrl+shift+k")).toBe(true);
+    expect(matchesHotkey({ key: "t", code: "KeyT" }, "")).toBe(false);
+  });
+
+  it("dismisses a toast swiped far enough toward the edge", async () => {
+    const app = await boot(App, providers);
+    app.toast.success("Swipe me", { duration: 0 });
+    await settle();
+    const li = $("section li");
+    li.getBoundingClientRect = () => ({ width: 300, height: 60, top: 0, left: 0, right: 300, bottom: 60, x: 0, y: 0, toJSON() {} }) as DOMRect;
+    let t = 0;
+    const fire = (type: string, x: number) => {
+      const e = new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, clientX: x, clientY: 10 });
+      Object.defineProperty(e, "timeStamp", { value: t });
+      li.dispatchEvent(e);
+    };
+    fire("pointerdown", 10);
+    t = 400;
+    fire("pointermove", 230);
+    expect(li.style.transform).toBe("translate3d(220px,0,0)");
+    t = 800;
+    fire("pointerup", 230);
+    await settle();
+    expect(li.getAttribute("data-state")).toBe("closed");
+    expect(app.toast.toasts()).toHaveLength(0);
+  });
+
+  it("uses theme tokens for status icons", async () => {
+    const app = await boot(App, providers);
+    app.toast.success("Ok", { duration: 0 });
+    await settle();
+    expect(document.querySelector("section li svg")!.getAttribute("class")).toContain("text-success");
   });
 });

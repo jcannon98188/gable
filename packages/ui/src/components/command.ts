@@ -25,6 +25,60 @@ export function commandMatches(item: CommandItem, query: string): boolean {
   return words.every((w) => haystack.includes(w));
 }
 
+/** Decides which items match a query and in what order. Replace the default with the `filter` input. */
+export type CommandFilter = (items: readonly CommandItem[], query: string) => CommandItem[];
+
+/** The default filter: every word must be a substring of the label, group or keywords; items keep their order. */
+export const substringFilter: CommandFilter = (items, query) => items.filter((item) => commandMatches(item, query));
+
+/**
+ * Scores `word` as a subsequence of `text` (both lower case): 0 when it is not one. Higher for a prefix, for matches at the start
+ * of a word, for consecutive characters and for a shorter text.
+ */
+export function fuzzyScore(text: string, word: string): number {
+  if (!word) return 1;
+  let score = 0;
+  let at = 0;
+  let run = 0;
+  for (const ch of word) {
+    const found = text.indexOf(ch, at);
+    if (found < 0) return 0;
+    const consecutive = found === at && at > 0;
+    const wordStart = found === 0 || /[\s_./-]/.test(text[found - 1]!);
+    run = consecutive ? run + 1 : 0;
+    score += 1 + run * 2 + (wordStart ? 3 : 0) + (found === 0 ? 4 : 0) - Math.min(found - at, 3) * 0.1;
+    at = found + 1;
+  }
+  if (text.startsWith(word)) score += 10;
+  return score + 1 / (1 + text.length);
+}
+
+/**
+ * A simple fuzzy filter: every word of the query must match (as a subsequence) the label, the keywords or the group, and the
+ * best matches come first (prefixes, word starts and contiguous runs score higher; a label counts more than a keyword, a
+ * keyword more than the group). The sort is stable, so equal scores keep their order. An empty query keeps every item as is.
+ *
+ *   <ui-command [items]="commands" [filter]="fuzzy"></ui-command>   // fuzzy = fuzzyFilter
+ */
+export const fuzzyFilter: CommandFilter = (items, query) => {
+  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return [...items];
+  const scored: { item: CommandItem; score: number; index: number }[] = [];
+  items.forEach((item, index) => {
+    const label = item.label.toLowerCase();
+    const keywords = (item.keywords ?? []).map((k) => k.toLowerCase());
+    const group = (item.group ?? "").toLowerCase();
+    let total = 0;
+    for (const w of words) {
+      const best = Math.max(fuzzyScore(label, w) * 3, ...keywords.map((k) => fuzzyScore(k, w) * 2), fuzzyScore(group, w));
+      if (best <= 0) return;
+      total += best;
+    }
+    scored.push({ item, score: total, index });
+  });
+  return scored.sort((a, b) => b.score - a.score || a.index - b.index).map((s) => s.item);
+};
+
 /**
  * A searchable command list (shadcn's Command, cmdk-style): a search box over a list of commands in groups.
  *
@@ -38,7 +92,8 @@ export function commandMatches(item: CommandItem, query: string): boolean {
  * the `emptyText` shows. `selected` fires with the command's `value`. The list is always filtered by `query`
  * (two-way, so it can be cleared from outside).
  *
- * Put it in a `ui-command-dialog` for the usual palette. Filtering is a plain substring match: no fuzzy ranking.
+ * `filter` replaces how items are matched and ordered (`(items, query) => items`): the default is the substring match above;
+ * `fuzzyFilter` (exported) ranks subsequence matches, best first. Put it in a `ui-command-dialog` for the usual palette.
  */
 export class UiCommand {
   static meta = {
@@ -106,6 +161,8 @@ export class UiCommand {
   emptyText = input<string>("No results found.");
   /** Accessible name of the search box and the list. */
   label = input<string>("Command palette");
+  /** How items match the query and in what order. Default: every word is a substring (see `fuzzyFilter` for ranked fuzzy matching). */
+  filter = input<CommandFilter>(substringFilter);
   class = input<string>("");
   /** Two-way: the text in the search box. */
   query = model("");
@@ -118,7 +175,7 @@ export class UiCommand {
 
   private apply = useHostClass(() => cn("flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground", this.class()));
 
-  filtered = computed(() => this.items().filter((item) => commandMatches(item, this.query())));
+  filtered = computed(() => this.filter()(this.items(), this.query()));
   empty = computed(() => this.filtered().length === 0);
   /** The commands that can be highlighted, in display order (groups are laid out in order of first appearance). */
   navigable = computed(() => this.layout().flatMap((g) => g.items).filter((item) => !item.disabled));
@@ -244,7 +301,7 @@ export class UiCommandDialog {
         ></div>
         <div uiDialogContent [attr.class]="contentClasses()">
           <h2 uiDialogTitle class="sr-only">{{ heading() }}</h2>
-          <ui-command [items]="items()" [placeholder]="placeholder()" [emptyText]="emptyText()" [label]="heading()" [(query)]="query" (selected)="onSelected($event)"></ui-command>
+          <ui-command [items]="items()" [filter]="filter()" [placeholder]="placeholder()" [emptyText]="emptyText()" [label]="heading()" [(query)]="query" (selected)="onSelected($event)"></ui-command>
         </div>
       </ui-portal>
     `,
@@ -256,6 +313,8 @@ export class UiCommandDialog {
   heading = input<string>("Command palette");
   placeholder = input<string>("Type a command or search...");
   emptyText = input<string>("No results found.");
+  /** Passed to the command list: see `UiCommand.filter`. */
+  filter = input<CommandFilter>(substringFilter);
   /** Extra classes for the panel; they win over the defaults. */
   contentClass = input<string>("");
   selected = output<string>();

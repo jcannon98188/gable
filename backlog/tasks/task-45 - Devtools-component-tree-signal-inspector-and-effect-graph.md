@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-07T03:30:00Z'
-updated_date: '2026-11-07T03:49:00Z'
+updated_date: '2026-11-07T05:00:00Z'
 labels:
   - devtools
   - ready-for-agent
@@ -35,6 +35,8 @@ Decision (user): build a Chrome-based browser extension (Manifest V3: devtools_p
 Instrumentation: packages/core/src/devtools.ts plus additive hooks (a separate devtools.current sink in dev-hooks.ts, so devtools work without HMR). Hook: window.__GABLE_DEVTOOLS_HOOK__ with call(method, params), connect(listener), element(id), componentFor(node), registerInspector(id, spec). Installed from index.ts under DEV. core package.json sideEffects now lists ./dist/index.js, otherwise bundlers drop the barrel's install call. Prod absence proven by packages/core/src/devtools-prod.test.ts (vite build with __GABLE_DEV__ false has no hook; true has it). Open-in-editor uses Vite /__open-in-editor, project root injected by @gable/vite as __GABLE_DEV_SERVER__.
 Extension: packages/devtools-extension (MV3, build with npm run build -w packages/devtools-extension, load dist/ unpacked). Decision: panel UI is plain TypeScript, not Gable (small, no self-inspection, no framework dependency). Tests: protocol guards, relay, and an end-to-end page-hook -> bridge -> content -> relay -> client -> panel model path (src/extension.test.ts). Guide: docs/devtools.md with the manual checklist.
 NOT verified: nothing was run in a real browser, so the panel rendering (view.ts), chrome.* glue (main.ts, background.ts, devtools.ts), the built dist loading as an unpacked extension, hover highlight, click-to-open-in-editor and editing from the real panel are untested. AC2 and AC3 are left unchecked for that reason; the checklist in docs/devtools.md lists what to check.
+
+Housekeeping: packages/devtools-extension added to the root build script (npm run build builds it).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

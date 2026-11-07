@@ -7,7 +7,7 @@ npx gable-ui init
 npx gable-ui add button dialog select
 ```
 
-The package is still `"private": true` while nothing is published. One thing to settle before publishing: `npm pack` names the `@gable/ui` tarball `gable-ui-<version>.tgz`, the same as this package's tarball, so `scripts/pack-local.mjs` would collide the moment both are public. Rename or exempt one then.
+The package is still `"private": true` while nothing is published, so `npm run pack:local` does not pack it yet (`"gablePack": true` would). `npm pack` names the `@gable/ui` tarball `gable-ui-<version>.tgz`, which is also what it would call this package, so `scripts/pack-local.mjs` stores the CLI as `gable-ui-cli-<version>.tgz` in `vendor/` and fails on any other name collision.
 
 ## Commands
 

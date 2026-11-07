@@ -1,4 +1,5 @@
 import { InjectionToken, type Provider } from "./di.js";
+import { computedExitDuration } from "./exit-duration.js";
 import type { Renderer } from "./renderer.js";
 
 /** How the outlet animates a route swap: `css` keeps the outgoing view mounted while CSS animates it; `view` uses `document.startViewTransition`. */
@@ -49,41 +50,6 @@ export function viewTransition(options: RouteTransitionOptions | null | undefine
   if (!doc || typeof doc.startViewTransition !== "function") return false;
   doc.startViewTransition(update);
   return true;
-}
-
-const ms = (token: string) => (token.endsWith("ms") ? parseFloat(token) : parseFloat(token) * 1000) || 0;
-const split = (value: string | undefined) => (value ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-
-/** Longest animation or transition on `host` according to its computed style, in ms; null when it has none. */
-export function computedExitDuration(host: unknown): number | null {
-  const g = globalThis as unknown as { getComputedStyle?: (el: unknown) => Record<string, string | undefined> };
-  if (!g.getComputedStyle || (host as { nodeType?: number } | null)?.nodeType !== 1) return null;
-  const cs = g.getComputedStyle(host) as Record<string, string | undefined> & { getPropertyValue?(name: string): string };
-  let longest = -1;
-  // A style that only exposes the shorthands (jsdom) is read from those.
-  if (!cs.animationDuration && !cs.transitionDuration) {
-    for (const [kind, value] of [["animation", cs.getPropertyValue?.("animation") ?? cs.animation], ["transition", cs.getPropertyValue?.("transition") ?? cs.transition]] as const) {
-      for (const item of (value ?? "").split(/,(?![^(]*\))/).map((x) => x.trim()).filter((x) => x && x !== "none")) {
-        const times = item.split(/\s+(?![^(]*\))/).filter((w) => /^-?[\d.]+m?s$/.test(w));
-        const iter = item.split(/\s+/).find((w) => w === "infinite" || /^\d+(\.\d+)?$/.test(w));
-        const total = ms(times[1] ?? "0s") + ms(times[0] ?? "0s") * (kind === "animation" ? (iter === "infinite" ? Infinity : iter ? parseFloat(iter) : 1) : 1);
-        if (ms(times[0] ?? "0s") + ms(times[1] ?? "0s") > 0) longest = Math.max(longest, total);
-      }
-    }
-    return longest < 0 ? null : longest;
-  }
-  const names = split(cs.animationName);
-  split(cs.animationDuration).forEach((d, i) => {
-    if ((names[i % Math.max(names.length, 1)] ?? "none") === "none") return;
-    const delay = ms(split(cs.animationDelay)[i] ?? split(cs.animationDelay)[0] ?? "0s");
-    const count = split(cs.animationIterationCount)[i] ?? "1";
-    longest = Math.max(longest, delay + ms(d) * (count === "infinite" ? Infinity : parseFloat(count) || 1));
-  });
-  split(cs.transitionDuration).forEach((d, i) => {
-    if (ms(d) <= 0) return;
-    longest = Math.max(longest, ms(split(cs.transitionDelay)[i] ?? split(cs.transitionDelay)[0] ?? "0s") + ms(d));
-  });
-  return longest < 0 ? null : longest;
 }
 
 const END_EVENTS = ["animationend", "animationcancel", "transitionend", "transitioncancel"] as const;

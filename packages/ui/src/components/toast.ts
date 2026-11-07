@@ -1,7 +1,7 @@
 import { computed, html, inject, input, signal } from "@gable/core";
 import { currentScope } from "@gable/core/internal";
 import { LiveAnnouncer } from "@gable/core/renderer";
-import { UiPortal, UiPresence } from "@gable/ui-primitives";
+import { UiDrawerDrag, UiPortal, UiPresence } from "@gable/ui-primitives";
 import { cn } from "../lib/cn.js";
 import { UiIcon } from "../lib/icon.js";
 
@@ -188,12 +188,26 @@ const POSITIONS: Record<ToastPosition, string> = {
 const ICON: Record<ToastType, string> = { default: "", success: "check", error: "circle-alert", info: "circle", warning: "circle-alert", loading: "" };
 const ICON_CLASS: Record<ToastType, string> = {
   default: "",
-  success: "text-emerald-600 dark:text-emerald-400",
+  success: "text-success",
   error: "text-destructive",
-  info: "text-sky-600 dark:text-sky-400",
-  warning: "text-amber-600 dark:text-amber-400",
+  info: "text-info",
+  warning: "text-warning",
   loading: "",
 };
+
+let regionCounter = 0;
+
+/** True when a keydown matches a spec like `alt+t` or `ctrl+shift+k` (modifiers must match exactly; the key is compared by physical letter key or `key`). */
+export function matchesHotkey(event: { key?: string; code?: string; altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean }, spec: string): boolean {
+  const parts = spec.toLowerCase().split("+").map((p) => p.trim()).filter(Boolean);
+  const key = parts.pop();
+  if (!key) return false;
+  const want = (m: string) => parts.includes(m);
+  if (want("alt") !== !!event.altKey || want("shift") !== !!event.shiftKey || want("meta") !== !!event.metaKey || want("ctrl") !== !!event.ctrlKey) return false;
+  // Alt changes `key` on some layouts (macOS types a symbol), so letters and digits go by the physical key.
+  const code = (event.code ?? "").toLowerCase();
+  return code === `key${key}` || code === `digit${key}` || (event.key ?? "").toLowerCase() === key;
+}
 
 /**
  * The region that shows toasts. Put one `<ui-toaster></ui-toaster>` in the app (usually the root component); it renders
@@ -203,16 +217,19 @@ const ICON_CLASS: Record<ToastType, string> = {
  *   <ui-toaster position="bottom-right" [limit]="3"></ui-toaster>
  *
  * Hovering or focusing the region pauses the timers of every toast. `limit` caps how many are shown at once (the
- * oldest are hidden until there is room; they are not dismissed).
+ * oldest are hidden until there is room; they are not dismissed). A toast can be swiped away with a finger, pen or mouse
+ * (toward the nearest screen edge; it uses the same drag engine as the drawer). `hotkey` (default `alt+t`, `""` turns it off) moves
+ * focus to the region from anywhere on the page, which also pauses the timers; Tab then reaches each toast's buttons.
  */
 export class UiToaster {
   static meta = {
     selector: "ui-toaster",
-    imports: [UiPortal, UiPresence, UiIcon],
+    imports: [UiPortal, UiPresence, UiIcon, UiDrawerDrag],
     template: html`
       <ui-portal>
         <section
           aria-label="Notifications"
+          [attr.id]="regionId"
           tabindex="-1"
           [attr.class]="regionClasses()"
           (mouseenter)="hover(true)"
@@ -222,7 +239,7 @@ export class UiToaster {
         >
           <ol class="contents">
             @for (t of rows(); track t.id) {
-              <li uiPresence [attr.data-type]="t.type" class="pointer-events-auto flex w-full items-start gap-3 rounded-lg border bg-popover p-4 text-sm text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-right-8 motion-reduce:animate-none">
+              <li uiPresence uiDrawerDrag [side]="swipeSide()" (dismiss)="close(t.id)" [attr.data-type]="t.type" class="pointer-events-auto touch-pan-y data-[dragged]:data-[state=closed]:animate-none data-[dragging]:select-none flex w-full items-start gap-3 rounded-lg border bg-popover p-4 text-sm text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-right-8 motion-reduce:animate-none">
                 @if (t.spinner) {
                   <span class="mt-0.5 size-4 shrink-0 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground motion-reduce:animate-none" aria-hidden="true"></span>
                 }
@@ -263,7 +280,13 @@ export class UiToaster {
   position = input<ToastPosition>("bottom-right");
   /** The most toasts shown at once. */
   limit = input<number>(5);
+  /** Keyboard shortcut that focuses the region, like `alt+t` or `ctrl+shift+k`. Empty turns it off. */
+  hotkey = input<string>("alt+t");
   class = input<string>("");
+
+  regionId = `ui-toaster-${++regionCounter}`;
+  /** Toasts are swiped toward the nearest side edge. */
+  swipeSide = computed(() => (this.position().endsWith("left") ? "left" : "right"));
 
   service = inject(ToastService);
   private hovered = false;
@@ -282,6 +305,23 @@ export class UiToaster {
         actionLabel: t.action?.label ?? "",
       })),
   );
+
+  private bindHotkey = (() => {
+    const doc = (globalThis as { document?: Document }).document;
+    if (!doc?.addEventListener) return;
+    const handler = (event: KeyboardEvent) => this.onHotkey(event);
+    doc.addEventListener("keydown", handler);
+    currentScope()?.onDispose(() => doc.removeEventListener("keydown", handler));
+  })();
+
+  onHotkey(event: KeyboardEvent): void {
+    const spec = this.hotkey();
+    if (!spec || event.defaultPrevented || !matchesHotkey(event, spec)) return;
+    const region = (globalThis as { document?: Document }).document?.getElementById(this.regionId);
+    if (!region) return;
+    event.preventDefault();
+    region.focus();
+  }
 
   hover(on: boolean): void {
     this.hovered = on;

@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: 2026-11-07 02:24
-updated_date: '2026-11-07T03:21:00Z'
+updated_date: '2026-11-07T05:01:00Z'
 labels:
   - ui
   - needs-info
@@ -42,6 +42,8 @@ Name decided: gable-ui. Shadcn-style distribution: a CLI that copies component s
 User-approved decisions applied (CLI gable-ui, shadcn-style component registry, JSON index + per-item JSON, local dir or git URL source, gable-ui.json, init/add, no diff).
 
 Implemented packages/gable-ui (CLI gable-ui: init, add, build), registry JSON (index.json + items/<name>.json), sources: bundled dir / local dir or ui source tree / git URL(#ref), --local, --no-install, --overwrite. Registry generated from packages/ui by 'gable-ui build' (registry-meta.ts read if present, otherwise inferred from imports; not present when implemented, shape assumed: registryMeta keyed by item name). Docs: docs/gable-ui-cli.md. Verified: npx vitest run packages/gable-ui (41 tests incl. offline init+add e2e into Vite fixtures), tsc. Not verified: real package-manager install, tsc of copied output against real node_modules.
+
+Housekeeping: the @gable/ui vs gable-ui CLI tarball name collision (both gable-ui-<v>.tgz) is fixed in scripts/pack-local.mjs: vendorNames() stores the CLI as gable-ui-cli-<v>.tgz and throws on any other collision; test in packages/gable-ui/src/pack-names.test.ts; documented in docs/gable-ui-cli.md and docs/library-authors.md.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

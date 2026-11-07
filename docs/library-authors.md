@@ -33,3 +33,7 @@ Like `inject()`, `injectHost()` only works during Setup: in a field initialiser,
 ### Compatibility
 
 `@gable/core/internal` still exports the same `injectHost` function, so existing imports keep working.
+
+## Packing a library locally
+
+`npm run pack:local -- <app-dir>` packs every non-private workspace package, plus private ones marked `"gablePack": true` (`@gable/ui`), into `<app-dir>/vendor`. Tarballs are named after the package (`@gable/ui` becomes `gable-ui-<version>.tgz`). The unscoped `gable-ui` CLI would pack to the same name, so the script stores it as `gable-ui-cli-<version>.tgz` and stops with an error on any other collision. See `docs/gable-ui-cli.md`.

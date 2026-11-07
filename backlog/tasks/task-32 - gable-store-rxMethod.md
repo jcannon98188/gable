@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-07T03:12:00Z'
-updated_date: '2026-11-07T03:19:00Z'
+updated_date: '2026-11-07T05:01:00Z'
 labels:
   - store
   - ready-for-agent
@@ -36,6 +36,8 @@ rxMethod in the style of NgRx: accepts a value, signal or Observable and pipes i
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented packages/store/src/rx-method.ts (rxMethod, exported from index.ts), tests in rx-method.test.ts, docs/store.md section. vitest packages/store and tsc pass.
+
+Housekeeping: @gable/store now declares rxjs as a peerDependency (^7.8.2, same as @gable/core; not optional because index.ts imports rxMethod statically). Lockfile updated.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

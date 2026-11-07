@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-07T03:32:00Z'
-updated_date: '2026-11-07T04:44:00Z'
+updated_date: '2026-11-07T04:57:00Z'
 labels:
   - ui
 dependencies: []
@@ -40,4 +40,6 @@ Decision (2026-11-06): build natively and use date-fns for date maths, formattin
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented packages/ui/src/components/calendar.ts and date-picker.ts (date-fns ^4.4.0 added to packages/ui; registry-meta entries list it, so the gable-ui CLI installs it). Added a `calendar` icon to lib/icon.ts and a `label` input to UiPopover (a role=dialog panel needs an accessible name; axe flagged the picker). Tests: calendar.test.ts (in-memory), calendar.dom.test.ts (jsdom, keyboard, range, picker, axe). Gallery page examples/ui-gallery/date.html + src/date-*.ts; its test passes when @gable/ui is aliased to the sources, but the gallery's vendored @gable/ui is stale until `npm run pack:local examples/ui-gallery`, so AC #3 is not checked (not verified in a real browser). Not covered: typed text input of a date, multi-month display, multiple-date selection, range hover preview, dropdown month/year selects, I18n service wiring.
+
+Second pass: calendar captionLayout (dropdown / dropdown-months / dropdown-years) with native selects clamped to min/max; date picker typeable input parsed with date-fns via displayFormat and validated against min/max/isDisabled; locale accepts a function (lazy). Wiring to the I18n service not done: see follow-up task. Tests added incl. axe.
 <!-- SECTION:NOTES:END -->

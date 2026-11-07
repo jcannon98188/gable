@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-07T03:32:00Z'
-updated_date: '2026-11-07T04:35:00Z'
+updated_date: '2026-11-07T04:57:00Z'
 labels:
   - ui
 dependencies: []
@@ -35,6 +35,8 @@ shadcn uses Sonner for toasts. Zag has a toast machine, but it needs a global to
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented packages/ui/src/components/toast.ts; tests toast.test.ts (in-memory) and toast.dom.test.ts (jsdom, axe, exit animation) pass. Gallery page examples/ui-gallery/toast.html + src/toast-demo(.test).ts added but needs npm run pack:local before it resolves ToastService; not run in a browser. Swipe-to-dismiss not implemented.
+
+Second pass: status icons use new --success/--info/--warning tokens (theme.css light+dark, --color-* mapped); swipe-to-dismiss via uiDrawerDrag on each toast; hotkey input (default alt+t) focuses the region; tests added. Stacking/collapse of overflow not done: see follow-up task.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

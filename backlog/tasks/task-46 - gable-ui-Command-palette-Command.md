@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-07T03:32:00Z'
-updated_date: '2026-11-07T04:36:00Z'
+updated_date: '2026-11-07T04:57:00Z'
 labels:
   - ui
 dependencies: []
@@ -35,6 +35,8 @@ shadcn's Command is a cmdk-style searchable command list, usually shown in a dia
 
 <!-- SECTION:NOTES:BEGIN -->
 Gallery page examples/ui-gallery/command.html added; its test cannot run until npm run pack:local picks up the component (verified the demo against package source instead). AC3 left unchecked. jsdom: focus-trap cannot focus the search box without layout (initialFocusEl set; browser focus unverified).
+
+Second pass: filter input (CommandFilter) on ui-command and ui-command-dialog; substringFilter stays the default, fuzzyFilter exported (subsequence, prefix/word-start/contiguity scoring, stable, every word must match). Tests added.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

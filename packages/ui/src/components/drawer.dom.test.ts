@@ -135,6 +135,69 @@ describe("Drawer in jsdom", () => {
     expect(app.open()).toBe(false);
   });
 
+  it("fades the backdrop with the drag", async () => {
+    await boot(App);
+    $("[data-t=trigger]").click();
+    await settle();
+    sized();
+    const backdrop = () => $("[data-scope=dialog][data-part=backdrop]");
+    clock = 0;
+    drag(panel(), "pointerdown", 50, 100);
+    clock = 400;
+    drag(panel(), "pointermove", 50, 200);
+    await settle();
+    expect(Number(backdrop().style.opacity)).toBeCloseTo(0.75, 2);
+    expect(backdrop().style.transition).toBe("none");
+  });
+
+  it("closes from a snap point below full by sliding out from where it rests", async () => {
+    const app = await boot(App);
+    app.snaps.set([0.5, 1]);
+    $("[data-t=trigger]").click();
+    await settle();
+    sized();
+    clock = 0;
+    drag(panel(), "pointerdown", 50, 0);
+    clock = 400;
+    drag(panel(), "pointermove", 50, 200);
+    clock = 800;
+    drag(panel(), "pointerup", 50, 200);
+    await settle();
+    expect(app.snap()).toBe(0.5);
+    key(document.activeElement!, "Escape");
+    await settle();
+    expect(app.open()).toBe(false);
+    expect(panel().hasAttribute("data-dragged")).toBe(true); // the CSS exit (which restarts at the natural position) is off
+    expect(panel().style.transform).toBe("translate3d(0,100%,0)");
+    expect(panel().style.transition).toContain("transform");
+  });
+
+  it("closing from full height leaves the CSS exit animation alone", async () => {
+    const app = await boot(App);
+    $("[data-t=trigger]").click();
+    await settle();
+    key(document.activeElement!, "Escape");
+    await settle();
+    expect(app.open()).toBe(false);
+    expect(panel().hasAttribute("data-dragged")).toBe(false);
+    expect(panel().style.transform).toBe("");
+  });
+
+  it("animates a snap change made while open", async () => {
+    const app = await boot(App);
+    app.snaps.set([0.4, 1]);
+    $("[data-t=trigger]").click();
+    await settle();
+    expect(panel().style.transform).toBe("");
+    app.snap.set(0.4);
+    await settle();
+    expect(panel().style.transform).toBe("translate3d(0,60%,0)");
+    expect(panel().style.transition).toContain("transform 300ms");
+    app.snap.set(1);
+    await settle();
+    expect(panel().style.transform).toBe("translate3d(0,0%,0)");
+  });
+
   it("has no axe violations open", async () => {
     await boot(App);
     $("[data-t=trigger]").click();

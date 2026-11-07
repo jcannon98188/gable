@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { check, where } from "../test-support/check.js";
+import { PLUGIN_NAME, readConfig } from "./config.js";
 
 describe("i18n marker rules", () => {
   it("passes correct markers, including a bound attribute with no marker", async () => {
@@ -29,5 +30,72 @@ describe("i18n marker rules", () => {
     expect(message("i18n-attr-missing", "i18n-title")).toMatch(/has no title="..." attribute/);
     expect(message("i18n-not-translatable", "[title]")).toMatch(/only static text is translated/);
     expect(message("i18n-marker-syntax", "id")).toMatch(/Empty id/);
+  });
+});
+
+describe("i18n-missing-translation", () => {
+  it("is silent when the config has no i18n section (the marker fixtures)", async () => {
+    expect((await check("i18n-pass")).diagnostics.filter((d) => d.rule === "i18n-missing-translation")).toEqual([]);
+  });
+
+  it("reports each marked message with the locales it has no translation for, at its marker", async () => {
+    const { code, diagnostics } = await check("i18n-missing");
+    const at = (snippet: string, into = 0) => where("i18n-missing", snippet, into);
+    const rows = diagnostics.map((d) => [d.rule, d.line, d.column, d.severity, d.message]);
+    const expected = [
+      [at('i18n="page title"'), "es"],
+      [at("<p i18n>", 3), "de, es"],
+      [at('i18n-title="search field"'), "fr, de, es"],
+      [at('i18n="@@note"'), "es"],
+    ] as const;
+    expect(rows).toEqual(
+      expected.map(([p, locales]) => [
+        "i18n-missing-translation",
+        p.line,
+        p.column,
+        "warn",
+        expect.stringContaining(`has no translation for ${locales}`),
+      ]),
+    );
+    expect(diagnostics[0]!.message).toMatch(/no readable catalog for es/);
+    expect(diagnostics[2]!.message).toMatch(/^"Search" \(id 8bd803ecc83852a3\)/);
+    expect(code).toBe(0); // warnings only
+  });
+});
+
+describe("i18n-unmarked-text", () => {
+  it("is off by default", async () => {
+    expect((await check("i18n-pass")).diagnostics.filter((d) => d.rule === "i18n-unmarked-text")).toEqual([]);
+  });
+
+  it("flags unmarked words, text and attributes, and skips the rest", async () => {
+    const { diagnostics } = await check("i18n-unmarked");
+    const at = (snippet: string, into = 0) => where("i18n-unmarked", snippet, into);
+    const expected = [
+      at("Unmarked heading"),
+      at("Hello {{ name() }}, nice"),
+      at('title="Search"'),
+      at('alt="Logo"'),
+      at("Inside a block"),
+    ];
+    expect(diagnostics.map((d) => [d.rule, d.line, d.column, d.severity])).toEqual(expected.map((p) => ["i18n-unmarked-text", p.line, p.column, "warn"]));
+    expect(diagnostics[0]!.message).toMatch(/Text "Unmarked heading" is not marked.*i18n-ignore/);
+  });
+});
+
+describe("i18n plugin option", () => {
+  const read = (i18n: unknown) => readConfig({ configFilePath: "/p/tsconfig.json", plugins: [{ name: PLUGIN_NAME, i18n }] } as never);
+
+  it("defaults the catalog path and drops the source locale from the checked locales", () => {
+    const { config, errors } = read({ locales: ["en", "fr"] });
+    expect(errors).toEqual([]);
+    expect(config.i18n).toMatchObject({ sourceLocale: "en", locales: ["fr"], catalogs: "src/locales/messages.{locale}.json" });
+  });
+
+  it("explains a bad section, and accepts the other gableI18n options without using them", () => {
+    expect(read({ locales: "fr" }).errors[0]).toMatch(/i18n\.locales/);
+    expect(read({ locales: ["fr"], catalogs: "messages.json" }).errors[0]).toMatch(/\{locale\}/);
+    expect(read({ locales: ["fr"], banana: 1 }).errors[0]).toMatch(/unknown option "i18n\.banana"/);
+    expect(read({ locales: ["fr"], bake: true, extract: false }).errors).toEqual([]);
   });
 });

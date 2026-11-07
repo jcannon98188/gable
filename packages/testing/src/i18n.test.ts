@@ -193,3 +193,15 @@ describe("extraction", () => {
     expect(f.textOf(f.query("h1")!)).toBe(fr[first!.id]);
   });
 });
+
+describe("i18n-ignore", () => {
+  it("is a lint hint only: it is not rendered and adds no message", () => {
+    class Brand {
+      static meta = { selector: "app-brand", template: html`<p i18n-ignore class="x">Acme Inc</p>` };
+    }
+    const f = mount(Brand);
+    expect(f.textOf(f.query("p")!)).toBe("Acme Inc");
+    expect(f.query("p")!.attrs).not.toHaveProperty("i18n-ignore");
+    expect(extractTemplateMessages(`<p i18n-ignore>Acme Inc</p>`)).toEqual([]);
+  });
+});

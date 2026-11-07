@@ -213,3 +213,38 @@ describe("UiInputOtp", () => {
     await expectNoA11yViolations(document.body);
   });
 });
+
+class Rtl {
+  static meta = {
+    selector: "app-root",
+    imports: [UiInputOtp],
+    template: html`<div dir="rtl"><ui-input-otp id="auto" [(value)]="code" [length]="6"></ui-input-otp></div>
+      <ui-input-otp id="forced" dir="rtl" [(value)]="other" [length]="6"></ui-input-otp>
+      <ui-input-otp id="ltr" [(value)]="third" [length]="6"></ui-input-otp>`,
+  };
+  code = signal("123");
+  other = signal("123");
+  third = signal("123");
+}
+
+describe("InputOtp in RTL", () => {
+  const boxes = (id: string) => $$<HTMLInputElement>(`#${id} input[data-otp-slot]`);
+  it("swaps ArrowLeft and ArrowRight under dir=rtl (inherited or set)", async () => {
+    await boot(Rtl);
+    for (const id of ["auto", "forced"]) {
+      const s = boxes(id);
+      s[1]!.focus();
+      key(s[1]!, "ArrowLeft");
+      expect(document.activeElement, id).toBe(s[2]);
+      key(s[2]!, "ArrowRight");
+      expect(document.activeElement, id).toBe(s[1]);
+    }
+  });
+  it("keeps the usual direction without dir", async () => {
+    await boot(Rtl);
+    const s = boxes("ltr");
+    s[1]!.focus();
+    key(s[1]!, "ArrowRight");
+    expect(document.activeElement).toBe(s[2]);
+  });
+});

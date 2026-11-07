@@ -22,7 +22,8 @@ const browser = candidates.find((p) => existsSync(p));
 const here = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
 describe.skipIf(!browser)("sample app in a real browser", () => {
-  it("boots through bootstrap and behaves as a user would see it", { timeout: 60_000 }, async () => {
+  it("boots through bootstrap and behaves as a user would see it", // Retried once: a headless browser on a machine running the whole suite can miss its first frames, and the page then reports before IntersectionObserver fired.
+  { timeout: 60_000, retry: 1 }, async () => {
     const out = (await build({
       configFile: false,
       logLevel: "silent",

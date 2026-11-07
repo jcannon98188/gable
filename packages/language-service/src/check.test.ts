@@ -229,7 +229,8 @@ describe("gable-check", () => {
     });
 
     describe("applied with --fix to a copy of the project", () => {
-      const copy = fixture("_fix-run");
+      // Unique per test process, so two runs (or a leftover from a killed one) never share the directory.
+      const copy = fixture(`_fix-run-${process.pid}`);
       let fixedSource = "";
       let after: Reported[] = [];
 
@@ -238,7 +239,8 @@ describe("gable-check", () => {
         cpSync(fixture("fixes"), copy, { recursive: true });
         await main(["--project", copy, "--fix", "--format", "json"], { stdout: (s) => (after = JSON.parse(s)), stderr: () => {} });
         fixedSource = readFileSync(`${copy}/src/app.ts`, "utf8");
-      });
+        // Type-checking the whole project takes seconds, and vitest's default hook timeout is 10s; under a full run it needs more.
+      }, 60_000);
       afterAll(() => rmSync(copy, { recursive: true, force: true }));
 
       it("leaves only the diagnostic that has no fix", () => {

@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { html, signal } from "@gable/core";
 import { expectNoA11yViolations } from "@gable/testing/a11y";
-import { commandMatches, UiCommand, UiCommandDialog, type CommandItem } from "./command.js";
+import { commandMatches, fuzzyFilter, UiCommand, UiCommandDialog, type CommandItem } from "./command.js";
 import { $, $$, key, settle, useDomApp } from "../test-utils.js";
 
 const ITEMS: CommandItem[] = [
@@ -182,5 +182,53 @@ describe("Command accessibility", () => {
     app.open.set(true);
     await settle();
     await expectNoA11yViolations($("[role=dialog]"));
+  });
+});
+
+describe("fuzzyFilter", () => {
+  const list: CommandItem[] = [
+    { value: "a", label: "Open Settings" },
+    { value: "b", label: "Settings" },
+    { value: "c", label: "Set Timer", keywords: ["clock"] },
+    { value: "d", label: "Billing" },
+    { value: "e", label: "Sync tags" },
+  ];
+  const run = (q: string) => fuzzyFilter(list, q).map((i) => i.value);
+
+  it("matches subsequences and ranks prefix and contiguous matches first", () => {
+    expect(run("set")).toEqual(["b", "c", "a"]);
+    expect(run("stg").sort()).toEqual(["a", "b", "e"]);
+    expect(run("zzz")).toEqual([]);
+  });
+  it("still needs every word, across label and keywords", () => {
+    expect(run("set clk")).toEqual(["c"]);
+    expect(run("set xyz")).toEqual([]);
+  });
+  it("is stable for equal scores and keeps everything for an empty query", () => {
+    expect(run("")).toEqual(["a", "b", "c", "d", "e"]);
+    const same: CommandItem[] = [{ value: "1", label: "Item" }, { value: "2", label: "Item" }];
+    expect(fuzzyFilter(same, "item").map((i) => i.value)).toEqual(["1", "2"]);
+  });
+});
+
+describe("Command with a replaceable filter", () => {
+  class Fuzzy {
+    static meta = { selector: "app-root", imports: [UiCommand], template: html`<ui-command id="inline" [items]="items" [filter]="filter"></ui-command>` };
+    items = ITEMS;
+    filter = fuzzyFilter;
+  }
+  it("uses the given filter and keeps substring by default", async () => {
+    await boot(Fuzzy);
+    await type("emj");
+    expect(labels()).toEqual(["Search Emoji"]);
+  });
+  it("accepts a custom filter", async () => {
+    class Custom {
+      static meta = { selector: "app-root", imports: [UiCommand], template: html`<ui-command id="inline" [items]="items" [filter]="filter"></ui-command>` };
+      items = ITEMS;
+      filter = (items: readonly CommandItem[]) => [...items].reverse().slice(0, 2);
+    }
+    await boot(Custom);
+    expect(labels()).toEqual(["Help", "Billing"]);
   });
 });

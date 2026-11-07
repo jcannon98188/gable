@@ -55,7 +55,7 @@ const handle = hook?.registerInspector("cart", { label: "Cart store", snapshot: 
 handle?.log("add", { sku: "a1" });
 ```
 
-`snapshot()` is called whenever the Stores tab refreshes; `log(type, data)` appends a history entry (the last 500 are kept). Guard the registration with `DEV` so production builds drop it. No dependency on core internals is needed.
+`snapshot()` is called whenever the Stores tab refreshes; `log(type, data)` appends a history entry (the last 500 are kept). Guard the registration with `DEV` so production builds drop it. No dependency on core internals is needed. For a `signalStore`, add the `withDevtools("Cart")` feature from `@gable/store` instead: it registers the store (dev only) and logs every `patchState` that changes something.
 
 ## Manual checklist
 

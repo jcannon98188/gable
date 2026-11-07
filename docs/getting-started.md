@@ -296,7 +296,7 @@ Runs `tsc --noEmit` and then `gable-check`, which type-checks the `html` templat
 
 Accessibility lint rules for templates (`a11y-img-alt`, `a11y-control-name`, `a11y-aria-valid`, `a11y-click-key`, `a11y-tabindex-positive`, `a11y-heading-order`, `a11y-autofocus`) warn by default and are described in `docs/accessibility.md`.
 
-Marker rules for i18n (`i18n-attr-missing`, `i18n-not-translatable`, `i18n-marker-syntax`, `i18n-empty`) are described in `docs/i18n.md`.
+Marker rules for i18n (`i18n-attr-missing`, `i18n-not-translatable`, `i18n-marker-syntax`, `i18n-empty`, `i18n-missing-translation`, and the opt-in `i18n-unmarked-text`) are described in `docs/i18n.md`.
 
 Store-specific rules (`store-write-outside-patch`, `store-method-in-template`, `store-outside-injection-context`) are described in `docs/store.md`.
 

@@ -126,7 +126,7 @@ export const COMPONENT_META: ComponentMeta[] = [
   {
     name: "combobox",
     files: ["combobox.ts"],
-    exports: ["ComboboxItem", "UiCombobox"],
+    exports: ["ComboboxItem", "UiCombobox", "UiMultiCombobox"],
     dependencies: ["@gable/core", "@gable/ui-primitives", "@zag-js/combobox"],
     registryDependencies: [],
     lib: ["cn", "icon"],
@@ -137,7 +137,7 @@ export const COMPONENT_META: ComponentMeta[] = [
     exports: ["UiContextMenu"],
     dependencies: ["@gable/core", "@gable/ui-primitives"],
     registryDependencies: ["dropdown-menu"],
-    lib: ["cn", "icon"],
+    lib: ["cn"],
   },
   {
     name: "command",
@@ -158,7 +158,7 @@ export const COMPONENT_META: ComponentMeta[] = [
   {
     name: "dropdown-menu",
     files: ["dropdown-menu.ts"],
-    exports: ["MenuEntry", "MenuRadioItem", "MENU_CONTENT", "MenuRow", "menuRows", "UiMenuSub", "MenuTrigger", "UiDropdownMenu"],
+    exports: ["MenuEntry", "MenuRadioItem", "MENU_CONTENT", "MenuRow", "menuRows", "UiMenuRows", "UiMenuSub", "MenuTrigger", "UiDropdownMenu"],
     dependencies: ["@gable/core", "@gable/ui-primitives"],
     registryDependencies: [],
     lib: ["cn", "icon", "placement"],
@@ -410,5 +410,29 @@ export const COMPONENT_META: ComponentMeta[] = [
     dependencies: ["@gable/core", "date-fns"],
     registryDependencies: ["button", "calendar", "popover"],
     lib: ["cn", "host-class", "icon"],
+  },
+  {
+    name: "button-group",
+    files: ["button-group.ts"],
+    exports: ["UiButtonGroup", "UiButtonGroupText"],
+    dependencies: ["@gable/core", "@gable/ui-primitives"],
+    registryDependencies: [],
+    lib: ["cn", "host-class"],
+  },
+  {
+    name: "tree",
+    files: ["tree.ts"],
+    exports: ["UiTree", "flattenTree", "expandableIds"],
+    dependencies: ["@gable/core", "@gable/ui-primitives"],
+    registryDependencies: [],
+    lib: ["cn", "host-class", "icon"],
+  },
+  {
+    name: "json-viewer",
+    files: ["json-viewer.ts"],
+    exports: ["UiJsonViewer", "stringifyValue"],
+    dependencies: ["@gable/core"],
+    registryDependencies: ["tree"],
+    lib: ["cn", "host-class"],
   },
 ];

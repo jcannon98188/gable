@@ -1,4 +1,4 @@
-export { signalStore, withState, withComputed, withMethods, withHooks, withHotState, patchState, getState, STATE_SOURCE } from "./store.js";
+export { signalStore, withState, withComputed, withMethods, withHooks, withHotState, withDevtools, patchState, getState, STATE_SOURCE } from "./store.js";
 export type {
   DeepSignal,
   SignalStoreOf,

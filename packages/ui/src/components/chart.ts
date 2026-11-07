@@ -65,7 +65,11 @@ function arcPath(cx: number, cy: number, inner: number, outer: number, a0: numbe
  * row's `xKey` as the category. Pie and donut charts use the first series for slice sizes and `xKey` for slice names.
  * Series without a `color` take `--chart-1` .. `--chart-5` from `@gable/ui/theme.css`, so charts follow light and dark.
  * The width follows the element (a `ResizeObserver`); `height` is fixed. Scales are linear from zero with round ticks.
- * Not supported: stacked series, a secondary axis, zoom, animation, per-series toggling in the legend.
+ * `stacked` stacks the series of bar and area charts (negative values stack downwards from zero; ignored for line, pie and
+ * donut). In a cartesian chart each legend entry is a toggle button (`aria-pressed`, Space/Enter) that hides or shows
+ * that series; the last visible series cannot be hidden. Lines, areas, bars and slices fade or scale in when they first
+ * appear (`animate`, on by default); the animation is off under `prefers-reduced-motion`.
+ * Not supported: a secondary axis, zoom, toggling pie slices.
  *
  * Accessibility: the chart is a labelled group (`aria-roledescription="chart"`; a focusable child may not sit inside
  * `role="img"`). Every category (or slice) is one point that reads its values aloud, e.g. "March: Desktop 237, Mobile 120".
@@ -102,13 +106,15 @@ export class UiChart {
               <line [attr.x1]="cursor().x" [attr.x2]="cursor().x" [attr.y1]="cursor().y1" [attr.y2]="cursor().y2" class="stroke-muted-foreground/40" stroke-dasharray="3 3"></line>
             }
             @for (b of bars(); track b.key) {
-              <rect [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="b.h" rx="3" [attr.fill]="b.color" [attr.fill-opacity]="b.opacity"></rect>
+              <rect [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="b.h" rx="3" [attr.fill]="b.color" [attr.fill-opacity]="b.opacity" [attr.style]="b.origin" [attr.class]="enterClass()"></rect>
             }
             @for (l of lines(); track l.key) {
-              @if (l.area) {
-                <path [attr.d]="l.areaPath" [attr.fill]="l.color" fill-opacity="0.2"></path>
-              }
-              <path [attr.d]="l.path" [attr.stroke]="l.color" fill="none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+              <g [attr.class]="enterClass()">
+                @if (l.area) {
+                  <path [attr.d]="l.areaPath" [attr.fill]="l.color" fill-opacity="0.2"></path>
+                }
+                <path [attr.d]="l.path" [attr.stroke]="l.color" fill="none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+              </g>
             }
             @for (d of dots(); track d.key) {
               <circle [attr.cx]="d.x" [attr.cy]="d.y" r="4" [attr.fill]="d.color" class="stroke-background" stroke-width="2"></circle>
@@ -142,7 +148,7 @@ export class UiChart {
                 [attr.d]="s.path"
                 [attr.fill]="s.color"
                 [attr.fill-opacity]="s.opacity"
-                class="stroke-background outline-none focus-visible:stroke-ring focus-visible:stroke-2"
+                [attr.class]="sliceClasses()"
                 stroke-width="2"
                 (pointerenter)="show(s.index)"
                 (pointerleave)="hide()"
@@ -176,11 +182,20 @@ export class UiChart {
         }
       </div>
       @if (showLegend()) {
-        <ul class="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs" data-chart-legend>
-          @for (item of legend(); track item.label) {
-            <li class="flex items-center gap-1.5">
-              <span class="size-2 shrink-0 rounded-[2px]" [attr.style]="item.swatch"></span>
-              {{ item.label }}
+        <ul class="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs" data-chart-legend>
+          @for (item of legend(); track item.key) {
+            <li>
+              @if (cartesian()) {
+                <button type="button" data-chart-legend-item [attr.aria-pressed]="item.pressed" [attr.class]="item.classes" (click)="toggle(item.key)">
+                  <span class="size-2 shrink-0 rounded-[2px]" [attr.style]="item.swatch"></span>
+                  {{ item.label }}
+                </button>
+              } @else {
+                <span class="flex items-center gap-1.5">
+                  <span class="size-2 shrink-0 rounded-[2px]" [attr.style]="item.swatch"></span>
+                  {{ item.label }}
+                </span>
+              }
             </li>
           }
         </ul>
@@ -221,6 +236,10 @@ export class UiChart {
   height = input<number>(300);
   showGrid = input<boolean>(true);
   showLegend = input<boolean>(true);
+  /** Stacks the series of bar and area charts. */
+  stacked = input<boolean>(false);
+  /** Animates the marks in when they first appear (not under `prefers-reduced-motion`). */
+  animate = input<boolean>(true);
   /** Hole size of a donut as a fraction of the radius. */
   innerRadius = input<number>(0.6);
   /** Caption under the total in the middle of a donut. */
@@ -229,6 +248,8 @@ export class UiChart {
 
   /** The measured width; a fixed one until the element has been laid out. */
   width = signal(600);
+  /** Keys of the series hidden through the legend. */
+  private hidden = signal<ReadonlySet<string>>(new Set());
   /** The point (category or slice) being hovered or focused. */
   active = signal<number | null>(null);
   /** The point that holds the tab stop: the last one shown, so leaving the chart and coming back returns to it. */
@@ -255,6 +276,31 @@ export class UiChart {
   private seriesList = computed(() =>
     this.series().map((s, i) => ({ key: s.key, label: s.label ?? s.key, color: s.color ?? `var(--chart-${(i % PALETTE) + 1})` })),
   );
+  /** The series that are drawn (all but the ones hidden through the legend). */
+  private shown = computed(() => this.seriesList().filter((s) => !this.hidden().has(s.key)));
+  private stackOn = computed(() => this.stacked() && (this.type() === "bar" || this.type() === "area"));
+  enterClass = computed(() => (this.animate() ? "animate-in fade-in-0 duration-700 motion-reduce:animate-none" : ""));
+  sliceClasses = computed(() => cn("stroke-background outline-none focus-visible:stroke-ring focus-visible:stroke-2", this.enterClass()));
+  /** Stacked: per series key, the segment [from, to] of every category. */
+  private stack = computed(() => {
+    const out = new Map<string, { from: number; to: number }[]>();
+    const cats = this.categories();
+    const pos = cats.map(() => 0);
+    const neg = cats.map(() => 0);
+    for (const s of this.shown()) {
+      out.set(
+        s.key,
+        cats.map((c, i) => {
+          const v = num(c.row[s.key]);
+          const acc = v >= 0 ? pos : neg;
+          const from = acc[i]!;
+          acc[i] = from + v;
+          return { from, to: acc[i]! };
+        }),
+      );
+    }
+    return out;
+  });
   private categories = computed(() => this.data().map((row, i) => ({ index: i, name: String(row[this.xKey()] ?? ""), row })));
   /** Pie and donut slices: one per row with a positive value in the first series. */
   private pieRows = computed(() => {
@@ -269,7 +315,9 @@ export class UiChart {
     const w = this.width();
     const h = this.height();
     const plot = { left: MARGIN.left, top: MARGIN.top, width: Math.max(10, w - MARGIN.left - MARGIN.right), height: Math.max(10, h - MARGIN.top - MARGIN.bottom) };
-    const all = this.categories().flatMap((c) => this.seriesList().map((s) => num(c.row[s.key])));
+    const all = this.stackOn()
+      ? [...this.stack().values()].flatMap((segments) => segments.flatMap((seg) => [seg.from, seg.to]))
+      : this.categories().flatMap((c) => this.shown().map((s) => num(c.row[s.key])));
     const scale = niceScale(all.length ? Math.min(...all) : 0, all.length ? Math.max(...all) : 1);
     const n = this.categories().length;
     const step = n ? plot.width / n : plot.width;
@@ -295,34 +343,51 @@ export class UiChart {
     if (this.type() === "bar") return [];
     const { x, y, y0 } = this.geometry();
     const area = this.type() === "area";
-    return this.seriesList().map((s) => {
-      const pts = this.categories().map((c) => `${x(c.index)} ${y(num(c.row[s.key]))}`);
+    const stack = this.stackOn() ? this.stack() : null;
+    return this.shown().map((s) => {
+      const segs = stack?.get(s.key);
+      const top = (i: number) => (segs ? y(segs[i]!.to) : y(num(this.categories()[i]!.row[s.key])));
+      const pts = this.categories().map((c) => `${x(c.index)} ${top(c.index)}`);
       const path = pts.length ? `M ${pts.join(" L ")}` : "";
       const first = this.categories().length ? x(0) : 0;
       const last = this.categories().length ? x(this.categories().length - 1) : 0;
-      return { key: s.key, color: s.color, area, path, areaPath: path ? `${path} L ${last} ${y0} L ${first} ${y0} Z` : "" };
+      let areaPath = "";
+      if (path) {
+        if (segs) {
+          const back = this.categories().map((c) => `${x(c.index)} ${y(segs[c.index]!.from)}`).reverse();
+          areaPath = `${path} L ${back.join(" L ")} Z`;
+        } else areaPath = `${path} L ${last} ${y0} L ${first} ${y0} Z`;
+      }
+      return { key: s.key, color: s.color, area, path, areaPath };
     });
   });
 
   bars = computed(() => {
     if (this.type() !== "bar") return [];
     const { x, y, y0, step } = this.geometry();
-    const list = this.seriesList();
+    const list = this.shown();
     const group = step * 0.8;
     const each = Math.max(1, group / Math.max(1, list.length) - 2);
     const active = this.active();
+    const stack = this.stackOn() ? this.stack() : null;
+    const stackWidth = Math.max(1, group - 2);
     return this.categories().flatMap((c) =>
       list.map((s, si) => {
-        const top = y(num(c.row[s.key]));
-        const offset = x(c.index) - group / 2 + si * (group / list.length) + 1;
+        const seg = stack?.get(s.key)?.[c.index];
+        const a = seg ? y(seg.from) : y0;
+        const b = seg ? y(seg.to) : y(num(c.row[s.key]));
+        const w = stack ? stackWidth : each;
+        const offset = stack ? x(c.index) - stackWidth / 2 : x(c.index) - group / 2 + si * (group / list.length) + 1;
         return {
           key: `${c.index}:${s.key}`,
           x: r(offset),
-          y: Math.min(top, y0),
-          w: r(each),
-          h: r(Math.max(0, Math.abs(y0 - top))),
+          y: Math.min(a, b),
+          w: r(w),
+          h: r(Math.abs(a - b)),
           color: s.color,
           opacity: active === null || active === c.index ? 1 : 0.5,
+          // Bars grow from the baseline (the end that sits on zero).
+          origin: `transform-box: fill-box; transform-origin: 50% ${b <= a ? "100%" : "0%"}`,
         };
       }),
     );
@@ -335,7 +400,11 @@ export class UiChart {
     const c = this.categories()[active];
     if (!c) return [];
     const { x, y } = this.geometry();
-    return this.seriesList().map((s) => ({ key: s.key, x: x(active), y: y(num(c.row[s.key])), color: s.color }));
+    const stack = this.stackOn() ? this.stack() : null;
+    return this.shown().map((s) => {
+      const seg = stack?.get(s.key)?.[active];
+      return { key: s.key, x: x(active), y: seg ? y(seg.to) : y(num(c.row[s.key])), color: s.color };
+    });
   });
 
   cursor = computed(() => {
@@ -349,7 +418,7 @@ export class UiChart {
   columns = computed(() => {
     const { plot, step, x } = this.geometry();
     const rovingTo = this.roving();
-    const list = this.seriesList();
+    const list = this.shown();
     return this.categories().map((c) => ({
       index: c.index,
       x: r(x(c.index) - step / 2),
@@ -413,7 +482,7 @@ export class UiChart {
       return {
         title: c.name,
         style: `left: ${clamp(x(active))}px; top: ${plot.top}px`,
-        rows: this.seriesList().map((s) => ({ label: s.label, value: fmt(num(c.row[s.key])), swatch: this.swatch(s.color) })),
+        rows: this.shown().map((s) => ({ label: s.label, value: fmt(num(c.row[s.key])), swatch: this.swatch(s.color) })),
       };
     }
     const slice = this.slices()[active];
@@ -429,8 +498,17 @@ export class UiChart {
 
   legend = computed(() =>
     this.cartesian()
-      ? this.seriesList().map((s) => ({ label: s.label, swatch: this.swatch(s.color) }))
-      : this.categories().map((c) => ({ label: c.name, swatch: this.swatch(`var(--chart-${(c.index % PALETTE) + 1})`) })),
+      ? this.seriesList().map((s) => {
+          const off = this.hidden().has(s.key);
+          return {
+            key: s.key,
+            label: s.label,
+            swatch: this.swatch(s.color),
+            pressed: off ? "false" : "true",
+            classes: cn("flex items-center gap-1.5 rounded-sm px-1 py-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring", off && "opacity-50"),
+          };
+        })
+      : this.categories().map((c) => ({ key: String(c.index), label: c.name, swatch: this.swatch(`var(--chart-${(c.index % PALETTE) + 1})`), pressed: "true", classes: "" })),
   );
 
   /** The data as a table for screen readers. */
@@ -441,6 +519,15 @@ export class UiChart {
       rows: this.categories().map((c) => ({ index: c.index, name: c.name, cells: list.map((s, i) => ({ index: i, text: fmt(num(c.row[s.key])) })) })),
     };
   });
+
+  /** Hides or shows a series (the legend's toggle). The last visible series stays. */
+  toggle(key: string): void {
+    const next = new Set(this.hidden());
+    if (next.has(key)) next.delete(key);
+    else if (this.shown().length > 1) next.add(key);
+    else return;
+    this.hidden.set(next);
+  }
 
   show(index: number): void {
     this.active.set(index);

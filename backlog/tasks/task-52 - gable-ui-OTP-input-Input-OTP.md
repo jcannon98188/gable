@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-07T03:32:00Z'
-updated_date: '2026-11-07T04:35:00Z'
+updated_date: '2026-11-07T04:57:00Z'
 labels:
   - ui
 dependencies: []
@@ -35,6 +35,8 @@ shadcn's Input OTP uses input-otp. Zag has pin-input, which is a close fit but i
 
 <!-- SECTION:NOTES:BEGIN -->
 Decision: native, not @zag-js/pin-input. It is not installed (adding it means touching shared package.json/lockfile), and its machine would keep a second copy of the value beside the value model that [field] needs; the behaviour (type, paste, backspace, arrows, autofill, complete) is ~100 lines. Value is a gapless string; one input per box, first box has autocomplete=one-time-code; touched fires only when focus leaves the whole control. Tests: packages/ui/src/components/input-otp.dom.test.ts (14 pass incl. axe and [field]); packages/ui and ui-primitives suites 225 pass; tsc -p tsconfig.build.json clean. Gallery page examples/ui-gallery/otp.html + src/otp-demo.ts + test: test passed when run against package source (temp copy); not run in the gallery itself, which needs npm run pack:local, and not checked in a real browser.
+
+Second pass: dir input (auto follows nearest dir attribute) swaps ArrowLeft/ArrowRight under rtl. Tests added.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

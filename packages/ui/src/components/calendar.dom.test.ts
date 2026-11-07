@@ -291,3 +291,113 @@ describe("Date picker", () => {
     expect(trigger().textContent).toContain("November 10th, 2026 - November 12th, 2026");
   });
 });
+
+class Dropdowns {
+  static meta = {
+    selector: "app-root",
+    imports: [UiCalendar],
+    template: html`<ui-calendar captionLayout="dropdown" [(month)]="month" [today]="today" [min]="min" [max]="max" [locale]="lazy"></ui-calendar>`,
+  };
+  month = signal<Date | null>(null);
+  today = TODAY;
+  min = new Date(2025, 5, 10);
+  max = new Date(2027, 2, 20);
+  lazy = () => fr; // a lazily provided locale
+}
+
+const choose = async (select: HTMLSelectElement, value: string) => {
+  select.value = value;
+  select.dispatchEvent(new Event("change", { bubbles: true }));
+  await settle();
+};
+
+describe("Calendar dropdown navigation", () => {
+  it("shows month and year selects within min and max, and a lazily provided locale", async () => {
+    await boot(Dropdowns);
+    const [month, year] = $$<HTMLSelectElement>("select");
+    expect(month!.getAttribute("aria-label")).toBe("Month");
+    expect(year!.getAttribute("aria-label")).toBe("Year");
+    expect([...year!.options].map((o) => o.textContent)).toEqual(["2025", "2026", "2027"]);
+    expect(month!.options[10]!.textContent).toBe("novembre");
+    expect(month!.options[10]!.selected).toBe(true);
+    expect(year!.value).toBe("2026");
+    expect(document.getElementById($("table").getAttribute("aria-labelledby")!)!.textContent).toBe("novembre 2026");
+    expect(month!.options[0]!.disabled).toBe(false);
+  });
+
+  it("jumps to the chosen month and year, clamped to min and max", async () => {
+    const app = await boot(Dropdowns);
+    await choose($$<HTMLSelectElement>("select")[0]!, "2");
+    expect(iso(app.month())).toBe("2026-03-01");
+    expect(cell("2026-03-15")).not.toBeNull();
+    await choose($$<HTMLSelectElement>("select")[1]!, "2027");
+    expect(iso(app.month())).toBe("2027-03-01");
+    await choose($$<HTMLSelectElement>("select")[1]!, "2025");
+    expect(iso(app.month())).toBe("2025-06-01"); // March 2025 is before min (June 10th 2025)
+  });
+
+  it("has no axe violations", async () => {
+    await boot(Dropdowns);
+    await expectNoA11yViolations(document.body);
+  });
+});
+
+class Typed {
+  static meta = {
+    selector: "app-root",
+    imports: [UiDatePicker],
+    template: html`<ui-date-picker [typeable]="true" displayFormat="yyyy-MM-dd" [(value)]="day" [today]="today" [min]="min" [max]="max" [isDisabled]="noThe9th" label="Start"></ui-date-picker>`,
+  };
+  day = signal<Date | null>(null);
+  today = TODAY;
+  min = new Date(2026, 10, 2);
+  max = new Date(2026, 11, 20);
+  noThe9th = (d: Date) => d.getDate() === 9;
+}
+
+describe("Date picker typed entry", () => {
+  const input = () => $<HTMLInputElement>("input[type=text]");
+  const type = async (text: string, commit: "enter" | "blur" = "enter") => {
+    input().value = text;
+    input().dispatchEvent(new Event("input", { bubbles: true }));
+    if (commit === "enter") key(input(), "Enter");
+    else input().dispatchEvent(new Event("blur"));
+    await settle();
+  };
+
+  it("parses a valid date with displayFormat and sets the value", async () => {
+    const app = await boot(Typed);
+    expect(input().getAttribute("aria-label")).toBe("Start");
+    await type("2026-11-12");
+    expect(iso(app.day())).toBe("2026-11-12");
+    expect(input().getAttribute("aria-invalid")).toBeNull();
+    await type("2026-11-14", "blur");
+    expect(iso(app.day())).toBe("2026-11-14");
+  });
+
+  it("rejects text that does not parse, or is before min, after max or disabled", async () => {
+    const app = await boot(Typed);
+    await type("2026-11-12");
+    for (const bad of ["nonsense", "2026-11-01", "2026-12-21", "2026-11-09"]) {
+      await type(bad);
+      expect(iso(app.day()), bad).toBe("2026-11-12");
+      expect(input().getAttribute("aria-invalid"), bad).toBe("true");
+      expect(input().value).toBe(bad);
+    }
+  });
+
+  it("clears on empty text, and follows the calendar", async () => {
+    const app = await boot(Typed);
+    await type("2026-11-12");
+    await type("");
+    expect(app.day()).toBeNull();
+    app.day.set(new Date(2026, 10, 20));
+    await settle();
+    expect(input().value).toBe("2026-11-20");
+  });
+
+  it("has no axe violations", async () => {
+    await boot(Typed);
+    await expectNoA11yViolations(document.body);
+  });
+});

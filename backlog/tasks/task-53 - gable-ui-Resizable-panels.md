@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-07T03:32:00Z'
-updated_date: '2026-11-07T04:43:00Z'
+updated_date: '2026-11-07T04:59:00Z'
 labels:
   - ui
 dependencies: []
@@ -35,6 +35,8 @@ shadcn's Resizable wraps react-resizable-panels. Zag has a splitter machine that
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented. vitest packages/ui packages/ui-primitives: all pass except calendar.dom.test.ts date-picker axe (other agent's work). tsc -p tsconfig.build.json clean for ui and ui-primitives. Gallery page examples/ui-gallery/resizable.html needs npm run pack:local to run; its demo test was verified only by temporarily running it against packages/ui source, not in a browser. Real pointer dragging in a browser (layout, pointer capture) not verified; jsdom uses mocked rects. Limits: handles move neighbours only; panels matched to handles by creation order.
+
+Second pass: panels and handles are now matched by document order (compareDocumentPosition, re-read on contentChildren change and via a childList MutationObserver), so @if/@for panels added mid-group are placed correctly (resizable-order.dom.test.ts). ResizeEngine cascades a drag or arrow key into the next panel when the neighbour is at its minimum (Home/End/infinite deltas do not); RTL option mirrors drags and arrows for horizontal groups, detected from dir on the group or an ancestor. Engine tests added (resize.test.ts, 25). Browser verification still outstanding (TASK-62).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

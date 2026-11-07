@@ -2,6 +2,10 @@ import { computed, signal, untracked, type ReadonlySignal, type WritableSignal }
 import { hotState } from "@gable/core";
 import { currentScope } from "@gable/core/internal";
 
+/** Dev-only code is gated on this so bundlers can drop it (`define: { __GABLE_DEV__: false }`), the same flag core uses. */
+declare const __GABLE_DEV__: boolean | undefined;
+const DEV = typeof __GABLE_DEV__ === "undefined" || __GABLE_DEV__ !== false;
+
 // --- types -----------------------------------------------------------------
 
 /** What a (partial) store contains: state keys, computed/other props, and methods. */
@@ -208,6 +212,46 @@ export function withHotState<In extends StoreShape>(
     });
     h.persist.push((next) => {
       holder.saved = next;
+    });
+    return store;
+  }) as never;
+}
+
+interface DevtoolsHook {
+  registerInspector(id: string, spec: { label: string; snapshot(): unknown }): { log(type: string, data?: unknown): void; dispose(): void };
+}
+
+/**
+ * Shows the store in the Gable devtools panel (Stores tab; dev only, in production this does nothing). The panel reads
+ * the current state, and every `patchState` that changes something is added to the history as a `patch` entry holding
+ * the changed keys with their new values. `name` identifies the store in the panel; give each live store its own
+ * (a second store with the same name replaces the first). Without the devtools hook on the page it does nothing.
+ *
+ *     class CartStore extends signalStore(withState({ ... }), withDevtools("Cart")) {}
+ */
+export function withDevtools<In extends StoreShape>(name: string): StoreFeature<In, EmptyShape> {
+  return ((store: object) => {
+    if (!DEV) return store;
+    const h = hooks(store);
+    let handle: ReturnType<DevtoolsHook["registerInspector"]> | undefined;
+    let last: Record<string, unknown> = {};
+    h.ready.push(() => {
+      const hook = (globalThis as { __GABLE_DEVTOOLS_HOOK__?: DevtoolsHook }).__GABLE_DEVTOOLS_HOOK__;
+      if (!hook) return;
+      const source = state(store);
+      last = untracked(source);
+      handle = hook.registerInspector(name, { label: name, snapshot: () => untracked(source) });
+    });
+    h.persist.push((next) => {
+      if (!handle) return;
+      const changes: Record<string, unknown> = {};
+      for (const key of Object.keys(next)) if (!Object.is(next[key], last[key])) changes[key] = next[key];
+      last = next;
+      if (Object.keys(changes).length > 0) handle.log("patch", changes);
+    });
+    h.onDestroy.push(() => {
+      handle?.dispose();
+      handle = undefined;
     });
     return store;
   }) as never;

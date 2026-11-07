@@ -3,9 +3,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { messageId } from "@gable/core/tooling";
 import { describe, expect, it } from "vitest";
-import { bakeSource } from "./bake.js";
+import { bakeSource, dynamicCalls } from "./bake.js";
 import { readCatalogFile, writeCatalogs } from "./catalogs.js";
 import { extractFromSource, extractProject } from "./extract.js";
+import { setHtmlLang } from "./plugin.js";
 import { scanTemplates } from "./scan.js";
 
 const sample = [
@@ -160,5 +161,61 @@ describe("catalog files", () => {
     expect(xlf).toContain('target-language="fr"');
     expect(xlf).toContain("<target>Bienvenue</target>");
     rmSync(root, { recursive: true, force: true });
+  });
+});
+
+describe("inject(I18n).t tag calls", () => {
+  const code = [
+    "class Cart {",
+    "  #i18n = inject(I18n);",
+    "  label = computed(() => this.#i18n.t`:cart@@cart:${this.items()} items`);",
+    "  other = inject(I18n).t`Saved`;",
+    "  nope = other.t`Not the service`;",
+    "}",
+  ].join("\n");
+
+  it("scans and extracts them like the i18n tag, covering the whole receiver", () => {
+    const hits = scanTemplates(code);
+    expect(hits.map((h) => h.tag)).toEqual(["t", "t"]);
+    expect(code.slice(hits[0]!.tagStart, hits[0]!.start - 1)).toBe("this.#i18n.t");
+    expect(code.slice(hits[1]!.tagStart, hits[1]!.start - 1)).toBe("inject(I18n).t");
+    const found = extractFromSource(code, "src/cart.ts");
+    expect(found.map((m) => [m.id, m.message, m.description])).toEqual([
+      ["cart", "{0} items", "cart"],
+      [id("Saved", ""), "Saved", ""],
+    ]);
+  });
+
+  it("bakes them into plain template literals, and keeps the source map", () => {
+    const result = bake(code, { cart: "{0} articles", [id("Saved", "")]: "Enregistré" });
+    expect(result.code).toContain("label = computed(() => `${__gableValue(this.items())} articles`);");
+    expect(result.code).toContain("other = `Enregistré`;");
+    expect(result.code).toContain("other.t`Not the service`");
+    expect(result.code).not.toContain("__gableComputed"); // no import needed for plain strings
+    expect(result.code).toContain("const __gableValue");
+    expect(result.map?.mappings).toBeTruthy();
+    expect(result.map?.sources).toEqual(["src/inbox.ts"]);
+  });
+
+  it("finds dynamic calls that stay runtime-only", () => {
+    const dynamic = "const a = this.i18n.t(parts, 1);\nconst b = inject(I18n).translate(id, 'x');\nconst c = this.i18n.t`ok`;";
+    expect(dynamicCalls(dynamic)).toEqual([1, 2]);
+  });
+});
+
+describe("html lang", () => {
+  it("adds or replaces the lang attribute on <html>", () => {
+    expect(setHtmlLang("<!doctype html><html><head></head></html>", "fr")).toContain('<html lang="fr">');
+    expect(setHtmlLang('<html lang="en" class="x">', "de-CH")).toBe('<html lang="de-CH" class="x">');
+    expect(setHtmlLang("<div></div>", "fr")).toBe("<div></div>");
+  });
+});
+
+describe("i18n-ignore", () => {
+  it("is removed from baked templates and does not count as a marker", () => {
+    const code = "const t = html`<h1 i18n>Welcome</h1><p i18n-ignore class=\"x\">Acme</p>`;";
+    const { code: out, count } = bake(code, { [id("Welcome", "")]: "Bienvenue" });
+    expect(count).toBe(1);
+    expect(out).toContain("<h1>Bienvenue</h1><p class=\"x\">Acme</p>");
   });
 });

@@ -78,20 +78,18 @@ describe("module-level signals and subjects", () => {
   });
 });
 
-describe("non-literal Tailwind class fragments", () => {
+describe("Tailwind class names built by joining strings", () => {
   it("passes literal class names and bindings", async () => {
     expect((await check("fragment-pass")).diagnostics).toEqual([]);
   });
 
-  it("warns on a hole glued to class text and on string concatenation in [class]", async () => {
+  it("warns on string concatenation in [class]", async () => {
     const { diagnostics } = await check("fragment-fail");
-    const first = where("fragment-fail", "${color}-500\"></div>");
-    const plus = where("fragment-fail", "+ hue()");
-    const last = where("fragment-fail", "${color}-500 p-2");
+    const first = where("fragment-fail", "+ hue()");
+    const second = where("fragment-fail", "+ '-500");
     expect(found(diagnostics.filter((d) => d.rule === "class-fragment"))).toEqual([
       ["class-fragment", first.line, first.column, "warn"],
-      ["class-fragment", plus.line, plus.column, "warn"],
-      ["class-fragment", last.line, last.column, "warn"],
+      ["class-fragment", second.line, second.column, "warn"],
     ]);
   });
 });
@@ -286,7 +284,7 @@ describe("accessibility rules", () => {
 
 describe("template holes", () => {
   it("reports a ${} hole as a template-syntax error (TASK-30)", async () => {
-    const { diagnostics } = await check("fragment-fail");
+    const { diagnostics } = await check("holes-fail");
     const holes = diagnostics.filter((d) => d.rule === "template-syntax" && /holes/.test(d.message));
     expect(holes.length).toBe(2);
   });

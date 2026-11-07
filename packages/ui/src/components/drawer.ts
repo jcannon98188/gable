@@ -1,4 +1,4 @@
-import { computed, contentChild, effect, html, inject, input, model } from "@gable/core";
+import { computed, contentChild, effect, html, inject, input, model, signal } from "@gable/core";
 import { DialogState, UiDialogBackdrop, UiDialogContent, UiDialogDescription, UiDialogTitle, UiDrawerDrag, UiPortal } from "@gable/ui-primitives";
 import { cn } from "../lib/cn.js";
 import { DialogTrigger } from "./dialog.js";
@@ -24,6 +24,9 @@ const SIDES: Record<DrawerSide, string> = {
  *     <div slot="footer"><button uiButton (click)="open.set(false)">Submit</button></div>
  *   </ui-drawer>
  *
+ * The backdrop fades with the panel while it is dragged. Closing (Escape, a button) from a snap point below full slides out from
+ * where the panel rests, and changing `snap` while open animates to the new position.
+ *
  * Releasing a drag closes the drawer when it was pulled more than halfway or flung faster than 0.4px/ms. `[snapPoints]="[0.4, 1]"`
  * adds resting positions (fractions of the panel that stay visible; `[(snap)]` reads or sets the current one): a release
  * settles on the nearest, a fling moves one step, and dragging below the lowest one closes it. Touch drags start from the
@@ -43,6 +46,7 @@ export class UiDrawer {
       <ui-portal>
         <div
           uiDialogBackdrop
+          [attr.style]="backdropStyle()"
           class="fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
         ></div>
         <div
@@ -55,6 +59,7 @@ export class UiDrawer {
           [enabled]="dragToClose()"
           (dismiss)="open.set(false)"
           (snapChange)="snap.set($event)"
+          (progress)="drag.set($event)"
           [attr.class]="contentClasses()"
         >
           <div class="touch-none">
@@ -90,6 +95,15 @@ export class UiDrawer {
   contentClass = input<string>("");
   contentClasses = computed(() => cn(BASE, SIDES[this.side()], this.contentClass()));
   showHandle = computed(() => this.side() === "bottom" && this.dragToClose());
+
+  /** How much of the panel is visible while it is dragged, settling or resting below full: the backdrop fades with it. */
+  drag = signal<{ value: number; dragging: boolean }>({ value: 1, dragging: false });
+  backdropStyle = computed(() => {
+    const { value, dragging } = this.drag();
+    if (value >= 1) return null;
+    const v = Math.max(0, value).toFixed(3);
+    return `--tw-enter-opacity:${v};opacity:${v};transition:${dragging ? "none" : "opacity 300ms cubic-bezier(0.32, 0.72, 0, 1)"}`;
+  });
 
   state = inject(DialogState).bind(() => ({
     open: this.open(),

@@ -31,6 +31,16 @@ beforeEach(() => {
   document.title = "";
 });
 
+// jsdom performs history traversal asynchronously. Wait for the popstate it dispatches rather than a fixed delay,
+// which is too short when the machine is busy. The platform listener was registered first, so it has run by then.
+function traverse(go: () => void): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("no popstate after history traversal")), 5000);
+    window.addEventListener("popstate", () => { clearTimeout(timer); resolve(); }, { once: true });
+    go();
+  });
+}
+
 describe("DOM platform services", () => {
   it("bootstrap(dom()) provides Location, History and Title with no extra providers", () => {
     const s = start();
@@ -55,12 +65,10 @@ describe("DOM platform services", () => {
     s.history.push("/a");
     s.history.push("/b");
     expect(seen).toEqual([]);
-    s.history.back();
-    await new Promise((r) => setTimeout(r, 20));
+    await traverse(() => s.history.back());
     expect(seen).toEqual(["/a"]);
     off();
-    s.history.back();
-    await new Promise((r) => setTimeout(r, 20));
+    await traverse(() => s.history.back());
     expect(seen).toEqual(["/a"]);
   });
 

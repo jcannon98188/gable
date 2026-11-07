@@ -22,6 +22,18 @@ import { UiButton } from "./button.js";
 
 export type CalendarMode = "single" | "range";
 export type WeekDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+/** How the month heading is shown: plain text, or with month and/or year dropdowns to jump around. */
+export type CaptionLayout = "label" | "dropdown" | "dropdown-months" | "dropdown-years";
+/** A date-fns locale, or a function returning one (read inside the calendar's computeds, so a signal it reads re-renders it). */
+export type LocaleSource = Locale | (() => Locale | undefined);
+
+/** Resolves a `LocaleSource`. */
+export function resolveLocale(source: LocaleSource | undefined): Locale | undefined {
+  return typeof source === "function" ? source() : source;
+}
+
+const SELECT =
+  "h-8 cursor-pointer rounded-md border border-input bg-transparent px-2 text-sm font-medium shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
 
 /** A selected span of days; `to` is `null` while the user has picked only the first day. */
 export interface DateRange {
@@ -87,7 +99,21 @@ export class UiCalendar {
         <button uiButton variant="outline" type="button" [class]="prevClass" [attr.aria-label]="previousLabel()" [disabled]="!canPrev()" (click)="prevMonth()">
           <svg uiIcon="chevron-left"></svg>
         </button>
-        <div [attr.id]="captionId" aria-live="polite" class="text-sm font-medium">{{ caption() }}</div>
+        <div [attr.id]="captionId" aria-live="polite" [attr.class]="captionClass()">{{ caption() }}</div>
+        @if (monthDropdown()) {
+          <select [attr.aria-label]="monthLabel()" [attr.class]="selectClass" (change)="onMonthSelect($event)">
+            @for (m of monthOptions(); track m.value) {
+              <option [attr.value]="m.value" [selected]="m.selected" [disabled]="m.disabled">{{ m.label }}</option>
+            }
+          </select>
+        }
+        @if (yearDropdown()) {
+          <select [attr.aria-label]="yearLabel()" [attr.class]="selectClass" (change)="onYearSelect($event)">
+            @for (y of yearOptions(); track y.value) {
+              <option [attr.value]="y.value" [selected]="y.selected">{{ y.label }}</option>
+            }
+          </select>
+        }
         <button uiButton variant="outline" type="button" [class]="nextClass" [attr.aria-label]="nextLabel()" [disabled]="!canNext()" (click)="nextMonth()">
           <svg uiIcon="chevron-right"></svg>
         </button>
@@ -140,14 +166,18 @@ export class UiCalendar {
   max = input<Date | null>(null);
   /** Extra rule: return `true` for a day that cannot be picked. */
   isDisabled = input<((day: Date) => boolean) | null>(null);
-  /** A date-fns locale (names of months and weekdays, first day of the week). Default: English (US). */
-  locale = input<Locale | undefined>(undefined);
+  /** A date-fns locale (names of months and weekdays, first day of the week), or a function returning one for a lazily loaded locale. Default: English (US). */
+  locale = input<LocaleSource | undefined>(undefined);
+  /** `dropdown` shows month and year selects in the heading (`dropdown-months` / `dropdown-years` only one). Years span `min` to `max`, else 100 years back and 10 ahead. */
+  captionLayout = input<CaptionLayout>("label");
   /** First day of the week, 0 (Sunday) to 6. Default: the locale's. */
   weekStartsOn = input<WeekDay | undefined>(undefined);
   /** Show the days of neighbouring months in the first and last row. */
   showOutsideDays = input<boolean>(true);
   /** What "today" is. Mainly for tests and demos; default is the current date. */
   today = input<Date | null>(null);
+  monthLabel = input<string>("Month");
+  yearLabel = input<string>("Year");
   previousLabel = input<string>("Go to the previous month");
   nextLabel = input<string>("Go to the next month");
   class = input<string>("");
@@ -156,6 +186,7 @@ export class UiCalendar {
   private apply = useHostClass(() => cn("inline-block rounded-md p-3", this.class()));
 
   captionId = `ui-calendar-${++counter}-caption`;
+  selectClass = SELECT;
   prevClass = cn(NAV, "left-1");
   nextClass = cn(NAV, "right-1");
 
@@ -165,9 +196,38 @@ export class UiCalendar {
 
   private now = computed(() => startOfDay(this.today() ?? new Date()));
   private shown = computed(() => startOfMonth(this.month() ?? this.value() ?? this.range().from ?? this.now()));
-  private options = computed(() => ({ locale: this.locale(), weekStartsOn: this.weekStartsOn() ?? this.locale()?.options?.weekStartsOn ?? 0 }) as { locale?: Locale; weekStartsOn: WeekDay });
+  private loc = computed(() => resolveLocale(this.locale()));
+  private options = computed(() => ({ locale: this.loc(), weekStartsOn: this.weekStartsOn() ?? this.loc()?.options?.weekStartsOn ?? 0 }) as { locale?: Locale; weekStartsOn: WeekDay });
+  monthDropdown = computed(() => this.captionLayout() === "dropdown" || this.captionLayout() === "dropdown-months");
+  yearDropdown = computed(() => this.captionLayout() === "dropdown" || this.captionLayout() === "dropdown-years");
+  /** With a dropdown the heading stays for assistive tech (it names the grid) but is not shown. */
+  captionClass = computed(() => (this.monthDropdown() || this.yearDropdown() ? "sr-only" : "text-sm font-medium"));
+  monthOptions = computed(() => {
+    const shown = this.shown();
+    const min = this.min();
+    const max = this.max();
+    return Array.from({ length: 12 }, (_, i) => {
+      const first = new Date(shown.getFullYear(), i, 1);
+      return {
+        value: String(i),
+        label: format(first, "LLLL", { locale: this.loc() }),
+        selected: i === shown.getMonth(),
+        disabled: (!!min && isBefore(endOfMonth(first), startOfDay(min))) || (!!max && isAfter(first, startOfDay(max))),
+      };
+    });
+  });
+  yearOptions = computed(() => {
+    const year = this.shown().getFullYear();
+    const now = this.now().getFullYear();
+    const from = Math.min(this.min()?.getFullYear() ?? now - 100, year);
+    const to = Math.max(this.max()?.getFullYear() ?? now + 10, year);
+    return Array.from({ length: to - from + 1 }, (_, i) => {
+      const y = from + i;
+      return { value: String(y), label: String(y), selected: y === year };
+    });
+  });
   multiselectable = computed(() => (this.mode() === "range" ? "true" : null));
-  caption = computed(() => format(this.shown(), "LLLL yyyy", { locale: this.locale() }));
+  caption = computed(() => format(this.shown(), "LLLL yyyy", { locale: this.loc() }));
   canPrev = computed(() => !this.min() || isAfter(this.shown(), startOfDay(this.min()!)));
   canNext = computed(() => !this.max() || isBefore(endOfMonth(this.shown()), startOfDay(this.max()!)));
 
@@ -268,6 +328,24 @@ export class UiCalendar {
       host?.querySelector?.<HTMLElement>(`[data-date="${key}"]`)?.focus();
     });
   });
+
+  /** Shows month `month` (0 to 11) of year `year`, kept inside `min` and `max`. */
+  goTo(year: number, month: number): void {
+    let next = new Date(year, month, 1);
+    const min = this.min();
+    const max = this.max();
+    if (min && isBefore(endOfMonth(next), startOfDay(min))) next = startOfMonth(min);
+    if (max && isAfter(next, startOfDay(max))) next = startOfMonth(max);
+    this.month.set(next);
+  }
+
+  onMonthSelect(event: unknown): void {
+    this.goTo(this.shown().getFullYear(), Number((event as { target: { value: string } }).target.value));
+  }
+
+  onYearSelect(event: unknown): void {
+    this.goTo(Number((event as { target: { value: string } }).target.value), this.shown().getMonth());
+  }
 
   prevMonth(): void {
     this.month.set(addMonths(this.shown(), -1));

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-07T03:32:00Z'
-updated_date: '2026-11-07T04:44:00Z'
+updated_date: '2026-11-07T04:59:00Z'
 labels:
   - ui
 dependencies: []
@@ -35,4 +35,6 @@ TASK-28 shipped Dropdown Menu and Context Menu with items, checkbox items, label
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented in packages/ui (dropdown-menu.ts: UiMenuSub, radio-group/submenu entries, radioChange output; context-menu.ts same; slider.ts: UiRangeSlider). Tests: menu-submenu.dom.test.ts (11, incl. axe with submenu open), range-slider.dom.test.ts (5, incl. axe); npx vitest run packages/ui packages/ui-primitives: 341 passed. Gallery page examples/ui-gallery/menus.html + src/menus-demo.ts; its jsdom test passes only when run against package sources (the gallery resolves vendored tarballs of @gable/ui that predate these exports, so it needs a rebuild/repack to run in the gallery). AC3 left unchecked: not run in a real browser or via the gallery's own build. Not done: multi-select combobox (in the description, not in the ACs); disabled submenu triggers.
+
+Second pass: disabled submenu entries (disabled: true; rendered as a disabled menuitem that is skipped by keys and never opens). Row markup deduplicated into one internal component, UiMenuRows, used by UiDropdownMenu, UiContextMenu and UiMenuSub; UiMenuRows and UiMenuSub reference each other, so UiMenuSub is pushed onto UiMenuRows.meta.imports after both classes are defined. Multi-select combobox shipped as UiMultiCombobox (combobox.ts): value is string[] (works with [field]), removable chips, Backspace in the empty input removes the last chip, uses the combobox machine with multiple. Tests: multi-combobox.dom.test.ts (5, incl. axe), disabled submenu test in menu-submenu.dom.test.ts. Gallery demo for multi-combobox and browser check deferred to TASK-62.
 <!-- SECTION:NOTES:END -->

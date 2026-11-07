@@ -1,0 +1,59 @@
+// @vitest-environment jsdom
+import { afterEach, describe, expect, it } from 'vitest';
+import { bootstrap } from '@gable/core';
+import { whenFlushed } from '@gable/core/internal';
+import { createDomRenderer } from '@gable/renderer-dom';
+import { expectNoA11yViolations } from '@gable/testing/a11y';
+import { ButtonGroupDemo } from './button-group-demo.js';
+
+let destroy = () => {};
+afterEach(() => destroy());
+const settle = async () => {
+  for (let i = 0; i < 6; i++) {
+    await new Promise((r) => setTimeout(r, 10));
+    await whenFlushed();
+  }
+};
+const text = (selector: string) => document.querySelector(selector)!.textContent;
+const boot = async () => {
+  const g = globalThis as unknown as { CSS?: { escape?: (s: string) => string } };
+  g.CSS ??= {};
+  g.CSS.escape ??= (s) => s.replace(/([^\w-])/g, '\\$1');
+  for (const Observer of ['ResizeObserver', 'IntersectionObserver']) {
+    (globalThis as Record<string, unknown>)[Observer] ??= class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
+  }
+  document.body.innerHTML = '<div id="app"></div>';
+  const ref = bootstrap(ButtonGroupDemo as never, { renderer: createDomRenderer(), target: '#app' }) as unknown as { destroy(): void };
+  destroy = () => ref.destroy();
+  await settle();
+};
+
+describe('button group demo (jsdom)', () => {
+  it('renders labelled groups, the split button works, and there are no axe violations', async () => {
+    await boot();
+    const groups = [...document.querySelectorAll('ui-button-group')];
+    expect(groups.map((g) => g.getAttribute('role'))).toEqual(['group', 'group', 'group', 'group']);
+    expect(groups.map((g) => g.getAttribute('aria-label'))).toEqual(['Text alignment', 'Zoom', 'Address', 'Save options']);
+    expect(groups[1]!.getAttribute('data-orientation')).toBe('vertical');
+    await expectNoA11yViolations(document.body);
+
+    (document.querySelector('.split-main') as HTMLElement).click();
+    await settle();
+    expect(text('#saved')).toBe('1');
+
+    const chevron = document.querySelector('.split-chevron') as HTMLElement;
+    expect(chevron.getAttribute('aria-label')).toBe('More save options');
+    chevron.click();
+    await settle();
+    expect(chevron.getAttribute('aria-expanded')).toBe('true');
+    await expectNoA11yViolations(document.body);
+    const copy = [...document.querySelectorAll('[role=menuitem]')].find((el) => el.textContent?.includes('Save a copy')) as HTMLElement;
+    copy.click();
+    await settle();
+    expect(text('#picked')).toBe('copy');
+  });
+});

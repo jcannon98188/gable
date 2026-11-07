@@ -1,3 +1,4 @@
+import path from "node:path";
 import ts from "@typescript/typescript6";
 
 export type Severity = "off" | "warn" | "error";
@@ -42,14 +43,30 @@ export const RULES = {
   "i18n-not-translatable": "error",
   "i18n-marker-syntax": "error",
   "i18n-empty": "warn",
+  "i18n-missing-translation": "warn",
+  "i18n-unmarked-text": "off",
 } as const satisfies Record<string, Severity>;
 
 export type RuleId = keyof typeof RULES;
+
+/** The `i18n` plugin option: where the translation catalogs are. Same shape as the options of `gableI18n` in `@gable/vite`. */
+export interface I18nCheckConfig {
+  /** The language the templates are written in; it needs no catalog. Default `"en"`. */
+  sourceLocale: string;
+  /** The target locales whose catalogs are checked. */
+  locales: string[];
+  /** Catalog path template, relative to the tsconfig's folder. `{locale}` is replaced; `.xlf` selects XLIFF. Default `src/locales/messages.{locale}.json`. */
+  catalogs: string;
+  /** Folder the catalog paths are relative to (the tsconfig's folder). */
+  root: string;
+}
 
 export interface AnalyzerConfig {
   /** Tag of tagged template literals that hold Gable templates. */
   templateTag: string;
   severity: Record<RuleId, Severity>;
+  /** Set when the plugin entry has an `i18n` section; `i18n-missing-translation` does nothing without it. */
+  i18n?: I18nCheckConfig;
 }
 
 export const PLUGIN_NAME = "@gable/language-service";
@@ -63,6 +80,24 @@ export function readConfig(options: ts.CompilerOptions): { config: AnalyzerConfi
   if (entry.templateTag !== undefined) {
     if (typeof entry.templateTag === "string" && /^[A-Za-z_$][\w$]*$/.test(entry.templateTag)) config.templateTag = entry.templateTag;
     else errors.push(`plugin option "templateTag" must be an identifier, got ${JSON.stringify(entry.templateTag)}`);
+  }
+  if (entry.i18n !== undefined) {
+    const i18n = entry.i18n as Record<string, unknown> | null;
+    const root = path.dirname((options.configFilePath as string | undefined) ?? "tsconfig.json");
+    if (typeof i18n !== "object" || i18n === null || Array.isArray(i18n)) errors.push(`plugin option "i18n" must be an object`);
+    else {
+      const problems = errors.length;
+      const sourceLocale = i18n.sourceLocale ?? "en";
+      if (typeof sourceLocale !== "string" || sourceLocale === "") errors.push(`plugin option "i18n.sourceLocale" must be a locale string, got ${JSON.stringify(i18n.sourceLocale)}`);
+      const locales = i18n.locales;
+      if (!Array.isArray(locales) || locales.some((l) => typeof l !== "string" || l === "")) errors.push(`plugin option "i18n.locales" must be an array of locale strings`);
+      const catalogs = i18n.catalogs ?? "src/locales/messages.{locale}.json";
+      if (typeof catalogs !== "string" || !catalogs.includes("{locale}")) errors.push(`plugin option "i18n.catalogs" must be a path template containing {locale}, got ${JSON.stringify(i18n.catalogs)}`);
+      for (const key of Object.keys(i18n)) {
+        if (!["sourceLocale", "locales", "catalogs", "xliff", "extract", "bake"].includes(key)) errors.push(`unknown option "i18n.${key}" (known: sourceLocale, locales, catalogs)`);
+      }
+      if (errors.length === problems) config.i18n = { sourceLocale: sourceLocale as string, locales: (locales as string[]).filter((l) => l !== sourceLocale), catalogs: catalogs as string, root };
+    }
   }
   const rules = entry.rules;
   if (rules !== undefined) {

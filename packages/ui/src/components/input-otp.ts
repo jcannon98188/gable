@@ -85,6 +85,8 @@ export class UiInputOtp {
   mask = input<boolean>(false);
   disabled = input<boolean>(false);
   readonly = input<boolean>(false);
+  /** Reading direction for the arrow keys: in `rtl` ArrowLeft moves to the next box and ArrowRight to the previous. `auto` (default) follows the `dir` attribute in effect on the element. */
+  dir = input<"ltr" | "rtl" | "auto">("auto");
   invalid = input<boolean>(false);
   /** Name of a hidden input that carries the whole code in a native form post. */
   name = input<string>("");
@@ -133,6 +135,14 @@ export class UiInputOtp {
       };
     });
   });
+
+  private rtl(): boolean {
+    const dir = this.dir();
+    if (dir !== "auto") return dir === "rtl";
+    const host = this.hostRef.host;
+    const own = typeof host?.closest === "function" ? host.closest("[dir]")?.getAttribute("dir") : null;
+    return (own ?? (globalThis as { document?: Document }).document?.documentElement?.getAttribute("dir") ?? "ltr").toLowerCase() === "rtl";
+  }
 
   private slotEls(): HTMLInputElement[] {
     const host = this.hostRef.host;
@@ -195,13 +205,12 @@ export class UiInputOtp {
         if (!this.readonly() && value[index]) this.commit(value.slice(0, index) + value.slice(index + 1));
         return;
       case "ArrowLeft":
+      case "ArrowRight": {
         e.preventDefault();
-        this.focusSlot(index - 1);
+        const forward = (e.key === "ArrowRight") !== this.rtl();
+        this.focusSlot(forward ? Math.min(index + 1, value.length) : index - 1);
         return;
-      case "ArrowRight":
-        e.preventDefault();
-        this.focusSlot(Math.min(index + 1, value.length));
-        return;
+      }
       case "Home":
         e.preventDefault();
         this.focusSlot(0);

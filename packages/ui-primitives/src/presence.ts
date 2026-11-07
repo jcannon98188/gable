@@ -1,5 +1,5 @@
 import { InjectionToken, effect, inject, input, signal, untracked, type InputSignal, type ReadonlySignal } from "@gable/core";
-import { currentScope, holdRemoval, injectHost } from "@gable/core/internal";
+import { computedExitDuration, currentScope, holdRemoval, injectHost } from "@gable/core/internal";
 import type { Renderer } from "@gable/core/renderer";
 
 /**
@@ -16,55 +16,10 @@ export interface PresenceEnv {
 
 export const PRESENCE_ENV = new InjectionToken<PresenceEnv>("PresenceEnv");
 
-const ms = (token: string) => (token.endsWith("ms") ? parseFloat(token) : parseFloat(token) * 1000) || 0;
-const list = (value: string | undefined) => (value ?? "").split(/,(?![^(]*\))/).map((s) => s.trim()).filter(Boolean);
-const TIME = /^-?[\d.]+m?s$/;
-type Style = Record<string, string | undefined> & { getPropertyValue?(name: string): string };
-
-/** One animation or transition of a computed style: delay and duration in ms, iteration count (Infinity for `infinite`). */
-interface Timing {
-  duration: number;
-  delay: number;
-  count: number;
-  none: boolean;
-}
-
-/** Longhands first; a style that only exposes the shorthand (jsdom, happy-dom) is parsed from that. */
-function timings(cs: Style, kind: "animation" | "transition"): Timing[] {
-  const durations = list(cs[kind + "Duration"]);
-  if (durations.length > 0) {
-    const delays = list(cs[kind + "Delay"]);
-    const counts = list(cs.animationIterationCount);
-    const names = kind === "animation" ? list(cs.animationName) : [];
-    return durations.map((d, i) => ({
-      duration: ms(d),
-      delay: ms(delays[i % Math.max(delays.length, 1)] ?? "0s"),
-      count: kind === "animation" ? (counts[i % Math.max(counts.length, 1)] === "infinite" ? Infinity : parseFloat(counts[i % Math.max(counts.length, 1)] ?? "1") || 1) : 1,
-      none: kind === "animation" && (names[i % Math.max(names.length, 1)] ?? "none") === "none",
-    }));
-  }
-  return list(cs.getPropertyValue?.(kind) ?? cs[kind]).map((item) => {
-    const words = item.split(/\s+(?![^(]*\))/);
-    const times = words.filter((w) => TIME.test(w));
-    const iter = words.find((w) => w === "infinite" || /^\d+(\.\d+)?$/.test(w));
-    return { duration: ms(times[0] ?? "0s"), delay: ms(times[1] ?? "0s"), count: iter === "infinite" ? Infinity : iter ? parseFloat(iter) : 1, none: item === "none" };
-  });
-}
-
-/** Reads the animation and transition styles of the host (computed style). */
-const domEnv: PresenceEnv = {
-  exitDuration(host) {
-    const g = globalThis as unknown as { getComputedStyle?: (el: unknown) => Style };
-    if (!g.getComputedStyle || (host as { nodeType?: number } | null)?.nodeType !== 1) return null;
-    const cs = g.getComputedStyle(host);
-    let longest = -1;
-    for (const t of timings(cs, "animation")) if (!t.none && t.duration + t.delay > 0) longest = Math.max(longest, t.delay + t.duration * t.count);
-    for (const t of timings(cs, "transition")) if (!t.none && t.duration > 0) longest = Math.max(longest, t.delay + t.duration);
-    return longest < 0 ? null : longest;
-  },
-};
-
 const END_EVENTS = ["animationend", "animationcancel", "transitionend", "transitioncancel"] as const;
+/** Reads the animation and transition styles of the host (computed style). */
+const domEnv: PresenceEnv = { exitDuration: computedExitDuration };
+
 /** Slack added to the computed duration before giving up on an end event that never came (a transition that did not run). */
 const FALLBACK_SLACK_MS = 100;
 

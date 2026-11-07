@@ -105,7 +105,7 @@ The engine (`createVirtualizer`, `virtual-core.ts`) is plain signals with no DOM
 
 ## gable-ui (`packages/ui`, `@gable/ui`)
 
-Button, Dialog, Popover, Tabs, Tooltip, Select, Sortable, Label, Input, Textarea, Checkbox, Switch, Radio Group, Slider, Toggle, Toggle Group, Badge, Card, Alert, Separator, Skeleton, Progress, Avatar, Accordion, Collapsible, Dropdown Menu, Context Menu, Combobox, Alert Dialog, Sheet, Drawer, Table, Breadcrumb, Pagination, Scroll Area, Hover Card, Virtual List, Virtual Table, and Form and Field, in the shadcn neutral style (Tailwind v4, `tw-animate-css`, lucide icons, CSS variables in `theme.css`). One file per component in `src/components`, helpers (`cn`, `variants`, `useHostClass`, `UiIcon`) in `src/lib`, so a component can be copied into an app. Templates cannot call functions, so variant classes are computed view models (`variants()` is a small cva). `data-state="open|closed"` drives the enter and exit animations; the exit runs because `usePresence` delays `hidden`. A `class`/`*Class` input merges over the defaults with `tailwind-merge`. The package is private for now (`"gablePack": true` makes `scripts/pack-local.mjs` pack it). `registry-meta.ts` lists each component file with its npm, component and lib dependencies (a test keeps it in step with the imports). Machines are exposed as `*State` classes in `@gable/ui-primitives` (`machines.ts`); `[uiProps]` and `[uiPopup]` spread a computed Zag prop bag onto an element, so a template can render any part. Stateful parts that live in projected content (accordion items, menu and collapsible triggers) are wired by the parent with `contentChild` plus an effect that hands them the state (the owner push). Form controls follow the `[field]` convention (`value` model, `invalid`/`disabled`, `touched` output). `ui-form` + `ui-field` + `uiFieldControl` add labels, descriptions and error text over `Form<T>`: `<ui-field [state]="form.email.state">` (a field itself would be a bare signal in a template). `examples/ui-gallery` shows them all: `npm run pack:local examples/ui-gallery`, then in that folder `npm install` and `npm run dev`.
+Button, Dialog, Popover, Tabs, Tooltip, Select, Sortable, Label, Input, Textarea, Checkbox, Switch, Radio Group, Slider, Toggle, Toggle Group, Badge, Card, Alert, Separator, Skeleton, Progress, Avatar, Accordion, Collapsible, Dropdown Menu, Context Menu, Combobox, Alert Dialog, Sheet, Drawer, Table, Breadcrumb, Pagination, Scroll Area, Hover Card, Virtual List, Virtual Table, Tree, JSON Viewer, and Form and Field, in the shadcn neutral style (Tailwind v4, `tw-animate-css`, lucide icons, CSS variables in `theme.css`). One file per component in `src/components`, helpers (`cn`, `variants`, `useHostClass`, `UiIcon`) in `src/lib`, so a component can be copied into an app. Templates cannot call functions, so variant classes are computed view models (`variants()` is a small cva). `data-state="open|closed"` drives the enter and exit animations; the exit runs because `usePresence` delays `hidden`. A `class`/`*Class` input merges over the defaults with `tailwind-merge`. The package is private for now (`"gablePack": true` makes `scripts/pack-local.mjs` pack it). `registry-meta.ts` lists each component file with its npm, component and lib dependencies (a test keeps it in step with the imports). Machines are exposed as `*State` classes in `@gable/ui-primitives` (`machines.ts`); `[uiProps]` and `[uiPopup]` spread a computed Zag prop bag onto an element, so a template can render any part. Stateful parts that live in projected content (accordion items, menu and collapsible triggers) are wired by the parent with `contentChild` plus an effect that hands them the state (the owner push). Form controls follow the `[field]` convention (`value` model, `invalid`/`disabled`, `touched` output). `ui-form` + `ui-field` + `uiFieldControl` add labels, descriptions and error text over `Form<T>`: `<ui-field [state]="form.email.state">` (a field itself would be a bare signal in a template). `examples/ui-gallery` shows them all: `npm run pack:local examples/ui-gallery`, then in that folder `npm install` and `npm run dev`.
 
 ## Testing
 
@@ -176,7 +176,9 @@ this.toast.dismiss(id); // or dismiss() for all
 - Announcements go through `LiveAnnouncer` (errors assertive, the rest polite), so a toast is spoken even though it is inserted after the page loaded. The visible toasts carry no live role of their own, to avoid a double announcement.
 - Hovering or focusing the region calls `pause()`; leaving calls `resume()` and each toast keeps the time it had left.
 - Items use `[uiPresence]` with `data-state` animations (`animate-in`/`animate-out`, off under `motion-reduce`), so a dismissed toast stays mounted until its exit has played.
-- Not included: swipe to dismiss, stacking/collapsing, a keyboard shortcut to focus the region.
+- Status icons use the `--success`, `--info` and `--warning` theme tokens (`text-success` etc., defined in `theme.css` for light and dark; `error` uses `--destructive`).
+- A toast can be swiped toward the nearest side edge (`uiDrawerDrag` on each item, so the drawer's pointer engine, slop and fling rules apply); `hotkey` (default `alt+t`, `""` disables) focuses the region from anywhere, which pauses the timers.
+- Not included: stacking/collapsing of the overflow beyond `limit` (older toasts are just hidden).
 
 ## Carousel: `useCarousel`
 
@@ -199,8 +201,58 @@ Drag-to-dismiss and snap points for an edge panel (`drawer-drag.ts`). `<ui-drawe
 - A press becomes a drag after 4px along the axis (mostly across the axis abandons it); dragging toward the open side is rubber-banded. On release, speed over the last 100ms decides first (above 0.4px/ms moves one snap point in that direction, past the lowest one dismisses), otherwise the nearest snap point wins, and dismissal needs the panel dragged half way below the lowest snap point. Snap points are visible fractions, ascending (`[0.4, 1]`).
 - **`useDrawerDrag`** listens for pointer events on the host (pointer capture; mouse, touch and pen) and writes an inline `transform` and `transition`. A press on a form control, button, link or `[data-drawer-no-drag]`, or inside a scroller not at its edge, never drags. Give the grab area `touch-action: none`, or a touch scrolls instead.
 - After a drag dismissal the host has `data-dragged` and sits off screen with a `transition`; the owner closes and `usePresence` waits for that transition, so CSS should drop its exit animation (`data-[dragged]:data-[state=closed]:animate-none`). Opening again (`[open]` true) clears it.
-- Limits: the panel jumps when closed by Escape while resting at a snap point below full (the exit animation restarts from the natural position); no drag-linked backdrop fade; no nested-drawer scaling.
+- Closing without a drag (Escape, a button) from a snap point below full calls `handle.exit()`: the panel slides out from where it rests (`data-dragged` drops the CSS exit). At full height the CSS exit runs as before. Changing the active snap while open animates (`setSnap(fraction, true)`), and the `progress` output (`{ value, dragging }`, the visible fraction) drives `<ui-drawer>`'s backdrop opacity.
+- Limits: no nested-drawer scaling.
+
+## Command, date picker and OTP additions (TASK-46, 50, 52)
+
+- **Command:** `filter` (on `ui-command` and `ui-command-dialog`) takes `(items, query) => items`. The default `substringFilter` is the original rule (every word a substring of label, group or keywords, items keep their order); `fuzzyFilter` matches subsequences (every word still has to match) and ranks prefix, word-start and contiguous matches first, a label above keywords above the group, with a stable sort.
+- **Calendar:** `captionLayout="dropdown"` (or `dropdown-months` / `dropdown-years`) adds native month and year selects (years from `min` to `max`, else 100 back and 10 ahead; picking clamps to `min`/`max`); the text heading stays, visually hidden, as the grid's name. `locale` also takes a function returning a date-fns `Locale`, read inside computeds, for a lazily loaded locale. Wiring to the I18n service is not done.
+- **Date picker:** `[typeable]="true"` (single mode) adds a text input; the date is parsed with date-fns using `displayFormat` on Enter, change or blur, and must pass `min`, `max` and `isDisabled`, otherwise the input is `aria-invalid` and the value is unchanged. An empty box clears. `captionLayout` goes to the calendar.
+- **Input OTP:** `dir` (`auto` follows the nearest `dir` attribute) swaps ArrowLeft and ArrowRight under `rtl`.
 
 ## Resizable panels: `ResizeEngine` (TASK-53)
 
 `ResizeEngine` (`resize.ts`) is the logic of a resizable panel group with no DOM: panel sizes as percentages that always total 100 (`sizes()` signal), `configure(panels, savedLayout?)`, pointer drags (`startDrag(handle, pos, containerPx)`, `dragTo(pos)`, `endDrag()`) and keys (`key(handle, "ArrowRight" | "Home" | "End" | "Enter")`). A handle moves its two neighbours only, inside each panel's `minSize`/`maxSize`; a `collapsible` panel dragged past halfway below its minimum snaps to `collapsedSize` and back out the same way, and remembers its size for `expand`. `handleState(i)` gives the `aria-valuenow/min/max` of the panel before the handle (the ARIA window splitter pattern; Enter toggles a collapsible neighbour, arrows never leave a panel between collapsed and minimum). Test it with plain calls, no pointer events needed; `ui-resizable-panel-group`, `ui-resizable-panel` and `ui-resizable-handle` in gable-ui wire it to pointer events (the group's pixel size is read at pointer-down), `[(layout)]` and an optional `autoSaveId` (localStorage, guarded). Limits: a handle never cascades into panels beyond its neighbours, and panels are matched to handles by creation order.
+
+## Button group and the split-button recipe (TASK-73)
+
+`ui-button-group` (`packages/ui/src/components/button-group.ts`) is a flex row (or column) of joined buttons: one `role="group"`, named by `label` (becomes `aria-label`; give it one whenever the group holds more than one control). `orientation` is `horizontal` (default) or `vertical`. As in shadcn's ButtonGroup, joined borders and radii come from child selectors on the group (`[&>*:not(:first-child)]:rounded-l-none` and so on), so children keep their own variant; a focused child is raised so its ring is not clipped. `[uiButtonGroupText]` is a non-interactive addon (a prefix, a unit); `[uiSeparator]` works between children. The `class` input merges last.
+
+shadcn has no split button; it is a Button joined to a Dropdown Menu trigger inside a group. This is the recipe, with no extra component:
+
+```html
+<ui-button-group label="Save options">
+  <button uiButton (click)="save()">Save</button>
+  <ui-dropdown-menu [entries]="entries" (selected)="run($event)" placement="bottom-end">
+    <button slot="trigger" menuTrigger uiButton size="icon" aria-label="More save options"><svg uiIcon="chevron-down"></svg></button>
+  </ui-dropdown-menu>
+</ui-button-group>
+```
+
+- One accessible name for the pair: the group's `label`. The primary button keeps its own visible text.
+- The chevron trigger needs its own name (`aria-label`), since it has only an icon. `menuTrigger` adds `aria-haspopup="menu"`, `aria-expanded` and `aria-controls`; do not add them by hand.
+- `ui-dropdown-menu` wraps its trigger, so the group also has selectors for a `ui-dropdown-menu` child (`[&>ui-dropdown-menu:not(:first-child)>*]`); only a dropdown menu is handled that way.
+- `placement="bottom-end"` keeps the menu under the chevron at the group's right edge.
+
+Tests: `button-group.test.ts` (in-memory: attributes and classes) and `button-group.dom.test.ts` (jsdom: the recipe, menu semantics, axe via `@gable/testing/a11y`). The runnable example is `examples/ui-gallery/button-group.html` (after `npm run pack:local examples/ui-gallery`).
+
+## Tree view and JSON viewer (TASK-71, TASK-72)
+
+`ui-tree` (`packages/ui/src/components/tree.ts`) is a file-explorer / inspector tree. It is native, not `@zag-js/tree-view` (not installed; Zag's parts are nested and recursive, while a flattened list of visible nodes is what lets the tree virtualise and render with a plain `@for`, and what makes per-level `aria-setsize` / `aria-posinset` cheap). Nodes are data: `{ id, label, children?, lazy?, disabled?, icon?, description?, descriptionClass?, actions? }`; `expanded` and `selected` are two-way arrays of ids; `selectionMode` is `none | single | multiple`.
+
+```html
+<ui-tree label="Files" class="h-72" [nodes]="files" [(expanded)]="open" [(selected)]="picked" selectionMode="multiple" [loadChildren]="load" (activated)="show($event)"></ui-tree>
+<ui-tree label="Big" [virtual]="true" [itemSize]="28" [nodes]="tenThousandNodes" [(expanded)]="open"></ui-tree>
+```
+
+- **ARIA.** The host is `role="tree"` (`aria-multiselectable`), every visible node is a flat `role="treeitem"` carrying `aria-level`, `aria-setsize`, `aria-posinset` (among its siblings), `aria-expanded` (branches only), `aria-selected` (when selectable), `aria-disabled`, `aria-busy` while lazy children load. One row has `tabindex="0"` (roving); its action buttons are the only tabbable buttons.
+- **Keyboard.** Up/Down, Right (open, then step into the first child), Left (close, then to the parent), Home/End, `*` (open siblings), type-ahead (500 ms buffer), Enter (select and `activated`), Space (select; toggles in `multiple`), Shift+Arrow and Shift+click (range), Ctrl/Meta+click (toggle), Ctrl+A. Disabled rows are skipped. A click on the chevron only expands.
+- **Lazy.** `lazy: true` plus `loadChildren(node)` (array or promise; the result is cached until `nodes` changes; `loadFailed` fires on error).
+- **Virtual.** `virtual` flattens the visible nodes (`flattenTree`, iterative) and renders them through `useVirtualizer` with a fixed `itemSize`; the focused row is always rendered (`keepIndexes`), keyboard moves `scrollToIndex` then focus. Tests: 10,100 nodes render about 20 rows (`tree.dom.test.ts`, `tree.test.ts`); flattening 10,000 nodes takes a few ms. Like the virtual list it needs a real element, so jsdom tests mock `clientHeight` and dispatch `scroll`.
+- **Row actions.** `actions: [{ id, label, text? }]` render small buttons and emit `(action)` with `{ node, action }`.
+- Not covered: drag and drop reordering, checkbox (tri-state) trees, horizontal virtualisation, variable row heights in `virtual` mode, async expand-all.
+
+`ui-json-viewer` (`json-viewer.ts`, registry dependency `tree`) shows any value: `<ui-json-viewer [value]="response" label="Response" [maxDepth]="6" [maxString]="120" [chunkSize]="100"></ui-json-viewer>`. Children are built when a node first opens (through the tree's `loadChildren`), so a huge value costs what is open. Primitives are coloured with theme tokens (`text-success` strings, `text-info` numbers/bigints/dates, `text-warning` booleans, muted null/undefined/functions). Each row has `path` and `value` buttons (`navigator.clipboard`, guarded; `copied` emits `{ kind, text, ok }`, `ok: false` without a clipboard) and "Expand all" / "Collapse all" buttons (expand all stops after `expandLimit` nodes). Long strings are cut at `maxString`; a reference back to an ancestor shows `[Circular]`; containers below `maxDepth` show their size and stay closed; containers with more than `chunkSize` entries group as `[0..99]`, nested for very long ones (100,000 items open as ten rows). Paths look like `$.items[0]["odd key"]`. Maps and Sets are shown as containers. Not covered: search/filter, editing, class-instance names.
+
+Gallery: `examples/ui-gallery/tree.html` (`src/tree-demo.ts`); run `npm run pack:local examples/ui-gallery` once so the gallery sees the new components.

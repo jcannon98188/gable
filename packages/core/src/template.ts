@@ -360,6 +360,7 @@ class Parser {
       p = ATTR.lastIndex;
       const value = m[2] ?? m[3] ?? "";
       if (m[1] === "i18n") marker = value;
+      else if (m[1] === "i18n-ignore") continue; // tells the unmarked-text lint to leave this element alone; not rendered
       else if (m[1]!.startsWith("i18n-") && m[1]!.length > 5) attrMarkers.push({ attr: m[1]!.slice(5), value });
       else addAttribute(el, m[1]!, value);
     }

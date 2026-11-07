@@ -59,12 +59,14 @@ export function sourceRules(sf: ts.SourceFile, checker: ts.TypeChecker, template
   }
 }
 
-/** Tailwind scans source text for whole class names, so a `${}` hole glued to class text, or a built-up string in [class], is invisible to it. */
+/**
+ * Tailwind scans source text for whole class names, so a string joined with `+` inside `[class]` is invisible to it.
+ * (A `${}` hole in a template is a template-syntax error, so holes are no longer checked here.)
+ */
 function classFragments(sf: ts.SourceFile, literal: ts.TemplateLiteral, report: Report): void {
-  // The template text with each hole replaced by NUL, and where each character came from.
+  // The template text, and where each character came from; a hole is one blank.
   let text = "";
   const origin: number[] = [];
-  const holes: Array<{ start: number; length: number }> = [];
   const piece = (from: number, to: number) => {
     for (let i = from; i < to; i++) {
       text += sf.text[i];
@@ -74,23 +76,10 @@ function classFragments(sf: ts.SourceFile, literal: ts.TemplateLiteral, report: 
   if (ts.isNoSubstitutionTemplateLiteral(literal)) piece(literal.getStart(sf) + 1, literal.end - 1);
   else {
     piece(literal.head.getStart(sf) + 1, literal.head.end - 2);
-    let holeStart = literal.head.end - 2;
     for (const span of literal.templateSpans) {
-      const holeEnd = span.literal.getStart(sf) + 1;
-      holes.push({ start: holeStart, length: holeEnd - holeStart });
-      text += "\0";
-      origin.push(holeStart);
-      piece(holeEnd, span.literal.end - (ts.isTemplateTail(span.literal) ? 1 : 2));
-      holeStart = span.literal.end - 2;
-    }
-  }
-  for (const m of text.matchAll(/(?<![\w[.-])class\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
-    const value = m[1] ?? m[2] ?? "";
-    const valueAt = m.index! + m[0].length - 1 - value.length;
-    for (const g of value.matchAll(/[^\s\0]\0|\0[^\s\0]/g)) {
-      const nul = valueAt + g.index! + (g[0][0] === "\0" ? 0 : 1);
-      const hole = holes[[...text.slice(0, nul)].filter((c) => c === "\0").length]!;
-      report(hole.start, hole.length, "class-fragment", "A class name assembled from a ${} hole is invisible to Tailwind: write the full class names, or look them up from a map of literal names");
+      text += " "; // a hole is blank; it cannot be part of a class name
+      origin.push(span.literal.getStart(sf));
+      piece(span.literal.getStart(sf) + 1, span.literal.end - (ts.isTemplateTail(span.literal) ? 1 : 2));
     }
   }
   for (const m of text.matchAll(/\[class\]\s*=\s*"([^"]*)"/g)) {

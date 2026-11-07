@@ -8,7 +8,7 @@
 // packages depend on each other at the lockstep version. With --no-update the package.json is left alone and the
 // entries to add are printed instead.
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -29,6 +29,25 @@ export function publishablePackages(repo = root) {
 export const tarballName = (name, version) => `${name.replace(/^@/, "").replace("/", "-")}-${version}.tgz`;
 
 /**
+ * The file name each package is stored under in vendor/: what `npm pack` produces, except that an unscoped package whose
+ * tarball name would equal a scoped one gets `-cli` appended. `@gable/ui` and the `gable-ui` CLI both pack to
+ * `gable-ui-<version>.tgz`; the CLI is stored as `gable-ui-cli-<version>.tgz`. Throws on any other collision.
+ */
+export function vendorNames(packages) {
+  const scoped = new Set(packages.filter((p) => p.name.startsWith("@")).map((p) => tarballName(p.name, p.manifest.version)));
+  const out = new Map();
+  const taken = new Map();
+  for (const { name, manifest } of packages) {
+    let file = tarballName(name, manifest.version);
+    if (!name.startsWith("@") && scoped.has(file)) file = tarballName(name + "-cli", manifest.version);
+    if (taken.has(file)) throw new Error(`pack-local: ${name} and ${taken.get(file)} would both be packed as ${file}`);
+    taken.set(file, name);
+    out.set(name, file);
+  }
+  return out;
+}
+
+/**
  * The dependency and overrides entries that make `manifest` install `packed` (name to tarball file) from `vendor/`.
  * Every packed @gable/* package is overridden (npm ignores overrides for packages not in the tree), so the ones the
  * app only reaches transitively, such as @gable/template-format, resolve to the same tarballs.
@@ -47,6 +66,7 @@ export function localEntries(manifest, packed, vendorSpec = "vendor") {
 
 export function packLocal({ app, build = true, update = true, log = console.log }) {
   const packages = publishablePackages();
+  const names = vendorNames(packages);
   if (build) {
     log("Building the workspace...");
     execSync("npm run build", { cwd: root, stdio: "inherit" });
