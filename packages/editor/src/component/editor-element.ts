@@ -11,6 +11,7 @@ import type { Awareness } from "y-protocols/awareness";
 import { GablePresence } from "./presence.js";
 import { formattingPlugins, historyPlugin } from "../plugins/formatting.js";
 import type { EditorPlugin, ToolbarItem } from "../plugin.js";
+import { placeBubble } from "../bubble-position.js";
 import { watchToolbar, type ToolbarItemState } from "../toolbar-model.js";
 
 export const defaultPlugins: readonly EditorPlugin[] = [corePlugin, ...formattingPlugins, historyPlugin];
@@ -27,7 +28,7 @@ export class GableEditorElement {
     selector: "gable-editor",
     imports: [UiToggle, UiIcon, GablePresence],
     template: html`
-      <div class="flex flex-col rounded-md border bg-background text-foreground">
+      <div class="relative flex flex-col rounded-md border bg-background text-foreground" #frame>
         <div
           role="toolbar"
           aria-label="Formatting"
@@ -146,6 +147,7 @@ export class GableEditorElement {
   contentClasses = computed(() => `prose-editor min-h-24 p-3 outline-none [&_.ProseMirror]:min-h-20 [&_.ProseMirror]:outline-none ${this.class()}`);
 
   private contentEl = viewChild<HTMLElement>("content");
+  private frameEl = viewChild<HTMLElement>("frame");
   private mount = (() => {
     effect(() => {
       const el = this.contentEl();
@@ -218,15 +220,23 @@ export class GableEditorElement {
 
   private placeBubble(ed: GableEditor, el: HTMLElement): void {
     const { from, to, empty } = ed.editor.state.selection;
+    const frame = (this.frameEl() as HTMLElement | undefined) ?? el;
     if (!this.bubbleMenu() || empty || !ed.editor.isEditable) return void this.bubble.set(null);
     try {
-      const start = ed.editor.view.coordsAtPos(from);
-      const box = el.getBoundingClientRect();
-      this.bubble.set({ style: `top:${Math.max(0, start.top - box.top - 40)}px;left:${Math.max(0, start.left - box.left)}px` });
+      const a = ed.editor.view.coordsAtPos(from);
+      const b = ed.editor.view.coordsAtPos(to);
+      const box = frame.getBoundingClientRect();
+      // The bubble's width is not known until it renders: estimate from the number of buttons (compact buttons are ~32px).
+      const size = { width: this.bubbleRows().length * 32 + 8, height: 40 };
+      const at = placeBubble(
+        { top: Math.min(a.top, b.top), bottom: Math.max(a.bottom, b.bottom), left: a.left, right: b.right },
+        box,
+        size,
+      );
+      this.bubble.set({ style: `top:${Math.round(at.top)}px;left:${Math.round(at.left)}px` });
     } catch {
       this.bubble.set(null);
     }
-    void to;
   }
 
   activate(s: ToolbarItemState): void {
