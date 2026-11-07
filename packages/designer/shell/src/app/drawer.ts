@@ -5,6 +5,7 @@ import { UiButton } from "../components/ui/button.js";
 import { UiTooltip } from "../components/ui/tooltip.js";
 import { UiVirtualTable, type VirtualTableColumn } from "../components/ui/virtual-table.js";
 import { UiIcon } from "../lib/ui/icon.js";
+import { A11yState } from "./a11y-state.js";
 import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";
 import { EditState } from "./edit-state.js";
@@ -15,7 +16,7 @@ export class CodeTab {
   static meta = {
     selector: "app-code-tab",
     host: { class: "block h-full" },
-    imports: [UiButton, UiTooltip],
+    imports: [UiButton],
     template: html`
       <div class="split">
         <div>
@@ -42,10 +43,15 @@ export class CodeTab {
           </div>
           @if (last(); as l) {
             <div class="pad patch">
-              <div>{{ l.label }}</div>
+              <div>{{ l.label }} <span class="mono"><span class="diff-add">+{{ l.added }}</span> <span class="diff-del">−{{ l.removed }}</span></span></div>
               <div class="mono dim">{{ l.file }}</div>
-              <p class="dim" uiTooltip="The backend applies patches but does not return them yet">The patch itself is not shown yet: the backend does not return its diff.</p>
             </div>
+            @if (diffRows().length > 0) {
+              <pre class="code diff" data-part="patch-diff" aria-label="Unified diff of the last patch"><!--
+                -->@for (r of diffRows(); track r.key) {<span class="ln" [class.add]="r.add" [class.del]="r.del" [class.hunk]="r.hunk"><span class="n">{{ r.old }}</span><span class="n">{{ r.new }}</span>{{ r.text }}</span>}</pre>
+            } @else {
+              <p class="pad dim">The patch left every line as it was.</p>
+            }
           } @else {
             <div class="empty">Edits made here are written to the source. The latest one appears here, with Undo.</div>
           }
@@ -73,9 +79,19 @@ export class CodeTab {
     return this.state.picked() ? "Locating this element in the source…" : "Select an element on the canvas to see where it is written.";
   });
   last = computed(() => {
-    const undo = this.edit.history().undo;
-    const item = undo[undo.length - 1];
-    return item ? { label: item.label, file: this.state.relative(item.file), stale: item.stale, state: item.stale ? "file changed" : "applied" } : null;
+    const item = this.edit.history().last;
+    return item
+      ? { label: item.label, file: this.state.relative(item.file), stale: item.stale, state: item.stale ? "file changed" : "applied", added: item.diff.added, removed: item.diff.removed }
+      : null;
+  });
+  /** The unified diff, one row per line: hunk headers, then context, removed and added lines with their old and new numbers. */
+  diffRows = computed(() => {
+    const diff = this.edit.history().last?.diff;
+    if (!diff) return [];
+    return diff.hunks.flatMap((h, i) => [
+      { key: `${i}@`, add: false, del: false, hunk: true, old: "", new: "", text: h.header },
+      ...h.lines.map((l, j) => ({ key: `${i}:${j}`, add: l.kind === "+", del: l.kind === "-", hunk: false, old: l.old ?? "", new: l.new ?? "", text: l.kind + l.text })),
+    ]);
   });
   externalText = computed(() => this.edit.external().join(", "));
 }
@@ -212,7 +228,10 @@ export class HmrTab {
   }
 }
 
-/** Honest about what is missing: no checks run yet, so this says that instead of implying the page passed. */
+/**
+ * What the Preview agent's checker (axe-core) found on the selected frame's page: one row per element and rule, failures
+ * first. A row selects its element on the canvas. Checks the checker could not decide are listed as "review", never as passed.
+ */
 export class AccessibilityTab {
   static meta = {
     selector: "app-accessibility-tab",
@@ -220,16 +239,79 @@ export class AccessibilityTab {
     imports: [UiButton, UiTooltip],
     template: html`
       <div class="dbar">
-        <span class="chip off" uiTooltip="Needs a checker running in the preview agent" tabindex="0">Not checked</span>
+        <span class="chip" [class.err]="a11y.violations() > 0" [class.ok]="passedAll()" [class.off]="!a11y.report()" data-part="a11y-status">{{ status() }}</span>
+        @if (a11y.reviews() > 0) {
+          <span class="chip warn" uiTooltip="The checker could not decide these; look at them yourself" tabindex="0">{{ a11y.reviews() }} to review</span>
+        }
+        <span class="dim">{{ detail() }}</span>
         <span class="spacer"></span>
-        <span uiTooltip="Accessibility checks are not available yet" tabindex="0"><button uiButton variant="outline" size="sm" class="btn sm" disabled>Re-run</button></span>
+        <button uiButton variant="outline" size="sm" class="btn sm" data-part="a11y-rerun" [disabled]="!canRun()" (click)="a11y.run()">{{ runLabel() }}</button>
       </div>
-      <div class="empty">
-        <strong>Accessibility checks are not available yet</strong>
-        The Designer has no checker to run against the canvas, so nothing here means this page passed.
-      </div>
+      @if (a11y.error(); as e) {
+        <p class="callout err" role="alert">The checks did not run: {{ e }}</p>
+      }
+      @for (r of rows(); track r.id) {
+        <div class="tbl-row a11y-row" data-part="a11y-row" [attr.data-rule]="r.rule" [attr.aria-current]="r.current" (click)="choose(r.id)" (mouseenter)="hover(r.id)" (mouseleave)="hover(null)">
+          <span class="chip" [class.err]="r.err" [class.warn]="r.warn">{{ r.impact }}</span>
+          <span class="a11y-what">
+            <span><span class="mono" [attr.title]="r.helpUrl">{{ r.rule }}</span> · {{ r.help }}</span>
+            <span class="dim">{{ r.summary }}</span>
+          </span>
+          <button class="chip mono elink" data-part="a11y-element" [disabled]="!r.linked" [attr.title]="r.elementTitle">{{ r.element }}</button>
+        </div>
+      }
+      @if (empty(); as e) {
+        <div class="empty"><strong>{{ e.title }}</strong>{{ e.text }}</div>
+      }
     `,
   };
+  a11y = inject(A11yState);
+  state = inject(DesignerState);
+  canRun = computed(() => this.state.connection() === "ready" && !this.a11y.running());
+  runLabel = computed(() => (this.a11y.running() ? "Checking…" : "Re-run"));
+  passedAll = computed(() => !!this.a11y.report() && this.a11y.checks().length === 0);
+  status = computed(() => {
+    if (!this.a11y.report()) return this.a11y.running() ? "Checking…" : "Not checked";
+    const n = this.a11y.violations();
+    return n === 0 ? "No violations" : `${n} violation${n === 1 ? "" : "s"}`;
+  });
+  detail = computed(() => {
+    const r = this.a11y.report();
+    if (!r) return "";
+    const off = r.skipped.length ? `, ${r.skipped.length} page rules off in component mode` : "";
+    return `${r.engine}: ${r.rules} rules, ${r.passed} passed${off} · ${r.url} · ${r.ms} ms`;
+  });
+  rows = computed(() => {
+    const picked = this.state.picked()?.node.id;
+    return this.a11y.checks().map((c) => ({
+      id: c.id,
+      rule: c.rule,
+      help: c.help,
+      helpUrl: c.helpUrl,
+      summary: c.summary,
+      impact: c.kind === "review" ? "review" : (c.impact ?? "issue"),
+      err: c.kind === "violation" && (c.impact === "critical" || c.impact === "serious"),
+      warn: c.kind === "review" || (c.impact !== "critical" && c.impact !== "serious"),
+      linked: !!c.node,
+      element: c.node ? `<${c.node.tag}>${c.node.component ? ` in ${c.node.component}` : ""}` : "not in a template",
+      elementTitle: c.node ? `${c.html}\nSelect this element` : `${c.html}\nNo template renders this element (${c.selector})`,
+      current: c.node && c.node.id === picked ? "true" : null,
+    }));
+  });
+  empty = computed(() => {
+    if (this.a11y.checks().length > 0 || this.a11y.error()) return null;
+    if (this.state.connection() !== "ready") return { title: "No page to check", text: "The checks run in the selected frame once its page is connected." };
+    if (!this.a11y.report()) return { title: "Checking…", text: "The Preview agent is running the checker on this page." };
+    return { title: "No violations found", text: "Every rule that applies passed on this page as it is rendered now. Automated checks catch only part of the problems; keyboard and screen reader use still need a person." };
+  });
+  #byId = (id: string) => this.a11y.checks().find((c) => c.id === id) ?? null;
+  choose(id: string): void {
+    const c = this.#byId(id);
+    if (c) this.a11y.select(c);
+  }
+  hover(id: string | null): void {
+    this.a11y.hover(id ? this.#byId(id) : null);
+  }
 }
 
 /** The tab strip and the open tab. */
@@ -257,6 +339,7 @@ export class DrawerTabs {
   };
   state = inject(DesignerState);
   chrome = inject(ChromeState);
+  a11y = inject(A11yState);
   open = this.chrome.drawerOpen;
   closed = computed(() => !this.chrome.drawerOpen());
   toggleText = computed(() => (this.chrome.drawerOpen() ? "Collapse the drawer" : "Open the drawer"));
@@ -270,7 +353,7 @@ export class DrawerTabs {
       { value: "code", label: "Code", badge: 0, err: false, warn: false },
       { value: "problems", label: "Problems", badge: problems, err: errors > 0, warn: errors === 0 && problems > 0 },
       { value: "hmr", label: "HMR timeline", badge: 0, err: false, warn: false },
-      { value: "a11y", label: "Accessibility", badge: 0, err: false, warn: false },
+      { value: "a11y", label: "Accessibility", badge: this.a11y.violations(), err: this.a11y.severe(), warn: !this.a11y.severe() && this.a11y.violations() > 0 },
       { value: "http", label: "HTTP", badge: 0, err: false, warn: false },
     ].map((t) => ({ ...t, selected: String(t.value === current), tabId: `drawer-tab-${t.value}` }));
   });

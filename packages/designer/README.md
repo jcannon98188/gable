@@ -86,11 +86,33 @@ Accessibility, HTTP) and Style, Content and Inspector on the right. Tokens live 
 Ctrl K opens the command palette, generated from the current state in `shell/src/app/commands.ts`. Panel sizes, the drawer and
 the theme are saved per project with the frame layout (`chrome` in the device settings), never in browser storage.
 
-Open project, install the agent, extract component, create Scenario and accessibility checks have no backend yet: they show the
+Open project, install the agent, extract component and create Scenario have no backend yet: they show the
 real part and say the rest is unavailable, with the action disabled. Nothing pretends to have run.
 
 ```
 node packages/designer/e2e/chrome-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port>
+```
+
+## Last patch and accessibility checks
+
+The drawer's **Code** tab shows the unified diff of the patch Undo would take back (`src/server/edit/diff.ts`: a line diff of
+the file before and after the write, three lines of context, `a/` and `b/` headers, CRLF compared as LF). It is computed when
+the patch is written (and again on redo) and sent as `last` in the history (`/api/edit/history` and the `history` event); only
+that one diff is sent. Undo and Redo sit next to it.
+
+The **Accessibility** tab lists what the Preview agent's checker found on the selected frame's page. The checker is
+[axe-core](https://github.com/dequelabs/axe-core), a dependency of the Designer (the project needs none): the Designer's Vite
+plugin serves it at `/__gable-designer/axe.js` and the agent loads it on the first run (`src/agent/a11y.ts`). It runs in the
+real page, so contrast is measured on painted colours; the Designer's overlay is hidden and excluded while it runs. Each
+failing element is a row with its rule, impact and axe's own explanation, linked to the template node that renders it (or its
+nearest rendered ancestor); clicking a row selects the element. Checks axe cannot decide (text over an image, say) are listed
+as "review", never as passed. Component mode turns off the rules that judge a whole document (title, `lang`, landmarks), since
+they would report on the Designer's host page. The shell runs the checks when the frame connects, after a hot update, a
+navigation or a tree change (debounced), and on Re-run; the tab's badge counts violations. The protocol gained the `a11y`
+method; it is additive, so `PROTOCOL_VERSION` is unchanged. Automated checks find only part of the problems.
+
+```
+node packages/designer/e2e/a11y-diff-check.mjs     # spawns the backend on test-fixtures/a11y-app and a headless Edge, stops only those
 ```
 
 ## Page mode

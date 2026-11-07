@@ -14,7 +14,7 @@ export class EditState {
 
   model = signal<DescribeResult | null>(null);
   palette = signal<PaletteEntry[]>([]);
-  history = signal<HistoryInfo>({ undo: [], redo: [], external: [] });
+  history = signal<HistoryInfo>({ undo: [], redo: [], external: [], last: null });
   /** The last outcome, shown under the panel: an edit's label, or why it was refused. */
   notice = signal<{ ok: boolean; text: string } | null>(null);
   busy = signal(false);

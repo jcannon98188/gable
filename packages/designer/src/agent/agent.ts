@@ -4,13 +4,16 @@
 // postMessage transport.
 import type { DevtoolsEvent, GableDevtoolsHook } from "@gable/core/devtools";
 import type { DesignerHook, DesignNode } from "@gable/core/designer";
+import { RUN_CONTEXT, runOptions, toReport, type AxeLike } from "./a11y.js";
 import {
+  AXE_PATH,
   PROTOCOL_VERSION,
   envelope,
   isOurs,
   takeSession,
   windowNameStorage,
   type AgentMessage,
+  type A11yReport,
   type AgentMethods,
   type CanvasDiagnostic,
   type Interaction,
@@ -353,6 +356,40 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     return true;
   }
 
+  // --- accessibility checks (see a11y.ts) ------------------------------------------------------------------------------
+
+  let axeLoad: Promise<AxeLike> | null = null;
+  const loadAxe = (): Promise<AxeLike> =>
+    (axeLoad ??= import(/* @vite-ignore */ AXE_PATH).then(() => {
+      const axe = (globalThis as { axe?: AxeLike }).axe;
+      if (!axe || typeof axe.run !== "function") throw new Error("axe-core did not load in the preview.");
+      return axe;
+    }).catch((error: unknown) => {
+      axeLoad = null;
+      throw error;
+    }));
+  // axe refuses to start while it runs: runs are queued.
+  let checking: Promise<unknown> = Promise.resolve();
+  function checkA11y(): Promise<A11yReport> {
+    const run = checking.then(async () => {
+      const axe = await loadAxe();
+      const pageMode = globalThis.__GABLE_SCENES__ ? "component" : "page";
+      const { options, skipped } = runOptions(pageMode);
+      // The overlay sits over the page; hidden while the checker measures, so it never counts as covering the text.
+      const display = layer.style.display;
+      layer.style.display = "none";
+      const t0 = performance.now();
+      try {
+        const results = await axe.run(RUN_CONTEXT, options);
+        return toReport(results, { url: location.href, mode: pageMode, skipped, ms: performance.now() - t0, engine: `axe-core ${axe.version}`, nodeOf: (el) => designer.nodeOf(el) });
+      } finally {
+        layer.style.display = display;
+      }
+    });
+    checking = run.catch(() => undefined);
+    return run;
+  }
+
   // --- the shell's requests -----------------------------------------------
 
   const handlers: { [M in keyof AgentMethods]?: (p: AgentMethods[M]["params"]) => AgentMethods[M]["result"] | Promise<AgentMethods[M]["result"]> } = {
@@ -373,6 +410,7 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     scenes: () => sceneInfo(),
     pageScenario: () => globalThis.__GABLE_PAGE_SCENARIO__ ?? null,
     httpLog: () => [...(globalThis.__GABLE_DESIGNER_HTTP__ ?? [])],
+    a11y: () => checkA11y(),
     mountScene: ({ name }) => {
       if (!globalThis.__GABLE_SCENES__) throw new Error("This page is not a component-mode host.");
       globalThis.__GABLE_SCENES__.mount(name);

@@ -114,7 +114,8 @@ for (const [command, words, button] of [
   await sleep(300);
 }
 await palette("Show Accessibility in the drawer");
-check((await ev("document.body.innerText")).includes("not available"), "Accessibility says it has no checks yet rather than reporting zero issues");
+await until(() => ev(`!/^(Not checked|Checking…)$/.test(document.querySelector('[data-part="a11y-status"]')?.textContent.trim() ?? "Not checked")`), "the accessibility checks report", 60000);
+check((await ev("document.body.innerText")).includes("axe-core"), "Accessibility lists the Preview agent's checks (see a11y-diff-check.mjs for the rest)");
 
 console.log(failed ? `\n${failed} check(s) FAILED` : "\nall checks passed");
 page.close();

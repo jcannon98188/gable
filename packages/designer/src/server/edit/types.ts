@@ -1,4 +1,7 @@
 // The write-back API: what the shell sends and gets back. Types only (the shell imports them without pulling in server code).
+import type { UnifiedDiff } from "./diff.js";
+
+export type { DiffLine, UnifiedDiff } from "./diff.js";
 
 /**
  * A template element as the preview agent reports it (`DesignNode`), plus where its file is. The `raw` text finds the template
@@ -148,4 +151,6 @@ export interface HistoryInfo {
   redo: HistoryItem[];
   /** Files edited outside the Designer since the last edit it made. */
   external: string[];
+  /** The change Undo would take back (the top of `undo`), with the unified diff of its write; null when there is none. */
+  last: (HistoryItem & { diff: UnifiedDiff }) | null;
 }

@@ -11,6 +11,9 @@ export const PROTOCOL_VERSION = 1;
 /** The page URL parameter that names the page-mode Scenario: `<scenes module>|<scene name>`. It stays in the URL so a reload of the frame keeps it. */
 export const SCENARIO_PARAM = "__gable_scenario";
 
+/** Where the Designer's Vite plugin serves axe-core (as an ES module) for the agent's accessibility checks. */
+export const AXE_PATH = "/__gable-designer/axe.js";
+
 /** Marks a message as ours. */
 export const CHANNEL = "gable-designer";
 
@@ -101,6 +104,46 @@ export interface AgentMethods extends DevtoolsMethods {
   pageScenario: { params: void; result: PageScenarioInfo | null };
   /** The HTTP requests the Scenario's mocks have answered (newest last), in either mode. */
   httpLog: { params: void; result: HttpLogEntry[] };
+  /** Runs the accessibility checker (axe-core, loaded on first use) on the page as it is now. Added after version 1 shipped; additive. */
+  a11y: { params: void; result: A11yReport };
+}
+
+/** What the accessibility checker found on the page. Only failures and undecided checks are listed; passes are counted. */
+export interface A11yReport {
+  /** The checker and its version, for example `axe-core 4.14.0`. */
+  engine: string;
+  url: string;
+  mode: "page" | "component";
+  /** Rules that ran, and the ones turned off for this mode (component mode mounts one component, not a page). */
+  rules: number;
+  skipped: string[];
+  /** Rules that passed on every element they apply to. */
+  passed: number;
+  checks: A11yCheck[];
+  /** How long the run took. */
+  ms: number;
+}
+
+/** One element that failed (or could not be decided by) one rule. */
+export interface A11yCheck {
+  /** Unique within the report. */
+  id: string;
+  /** The checker's rule id, for example `color-contrast` or `image-alt`. */
+  rule: string;
+  /** `violation`: the rule failed. `review`: the checker could not decide (text over an image, say) and a person has to look. */
+  kind: "violation" | "review";
+  impact: "minor" | "moderate" | "serious" | "critical" | null;
+  /** The rule in a sentence. */
+  help: string;
+  helpUrl: string;
+  /** What is wrong with this element, as the checker words it. */
+  summary: string;
+  /** The element's markup, shortened. */
+  html: string;
+  /** The checker's selector for the element. */
+  selector: string;
+  /** The template node that renders the element (or its nearest ancestor that a template renders); null when no template does. */
+  node: { id: string; tag: string; component: string | null } | null;
 }
 
 export interface PageScenarioInfo {
