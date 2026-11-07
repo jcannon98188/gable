@@ -6,7 +6,9 @@
 // Without --tailwind it expects examples/todomvc (page mode with a hash router): Back/Forward, text size, the template
 // outline, Sync's mirrored selection, drag-insert from the Insert tab and a Problems quick fix. With --tailwind it expects a
 // Tailwind v4 project (examples/ui-gallery) whose <file> holds `<h1 class="text-2xl font-semibold tracking-tight">`: the
-// class conflict callout and its fix, and the read-only hatch on a dynamic class list. Every file it edits is restored.
+// class conflict callout and its fix, and the read-only hatch on a bound class list
+// ([attr.class]; [class.x] stays editable). Both modes then write a template that does not compile and expect the banner
+// over the canvas, the stale hatch and the error in Problems, all cleared once it is fixed. Every file it edits is restored.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { connect, connectBrowser } from "./cdp.mjs";
@@ -54,6 +56,42 @@ const edit = (file, fn) => {
   if (next === original) throw new Error(`no change made to ${file}`);
   writeFileSync(file, next);
 };
+/**
+ * Writes a template that does not compile (`to` in place of `from` in `file`) and expects the Designer to say so: the banner
+ * over the canvas with file:line:column and the message, the "last good version" note once the page has refused the update,
+ * the error in Problems, and the selected element hatched "stale". With the file restored, all of it clears.
+ */
+const compileError = async (file, from, to, selector) => {
+  const original = readFileSync(file, "utf8");
+  const line = original.slice(0, original.indexOf(from)).split("\n").length;
+  const name = file.replace(/\\/g, "/").split("/").pop();
+  edit(file, (s) => s.replace(from, to));
+  await until(() => exists('[data-part="compile-error"]'), "the compile error banner", 20000);
+  // the page's own rollback (no line) may be shown first; the backend's check names the line a moment later
+  const whereText = () => ev(`document.querySelector('[data-part="compile-where"]')?.textContent ?? ""`);
+  await until(async () => /:\d+:\d+$/.test(await whereText()), "the error located (file:line:column)", 20000);
+  const where = await whereText();
+  const banner = () => ev(`document.querySelector('[data-part="compile-error"]')?.innerText.replace(/\\s+/g, " ") ?? ""`);
+  check(where.endsWith(`${name}:${line}:${where.split(":").pop()}`) && /Interpolation in attribute "class" is not supported/.test(await banner()), "a template that does not compile is named over the canvas: file:line:column and the message", `${where} · ${await banner()}`);
+  await until(async () => /last good version/.test(await banner()), "the 'last good version' note", 20000);
+  check(true, "once the page refuses the hot update the banner says the canvas shows the last good version");
+  await shot("compile-error");
+  await clickIn(await first(), selector);
+  await until(async () => /🔒 \S+ · stale/.test(await overlayText(await first())), "the stale hatch", 15000);
+  check(true, "the selected element of the template that does not compile is hatched 'stale'", (await overlayText(await first())).replace(/\s+/g, " "));
+  await clickSel('[data-part="compile-problems"]');
+  await until(async () => (await ev(`document.querySelector("ui-virtual-table")?.innerText ?? ""`)).includes("Interpolation in attribute"), "the error in Problems", 15000);
+  check(true, "Show in Problems opens the drawer on the error");
+  restore.pop()();
+  await until(async () => !(await exists('[data-part="compile-error"]')), "the banner gone", 20000);
+  check(true, "with the template fixed the banner clears");
+  await until(async () => !(await ev(`document.querySelector("ui-virtual-table")?.innerText ?? ""`)).includes("Interpolation in attribute"), "the error gone from Problems", 20000);
+  check(true, "and the error leaves Problems");
+  await sleep(2000);
+  await clickIn(await first(), selector);
+  await until(async () => !/🔒/.test(await overlayText(await first())), "the stale hatch gone", 15000);
+  check(true, "the element is editable again: no hatch");
+};
 const mouse = (type, x, y) => cdp("Input.dispatchMouseEvent", { type, x, y, button: "left", buttons: type === "mouseReleased" ? 0 : 1, clickCount: 1, pointerType: "mouse" });
 
 try {
@@ -78,20 +116,39 @@ try {
     check(!(await exists('[data-part="class-conflict"]')), "no callout once the conflict is gone");
 
     // --- AC1: the read-only hatch -------------------------------------------------------------------------------------------
-    edit(tailwind, (s) => s.replace(/<h1 class="[^"]*">/, `<h1 class="text-2xl {{ dialogOpen() }}">`));
+    // [attr.class] sets the whole class list at runtime, so editing the written classes would be overwritten: read-only.
+    edit(tailwind, (s) =>
+      s
+        .replace(/<h1 class="[^"]*">/, `<h1 class="text-2xl" [attr.class]="headingClass()">`)
+        .replace("  dialogOpen = signal(false);", "  dialogOpen = signal(false);\n  headingClass = computed(() => (this.dialogOpen() ? 'text-2xl opacity-50' : 'text-2xl'));"),
+    );
     await sleep(3000);
     await clickIn(await first(), "main h1");
     const f = await first();
-    await until(async () => /🔒 h1 · (dynamic|read-only)/.test(await overlayText(f)), "the hatch chip");
+    await until(async () => /🔒 h1\S* · dynamic/.test(await overlayText(f)), "the hatch chip");
     const hatch = await f.ev(`[...document.querySelectorAll("[data-gable-designer] div")].some(d => d.style.background.includes("repeating-linear-gradient") && d.style.outline.includes("dashed"))`);
-    check(hatch, "an element whose classes cannot be edited (a {{ }} class list) is drawn read-only on the canvas: amber dashed outline, hatch and lock chip", (await overlayText(f)).replace(/\s+/g, " "));
+    check(hatch, "an element whose class list is bound ([attr.class]) is drawn read-only on the canvas: amber dashed outline, hatch and lock chip", (await overlayText(f)).replace(/\s+/g, " "));
+    check(!(await exists('[data-part="compile-error"]')), "valid Gable: no compile error banner");
+    await until(() => exists('[data-part="conditional"]'), "the binding listed as conditional");
     await shot("hatch");
-    // the {{ }} makes the edit service refuse this whole template; with the file back, the same element is editable again
+    restore.pop()();
+    await sleep(3000);
+
+    // [class.x]="cond" only toggles one class: the written list next to it stays editable, so no hatch
+    edit(tailwind, (s) => s.replace(/<h1 class="[^"]*">/, `<h1 class="text-2xl font-semibold" [class.opacity-50]="dialogOpen()">`));
+    await sleep(3000);
+    await clickIn(await first(), "main h1");
+    await until(async () => (await ev(`document.querySelector('[data-part="conditional"]')?.textContent ?? ""`)).includes("opacity-50"), "[class.opacity-50] listed as conditional");
+    await sleep(1000);
+    check(/h1/.test(await overlayText(await first())) && !/🔒/.test(await overlayText(await first())), "[class.x] keeps the written class list editable: no hatch", (await overlayText(await first())).replace(/\s+/g, " "));
     restore.pop()();
     await sleep(3000);
     await clickIn(await first(), "main h1");
     await until(async () => /h1/.test(await overlayText(await first())) && !/🔒/.test(await overlayText(await first())), "the hatch gone");
-    check(true, "once the element can be edited again the hatch is gone");
+    check(true, "with the class list plain text again the element is editable, no hatch");
+
+    // --- TASK-56.14: a template that does not compile -----------------------------------------------------------------------
+    await compileError(tailwind, '<h1 class="text-2xl font-semibold tracking-tight p-8">', '<h1 class="text-2xl {{ dialogOpen() }}">', "main h1");
   } else {
     const appFile = join(project, "src/components/todo-app.ts");
     const f = await first();
@@ -211,6 +268,10 @@ try {
     await until(() => readFileSync(appFile, "utf8").includes("{{ store.itemWord() }} left"), "the fix applied");
     check(true, "Fix applies the quick fix to the source");
     await until(async () => (await text()).includes("Undo"), "undo offered");
+    await sleep(1500);
+
+    // --- TASK-56.14: a template that does not compile -----------------------------------------------------------------------
+    await compileError(appFile, "<h1>todos</h1>", '<h1 class="x {{ draft() }}">todos</h1>', "h1");
   }
 } catch (e) {
   console.log(`FAIL  ${e.message}`);

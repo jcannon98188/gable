@@ -32,7 +32,8 @@ export class CanvasOverlays {
   /** Why the selected element is shown read-only on the canvas, as its lock chip says it; null when it can be edited. */
   readOnly = computed(() => {
     if (!this.state.picked()) return null;
-    if (this.edit.refused()) return `${this.label()} · read-only`;
+    // Its template no longer matches the file because the file does not compile (or the page refused it): the canvas is stale.
+    if (this.edit.refused()) return `${this.label()} · ${this.state.staleFile(this.state.picked()?.node.component?.source?.path) ? "stale" : "read-only"}`;
     if (this.tw.enabled() && this.edit.node() && !this.tw.writable()) return `${this.label()} · dynamic`;
     return null;
   });

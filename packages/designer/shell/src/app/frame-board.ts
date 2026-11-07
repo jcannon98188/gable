@@ -12,6 +12,7 @@ import { CanvasOverlays } from "./canvas-overlays.js";
 import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";
 import { frameUrl, type Frame } from "./frames.js";
+import { staleNote } from "./stale-canvas.js";
 import { PageState } from "./page-state.js";
 import { ProjectState } from "./project-state.js";
 
@@ -422,6 +423,16 @@ export class FrameBoard {
     imports: [DeviceBar, FrameView, SelectionCrumb, UiButton],
     template: html`
       <div class="flex h-full flex-col">
+        @if (stale(); as st) {
+          <div class="compile-banner" role="alert" data-part="compile-error">
+            <span class="chip err">{{ st.title }}</span>
+            <span class="compile-text">
+              <span><span class="mono" data-part="compile-where">{{ st.where }}</span> · {{ st.message }}</span>
+              <span class="dim" data-part="compile-note">{{ staleNote() }}</span>
+            </span>
+            <button uiButton variant="outline" size="sm" class="btn sm" data-part="compile-problems" (click)="chrome.showDrawer('problems')">Show in Problems</button>
+          </div>
+        }
         <div #board class="canvas relative min-h-0 flex-1 overflow-auto">
           <div class="flex w-max items-start gap-6 p-4">
             @for (f of frames(); track f.id) {
@@ -462,6 +473,12 @@ export class FrameBoard {
   frames = computed(() => this.state.frames.frames());
   chrome = inject(ChromeState);
   projects = inject(ProjectState);
+  /** A template that does not compile, or a hot update the page refused: the canvas is not showing the source as saved. */
+  stale = this.state.stale;
+  staleNote = computed(() => {
+    const s = this.stale();
+    return s ? staleNote(s) : "";
+  });
   failure = computed(() => this.state.error() ?? this.state.project()?.error ?? null);
   restartLabel = computed(() => (this.projects.restarting() ? "Restarting…" : "Restart server"));
   failureTitle = computed(() => (this.state.project()?.installing ? "Installing the project's dependencies" : /stopped/.test(this.failure() ?? "") ? "The dev server stopped" : "The project's dev server is not available"));

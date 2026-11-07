@@ -846,6 +846,25 @@ input.fld::placeholder {
 .frame.sel {
   box-shadow: 0 0 0 2px var(--sel), 0 10px 30px rgb(0 0 0 / 0.25);
 }
+/* Over the canvas while it is not showing the source as saved (a template that does not compile). */
+.compile-banner {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--err-bg);
+  border-bottom: 1px solid var(--d-border);
+  color: var(--err);
+  font-size: 12px;
+}
+.compile-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .canvas-msg {
   position: absolute;
   inset: 0;

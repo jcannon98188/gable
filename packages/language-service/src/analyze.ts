@@ -10,7 +10,7 @@ import { a11yRules } from "./a11y-rules.js";
 import { i18nRules, i18nSourceRules } from "./i18n-rules.js";
 import { projectRules, sourceRules } from "./source-rules.js";
 import { componentMetaRules } from "./meta-rules.js";
-import { scanTemplate, ScanError, type ExprKind, type Src } from "./scan.js";
+import { scanTemplate, ScanError, type ExprKind, type Src, type TNode } from "./scan.js";
 
 export interface Diagnostic {
   file: string;
@@ -120,16 +120,7 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
   const validator = (state: FileState) => (e: Src, kind: ExprKind): boolean => {
     let verdict = state.syntax.get(e.start);
     if (!verdict) {
-      let problem: string | null = null;
-      try {
-        if (kind === "handler") parseHandler(e.text);
-        else parseExpression(e.text);
-      } catch (err) {
-        const message = (err as Error).message;
-        const prefix = `Invalid template expression "${e.text}": `;
-        problem = message.startsWith(prefix) ? message.slice(prefix.length) : message;
-      }
-      verdict = { problem, length: Math.max(1, e.text.length) };
+      verdict = { problem: expressionProblem(e.text, kind), length: Math.max(1, e.text.length) };
       state.syntax.set(e.start, verdict);
     }
     return verdict.problem === null;
@@ -239,6 +230,83 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
   const analyzed = new Map<string, { sf: ts.SourceFile; emitted: Emitted }>();
   for (const [file, state] of files) analyzed.set(file, { sf: state.sf, emitted: final.emitted.get(file)! });
   return { diagnostics: out, options, rootNames, overlay, files: analyzed, defaultLib };
+}
+
+/** Why @gable/core's expression parser rejects `text`, or null when it accepts it. */
+function expressionProblem(text: string, kind: ExprKind): string | null {
+  try {
+    if (kind === "handler") parseHandler(text);
+    else parseExpression(text);
+    return null;
+  } catch (err) {
+    const message = (err as Error).message;
+    const prefix = `Invalid template expression "${text}": `;
+    return message.startsWith(prefix) ? message.slice(prefix.length) : message;
+  }
+}
+
+/** Every expression of a scanned template, with how it is parsed. */
+function eachExpression(nodes: readonly TNode[] | undefined, visit: (e: Src, kind: ExprKind) => void): void {
+  for (const n of nodes ?? []) {
+    switch (n.type) {
+      case "element":
+        for (const e of n.expressions) visit(e, e.kind);
+        eachExpression(n.children, visit);
+        break;
+      case "text":
+        for (const e of n.exprs) visit(e, "value");
+        break;
+      case "let":
+        visit(n.expr, "value");
+        break;
+      case "if":
+        for (const b of n.branches) {
+          if (b.cond) visit(b.cond, "value");
+          eachExpression(b.children, visit);
+        }
+        break;
+      case "for":
+        visit(n.source, "value");
+        visit(n.track, "value");
+        eachExpression(n.children, visit);
+        eachExpression(n.empty, visit);
+        break;
+      case "switch":
+        visit(n.expr, "value");
+        for (const c of n.cases) {
+          if (c.expr) visit(c.expr, "value");
+          eachExpression(c.children, visit);
+        }
+        break;
+      case "defer":
+        if (n.when) visit(n.when, "value");
+        for (const part of [n.children, n.placeholder, n.loading, n.error]) eachExpression(part, visit);
+        break;
+    }
+  }
+}
+
+/**
+ * The problems that keep the runtime from compiling a template, for one file and without a type-check (it takes
+ * milliseconds, not seconds): `template-syntax` and `expression-syntax`, always errors. The Designer runs it on every save
+ * to say why the canvas did not follow; the full analysis reports the same problems among the rest.
+ */
+export function checkTemplateSyntax(fileName: string, text: string, templateTag = "html"): Diagnostic[] {
+  const sf = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true);
+  const raw: RawDiagnostic[] = [];
+  const models = findTemplates(sf, templateTag, (start, length, message) => raw.push({ file: fileName, start, length, rule: "template-syntax", message }));
+  for (const model of models) {
+    eachExpression(model.tree, (e, kind) => {
+      const problem = expressionProblem(e.text, kind);
+      if (problem !== null) raw.push({ file: fileName, start: e.start, length: Math.max(1, e.text.length), rule: "expression-syntax", message: problem });
+    });
+  }
+  return raw
+    .sort((a, b) => a.start - b.start)
+    .map((d) => {
+      const { line, character } = sf.getLineAndCharacterOfPosition(d.start);
+      return { ...d, severity: "error" as const, line: line + 1, column: character + 1 };
+    });
 }
 
 // --- finding templates ------------------------------------------------------

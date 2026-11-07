@@ -381,7 +381,7 @@ class Scanner {
       else if (name.startsWith("(") && name.endsWith(")")) el.expressions.push(expr("handler", 1));
       else if (name.startsWith("#")) el.refs.push(name.slice(1));
       else if (name.startsWith("*")) this.err(`Structural directives ("${name}") do not exist; use @if or @for blocks.`, nameAt, name.length);
-      else if (value.includes("{{")) this.err(`Interpolation in attribute "${name}" is not supported; use [attr.${name}] or [${name}].`, valueAt, value.length);
+      else if (value.includes("{{")) this.err(`Interpolation in attribute "${name}" is not supported; use ${name === "class" ? "[attr.class] or [class.name]" : `[attr.${name}] or [${name}]`}.`, valueAt, value.length);
       else el.attrs.push({ name, nameStart: this.base + nameAt, value: valueRange || m[2] !== undefined || m[3] !== undefined ? value : undefined });
     }
     this.i = p;
