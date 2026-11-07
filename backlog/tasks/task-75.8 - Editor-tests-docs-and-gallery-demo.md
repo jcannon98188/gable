@@ -4,6 +4,7 @@ title: 'Editor: tests, docs and gallery demo'
 status: To Do
 assignee: []
 created_date: '2026-11-07T06:33:00Z'
+updated_date: '2026-11-07T06:52:00Z'
 labels:
   - editor
 dependencies:
@@ -25,4 +26,5 @@ Final hardening for the first milestone.
 - [ ] #1 Convergence/fuzz test suite in CI
 - [ ] #2 Docs: getting started, plugin authoring, collaboration setup
 - [ ] #3 Browser verification of full feature set with two peers
+- [ ] #4 Demo with two clients in an example app or the gallery (examples use vendored tarballs; see scripts/pack-local.mjs)
 <!-- AC:END -->

@@ -5,6 +5,9 @@ import type * as Y from "yjs";
 import { GableEditor } from "../editor.js";
 import { corePlugin } from "../core-plugin.js";
 import { collabPlugin } from "../yjs/collab-plugin.js";
+import { awarenessPlugin, type CollabUser } from "../yjs/awareness.js";
+import type { Awareness } from "y-protocols/awareness";
+import { GablePresence } from "./presence.js";
 import { formattingPlugins, historyPlugin } from "../plugins/formatting.js";
 import type { EditorPlugin, ToolbarItem } from "../plugin.js";
 import { watchToolbar, type ToolbarItemState } from "../toolbar-model.js";
@@ -27,7 +30,7 @@ const GLYPHS: Record<string, string> = {
 export class GableEditorElement {
   static meta = {
     selector: "gable-editor",
-    imports: [UiToggle],
+    imports: [UiToggle, GablePresence],
     template: html`
       <div class="flex flex-col rounded-md border bg-background text-foreground">
         <div
@@ -55,6 +58,7 @@ export class GableEditorElement {
               {{ s.glyph }}
             </button>
           }
+          <gable-presence class="ml-auto" [awareness]="awareness()"></gable-presence>
         </div>
         @if (bubble(); as b) {
           <div
@@ -82,6 +86,12 @@ export class GableEditorElement {
   plugins = input<readonly EditorPlugin[]>(defaultPlugins);
   /** A shared Y.Doc to collaborate through. */
   ydoc = input<Y.Doc | null>(null);
+  /** With `ydoc`: the provider's awareness. Shows remote cursors and the presence list. */
+  awareness = input<Awareness | null>(null);
+  /** The local user shown to others. Needed with `awareness`. */
+  user = input<CollabUser>({ name: "Anonymous", color: "#6b7280" });
+  /** With `ydoc`: resolve when the provider has synced, so peers do not each seed the document. */
+  whenSynced = input<Promise<unknown> | null>(null);
   readonly = input<boolean>(false);
   disabled = input<boolean>(false);
   /** Show the floating toolbar over a text selection. */
@@ -124,11 +134,19 @@ export class GableEditorElement {
 
   private create(el: HTMLElement, plugins: readonly EditorPlugin[], ydoc: Y.Doc | null): void {
     this.teardown();
-    const all = ydoc ? [...plugins.filter((p) => p.name !== "history"), collabPlugin({ ydoc })] : plugins;
+    const awareness = this.awareness();
+    const all = ydoc
+      ? [
+          ...plugins.filter((p) => p.name !== "history"),
+          collabPlugin({ ydoc, whenSynced: this.whenSynced() ?? undefined }),
+          ...(awareness ? [awarenessPlugin({ awareness, user: this.user() })] : []),
+        ]
+      : plugins;
     const ed = new GableEditor({
       plugins: all,
       element: el,
-      content: ydoc ? undefined : this.value(),
+      // With a ydoc, `value` is only the initial content: used if the shared document turns out to be empty.
+      content: this.value(),
       editable: !this.readonly() && !this.disabled(),
       ydoc: ydoc ?? undefined,
       editorProps: { attributes: { role: "textbox", "aria-multiline": "true", "aria-label": "Rich text editor" } },

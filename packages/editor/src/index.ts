@@ -9,3 +9,6 @@ export * from "./toolbar-model.js";
 export * from "./component/editor-element.js";
 export * from "./plugins/table.js";
 export * from "./plugins/image.js";
+export * from "./yjs/awareness.js";
+export * from "./yjs/provider.js";
+export * from "./component/presence.js";

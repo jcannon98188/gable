@@ -13,6 +13,8 @@ export interface CollabOptions {
   field?: string;
   /** Undo merge window in ms. Default 500. */
   captureTimeout?: number;
+  /** Resolve when the provider has synced. Until then the editor neither seeds nor pushes content, so peers never duplicate each other's initial document. */
+  whenSynced?: Promise<unknown>;
 }
 
 /** The live binding of a view created with `collabPlugin`, if any. */
@@ -66,7 +68,13 @@ export function collabPlugin(options: CollabOptions): EditorPlugin {
             });
             bindings.set(view, binding);
             // Dispatching while the view is still being constructed is unsafe; sync right after.
-            queueMicrotask(() => binding.init());
+            void Promise.resolve(options.whenSynced).then(() => {
+              if (view.isDestroyed) return;
+              // An untouched empty editor must not seed Yjs: it would add a stray empty paragraph for every peer.
+              const doc = view.state.doc;
+              const blank = doc.childCount === 1 && doc.firstChild!.isTextblock && doc.firstChild!.content.size === 0;
+              binding.init({ seed: !blank });
+            });
             return {
               update: () => binding.pmChanged(),
               destroy: () => {

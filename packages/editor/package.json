@@ -39,6 +39,7 @@
     "@tiptap/extension-underline": "^3.33.0",
     "@tiptap/extensions": "^3.33.0",
     "@tiptap/pm": "^3.33.0",
+    "y-protocols": "^1.0.7",
     "yjs": "^13.6.33"
   },
   "devDependencies": {

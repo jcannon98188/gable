@@ -38,6 +38,7 @@ export class YProseMirrorBinding {
   readonly #host: BindingHost;
   #lastDoc: EditorState["doc"] | null = null;
   #applyingRemote = false;
+  #ready = false;
   #relSel: { anchor: Y.RelativePosition; head: Y.RelativePosition } | null = null;
   #observer: (events: Y.YEvent<Y.AbstractType<any>>[], tr: Y.Transaction) => void;
 
@@ -56,10 +57,15 @@ export class YProseMirrorBinding {
     this.fragment.observeDeep(this.#observer);
   }
 
-  /** Initial sync: Yjs content wins if present; otherwise the editor's current content seeds Yjs. */
-  init(): void {
+  /**
+   * Initial sync: Yjs content wins if present; otherwise the editor's current content seeds Yjs (pass
+   * `seed: false` to wait for a remote peer instead). Until this is called, local changes are not pushed, so
+   * call it after your provider has synced if several peers might each seed content.
+   */
+  init(options: { seed?: boolean } = {}): void {
+    this.#ready = true;
     if (this.fragment.length > 0) this.#applyRemote(true);
-    else this.pmChanged();
+    else if (options.seed !== false) this.pmChanged();
   }
 
   destroy(): void {
@@ -69,7 +75,7 @@ export class YProseMirrorBinding {
 
   /** Call after every editor state update. Pushes document changes to Yjs and remembers the selection. */
   pmChanged(): void {
-    if (this.#applyingRemote) return;
+    if (this.#applyingRemote || !this.#ready) return;
     const state = this.#host.state;
     if (state.doc !== this.#lastDoc) {
       this.#lastDoc = state.doc;
@@ -133,6 +139,7 @@ export class YProseMirrorBinding {
   }
 
   #applyRemote(initial = false): void {
+    if (!this.#ready) return;
     const state = this.#host.state;
     const next = yToDoc(this.fragment, state.schema);
     if (next.eq(state.doc)) {

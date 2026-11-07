@@ -49,7 +49,7 @@ class Peer {
     });
     const self = this;
     // Peers without initial content wait for a remote sync instead of seeding Yjs (avoids duplicate seeds).
-    if (initial) this.binding.init();
+    this.binding.init({ seed: !!initial });
   }
   edit(fn: (tr: Transaction) => void): void {
     const tr = this.state.tr;
