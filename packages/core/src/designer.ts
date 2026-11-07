@@ -5,6 +5,7 @@
 // No semver promise.
 import { design, type DesignSink } from "./dev-hooks.js";
 import type { SourceInfo } from "./devtools.js";
+import type { Provider } from "./di.js";
 
 /** A template element, and where it sits in its template's source. Offsets are into `raw` (the template literal's text as written), not into the file. */
 export interface DesignNode {
@@ -34,6 +35,8 @@ export interface DesignerHook {
   readonly version: 1;
   /** While muted, the app does not see user events (click, keys, focus, input...) at the Renderer's `listen`. */
   muted: boolean;
+  /** Providers `bootstrap` adds to the root injector after the app's own (the Designer's page-mode Scenario). Set before the app starts. */
+  rootProviders: Provider[];
   /** The template node that produced `element`, or that of its nearest ancestor that has one. `null` for anything not built from a template. */
   nodeOf(element: unknown): DesignNode | null;
   /** Every live element rendered from a template node. */
@@ -110,6 +113,7 @@ export function createDesigner(target?: { __GABLE_DESIGNER_HOOK__?: DesignerHook
   const hook: DesignerHook = {
     version: 1,
     muted: false,
+    rootProviders: [],
     nodeOf(element) {
       for (let n = element as any; n && typeof n === "object"; n = n.parentNode ?? n.parent) {
         const entry = byElement.get(n);

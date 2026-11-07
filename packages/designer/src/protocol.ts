@@ -8,6 +8,9 @@ import type { DesignNode } from "@gable/core/designer";
 /** Bumped on any incompatible change. The agent refuses a shell that speaks another version, and says so. */
 export const PROTOCOL_VERSION = 1;
 
+/** The page URL parameter that names the page-mode Scenario: `<scenes module>|<scene name>`. It stays in the URL so a reload of the frame keeps it. */
+export const SCENARIO_PARAM = "__gable_scenario";
+
 /** Marks a message as ours. */
 export const CHANNEL = "gable-designer";
 
@@ -72,6 +75,27 @@ export interface AgentMethods extends DevtoolsMethods {
   /** Component mode: what the page mounts. */
   scenes: { params: void; result: SceneInfo | null };
   mountScene: { params: { name: string }; result: true };
+  /** Page mode: the Scenario applied to the real app (its page URL named one), or null when none is active. */
+  pageScenario: { params: void; result: PageScenarioInfo | null };
+  /** The HTTP requests the Scenario's mocks have answered (newest last), in either mode. */
+  httpLog: { params: void; result: HttpLogEntry[] };
+}
+
+export interface PageScenarioInfo {
+  module: string;
+  name: string;
+  /** Where the Scenario wants the app to open (`Scene.url`), if it says. */
+  url: string | null;
+  mocks: Array<{ method: string; url: string }>;
+}
+
+export interface HttpLogEntry {
+  method: string;
+  url: string;
+  /** Index into the Scenario's `http` list; -1 when no mock matched. */
+  mock: number;
+  outcome: string;
+  at: number;
 }
 
 export interface CanvasDiagnostic {

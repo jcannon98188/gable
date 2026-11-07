@@ -257,3 +257,92 @@ export function withInterceptors(interceptors: readonly HttpInterceptor[]): Prov
     },
   ];
 }
+
+// --- declarative mocks -------------------------------------------------------
+
+/** What a mock answers with, or how it fails. */
+export interface HttpMockReply {
+  /** Default 200. A non-2xx status errors the request with an `HttpError`, as the real client does. */
+  status?: number;
+  statusText?: string;
+  headers?: Record<string, string>;
+  body?: unknown;
+  /** Milliseconds before the answer; the request stays pending (and cancellable) meanwhile. */
+  delay?: number;
+  /** Fails the request with this kind of `HttpError` instead of answering. */
+  error?: "network" | "abort";
+}
+
+/**
+ * One mocked endpoint, plain data so a Scenario can carry it. `method` defaults to any. A string `url` matches the request
+ * URL without its query string exactly, or as a prefix when it ends in `*`; a RegExp is tested against the URL with params.
+ * `reply` is the answer, or a function of the request for answers that depend on it (a body, a param).
+ */
+export interface HttpMock {
+  method?: string;
+  url: string | RegExp;
+  reply: HttpMockReply | ((req: HttpRequest) => HttpMockReply);
+}
+
+/** One request the mock backend saw: what asked, and which mock (index in the list) answered, `-1` when none did. */
+export interface HttpMockEntry {
+  method: string;
+  url: string;
+  mock: number;
+  /** What it was answered with: `status` or the error kind. */
+  outcome: string;
+}
+
+export interface HttpMockOptions {
+  /** Called for every request, as it is received. */
+  onRequest?(entry: HttpMockEntry): void;
+  /** What a request no mock matches gets. Default: a 404 (and a console warning), so an unmocked call is visible instead of hanging. */
+  unmatched?: HttpMockReply;
+}
+
+function mockMatches(mock: HttpMock, req: HttpRequest): boolean {
+  if (mock.method !== undefined && mock.method.toUpperCase() !== req.method.toUpperCase()) return false;
+  const full = buildUrl(req.url, req.params);
+  if (mock.url instanceof RegExp) {
+    mock.url.lastIndex = 0;
+    return mock.url.test(full);
+  }
+  const path = req.url.split("?")[0]!;
+  return mock.url.endsWith("*") ? path.startsWith(mock.url.slice(0, -1)) : path === mock.url;
+}
+
+/** An `HttpBackend` that answers from a list of mocks, first match wins. It is what `mockHttp` provides. */
+export class HttpMockBackend extends HttpBackend {
+  constructor(
+    readonly mocks: readonly HttpMock[],
+    readonly options: HttpMockOptions = {},
+  ) {
+    super();
+  }
+  override handle(req: HttpRequest): Observable<HttpResponse> {
+    return new Observable((subscriber) => {
+      const index = this.mocks.findIndex((m) => mockMatches(m, req));
+      const mock = this.mocks[index];
+      if (!mock && !this.options.unmatched) console.warn(`[gable] No HTTP mock for ${req.method} ${req.url}`);
+      const reply = mock ? (typeof mock.reply === "function" ? mock.reply(req) : mock.reply) : (this.options.unmatched ?? { status: 404, statusText: "No mock" });
+      const url = buildUrl(req.url, req.params);
+      this.options.onRequest?.({ method: req.method, url, mock: index, outcome: reply.error ?? String(reply.status ?? 200) });
+      const finish = () => {
+        if (reply.error) return subscriber.error(new HttpError(reply.error, { url }));
+        subscriber.next({ status: reply.status ?? 200, statusText: reply.statusText ?? "", url, headers: reply.headers ?? {}, body: reply.body ?? null });
+        subscriber.complete();
+      };
+      if (!reply.delay) {
+        finish();
+        return;
+      }
+      const timer = setTimeout(finish, reply.delay);
+      return () => clearTimeout(timer);
+    });
+  }
+}
+
+/** Providers that replace the HTTP backend with `mocks`. The Designer, `@gable/testing`'s `mountScene` and tests share it. */
+export function mockHttp(mocks: readonly HttpMock[], options?: HttpMockOptions): Provider[] {
+  return [{ provide: HttpBackend, useValue: new HttpMockBackend(mocks, options) }];
+}

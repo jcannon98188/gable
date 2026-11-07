@@ -148,7 +148,7 @@ The dev-only code inside a previewed app that reports its Component tree, live S
 _Avoid_: Inspector, bridge, probe
 
 **Scenario**:
-A named set of Component inputs and provider overrides that places a Component in one situation, such as empty, loading or error, so the Designer can show it in isolation. Scenarios are written in the project's source beside the Component.
+A named set of Component inputs, provider overrides and mocked HTTP replies that places a Component, or the whole app in page mode, in one situation, such as empty, loading or error, so the Designer can show it. Scenarios are written in the project's source beside the Component.
 _Avoid_: Story, preset, mock
 
 **Frame**:

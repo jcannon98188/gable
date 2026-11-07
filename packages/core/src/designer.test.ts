@@ -112,3 +112,25 @@ describe("design layer", () => {
     expect(designer.hook.nodeOf(f.query("p")!)).toBeNull();
   });
 });
+
+describe("rootProviders", () => {
+  it("are added to the root injector by bootstrap, after the app's own providers", async () => {
+    const { bootstrap, InjectionToken, inject: inj } = await import("@gable/core");
+    const { createTestRenderer } = await import("../../testing/src/renderer.js");
+    const T = new InjectionToken<string>("T");
+    let seen = "";
+    class Show {
+      static meta = { selector: "app-show", template: html`<i>x</i>` };
+      v = (seen = inj(T));
+    }
+    expect(designer.hook.rootProviders).toEqual([]);
+    designer.hook.rootProviders = [{ provide: T, useValue: "scenario" }];
+    (globalThis as { __GABLE_DESIGNER_HOOK__?: unknown }).__GABLE_DESIGNER_HOOK__ = designer.hook;
+    try {
+      bootstrap(Show, { renderer: createTestRenderer() as never, providers: [{ provide: T, useValue: "app" }] }).destroy();
+    } finally {
+      delete (globalThis as { __GABLE_DESIGNER_HOOK__?: unknown }).__GABLE_DESIGNER_HOOK__;
+    }
+    expect(seen).toBe("scenario");
+  });
+});

@@ -1,8 +1,10 @@
 // The Designer's side of the project's own Vite. It is added by `project-vite-config.ts` (a wrapper handed to the
-// project's Vite with `--config`), so nothing is written to the project. It does two things: injects the Preview agent
-// into every page, and serves the component-mode host page for a `*.scenes.ts` module.
+// project's Vite with `--config`), so nothing is written to the project. It injects the Preview agent into every page,
+// serves the component-mode host page for a `*.scenes.ts` module, and, in page mode, injects a scenario module that
+// applies a scene's providers and HTTP mocks to the real app before it bootstraps.
 import { dirname } from "node:path";
 import type { Plugin } from "vite";
+import { SCENARIO_PARAM } from "../protocol.js";
 
 const PAGE = "/__gable-designer/component";
 const HOST = "/__gable-designer/host.js";
@@ -10,14 +12,44 @@ const INSTALL = "/__gable-designer/install.js";
 const INSTALL_ID = "\0gable-designer-install";
 const VIRTUAL = "\0gable-designer-host:";
 
+const SCENARIO = "/__gable-designer/scenario.js";
+const SCENARIO_VIRTUAL = "\0gable-designer-scenario:";
+
+/** Every mocked HTTP request lands here, for the Designer's HTTP panel (the agent reads it). */
+const MOCK_LOG = `const log = (globalThis.__GABLE_DESIGNER_HTTP__ ??= []);
+const mocks = (scene) => (scene.http ? mockHttp(scene.http, { onRequest: (e) => { log.push({ ...e, at: Date.now() }); if (log.length > 200) log.shift(); } }) : []);`;
+
+/**
+ * The generated module that applies a Scenario to the REAL app (page mode). The plugin injects it ahead of the page's own
+ * scripts and it statically imports the scenes file, so by the time `bootstrap` runs the scenario's providers and HTTP
+ * mocks are in the design hook's `rootProviders`. Inputs are ignored: the app has no one to set them.
+ */
+export function scenarioModule(scenesModule: string, name: string): string {
+  const path = JSON.stringify(scenesModule);
+  const scene = JSON.stringify(name);
+  return `import definition from ${path};
+import { mockHttp } from "@gable/core/http";
+${MOCK_LOG}
+const hook = globalThis.__GABLE_DESIGNER_HOOK__;
+const scene = definition.scenes[${scene}];
+if (hook && scene) {
+  log.length = 0;
+  hook.rootProviders = [...mocks(scene), ...(scene.providers ?? [])];
+  globalThis.__GABLE_PAGE_SCENARIO__ = { module: ${path}, name: ${scene}, url: scene.url ?? null, mocks: (scene.http ?? []).map((m) => ({ method: m.method ?? "*", url: String(m.url) })) };
+}
+`;
+}
+
 /** The generated module that mounts one scene of a scenes file. It lives in the project's module graph so it shares its `@gable/core` and renderer, and HMR works. */
 export function hostModule(scenesModule: string, initial: string | null): string {
   const path = JSON.stringify(scenesModule);
   return `import * as scenesModule from ${path};
 import { createComponent, createInjector, RENDERER } from "@gable/core";
+import { mockHttp } from "@gable/core/http";
 import { dom } from "@gable/renderer-dom";
 
 const root = document.getElementById("gable-scene-root");
+${MOCK_LOG}
 let definition = scenesModule.default;
 let ref = null;
 let injector = null;
@@ -32,10 +64,11 @@ function unmount() {
 
 function mount(name) {
   unmount();
+  log.length = 0;
   const scene = definition.scenes[name];
   if (!scene) throw new Error('No scene "' + name + '". Scenes: ' + Object.keys(definition.scenes).join(", "));
   const renderer = dom();
-  injector = createInjector([{ provide: RENDERER, useValue: renderer }, ...(renderer.providers ?? []), ...(scene.providers ?? [])]);
+  injector = createInjector([{ provide: RENDERER, useValue: renderer }, ...(renderer.providers ?? []), ...mocks(scene), ...(scene.providers ?? [])]);
   ref = createComponent(definition.component, { injector, renderer, inputs: scene.inputs, parent: root });
   current = name;
 }
@@ -92,23 +125,38 @@ export function designerPlugin(options: { agentFile: string }): Plugin {
     },
     resolveId(id) {
       if (id === INSTALL) return INSTALL_ID;
+      if (id.startsWith(SCENARIO)) return SCENARIO_VIRTUAL + id.slice(SCENARIO.length);
       if (id.startsWith(HOST)) return VIRTUAL + id.slice(HOST.length);
     },
     load(id) {
       if (id === INSTALL_ID) return `import { installDesigner } from "@gable/core/designer";
 installDesigner();
 `;
+      if (id.startsWith(SCENARIO_VIRTUAL)) {
+        const q = new URLSearchParams(id.slice(SCENARIO_VIRTUAL.length));
+        return scenarioModule(q.get("scenes")!, q.get("scene")!);
+      }
       if (!id.startsWith(VIRTUAL)) return;
       const query = new URLSearchParams(id.slice(VIRTUAL.length));
       return hostModule(query.get("scenes")!, query.get("scene"));
     },
     transformIndexHtml(_, ctx) {
       if (!ctx.server) return;
+      const scenario = new URL(ctx.originalUrl ?? ctx.path, "http://x").searchParams.get(SCENARIO_PARAM);
+      const bar = scenario ? scenario.lastIndexOf("|") : -1;
+      const scenes = bar > 0 ? scenario!.slice(0, bar) : null;
+      // Only a project-relative path is accepted: the name goes into generated code and into an import.
+      const page = scenes && scenes.startsWith("/") && !scenes.includes("..") ? scenarioTag(scenes, scenario!.slice(bar + 1)) : [];
       return [
         // Two scripts, in this order: the hook has to exist before the agent module is evaluated, and static imports run first.
         { tag: "script", attrs: { type: "module", src: INSTALL }, injectTo: "head-prepend" },
         { tag: "script", attrs: { type: "module", src: agentUrl }, injectTo: "head-prepend" },
+        ...page,
       ];
     },
   };
 }
+
+const scenarioTag = (scenes: string, scene: string) => [
+  { tag: "script", attrs: { type: "module", src: `${SCENARIO}?${new URLSearchParams({ scenes, scene })}` }, injectTo: "head-prepend" as const },
+];

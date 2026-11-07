@@ -1,5 +1,6 @@
 import { InjectionToken, createInjector, type Injector, type Provider } from "./di.js";
 import type { Renderer } from "./renderer.js";
+import { DEV } from "./dev-hooks.js";
 import { instantiate, setInput, type ComponentClass } from "./component.js";
 import type { InputSignal, ModelSignal } from "./input.js";
 
@@ -71,7 +72,10 @@ export function bootstrap<T extends object, N = unknown>(Root: ComponentClass<T>
     if (!renderer.resolveTarget) throw new Error("This renderer cannot resolve the target passed to bootstrap(): it has no resolveTarget operation.");
     host = renderer.resolveTarget(options.target);
   }
-  const injector = createInjector([{ provide: RENDERER, useValue: renderer }, ...(renderer.providers ?? []), ...(options.providers ?? [])]);
+  const injector = createInjector([{ provide: RENDERER, useValue: renderer }, ...(renderer.providers ?? []), ...(options.providers ?? []),
+    // The Designer's page-mode Scenario (providers and HTTP mocks) goes on top of the app's own.
+    ...(DEV ? ((globalThis as { __GABLE_DESIGNER_HOOK__?: { rootProviders?: Provider[] } }).__GABLE_DESIGNER_HOOK__?.rootProviders ?? []) : []),
+  ]);
   const ref = createComponent(Root, { renderer, injector, host });
   return {
     get instance() {

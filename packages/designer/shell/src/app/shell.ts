@@ -4,6 +4,7 @@ import { UiTab, UiTabs } from "../components/ui/tabs.js";
 import { UiToggleGroup, type ToggleGroupItem } from "../components/ui/toggle-group.js";
 import { UiTooltip } from "../components/ui/tooltip.js";
 import { DesignerState } from "./designer-state.js";
+import { HttpPanel, PageBar, RoutesPanel } from "./page-mode.js";
 import { ComponentTree, HmrTimeline, InjectorTree, Inspector, Problems, ScenesPanel } from "./panels.js";
 
 /** The preview iframe. The state loads the project's page (or the component-mode host) into it and speaks the protocol with it. */
@@ -38,7 +39,7 @@ export class Canvas {
 export class Shell {
   static meta = {
     selector: "app-root",
-    imports: [Canvas, ComponentTree, InjectorTree, ScenesPanel, Inspector, Problems, HmrTimeline, UiTabs, UiTab, UiToggleGroup, UiBadge, UiTooltip],
+    imports: [Canvas, PageBar, RoutesPanel, HttpPanel, ComponentTree, InjectorTree, ScenesPanel, Inspector, Problems, HmrTimeline, UiTabs, UiTab, UiToggleGroup, UiBadge, UiTooltip],
     // TODO(gable-ui): ResizablePanelGroup (TASK-53). The three columns are fixed widths until it exists.
     template: html`
       <div class="grid h-screen grid-rows-[auto_1fr] bg-background text-foreground">
@@ -54,14 +55,16 @@ export class Shell {
             <ui-tabs [(value)]="left">
               <ui-tab value="components" label="Components"><app-component-tree></app-component-tree></ui-tab>
               <ui-tab value="injectors" label="Injectors"><app-injector-tree></app-injector-tree></ui-tab>
+              <ui-tab value="routes" label="Routes"><app-routes-panel></app-routes-panel></ui-tab>
               <ui-tab value="scenes" label="Scenes"><app-scenes-panel></app-scenes-panel></ui-tab>
             </ui-tabs>
           </aside>
-          <main class="min-h-0 min-w-0"><app-canvas></app-canvas></main>
+          <main class="grid min-h-0 min-w-0 grid-rows-[auto_1fr]"><app-page-bar></app-page-bar><app-canvas></app-canvas></main>
           <aside class="min-h-0 overflow-auto border-l p-2">
             <ui-tabs [(value)]="right">
               <ui-tab value="inspector" label="Inspector"><app-inspector></app-inspector></ui-tab>
               <ui-tab value="problems" label="Problems"><app-problems></app-problems></ui-tab>
+              <ui-tab value="http" label="HTTP"><app-http-panel></app-http-panel></ui-tab>
               <ui-tab value="hmr" label="HMR"><app-hmr-timeline></app-hmr-timeline></ui-tab>
             </ui-tabs>
           </aside>
