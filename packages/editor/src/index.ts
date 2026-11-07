@@ -4,3 +4,6 @@ export { corePlugin } from "./core-plugin.js";
 export * from "./yjs/binding.js";
 export * from "./yjs/collab-plugin.js";
 export { yToDoc, updateYFragment } from "./yjs/convert.js";
+export * from "./plugins/formatting.js";
+export * from "./toolbar-model.js";
+export * from "./component/editor-element.js";

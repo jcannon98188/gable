@@ -11,6 +11,9 @@ export interface ToolbarItem {
   run(editor: Editor): boolean;
   isActive?(editor: Editor): boolean;
   isEnabled?(editor: Editor): boolean;
+  /** Items that need a value from the user (e.g. a URL) declare it here; the UI collects it and calls `runWith`. */
+  input?: { kind: "url" | "text"; label: string };
+  runWith?(editor: Editor, value: string): boolean;
 }
 
 /** Context handed to a plugin's collaboration hook once a Y.Doc is attached to the editor. */
