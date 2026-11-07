@@ -330,7 +330,7 @@ export function createPanel(client: Client, host: Host): Panel {
     },
     async tick() {
       if (!state.connected || state.editing) return;
-      if (state.tab === "components") await guard(loadDetail);
+      if (state.tab === "components") await refresh(); // the tree too: a missed event must not leave it stale
       else if (state.tab !== "effects" && state.tab !== "hmr") await refresh();
     },
     async hidden() {
