@@ -12,6 +12,7 @@ import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";
 import { frameUrl, type Frame } from "./frames.js";
 import { PageState } from "./page-state.js";
+import { ProjectState } from "./project-state.js";
 
 /** One frame: its header (name, size, what it can do) and the scaled iframe. Clicking the name selects it. */
 export class FrameView {
@@ -405,13 +406,23 @@ export class FrameBoard {
             }
           </div>
           @if (failure(); as why) {
-            <div class="canvas-msg" role="alert">
+            <div class="canvas-msg" role="alert" data-part="server-failure">
               <div class="card msg-card">
                 <span class="chip err">Disconnected</span>
-                <strong>The project's dev server is not available</strong>
-                <pre class="code msg-code">{{ why }}</pre>
+                <strong>{{ failureTitle() }}</strong>
+                <span class="dim">{{ why }} Your files are untouched.</span>
+                @if (projects.logTail()) {
+                  <pre class="code msg-code" data-part="failure-log">{{ projects.logTail() }}</pre>
+                }
+                @if (projects.actionError(); as err) {
+                  <span class="callout err">{{ err }}</span>
+                }
                 <div class="flex justify-end gap-2">
-                  <button uiButton variant="default" size="sm" class="btn" data-part="retry" (click)="retry()">Retry</button>
+                  @if (projects.canInstall()) {
+                    <button uiButton variant="outline" size="sm" class="btn" data-part="install-open" (click)="chrome.dialog.set('connect')">Install…</button>
+                  }
+                  <button uiButton variant="outline" size="sm" class="btn" data-part="open-log" (click)="chrome.dialog.set('server-log')">Open log</button>
+                  <button uiButton variant="default" size="sm" class="btn" data-part="retry" [disabled]="projects.restarting() || projects.installing()" (click)="retry()">{{ restartLabel() }}</button>
                 </div>
               </div>
             </div>
@@ -426,17 +437,22 @@ export class FrameBoard {
   state = inject(DesignerState);
   board = viewChild<HTMLElement>("board");
   frames = computed(() => this.state.frames.frames());
+  chrome = inject(ChromeState);
+  projects = inject(ProjectState);
   failure = computed(() => this.state.error() ?? this.state.project()?.error ?? null);
+  restartLabel = computed(() => (this.projects.restarting() ? "Restarting…" : "Restart server"));
+  failureTitle = computed(() => (this.state.project()?.installing ? "Installing the project's dependencies" : /stopped/.test(this.failure() ?? "") ? "The dev server stopped" : "The project's dev server is not available"));
   message = computed(() => {
     const s = this.state;
     if (s.incompatible()) return s.incompatible();
+    if (s.project()?.installing) return "Installing the project's dependencies…";
     if (!s.project()?.ready) return "Starting the project's dev server…";
     return null;
   });
 
-  /** There is no restart endpoint yet: reloading the shell asks the backend for the project's state again. */
+  /** Restarts the project's Vite in the backend; the frames reload when it answers again. */
   retry(): void {
-    location.reload();
+    void this.projects.restart();
   }
 
   /** Reports the board's size so fit-to-screen can scale all frames to it. */

@@ -7,6 +7,7 @@ import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";
 import { EditState } from "./edit-state.js";
 import { PageState } from "./page-state.js";
+import { ProjectState } from "./project-state.js";
 import { TailwindState } from "./tailwind-state.js";
 
 interface Command extends CommandItem {
@@ -26,6 +27,7 @@ export class CommandPalette {
   edit = inject(EditState);
   page = inject(PageState);
   tailwind = inject(TailwindState);
+  projects = inject(ProjectState);
   filter = fuzzyFilter;
 
   commands = computed<Command[]>(() => {
@@ -139,6 +141,9 @@ export class CommandPalette {
 
     cmd("dialog.open", "Open a project…", "Dialogs", () => chrome.dialog.set("open-project"));
     cmd("dialog.connect", "Connect to dev server…", "Dialogs", () => chrome.dialog.set("connect"));
+    cmd("dialog.server-log", "Show the dev server log", "Dialogs", () => chrome.dialog.set("server-log"));
+    cmd("server.restart", "Restart the dev server", "Dialogs", () => void this.projects.restart(), { disabled: this.projects.installing() });
+    if (this.projects.canInstall()) cmd("server.install", "Install the project's dependencies and start", "Dialogs", () => void this.projects.install(), { disabled: this.projects.installing() });
     cmd("dialog.extract", "Extract to component…", "Dialogs", () => chrome.dialog.set("extract"));
     cmd("dialog.scenario", "New Scenario…", "Dialogs", () => chrome.dialog.set("new-scenario"));
     if (s.target().kind === "page") cmd("route.add", "Add route…", "Dialogs", () => this.#addRoute(), { disabled: this.page.config() === null });

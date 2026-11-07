@@ -1168,3 +1168,19 @@ ui-virtual-table {
   box-shadow: 0 0 0 3px var(--d-accent-bg);
   outline: none;
 }
+
+/* --- project dialogs (open project, dev server log) ------------------------------- */
+.pick-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 168px;
+  margin-bottom: 8px;
+  overflow: auto;
+}
+.pick-list .mi.on {
+  background: var(--d-accent-bg);
+}
+.log-text {
+  max-height: 50vh;
+  min-height: 160px;
+}

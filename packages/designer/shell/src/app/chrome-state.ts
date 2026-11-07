@@ -4,7 +4,7 @@ import { computed, effect, inject, signal, untracked } from "@gable/core";
 import type { ChromeSettings } from "../../../src/devices.js";
 import { DesignerState } from "./designer-state.js";
 
-export type DialogName = "open-project" | "connect" | "extract" | "new-scenario" | null;
+export type DialogName = "open-project" | "connect" | "server-log" | "extract" | "new-scenario" | null;
 
 /** Canvas and drawer heights while the drawer is closed: the canvas takes everything and the tab strip sits under it. */
 const DRAWER_CLOSED = [100, 0];

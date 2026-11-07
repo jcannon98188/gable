@@ -1,14 +1,15 @@
 // The Designer's backend: a Node sidecar the Tauri shell spawns (Rust stays thin: window, process lifetime). It
 // owns what needs the TypeScript tooling: running the project's own Vite, mapping nodes to source ranges, finding scenes
 // files, and running the Template language service. The shell talks to it over HTTP with a per-session token.
-import { spawn, type ChildProcess } from "node:child_process";
+// Everything that belongs to one project lives in a Session; opening another project closes it and starts a new one behind
+// the same server, token and preview port, so the shell only has to reload.
+import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync, watch } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { createServer as createNetServer } from "node:net";
-import { createRequire } from "node:module";
 import { dirname, extname, join, normalize, relative, resolve, sep } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import type { AnalysisOutput } from "./analyze-worker.js";
 import { EditService } from "./edit/service.js";
 import type { EditOp, TargetRef } from "./edit/types.js";
@@ -18,6 +19,10 @@ import { resolveNode, type NodeReport } from "./source.js";
 import { sceneIndex } from "./scene-index.js";
 import { editRouteConfig, listComponents, locateRouteConfig, type RouteEdit } from "./route-config.js";
 import { TailwindService, handleTailwindApi } from "./tailwind/api.js";
+import { DevServer, ProjectLog, type DevServerStatus } from "./dev-server.js";
+import { checkProject, projectName, rememberProject, runInstall, type ProjectCheck } from "./projects.js";
+import { handleProjectApi } from "./project-api.js";
+import { dataDir } from "./settings.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -29,6 +34,8 @@ export interface BackendOptions {
   previewPort?: number;
   /** The webview's Chrome DevTools Protocol port (Windows WebView2 in the desktop app): enables device emulation. */
   cdpPort?: number;
+  /** Where recent projects are kept (tests); the platform's data directory by default. */
+  dataDir?: string;
 }
 
 export interface ProjectInfo {
@@ -36,8 +43,12 @@ export interface ProjectInfo {
   name: string;
   previewUrl: string;
   ready: boolean;
-  /** Set when the project's Vite could not start. */
+  /** Set when the project's Vite could not start, or stopped. */
   error: string | null;
+  server: DevServerStatus;
+  /** The package manager is installing the project's dependencies (see projects.ts). */
+  installing: boolean;
+  check: ProjectCheck;
 }
 
 export interface Backend {
@@ -75,93 +86,141 @@ export function findScenes(root: string): string[] {
 
 const MIME: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".json": "application/json", ".woff2": "font/woff2" };
 
+/** Everything that belongs to the open project. */
+interface Session {
+  readonly root: string;
+  readonly server: DevServer;
+  readonly log: ProjectLog;
+  readonly edits: EditService;
+  readonly tailwind: TailwindService;
+  check: ProjectCheck;
+  installing: boolean;
+  diagnostics: (AnalysisOutput & { at: number; running?: boolean }) | null;
+  runAnalysis(): Promise<void>;
+  info(): ProjectInfo;
+  close(): Promise<void>;
+}
+
 export async function startBackend(options: BackendOptions): Promise<Backend> {
-  const root = resolve(options.root);
   const token = randomBytes(24).toString("hex");
   const previewPort = options.previewPort ?? (await freePort());
   const previewUrl = `http://localhost:${previewPort}/`;
-  const info: ProjectInfo = { root, name: root.split(/[\\/]/).pop() ?? root, previewUrl, ready: false, error: null };
-
-  // --- the project's own Vite -------------------------------------------------
-  const require = createRequire(pathToFileURL(join(root, "package.json")));
-  let vite: ChildProcess | null = null;
-  try {
-    const viteBin = join(dirname(require.resolve("vite/package.json")), "bin", "vite.js");
-    vite = spawn(process.execPath, [viteBin, root, "--config", join(here, "project-vite-config.js")], {
-      cwd: root,
-      env: { ...process.env, GABLE_DESIGNER_ROOT: root, GABLE_DESIGNER_PORT: String(previewPort) },
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    const log = (d: Buffer) => process.stderr.write(`[project vite] ${d}`);
-    vite.stdout!.on("data", log);
-    vite.stderr!.on("data", log);
-    vite.on("exit", (code) => !info.ready && (info.error = `The project's Vite exited with code ${code}.`));
-  } catch (error) {
-    info.error = `Could not find Vite in the project: ${error instanceof Error ? error.message : error}`;
-  }
-  const probe = async () => {
-    for (let i = 0; i < 300 && !info.error; i++) {
-      try {
-        if ((await fetch(previewUrl, { signal: AbortSignal.timeout(1000) })).ok) return void (info.ready = true);
-      } catch {
-        // not up yet
-      }
-      await new Promise((r) => setTimeout(r, 200));
-    }
-    info.error ??= "The project's Vite did not start in time.";
-  };
-  void probe();
-
+  const data = options.dataDir ?? dataDir();
   const cdp = options.cdpPort ? new CdpEmulator(options.cdpPort) : null;
 
-  // --- diagnostics -------------------------------------------------------------
-  let diagnostics: (AnalysisOutput & { at: number; running?: boolean }) | null = null;
-  let analyzing: Promise<void> | null = null;
-  const runAnalysis = () =>
-    (analyzing ??= new Promise<void>((done) => {
-      if (!existsSync(join(root, "tsconfig.json"))) {
-        diagnostics = { diagnostics: [], configErrors: ["The project has no tsconfig.json."], at: Date.now() };
-        analyzing = null;
-        return done();
-      }
-      const child = spawn(process.execPath, [join(here, "analyze-main.js"), root], { stdio: ["ignore", "pipe", "pipe"] });
-      let out = "";
-      let err = "";
-      child.stdout.on("data", (d) => (out += d));
-      child.stderr.on("data", (d) => (err += d));
-      child.on("close", () => {
-        try {
-          diagnostics = { ...(JSON.parse(out) as AnalysisOutput), at: Date.now() };
-        } catch {
-          diagnostics = { diagnostics: [], configErrors: [err.trim().split("\n").pop() || "The analyzer failed."], at: Date.now() };
-        }
-        analyzing = null;
-        broadcast("diagnostics", diagnostics);
-        done();
-      });
-    }));
-
-  // --- events (SSE) and file watching -----------------------------------------------
-  const edits = new EditService(root);
-  const tailwind = new TailwindService(root);
   const clients = new Set<ServerResponse>();
   const broadcast = (event: string, data: unknown) => {
     for (const res of clients) res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
   };
-  let debounce: NodeJS.Timeout | undefined;
-  const watcher = watch(root, { recursive: true }, (_, file) => {
-    if (!file || !/\.(ts|tsx|css|html)$/.test(file)) return;
-    if (file.split(/[\\/]/).some((p) => SKIP.has(p))) return;
-    // A stylesheet changed: the Tailwind design system (theme, plugins) is rebuilt on next use.
-    if (file.endsWith(".css")) (tailwind.invalidate(), broadcast("tailwind", { revision: tailwind.revision }));
-    clearTimeout(debounce);
-    // An edit made outside the Designer: undo history for that file is marked, and the shell is told.
-    if (edits.noteFileChanged(resolve(root, file))) broadcast("history", edits.history());
-    debounce = setTimeout(() => {
-      broadcast("files", { file: file.split(sep).join("/"), scenes: findScenes(root) });
-      if (file.endsWith(".ts")) void runAnalysis();
-    }, 250);
-  });
+
+  // --- the project session ------------------------------------------------------
+  function openSession(root: string): Session {
+    const current = () => session === s;
+    const log = new ProjectLog(200_000, (chunk) => current() && broadcast("log", { chunk }));
+    const announce = () => current() && broadcast("server", s.info());
+    // The project's own Vite (dev-server.ts); the preview port stays the same across restarts and projects.
+    const server = new DevServer({ root, port: previewPort, configFile: join(here, "project-vite-config.js"), log, onChange: () => announce() });
+
+    // --- diagnostics -------------------------------------------------------------
+    let analyzing: Promise<void> | null = null;
+    const runAnalysis = () =>
+      (analyzing ??= new Promise<void>((done) => {
+        if (!existsSync(join(root, "tsconfig.json"))) {
+          s.diagnostics = { diagnostics: [], configErrors: ["The project has no tsconfig.json."], at: Date.now() };
+          analyzing = null;
+          return done();
+        }
+        const child = spawn(process.execPath, [join(here, "analyze-main.js"), root], { stdio: ["ignore", "pipe", "pipe"] });
+        let out = "";
+        let err = "";
+        child.stdout.on("data", (d) => (out += d));
+        child.stderr.on("data", (d) => (err += d));
+        child.on("close", () => {
+          try {
+            s.diagnostics = { ...(JSON.parse(out) as AnalysisOutput), at: Date.now() };
+          } catch {
+            s.diagnostics = { diagnostics: [], configErrors: [err.trim().split("\n").pop() || "The analyzer failed."], at: Date.now() };
+          }
+          analyzing = null;
+          if (current()) broadcast("diagnostics", s.diagnostics);
+          done();
+        });
+      }));
+
+    // --- file watching ---------------------------------------------------------------
+    const edits = new EditService(root);
+    const tailwind = new TailwindService(root);
+    let debounce: NodeJS.Timeout | undefined;
+    const watcher = watch(root, { recursive: true }, (_, file) => {
+      if (!file || !/\.(ts|tsx|css|html)$/.test(file)) return;
+      if (file.split(/[\\/]/).some((p) => SKIP.has(p))) return;
+      // A stylesheet changed: the Tailwind design system (theme, plugins) is rebuilt on next use.
+      if (file.endsWith(".css")) (tailwind.invalidate(), broadcast("tailwind", { revision: tailwind.revision }));
+      clearTimeout(debounce);
+      // An edit made outside the Designer: undo history for that file is marked, and the shell is told.
+      if (edits.noteFileChanged(resolve(root, file))) broadcast("history", edits.history());
+      debounce = setTimeout(() => {
+        broadcast("files", { file: file.split(sep).join("/"), scenes: findScenes(root) });
+        if (file.endsWith(".ts")) void runAnalysis();
+      }, 250);
+    });
+    watcher.on("error", () => undefined);
+
+    const s: Session = {
+      root,
+      server,
+      log,
+      edits,
+      tailwind,
+      check: checkProject(root),
+      installing: false,
+      diagnostics: null,
+      runAnalysis,
+      info() {
+        const state = server.state();
+        return { root, name: projectName(root), previewUrl, ready: state.status === "running", error: state.error, server: state.status, installing: s.installing, check: s.check };
+      },
+      async close() {
+        clearTimeout(debounce);
+        watcher.close();
+        await server.stop();
+      },
+    };
+    return s;
+  }
+
+  let session = openSession(resolve(options.root));
+  session.server.start();
+
+  /** Closes the open project and opens `root` behind the same server; every shell is told to reload. */
+  async function switchProject(root: string): Promise<ProjectInfo> {
+    const previous = session;
+    session = openSession(root);
+    await previous.close();
+    session.server.start();
+    rememberProject(root, data);
+    broadcast("project", { root });
+    return session.info();
+  }
+
+  /** Runs the project's package manager, then re-checks and restarts the dev server. */
+  async function install(): Promise<string | null> {
+    const s = session;
+    if (s.installing) return "An install is already running.";
+    s.check = checkProject(s.root);
+    const command = s.check.install;
+    if (!command) return s.check.problem ?? "Nothing to install: the Preview agent and Vite are found.";
+    s.installing = true;
+    broadcast("server", s.info());
+    void runInstall(s.root, command, s.log).then(async (code) => {
+      s.installing = false;
+      s.check = checkProject(s.root);
+      if (session !== s) return;
+      if (code === 0) await s.server.restart();
+      broadcast("server", s.info());
+    });
+    return null;
+  }
 
   // --- HTTP ---------------------------------------------------------------------
   const shellDir = options.shellDir ? resolve(options.shellDir) : null;
@@ -195,15 +254,18 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
     if (url.pathname.startsWith("/api/")) {
       const bearer = req.headers.authorization === `Bearer ${token}` || url.searchParams.get("token") === token;
       if (!bearer) return json(res, 401, { error: "missing or wrong token" });
+      // The project this request is about; a switch while it runs does not change it halfway.
+      const s = session;
+      const { root, edits, tailwind } = s;
       switch (url.pathname) {
         case "/api/project":
-          return json(res, 200, info);
+          return json(res, 200, s.info());
         case "/api/scenes":
           return json(res, 200, findScenes(root));
         case "/api/diagnostics": {
-          if (!diagnostics) await runAnalysis();
-          else if (url.searchParams.has("refresh")) await runAnalysis();
-          return json(res, 200, diagnostics);
+          if (!s.diagnostics) await s.runAnalysis();
+          else if (url.searchParams.has("refresh")) await s.runAnalysis();
+          return json(res, 200, s.diagnostics);
         }
         case "/api/resolve": {
           const report = JSON.parse(await readBody(req)) as NodeReport;
@@ -250,6 +312,8 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
       }
       if (await handleTailwindApi({ service: tailwind, cdp, json, readBody }, req, res, url)) return;
       if (await handleDeviceApi({ root, previewUrl, cdp, json, readBody }, req, res, url)) return;
+      const projectApi = { root: () => root, dataDir: data, log: () => s.log.text(), open: switchProject, install, restart: async () => (await s.server.restart(), s.info()), json, readBody };
+      if (await handleProjectApi(projectApi, req, res, url)) return;
       return json(res, 404, { error: "no such endpoint" });
     }
 
@@ -273,11 +337,9 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
     token,
     previewUrl,
     async close() {
-      clearTimeout(debounce);
-      watcher.close();
       for (const c of clients) c.end();
       cdp?.close();
-      vite?.kill();
+      await session.close();
       await new Promise<void>((ok) => server.close(() => ok()));
     },
   };

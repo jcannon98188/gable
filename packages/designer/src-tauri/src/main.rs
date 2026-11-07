@@ -1,8 +1,10 @@
 // Rust stays thin: it owns the window and the lifetime of the Node backend, nothing else. It spawns
-// `node dist/server/cli.js <project> --watch-stdin`, waits for the `GABLE_DESIGNER_READY {json}` line, and opens one
+// `node dist/server/cli.js [project] --watch-stdin`, waits for the `GABLE_DESIGNER_READY {json}` line, and opens one
 // window on the backend's URL. The backend serves the shell (and hands it the per-session token), exactly as it does
 // for a browser, so the desktop window and `gable-designer` in a browser run the same code path. When this process
-// exits the backend's stdin closes and it shuts down, taking the project's Vite with it.
+// exits the backend's stdin closes and it shuts down, taking the project's Vite with it. Choosing, switching and
+// installing projects and restarting their dev server all happen in the backend; the project argument is optional (without
+// it the backend opens the most recent project).
 use std::{
     io::{BufRead, BufReader},
     path::PathBuf,
@@ -28,16 +30,17 @@ fn cdp_port() -> Option<u16> {
 }
 
 fn main() {
-    let project = std::env::args().nth(1).unwrap_or_else(|| {
-        eprintln!("usage: gable-designer <projectDir>");
-        std::process::exit(2);
-    });
+    let project = std::env::args().nth(1);
     let cdp = cdp_port();
     let package = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
     tauri::Builder::default()
         .setup(move |app| {
             let mut command = Command::new("node");
-            command.arg(package.join("dist/server/cli.js")).arg(&project).arg("--watch-stdin");
+            command.arg(package.join("dist/server/cli.js"));
+            if let Some(project) = &project {
+                command.arg(project);
+            }
+            command.arg("--watch-stdin");
             if let Some(port) = cdp {
                 command.arg("--cdp-port").arg(port.to_string());
             }
@@ -61,7 +64,7 @@ fn main() {
                     }
                 }
                 let Some(url) = url else {
-                    eprintln!("the Designer backend exited before it was ready");
+                    eprintln!("the Designer backend exited before it was ready (usage: gable-designer [projectDir])");
                     handle.exit(1);
                     return;
                 };

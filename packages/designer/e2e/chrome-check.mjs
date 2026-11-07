@@ -101,8 +101,8 @@ await palette("Use the light theme");
 await sleep(600);
 
 // --- flows without a backend say so, and do nothing ---------------------------------------------------------------------
+// (Open project has a backend now: e2e/project-check.mjs drives it.)
 for (const [command, words, button] of [
-  ["Open a project", "not available yet", "Browse…"],
   ["Extract to component", "not available yet", "Extract"],
   ["New Scenario", "cannot write Scenarios yet", "Create"],
 ]) {
