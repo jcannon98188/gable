@@ -35,7 +35,9 @@ export function signal<T>(initial: T, options?: SignalOptions<T>): WritableSigna
 /** Dev only: the devtools record state history, so they see the value a write replaces. */
 function willWrite(node: object): void {
   const sink = devtools.current;
-  if (sink?.recording) sink.write!(node);
+  if (!sink) return;
+  if (sink.recording) sink.write!(node);
+  if (sink.timing) sink.touch?.(node);
 }
 
 /**
@@ -195,6 +197,7 @@ function flushNow(): void {
     for (const node of pending) {
       if (node.scope.disposed) continue;
       const t = dev?.timing ? performance.now() : 0;
+      if (dev?.timing) dev.beforeRun?.(node);
       try {
         node.get();
       } catch (error) {

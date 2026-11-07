@@ -3,7 +3,7 @@ import type { Renderer } from "./renderer.js";
 import { createEnv, evaluate, readModel, runHandler, writeModel, type Env, type Expr, type HandlerExpr } from "./expression.js";
 import { createScope, currentScope, runInScope, type Scope } from "./scope.js";
 import { FAILED, guard, guarded } from "./errors.js";
-import { DEV } from "./dev-hooks.js";
+import { DEV, inBinding } from "./dev-hooks.js";
 import { disposeAndRemove } from "./removal.js";
 import { design, hooks, retireView } from "./dev-hooks.js";
 import { inputOf } from "./input.js";
@@ -64,7 +64,7 @@ function buildText<N>(parts: Array<string | Expr>, renderer: Renderer<N>, env: E
   renderer.insert(parent, text, before);
   if (dynamic) {
     const safe = guard(currentScope(), "text");
-    effect(() => {
+    inBinding(text, "text", () => effect(() => {
       const out = safe(() => {
         let out = "";
         for (const part of parts) {
@@ -77,7 +77,7 @@ function buildText<N>(parts: Array<string | Expr>, renderer: Renderer<N>, env: E
         return out;
       });
       if (out !== FAILED) renderer.setText(text, out);
-    });
+    }), parent);
   }
   return () => [text];
 }
@@ -91,7 +91,7 @@ export function applyBindings<N>(el: N, spec: Bindings, renderer: Renderer<N>, e
 
   for (const { kind, name, expr } of spec.bindings) {
     const safe = guard(scope, `${kind}:${name}`);
-    effect(() => {
+    inBinding(el, `${kind}:${name}`, () => effect(() => {
       const value = safe(() => evaluate(expr, env));
       if (value === FAILED) return;
       switch (kind) {
@@ -104,15 +104,15 @@ export function applyBindings<N>(el: N, spec: Bindings, renderer: Renderer<N>, e
         case "style":
           return renderer.setStyle(el, name, value == null || value === false ? null : String(value));
       }
-    });
+    }));
   }
 
   for (const { name, expr } of spec.models) {
     const safe = guard(scope, `model:${name}`);
-    effect(() => {
+    inBinding(el, `model:${name}`, () => effect(() => {
       const value = safe(() => readModel(expr, env));
       if (value !== FAILED) renderer.setProperty(el, name, value);
-    });
+    }));
     // The renderer decides what produces `<name>Change` (e.g. an input event on a native input).
     scope?.onDispose(renderer.listen(el, `${name}Change`, (event) => guarded(scope, "event", () => writeModel(expr, env, event), `${name}Change`)));
   }
@@ -227,10 +227,10 @@ function buildElementOf<N>(
       const target = binding.kind === "prop" ? inputFor(binding.name) : undefined;
       if (target) {
         const safe = guard(scope, `input:${binding.name}`);
-        effect(() => {
+        inBinding(el, `input:${binding.name}`, () => effect(() => {
           const value = safe(() => evaluate(binding.expr, env));
           if (value !== FAILED) target.set(value);
-        });
+        }));
       }
       else rest.bindings.push(binding);
     }
@@ -239,10 +239,10 @@ function buildElementOf<N>(
       if (!target) rest.models.push(model);
       else {
         const safe = guard(scope, `model:${model.name}`);
-        effect(() => {
+        inBinding(el, `model:${model.name}`, () => effect(() => {
           const value = safe(() => readModel(model.expr, env));
           if (value !== FAILED) target.set(value);
-        });
+        }));
         if (target.changes) subscribe(target.changes, (v) => guarded(scope, "event", () => writeModel(model.expr, env, v), `${model.name}Change`));
       }
     }

@@ -9,6 +9,7 @@ import { GableCounter, PerfCollector, domSize, settled } from "./perf.js";
 import { SignalState } from "./signal-state.js";
 import { startNetwork, throttled } from "./network.js";
 import { startStorage } from "./storage.js";
+import { UpdateFlasher, whyNode } from "./why.js";
 import {
   AXE_PATH,
   PROTOCOL_VERSION,
@@ -551,6 +552,15 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     pinSignal: ({ id, text, force }) => signalState.pin(id, text, force),
     pins: () => signalState.pins(),
     sceneState: () => signalState.sceneState(),
+    whyNode: ({ id }) => {
+      if (!devtools) throw new Error("The devtools hook is not installed in this page.");
+      return whyNode(devtools, designer, id);
+    },
+    flashUpdates: ({ on }) => {
+      flasher.on = on;
+      if (!on) flasher.clear();
+      return true;
+    },
     mountScene: ({ name }) => {
       if (!globalThis.__GABLE_SCENES__) throw new Error("This page is not a component-mode host.");
       globalThis.__GABLE_SCENES__.mount(name);
@@ -558,6 +568,7 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     },
   };
 
+  const flasher = new UpdateFlasher(layer, () => devtools);
   const signalState = new SignalState(() => devtools, () => globalThis.__GABLE_SCENES__);
 
   const sceneInfo = (): SceneInfo | null => {
@@ -597,7 +608,7 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
   };
 
   const forward = (event: DevtoolsEvent) => {
-    if (event.type === "flush") gableCounter.flush(event.flush);
+    if (event.type === "flush") (gableCounter.flush(event.flush), flasher.flush(event.flush.runs));
     else if (event.type === "tree") gableCounter.tree(performance.now());
     else if (event.type === "hmr") gableCounter.hotUpdate(event.entry.at, event.entry.status, (done) => requestAnimationFrame(() => setTimeout(() => done(performance.now()), 0)));
     // A flush carries every effect run; the shell only needs to know that signal values may have changed.

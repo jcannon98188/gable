@@ -214,6 +214,37 @@ recorded; the control channel a `history` command. All additive, so `PROTOCOL_VE
 node packages/designer/e2e/timeline-check.mjs  # spawns the backend on test-fixtures/state-app and a headless Edge, stops only those
 ```
 
+## Why did this update (reactive dependency graph)
+
+The drawer's **Why updated** tab answers, for the selected element, two questions. *What does it depend on?* Each dynamic
+binding of the element (its text, a `[class.x]`, `[attr.x]`, `[style.x]`, `[prop]`, a component input or a model) is listed
+with the signals it reads, through computeds, as an indented tree (a signal already shown above is marked, and the tree is
+bounded at depth 4). *Why did it last update?* Under each binding are its last five runs: the first is a creation (there is
+no earlier state), and a re-run names the signal writes behind it, such as `Cart.qty 2 → 3 via total`, with the computeds
+between and whether the app or the Designer made the write (set_signal, the Inspector, time travel). **Element** shows the
+selected element's own bindings; **Component** lists every effect of its component. **Highlight updates** outlines, on the
+canvas, the elements whose bindings re-run, fading out after under a second.
+
+How it is found, with nothing guessed: while a Designer is connected, the devtools hook of `@gable/core` remembers the value
+of each state signal before its first write in a task. When a pending effect is about to re-run it walks the effect's sources
+(through computeds, bounded at 300 nodes) and reports the written signals whose value changed. A run no recorded write
+explains says exactly that (a hot update, time travel or a write the Designer did not see), never a made-up cause. Template
+bindings are attributed to their element at creation (`inBinding`, a no-op outside a dev build with a connected hook).
+
+Limits, stated plainly: only effects have a last-run cause (a computed has none of its own; it shows as a `via` step);
+field bindings (`[field]`) and `@if`/`@for`/`@switch` blocks are not attributed to an element, so they appear only at Component
+scope; the canvas outline marks the element a binding sets, not a sub-range of its text; the picks follow the selection, so
+there is nothing to explain until an element from a template is selected. The tab reuses the shell's existing streams
+(the devtools flush events), it opens no new connection.
+
+The Preview agent gained `whyNode` and `flashUpdates`, the devtools hook `why`, `effectsOf` and `targetsOf` (flush runs also
+carry `causes`), the control channel `why` and `highlightUpdates`. All additive, so `PROTOCOL_VERSION` is unchanged. MCP:
+`why_did_update` (`scope`, `id`, `runs`) and `highlight_updates`.
+
+```
+node packages/designer/e2e/why-check.mjs  # spawns the backend on test-fixtures/state-app and a headless Edge, stops only those
+```
+
 ## Network: conditions, recording and mocks
 
 The drawer's **Network** tab is the selected frame's network panel (`shell/src/app/network-panel.ts`, `network-state.ts`). The
@@ -540,7 +571,7 @@ left out to mean the element selected in the window.
 | Read | `get_status` (call first), `list_components`, `list_scenes`, `list_routes`, `get_problems`, `get_history`, `describe_element`, `get_selection`, `get_styles`, `get_tree`, `get_signals`, `get_hmr_timeline`, `get_http_log`, `get_performance`, `list_tokens`, `get_token_usages`, `get_scene_state` |
 | Window | `set_mode`, `show_page`, `show_component`, `set_scene`, `set_scenario`, `navigate`, `add_frame`, `update_frame`, `remove_frame`, `select_frame`, `select_element` (by position or CSS selector) |
 | Edit | `edit_text`, `set_attribute`, `bind`, `insert_element`, `delete_element`, `move_element`, `wrap_element`, `set_component_meta`, `set_css`, `edit_classes` (Tailwind, at a breakpoint and state), `set_token`, `save_scenario`, `undo`, `redo` |
-| App state | `set_signal`, `pin_signal`: write the running app's signals (not the source); `get_signal_history`, `travel_signal_history` (a step, `start` or `live`), `clear_signal_history`, `record_signal_history`: the State timeline |
+| App state | `set_signal`, `pin_signal`: write the running app's signals (not the source); `get_signal_history`, `travel_signal_history` (a step, `start` or `live`), `clear_signal_history`, `record_signal_history`: the State timeline; `why_did_update`, `highlight_updates`: what a binding depends on and why it last ran (see Why did this update) |
 | Network | `get_network`, `set_network_condition`, `record_http`, `get_recording`, `save_recording_as_scenario`, `list_mocks`, `edit_mock`, `remove_mock` (see Network) |
 | Storage | `get_storage`, `set_storage_item`, `remove_storage_item`, `clear_storage`, `set_cookie`, `delete_cookie` (see Storage) |
 | Matrix | `get_matrix`, `run_matrix`, `get_matrix_cell`, `save_matrix_baselines`, `forget_matrix_baselines` (see Matrix) |

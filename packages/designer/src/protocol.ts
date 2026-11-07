@@ -2,7 +2,7 @@
 // iframe). Plain JSON over postMessage, versioned, and bound to one session by a nonce: both sides check `origin`,
 // `source` and the nonce on every message, so a page that happens to be framed (or a script in the preview) cannot
 // drive the shell, and the agent never answers anyone but the window that opened it.
-import type { ComponentDetail, DevtoolsEvent, DevtoolsMethods, HmrEntry } from "@gable/core/devtools";
+import type { ComponentDetail, DevtoolsEvent, DevtoolsMethods, HmrEntry, WhyNode } from "@gable/core/devtools";
 import type { DesignNode } from "@gable/core/designer";
 import type { NetworkMethods } from "./network.js";
 import type { StorageMethods } from "./storage.js";
@@ -150,6 +150,24 @@ export interface AgentMethods extends DevtoolsMethods, NetworkMethods, StorageMe
   pins: { params: void; result: SignalPin[] };
   /** Component mode: the mounted Component's inputs and writable signals as a Scene could hold them. Added after version 1 shipped; additive. */
   sceneState: { params: void; result: SceneStateReport | null };
+  /**
+   * What the template node `id` depends on and why it last updated: the dependencies of every binding on its element (and its
+   * text), with the signal writes behind each one's recent runs. `null` when the node is not rendered. Added after version 1 shipped; additive.
+   */
+  whyNode: { params: { id: string }; result: WhyElementReport | null };
+  /** Outlines, for a moment, the elements whose bindings re-ran in each flush (on the canvas). Off until turned on. Added after version 1 shipped; additive. */
+  flashUpdates: { params: { on: boolean }; result: true };
+}
+
+/** The reactive dependencies of one template node: its bindings (`nodes`), and how many other effects its component has. */
+export interface WhyElementReport {
+  id: string;
+  tag: string;
+  component: { id: string; name: string } | null;
+  /** The effects that update this element or its text: one per dynamic binding. Empty for a static element. */
+  nodes: WhyNode[];
+  /** Effects of the owning component that update other elements (see the component's own report). */
+  elsewhere: number;
 }
 
 export type SignalWriteResult = { ok: true } | { ok: false; error: string; /** Where the value does not fit the current one. */ problems?: string[] };
