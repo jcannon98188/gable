@@ -47,6 +47,70 @@ describe("<gable-editor>", () => {
     }
   });
 
+  describe("inline input popover", () => {
+    const field = () => $("[data-input-popover] input") as HTMLInputElement;
+    const type = async (value: string) => {
+      field().value = value;
+      field().dispatchEvent(new Event("input", { bubbles: true }));
+      await settle();
+    };
+    const press = (k: string) => field().dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
+
+    it("collects a link URL: Apply sets it, never calling window.prompt", async () => {
+      const prompt = (window.prompt = () => {
+        throw new Error("window.prompt must not be used");
+      });
+      void prompt;
+      const app = await boot(App);
+      tiptap().commands.selectAll();
+      await settle();
+      btn("link").click();
+      await settle();
+      expect($("[data-input-popover]")).not.toBeNull();
+      expect(document.activeElement).toBe(field());
+      await expectNoA11yViolations(document.body);
+      await type("https://example.com");
+      ($("[data-input-popover] button[type=submit]") as HTMLButtonElement).click();
+      await settle();
+      expect($("[data-input-popover]")).toBeNull();
+      expect(app.doc()).toBe('<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://example.com">hello</a></p>');
+    });
+
+    it("Enter applies and Escape cancels, returning focus to the editor", async () => {
+      const app = await boot(App);
+      tiptap().commands.selectAll();
+      await settle();
+      btn("link").click();
+      await settle();
+      await type("https://a.test");
+      press("Escape");
+      await settle();
+      expect($("[data-input-popover]")).toBeNull();
+      expect(app.doc()).toBe("<p>hello</p>");
+      expect(tiptap().isFocused).toBe(true);
+      btn("link").click();
+      await settle();
+      await type("https://b.test");
+      press("Enter");
+      await settle();
+      expect(app.doc()).toContain('href="https://b.test"');
+    });
+
+    it("prefills the current href and offers Remove on a link", async () => {
+      const app = await boot(App);
+      tiptap().commands.selectAll();
+      tiptap().chain().setLink({ href: "https://old.test" }).run();
+      await settle();
+      btn("link").click();
+      await settle();
+      expect(field().value).toBe("https://old.test");
+      const remove = $$("[data-input-popover] button").find((b) => b.textContent!.includes("Remove link"))!;
+      remove.click();
+      await settle();
+      expect(app.doc()).toBe("<p>hello</p>");
+    });
+  });
+
   it("toolbar buttons format the content and write value back", async () => {
     const app = await boot(App);
     const bold = btn("bold");

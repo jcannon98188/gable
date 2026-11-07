@@ -49,7 +49,7 @@ export const linkPlugin = definePlugin({
       order: 20,
       // Active link: remove it. Otherwise the UI collects a URL (see `input`) and calls runWith.
       run: (e) => (e.isActive("link") ? e.chain().focus().extendMarkRange("link").unsetLink().run() : false),
-      input: { kind: "url", label: "Link URL" },
+      input: { kind: "url", label: "Link URL", initial: (e) => (e.getAttributes("link").href as string | undefined) ?? "", removeLabel: "Remove link" },
       runWith: (e, href) => e.chain().focus().extendMarkRange("link").setLink({ href }).run(),
       isActive: (e) => e.isActive("link"),
     },

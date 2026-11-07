@@ -14,7 +14,14 @@ export interface ToolbarItem {
   isActive?(editor: Editor): boolean;
   isEnabled?(editor: Editor): boolean;
   /** Items that need a value from the user (e.g. a URL) declare it here; the UI collects it and calls `runWith`. */
-  input?: { kind: "url" | "text"; label: string };
+  input?: {
+    kind: "url" | "text";
+    label: string;
+    /** Prefill for the field (e.g. the current href). */
+    initial?(editor: Editor): string;
+    /** When the item is active, also offer a button with this label that calls `run` (e.g. "Remove link"). */
+    removeLabel?: string;
+  };
   runWith?(editor: Editor, value: string): boolean;
 }
 

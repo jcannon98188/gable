@@ -59,6 +59,30 @@ export class GableEditorElement {
           }
           <gable-presence class="ml-auto" [awareness]="awareness()"></gable-presence>
         </div>
+        @if (pending(); as p) {
+          <form
+            [attr.aria-label]="p.label"
+            data-input-popover
+            class="flex flex-wrap items-center gap-2 border-b bg-muted/40 p-2 text-sm"
+            (submit)="applyInput($event)"
+            (keydown)="onInputKey($event)"
+          >
+            <label class="text-xs font-medium" for="gable-editor-input">{{ p.label }}</label>
+            <input
+              #field
+              id="gable-editor-input"
+              class="min-w-40 flex-1 rounded border bg-background px-2 py-1"
+              [attr.type]="p.type"
+              [value]="p.value"
+              (input)="setInput($event)"
+            />
+            <button type="submit" class="rounded border px-2 py-0.5 text-xs">Apply</button>
+            @if (p.removeLabel) {
+              <button type="button" class="rounded border px-2 py-0.5 text-xs" (click)="removeInput()">{{ p.removeLabel }}</button>
+            }
+            <button type="button" class="rounded border px-2 py-0.5 text-xs" (click)="cancelInput()">Cancel</button>
+          </form>
+        }
         @if (bubble(); as b) {
           <div
             role="toolbar"
@@ -108,6 +132,15 @@ export class GableEditorElement {
   toolbar = signal<ToolbarItemState[]>([]);
   focusId = signal<string>("");
   bubble = signal<{ style: string } | null>(null);
+  /** The toolbar item that is waiting for a value from the user, shown as an inline popover. */
+  pending = signal<{ item: ToolbarItem; label: string; type: string; value: string; removeLabel: string } | null>(null);
+  private field = viewChild<HTMLInputElement>("field");
+  private focusField = (() => {
+    effect(() => {
+      const el = this.field();
+      if (el && this.pending()) untracked(() => (el as HTMLInputElement).focus());
+    });
+  })();
   rows = computed(() => this.toolbar().map((s) => ({ ...s, tab: s.id === this.focusId() ? 0 : -1 })));
   bubbleRows = computed(() => this.rows().filter((s) => ["styles", "insert"].includes(s.group)));
   contentClasses = computed(() => `prose-editor min-h-24 p-3 outline-none [&_.ProseMirror]:min-h-20 [&_.ProseMirror]:outline-none ${this.class()}`);
@@ -200,12 +233,59 @@ export class GableEditorElement {
     const ed = this.editor();
     if (!ed || !s.enabled) return;
     const item: ToolbarItem = s.item;
-    if (item.input && item.runWith && !item.isActive?.(ed.editor)) {
-      const value = ed.editor.view.dom.ownerDocument.defaultView?.prompt(item.input.label);
-      if (value) item.runWith(ed.editor, value);
+    if (item.input && item.runWith) {
+      const { input } = item;
+      this.pending.set({
+        item,
+        label: input.label,
+        type: input.kind === "url" ? "url" : "text",
+        value: input.initial?.(ed.editor) ?? "",
+        removeLabel: input.removeLabel && item.isActive?.(ed.editor) ? input.removeLabel : "",
+      });
       return;
     }
     item.run(ed.editor);
+  }
+
+  setInput(event: Event): void {
+    const p = this.pending();
+    if (p) this.pending.set({ ...p, value: (event.target as HTMLInputElement).value });
+  }
+
+  applyInput(event: Event): void {
+    event.preventDefault();
+    const p = this.pending();
+    const ed = this.editor();
+    if (!p || !ed) return;
+    const value = p.value.trim();
+    this.closeInput();
+    if (value) p.item.runWith?.(ed.editor, value);
+  }
+
+  removeInput(): void {
+    const p = this.pending();
+    const ed = this.editor();
+    this.closeInput();
+    if (p && ed) p.item.run(ed.editor);
+  }
+
+  cancelInput(): void {
+    this.closeInput();
+  }
+
+  onInputKey(event: KeyboardEvent): void {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      this.closeInput();
+    } else if (event.key === "Enter" && (event.target as HTMLElement).tagName === "INPUT") {
+      this.applyInput(event);
+    }
+  }
+
+  private closeInput(): void {
+    this.pending.set(null);
+    this.editor()?.editor.commands.focus();
   }
 
   /** Arrow keys, Home and End move between toolbar buttons (the ARIA toolbar pattern). */
