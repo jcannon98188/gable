@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { messageId } from "@gable/core/tooling";
+import { messageId, parseMessage } from "@gable/core/tooling";
 import { describe, expect, it } from "vitest";
 import { bakeSource, dynamicCalls } from "./bake.js";
 import { readCatalogFile, writeCatalogs } from "./catalogs.js";
@@ -153,6 +153,16 @@ describe("character references (TASK-92)", () => {
     const fr = bake(src, { [id("if a < b && {0}", "d")]: "si a < b &lt; {0}", [id("1 < 2", "")]: "un < deux" });
     expect(fr.code).toContain("<p>si a &lt; b &amp;lt; {{ x }}</p>");
     expect(fr.code).toContain('title="un &lt; deux"');
+  });
+
+  it("keeps a decoded brace literal: a reference to { or } is text, not a placeholder", () => {
+    const braces = 'export const t = html`<p i18n="d">use &#123;name&#125; and &#123;0&#125; with {{ x }}</p>`;';
+    const m = extractFromSource(braces, "a.ts");
+    expect(m).toHaveLength(1);
+    // Only the real expression is a placeholder; the decoded braces are escaped in the message.
+    expect(m[0]!.message).toBe("use \\{name\\} and \\{0\\} with {0}");
+    expect(m[0]!.placeholders).toEqual(["x"]);
+    expect(parseMessage(m[0]!.message)).toEqual(["use {name} and {0} with ", { kind: "arg", name: "0" }]);
   });
 });
 
