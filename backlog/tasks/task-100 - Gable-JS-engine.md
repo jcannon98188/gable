@@ -1,9 +1,11 @@
 ---
 id: TASK-100
 title: Gable JS engine
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-07T22:36:00Z'
+updated_date: '2026-11-07T22:41:00Z'
 labels:
   - ready-for-agent
 dependencies: []

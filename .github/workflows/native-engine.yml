@@ -1,0 +1,33 @@
+name: Native engine
+on:
+  push:
+    branches: [main]
+    paths: ["native/engine/**", ".github/workflows/native-engine.yml"]
+  pull_request:
+    paths: ["native/engine/**", ".github/workflows/native-engine.yml"]
+jobs:
+  build-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: native/engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: native/engine
+      - run: cargo build --workspace --locked
+      - run: cargo test --workspace --locked
+      - name: Cache test262 at the pinned commit
+        uses: actions/cache@v4
+        with:
+          path: native/engine/test262
+          key: test262-${{ hashFiles('native/engine/crates/gable-js-test262/PIN') }}
+      - run: cargo run --release -p gable-js-test262 --bin test262 -- fetch
+      - name: test262 against the QuickJS-NG baseline
+        run: cargo run --release -p gable-js-test262 --bin test262 -- run --engine quickjs
