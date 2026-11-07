@@ -114,9 +114,14 @@ export async function captureLive(port: number, frame: FrameRect, shellOrigins: 
     if (!page) throw new Error("The Designer window is not among the CDP targets on that port.");
     const sessionId = await attach(page);
     const { rect, scale } = frame;
+    // The capture is in device pixels: on a scaled display (150%) the window's own pixel ratio would enlarge it again.
+    const shellDpr = await cdp
+      .send<{ result?: { value?: unknown } }>("Runtime.evaluate", { expression: "devicePixelRatio", returnByValue: true }, sessionId)
+      .then((r) => (typeof r.result?.value === "number" && r.result.value > 0 ? r.result.value : 1))
+      .catch(() => 1);
     const { data } = await cdp.send<{ data: string }>(
       "Page.captureScreenshot",
-      { format: "png", captureBeyondViewport: true, clip: { x: rect.x, y: rect.y, width: rect.width, height: rect.height, scale: scale > 0 ? 1 / scale : 1 } },
+      { format: "png", captureBeyondViewport: true, clip: { x: rect.x, y: rect.y, width: rect.width, height: rect.height, scale: 1 / ((scale > 0 ? scale : 1) * shellDpr) } },
       sessionId,
     );
     return { data, method: "cdp-clip", note: `Live frame, clipped from the Designer window over CDP${scale !== 1 ? ` and scaled from ${Math.round(scale * 100)}% back to 100%` : ""}.` };

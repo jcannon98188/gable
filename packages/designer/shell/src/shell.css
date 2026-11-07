@@ -858,6 +858,10 @@ input.fld::placeholder {
   color: var(--err);
   font-size: 12px;
 }
+/* --d-dim is too faint on the red tint over the light canvas (under 4.5:1). */
+.compile-banner .dim {
+  color: var(--d-muted);
+}
 .compile-text {
   display: flex;
   flex: 1 1 auto;

@@ -151,6 +151,11 @@ try {
     await compileError(tailwind, '<h1 class="text-2xl font-semibold tracking-tight p-8">', '<h1 class="text-2xl {{ dialogOpen() }}">', "main h1");
   } else {
     const appFile = join(project, "src/components/todo-app.ts");
+    // The frame layout is saved per project, so a window that ran another check may open with several frames: start from one.
+    for (let n = (await frames()).length; n > 1; n--) {
+      await ev(`[...document.querySelectorAll("button[aria-label^='Close ']")].filter(b => !b.disabled).pop()?.click()`);
+      await until(async () => (await frames()).length === n - 1, "an extra frame closed");
+    }
     const f = await first();
 
     // --- AC2: Back and Forward ----------------------------------------------------------------------------------------------
