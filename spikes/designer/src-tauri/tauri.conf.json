@@ -1,0 +1,8 @@
+{
+  "productName": "Gable Designer (spike)",
+  "version": "0.0.0",
+  "identifier": "dev.gable.designer.spike",
+  "build": { "frontendDist": "../shell" },
+  "app": { "windows": [], "security": { "csp": null } },
+  "bundle": { "active": false, "icon": ["icons/icon.ico"] }
+}
