@@ -33,9 +33,25 @@ export class TailwindState {
 
   /** The state variants being edited (`hover`, `dark`...), in the order they are written. */
   states = signal<string[]>([]);
+  /** A breakpoint chosen in the Style tab. Otherwise the selected frame's width decides; changing frame goes back to following it. */
+  pinned = signal<string | null>(null);
   breakpoint = computed(() => {
-    const b = this.state.frames.selectedBreakpoint();
+    const b = this.pinned() ?? this.state.frames.selectedBreakpoint();
     return b === "base" ? null : b;
+  });
+  unpinOnResize = effect(() => {
+    this.state.frames.selectedBreakpoint();
+    this.state.frames.selectedId();
+    untracked(() => this.pinned.set(null));
+  });
+  pin(name: string): void {
+    this.pinned.set(name === this.state.frames.selectedBreakpoint() ? null : name);
+  }
+  /** Tokens written since this element was selected: the panel marks them as new. */
+  written = signal<string[]>([]);
+  forgetWritten = effect(() => {
+    this.state.picked()?.node.start;
+    untracked(() => this.written.set([]));
   });
   breakpoints = computed<Breakpoint[]>(() => this.enabled()?.breakpoints ?? []);
 
@@ -124,6 +140,8 @@ export class TailwindState {
     }
     this.notice.set(null);
     this.clearPreview();
+    const before = new Set(this.classes().split(/\s+/));
+    this.written.update((w) => [...w, ...plan.classes.split(/\s+/).filter((c) => c && !before.has(c))]);
     await this.edit.edit((target) => (plan.classes === "" ? { op: "removeAttr", target, name: "class" } : { op: "setAttr", target, name: "class", value: plan.classes }));
     return true;
   }

@@ -1,139 +1,102 @@
-// The page-mode UI: a URL bar and scenario picker above the canvas, the route tree (with add and edit, written back to the
-// route config), and the mocked HTTP traffic. Like the panels, templates only read signals; the components turn the state
-// into display-ready rows in `computed`s.
+// The page-mode UI: the Routes tab (route tree with add and edit written back to the route config, the scenario picker, the
+// active scenario's mocks) and the HTTP tab of the drawer (the mocked traffic). The URL bar lives in the canvas toolbar
+// (see DeviceBar). Like the panels, templates only read signals; the components turn the state into display-ready rows in `computed`s.
 import { computed, effect, html, inject, signal, untracked } from "@gable/core";
-import { UiBadge } from "../components/ui/badge.js";
 import { UiButton } from "../components/ui/button.js";
+import { UiDialog } from "../components/ui/dialog.js";
 import { UiSelect } from "../components/ui/select.js";
+import { UiTooltip } from "../components/ui/tooltip.js";
+import { UiTree, type TreeNode as UiTreeNode } from "../components/ui/tree.js";
+import { UiIcon } from "../lib/ui/icon.js";
 import { DesignerState } from "./designer-state.js";
 import { PageState, type RouteRow } from "./page-state.js";
 
-/** The URL bar and the scenario picker. Shown in page mode only. */
-export class PageBar {
-  static meta = {
-    selector: "app-page-bar",
-    host: { class: "block" },
-    imports: [UiButton, UiSelect],
-    template: html`
-      @if (shown()) {
-        <div class="flex items-center gap-2 border-b px-2 py-1.5">
-          <input
-            class="h-8 min-w-0 flex-1 rounded-md border border-input bg-transparent px-3 font-mono text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            aria-label="URL"
-            spellcheck="false"
-            [value]="page.urlText()"
-            [disabled]="!page.hasRouter()"
-            (input)="typed($event.currentTarget.value)"
-            (keydown)="onKeydown($event.key)"
-            (blur)="page.editing.set(false)"
-          />
-          <button uiButton size="sm" variant="outline" [disabled]="!page.hasRouter()" (click)="page.go()">Go</button>
-          <ui-select
-            triggerClass="h-8 w-64"
-            placeholder="Scenario"
-            [items]="page.scenarioItems()"
-            [(value)]="pick"
-          ></ui-select>
-        </div>
-      }
-    `,
-  };
-  state = inject(DesignerState);
-  page = inject(PageState);
-  shown = computed(() => this.state.target().kind === "page");
-  /** The picker's two-way value, kept in step with the page's scenario in both directions. */
-  pick = signal("none");
-  follow = effect(() => {
-    const current = this.page.scenarioValue();
-    untracked(() => this.pick.set(current));
-  });
-  choose = effect(() => {
-    const picked = this.pick();
-    if (picked !== untracked(this.page.scenarioValue)) untracked(() => this.page.chooseScenario(picked));
-  });
-  typed(text: string): void {
-    this.page.editing.set(true);
-    this.page.urlText.set(text);
-  }
-  onKeydown(key: string): void {
-    if (key === "Enter") void this.page.go();
-  }
-}
-
 interface Row extends RouteRow {
-  indent: string;
   id: string;
-  level: number;
   editable: boolean;
   hasParams: boolean;
   label: string;
   detail: string;
 }
 
-/**
- * The route tree: every route of the config as written in the source, the active ones marked; clicking one navigates.
- * TODO(gable-ui): Tree. This is a flat list indented by depth, like the component tree, until the shell adopts the tree component.
- */
+/** The route tree, the scenario the page runs under, and that scenario's HTTP mocks. */
 export class RoutesPanel {
   static meta = {
     selector: "app-routes-panel",
-    host: { class: "block" },
-    imports: [UiButton],
+    host: { class: "side" },
+    imports: [UiButton, UiDialog, UiIcon, UiSelect, UiTooltip, UiTree],
     template: html`
-      <div class="flex flex-col gap-2 p-2 text-sm">
-        <div class="flex items-center justify-between gap-2">
-          <span class="truncate text-xs text-muted-foreground">{{ where() }}</span>
-          <button uiButton size="sm" variant="outline" [disabled]="!canEdit()" (click)="addRoot()">Add route</button>
+      <div class="min-h-0 flex-1 overflow-auto">
+        <div class="sec">
+          <div class="sec-h">
+            Route tree
+            <span class="spacer"></span>
+            <button uiButton variant="ghost" size="icon" class="btn sm icon" uiTooltip="Add route" aria-label="Add route" [disabled]="!canEdit()" (click)="addRoot()"><svg uiIcon="plus" class="ico-sm"></svg></button>
+          </div>
+          @if (empty()) {
+            <div class="empty">This app has no router, or it has not started yet.</div>
+          } @else {
+            <ui-tree class="route-tree" [nodes]="nodes()" [(expanded)]="expanded" [(selected)]="selected" selectionMode="single" label="Routes" (activated)="activate($event)" (action)="onAction($event)"></ui-tree>
+          }
+          @if (saved()) {
+            <p class="callout" role="status">{{ saved() }}</p>
+          }
         </div>
-        <div class="flex flex-col gap-px" role="tree" aria-label="Routes">
-          @for (row of rows(); track row.id) {
-            <div class="flex items-center gap-1" role="treeitem" [attr.aria-level]="row.level" [attr.aria-selected]="row.active" [style.padding-left]="row.indent">
-              <button class="flex min-w-0 flex-1 items-center gap-2 rounded-sm px-2 py-1 text-left hover:bg-accent" [class.bg-accent]="row.active" (click)="open(row)">
-                <span class="truncate font-mono">{{ row.label }}</span>
-                <span class="truncate text-xs text-muted-foreground">{{ row.detail }}</span>
-              </button>
-              @if (row.editable) {
-                <button uiButton size="sm" variant="ghost" class="h-7 px-2" aria-label="Edit route" (click)="edit(row)">Edit</button>
-                <button uiButton size="sm" variant="ghost" class="h-7 px-2" aria-label="Add child route" (click)="add(row.at)">+</button>
-              }
+        <div class="sec">
+          <div class="sec-h">Scenario</div>
+          <div class="pad">
+            <ui-select triggerClass="fld-select w-full" placeholder="Scenario" [items]="page.scenarioItems()" [(value)]="pick"></ui-select>
+          </div>
+        </div>
+        <div class="sec">
+          <div class="sec-h">
+            Mock HTTP
+            <span class="count">{{ mockCount() }}</span>
+          </div>
+          @if (noMocks()) {
+            <div class="empty">{{ mockHint() }}</div>
+          }
+          @for (m of mocks(); track m.index) {
+            <div class="card mock">
+              <span class="chip mono">{{ m.method }}</span>
+              <span class="mono truncate flex-1" [attr.title]="m.url">{{ m.url }}</span>
+              <span class="dim">{{ m.hits }}</span>
             </div>
           }
         </div>
-        @if (empty()) {
-          <p class="text-muted-foreground">This app has no router, or it has not started yet.</p>
-        }
-        @if (saved()) {
-          <p class="text-xs text-muted-foreground">{{ saved() }}</p>
-        }
-        @if (form()) {
-          <form class="flex flex-col gap-2 rounded-md border p-2" (submit)="submit($event)">
-            <h3 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ formTitle() }}</h3>
-            <label class="flex flex-col gap-0.5 text-xs">Path
-              <input class="h-8 rounded-md border border-input bg-transparent px-2 font-mono text-sm" name="path" [value]="fPath()" (input)="fPath.set($event.currentTarget.value)" />
-            </label>
-            <label class="flex flex-col gap-0.5 text-xs">Component
-              <select class="h-8 rounded-md border border-input bg-transparent px-2 text-sm" name="component" (change)="fComponent.set($event.currentTarget.value)">
-                @for (c of componentOptions(); track c.value) {
-                  <option [value]="c.value" [selected]="c.selected">{{ c.label }}</option>
-                }
-              </select>
-            </label>
-            <label class="flex flex-col gap-0.5 text-xs">Title
-              <input class="h-8 rounded-md border border-input bg-transparent px-2 text-sm" name="title" [value]="fTitle()" (input)="fTitle.set($event.currentTarget.value)" />
-            </label>
-            <label class="flex flex-col gap-0.5 text-xs">Redirect to
-              <input class="h-8 rounded-md border border-input bg-transparent px-2 font-mono text-sm" name="redirectTo" [value]="fRedirect()" (input)="fRedirect.set($event.currentTarget.value)" />
-            </label>
-            @if (error()) {
-              <p class="text-xs text-destructive" role="alert">{{ error() }}</p>
-            }
-            <div class="flex gap-2">
-              <button uiButton size="sm" type="submit">Save to source</button>
-              <button uiButton size="sm" variant="outline" type="button" (click)="page.openForm(null)">Cancel</button>
-            </div>
-          </form>
-        }
       </div>
+      <div class="side-foot mono truncate" [attr.title]="where()">{{ where() }}</div>
+
+      <ui-dialog [(open)]="formOpen" [heading]="formTitle()" description="Written to the route config in the source file." contentClass="dlg">
+        <form (submit)="submit($event)">
+          <label class="form-row"><span>Path</span>
+            <input class="fld mono" name="path" placeholder="products/:id" [value]="fPath()" (input)="fPath.set($event.currentTarget.value)" />
+          </label>
+          <label class="form-row"><span>Component</span>
+            <select class="fld" name="component" (change)="fComponent.set($event.currentTarget.value)">
+              @for (c of componentOptions(); track c.value) {
+                <option [value]="c.value" [selected]="c.selected">{{ c.label }}</option>
+              }
+            </select>
+          </label>
+          <label class="form-row"><span>Title</span>
+            <input class="fld" name="title" [value]="fTitle()" (input)="fTitle.set($event.currentTarget.value)" />
+          </label>
+          <label class="form-row"><span>Redirect to</span>
+            <input class="fld mono" name="redirectTo" [value]="fRedirect()" (input)="fRedirect.set($event.currentTarget.value)" />
+          </label>
+          <div class="form-row"><span>Parent</span><span class="mono">{{ parentText() }}</span></div>
+          <pre class="code card route-preview">{{ preview() }}</pre>
+          <p class="dim route-note">Lazy loading and guards are not offered here yet: write those in the route config.</p>
+          @if (error()) {
+            <p class="callout err" role="alert">{{ error() }}</p>
+          }
+          <div class="flex justify-end gap-2">
+            <button uiButton size="sm" variant="outline" class="btn" type="button" (click)="page.openForm(null)">Cancel</button>
+            <button uiButton size="sm" class="btn" type="submit">Save to source</button>
+          </div>
+        </form>
+      </ui-dialog>
     `,
   };
   state = inject(DesignerState);
@@ -150,21 +113,113 @@ export class RoutesPanel {
   canEdit = computed(() => this.page.config() !== null);
   empty = computed(() => this.page.rows().length === 0);
   where = computed(() => this.page.config()?.file ?? "route config not found in source");
+
+  /** The dialog's two-way open state, in step with the page's form. */
+  formOpen = signal(false);
+  followForm = effect(() => {
+    const form = this.page.form();
+    untracked(() => {
+      if (form?.mode === "add" && !this.formOpen()) {
+        this.fPath.set("");
+        this.fTitle.set("");
+        this.fRedirect.set("");
+        this.fComponent.set("");
+      }
+      this.formOpen.set(form !== null);
+    });
+  });
+  closeForm = effect(() => {
+    const open = this.formOpen();
+    if (!open && untracked(this.page.form) !== null) untracked(() => this.page.openForm(null));
+  });
+
+  /** The picker's two-way value, kept in step with the page's scenario in both directions. */
+  pick = signal("none");
+  follow = effect(() => {
+    const current = this.page.scenarioValue();
+    untracked(() => this.pick.set(current));
+  });
+  choose = effect(() => {
+    const picked = this.pick();
+    if (picked !== untracked(this.page.scenarioValue)) untracked(() => this.page.chooseScenario(picked));
+  });
+
   rows = computed<Row[]>(() =>
     this.page.rows().map((r) => ({
       ...r,
-      indent: `${r.depth * 14 + 4}px`,
       id: `${r.key}|${r.path}|${r.depth}`,
-      level: r.depth + 1,
       editable: r.at !== null && this.canEdit(),
       hasParams: r.url.includes(":"),
       label: r.path,
       detail: r.redirectTo ? `→ ${r.redirectTo}` : r.lazy ? "lazy children" : r.component,
     })),
   );
-  formTitle = computed(() => {
+  /** Rows come flat, parents first, with a depth: the tree is rebuilt from them. */
+  nodes = computed<UiTreeNode[]>(() => {
+    const roots: UiTreeNode[] = [];
+    const stack: UiTreeNode[] = [];
+    for (const row of this.rows()) {
+      const node: UiTreeNode = {
+        id: row.id,
+        label: row.label,
+        description: row.detail,
+        ...(row.editable
+          ? {
+              actions: [
+                { id: "edit", label: `Edit route ${row.label}`, text: "Edit" },
+                { id: "add", label: `Add a route under ${row.label}`, text: "+" },
+              ],
+            }
+          : {}),
+      };
+      stack.length = row.depth;
+      const parent = stack[row.depth - 1];
+      if (parent) parent.children = [...(parent.children ?? []), node];
+      else roots.push(node);
+      stack[row.depth] = node;
+    }
+    return roots;
+  });
+  expanded = signal<string[]>([]);
+  selected = signal<string[]>([]);
+  #seen = new Set<string>();
+  /** Branches start open; collapsing one afterwards is the user's call. The active route is the tree's selection. */
+  openNew = effect(() => {
+    const fresh = this.rows().filter((r) => !this.#seen.has(r.id));
+    for (const r of fresh) this.#seen.add(r.id);
+    if (fresh.length) untracked(() => this.expanded.update((e) => [...e, ...fresh.map((r) => r.id)]));
+  });
+  markActive = effect(() => {
+    const active = this.rows().filter((r) => r.active);
+    const last = active[active.length - 1];
+    untracked(() => this.selected.set(last ? [last.id] : []));
+  });
+
+  mocks = computed(() => {
+    const log = this.page.httpLog();
+    return (this.page.scenario()?.mocks ?? []).map((m, index) => {
+      const hits = log.filter((e) => e.mock === index).length;
+      return { index, method: m.method, url: m.url, hits: `${hits} hit${hits === 1 ? "" : "s"}` };
+    });
+  });
+  mockCount = computed(() => this.mocks().length);
+  noMocks = computed(() => this.mocks().length === 0);
+  mockHint = computed(() => (this.page.scenario() ? "This scenario mocks no requests." : "No scenario: the app talks to its real backend."));
+
+  formTitle = computed(() => (this.page.form()?.mode === "edit" ? "Edit route" : "Add route"));
+  parentText = computed(() => {
     const f = this.page.form();
-    return f?.mode === "edit" ? `Edit route ${f.at.join(".")}` : "Add route";
+    if (!f) return "";
+    const at = f.mode === "add" ? f.parent : f.at.slice(0, -1);
+    if (at.length === 0) return "(top level)";
+    return this.page.rows().find((r) => r.at?.join(".") === at.join("."))?.path ?? at.join(".");
+  });
+  preview = computed(() => {
+    const parts = [`path: ${JSON.stringify(this.fPath().trim())}`];
+    if (this.fComponent()) parts.push(`component: ${this.fComponent()}`);
+    if (this.fTitle()) parts.push(`title: ${JSON.stringify(this.fTitle())}`);
+    if (this.fRedirect().trim()) parts.push(`redirectTo: ${JSON.stringify(this.fRedirect().trim())}`);
+    return `{ ${parts.join(", ")} }`;
   });
   componentOptions = computed(() => {
     const chosen = this.fComponent();
@@ -172,6 +227,18 @@ export class RoutesPanel {
     const all = chosen && !names.includes(chosen) ? [chosen, ...names] : names;
     return [{ value: "", label: "(none)", selected: chosen === "" }, ...all.map((n) => ({ value: n, label: n, selected: n === chosen }))];
   });
+
+  activate(node: UiTreeNode): void {
+    const row = this.rows().find((r) => r.id === node.id);
+    if (row) this.open(row);
+  }
+
+  onAction(e: { node: UiTreeNode; action: string }): void {
+    const row = this.rows().find((r) => r.id === e.node.id);
+    if (!row) return;
+    if (e.action === "edit") this.edit(row);
+    else this.add(row.at);
+  }
 
   /** A route with `:param` segments cannot be navigated to as it is: it goes to the URL bar for the user to fill in. */
   open(row: Row): void {
@@ -234,40 +301,19 @@ export class HttpPanel {
   static meta = {
     selector: "app-http-panel",
     host: { class: "block" },
-    imports: [UiBadge],
     template: html`
-      <div class="flex flex-col gap-3 p-2 text-sm">
-        <p class="text-muted-foreground">{{ summary() }}</p>
-        @if (hasMocks()) {
-          <section class="rounded-md border">
-            <header class="border-b px-2 py-1.5 font-medium">Mocks</header>
-            <ul class="divide-y">
-              @for (m of mocks(); track m.index) {
-                <li class="flex items-center gap-2 px-2 py-1.5">
-                  <span uiBadge variant="outline">{{ m.method }}</span>
-                  <span class="truncate font-mono text-xs">{{ m.url }}</span>
-                  <span class="ml-auto text-xs text-muted-foreground">{{ m.hits }}</span>
-                </li>
-              }
-            </ul>
-          </section>
-        }
-        <section class="rounded-md border">
-          <header class="border-b px-2 py-1.5 font-medium">Requests</header>
-          <ul class="divide-y">
-            @for (r of requests(); track r.key) {
-              <li class="flex items-center gap-2 px-2 py-1.5">
-                <span uiBadge [variant]="r.variant">{{ r.outcome }}</span>
-                <span class="font-mono text-xs">{{ r.method }}</span>
-                <span class="truncate font-mono text-xs">{{ r.url }}</span>
-              </li>
-            }
-          </ul>
-          @if (noRequests()) {
-            <p class="p-2 text-muted-foreground">None yet.</p>
-          }
-        </section>
-      </div>
+      <div class="dbar"><span class="dim">{{ summary() }}</span></div>
+      <div class="tbl-row http-row dim"><span>Outcome</span><span>Method</span><span>URL</span></div>
+      @for (r of requests(); track r.key) {
+        <div class="tbl-row http-row">
+          <span class="chip" [class.err]="r.bad" [class.ok]="!r.bad">{{ r.outcome }}</span>
+          <span class="mono">{{ r.method }}</span>
+          <span class="mono truncate" [attr.title]="r.url">{{ r.url }}</span>
+        </div>
+      }
+      @if (noRequests()) {
+        <div class="empty"><strong>No requests yet</strong>Calls the app makes under a scenario appear here.</div>
+      }
     `,
   };
   page = inject(PageState);
@@ -275,21 +321,16 @@ export class HttpPanel {
   summary = computed(() => {
     if (this.state.target().kind === "component") return this.state.sceneInfo() ? "Component mode: the scene's HTTP mocks answer its calls." : "";
     const s = this.page.scenario();
-    if (!s) return "No scenario: the app talks to its real backend. Pick a scenario in the bar above the canvas to mock it.";
+    if (!s) return "No scenario: the app talks to its real backend. Pick a scenario in the Routes tab to mock it.";
     return `Scenario ${s.name}: ${s.mocks.length} mock${s.mocks.length === 1 ? "" : "s"}. The app's HTTP calls go to them, not the network.`;
   });
-  mocks = computed(() => {
-    const log = this.page.httpLog();
-    return (this.page.scenario()?.mocks ?? []).map((m, index) => ({ index, method: m.method, url: m.url, hits: log.filter((e) => e.mock === index).length }));
-  });
-  hasMocks = computed(() => this.mocks().length > 0);
   requests = computed(() =>
     this.page.httpLog().map((e, i) => ({
       key: `${i}:${e.at}`,
       method: e.method,
       url: e.url,
       outcome: e.mock < 0 ? "no mock" : e.outcome,
-      variant: (e.mock < 0 || e.outcome === "network" || Number(e.outcome) >= 400 ? "destructive" : "secondary") as "destructive" | "secondary",
+      bad: e.mock < 0 || e.outcome === "network" || Number(e.outcome) >= 400,
     })),
   );
   noRequests = computed(() => this.page.httpLog().length === 0);

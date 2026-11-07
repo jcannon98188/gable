@@ -101,3 +101,1032 @@
   }
 }
 /* /gable-ui:theme-neutral */
+
+/*
+ * Designer chrome (TASK-56.8). Everything below is the shell's own: the design's palette, mapped onto gable-ui's variables so
+ * gable-ui components pick it up, plus the tokens gable-ui has no name for (--sel, ok/warn/err and their tints, the canvas dot
+ * grid). This stylesheet only loads in the shell, so previewed apps never see it. Webview-safe CSS only: flex, grid, variables
+ * and transforms; no backdrop-filter, container queries or view transitions. Kept outside the gable-ui marker block on purpose.
+ * The rules are unlayered, so they win over Tailwind's utilities on the same element.
+ */
+:root {
+  color-scheme: light;
+  --d-bg: #e9e9ec;
+  --d-panel: #fff;
+  --d-panel2: #f7f7f8;
+  --d-raised: #efeff2;
+  --d-hover: #f3f3f5;
+  --d-border: #e0e0e5;
+  --d-fg: #18181b;
+  --d-muted: #52525b;
+  --d-dim: #666672;
+  --d-seg-on: #fff;
+  --d-accent: #3a56d4;
+  --d-accent-bg: rgb(58 86 212 / 0.1);
+  --d-accent-fg: #fff;
+  --sel: #4f6df5;
+  --ok: #15803d;
+  --warn: #92580a;
+  --err: #b91c1c;
+  --ok-bg: rgb(21 128 61 / 0.12);
+  --warn-bg: rgb(146 88 10 / 0.12);
+  --err-bg: rgb(185 28 28 / 0.1);
+  --canvas: #e2e2e7;
+  --dot: #cbcbd3;
+  --c1: #2f4bc4;
+  --c2: #7c3aed;
+  --c3: #15803d;
+  --c4: #a8570a;
+  --d-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+.dark {
+  color-scheme: dark;
+  --d-bg: #0d0d0f;
+  --d-panel: #161618;
+  --d-panel2: #1b1b1e;
+  --d-raised: #242428;
+  --d-hover: #202024;
+  --d-border: #2a2a30;
+  --d-fg: #ededf0;
+  --d-muted: #a6a6b0;
+  --d-dim: #8c8c98;
+  --d-seg-on: #3d3d45;
+  --d-accent: #7c9cff;
+  --d-accent-bg: rgb(124 156 255 / 0.16);
+  --d-accent-fg: #0d0d0f;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --err: #f87171;
+  --ok-bg: rgb(74 222 128 / 0.13);
+  --warn-bg: rgb(251 191 36 / 0.14);
+  --err-bg: rgb(248 113 113 / 0.14);
+  --canvas: #101012;
+  --dot: #27272c;
+  --c1: #8fb0ff;
+  --c2: #c4a7ff;
+  --c3: #8de2b0;
+  --c4: #f5c26b;
+}
+/* The mapping onto gable-ui. Same names in both themes, so components never need a dark: variant here. */
+:root,
+.dark {
+  --background: var(--d-panel);
+  --foreground: var(--d-fg);
+  --card: var(--d-panel2);
+  --card-foreground: var(--d-fg);
+  --popover: var(--d-panel);
+  --popover-foreground: var(--d-fg);
+  --primary: var(--d-accent);
+  --primary-foreground: var(--d-accent-fg);
+  --secondary: var(--d-raised);
+  --secondary-foreground: var(--d-fg);
+  --muted: var(--d-raised);
+  --muted-foreground: var(--d-muted);
+  --accent: var(--d-hover);
+  --accent-foreground: var(--d-fg);
+  --destructive: var(--err);
+  --border: var(--d-border);
+  --input: var(--d-border);
+  --ring: var(--d-accent);
+  --radius: 6px;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+body {
+  margin: 0;
+  background: var(--d-bg);
+  color: var(--d-fg);
+  font: 12px/1.4 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+/* Keyboard first: anything focusable shows the ring, including plain buttons and native controls gable-ui does not own. */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.mono {
+  font-family: var(--d-mono);
+}
+.dim {
+  color: var(--d-dim);
+}
+.vsep {
+  align-self: center;
+  flex: none;
+  width: 1px;
+  height: 18px;
+  background: var(--d-border);
+}
+.spacer {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.ico {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+.ico-sm {
+  flex: none;
+  width: 12px;
+  height: 12px;
+}
+
+/* --- bars ---------------------------------------------------------------- */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 10px;
+  background: var(--d-panel);
+  border-bottom: 1px solid var(--d-border);
+}
+.logo {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--d-accent);
+  color: var(--d-accent-fg);
+  font-weight: 700;
+}
+.ctool {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 4px 8px;
+  background: var(--d-panel);
+  border-bottom: 1px solid var(--d-border);
+}
+.ctool.env {
+  min-height: 34px;
+  background: var(--d-panel2);
+}
+.crumb {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  background: var(--d-panel);
+  border-top: 1px solid var(--d-border);
+  color: var(--d-muted);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.crumb button.step {
+  border-radius: 3px;
+  padding: 0 3px;
+  font-family: var(--d-mono);
+  font-size: 11px;
+}
+.crumb button.step:hover {
+  color: var(--d-fg);
+  background: var(--d-hover);
+}
+.crumb .cur {
+  color: var(--d-fg);
+  font-weight: 600;
+}
+
+/* --- buttons, segments, chips, badges --------------------------------------- */
+.btn {
+  height: 28px;
+  gap: 6px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.btn.sm {
+  height: 24px;
+  padding: 0 6px;
+  font-size: 11px;
+}
+.btn.icon {
+  width: 28px;
+  padding: 0;
+}
+.btn.sm.icon {
+  width: 24px;
+  padding: 0;
+}
+.kbd {
+  padding: 0 4px;
+  border: 1px solid var(--d-border);
+  border-radius: 3px;
+  color: var(--d-dim);
+  font-family: var(--d-mono);
+  font-size: 10px;
+}
+/* A UiToggleGroup drawn as the design's segment. */
+/* UiToggleGroup passes its class input to its inner root, so .seg is the element holding the buttons. */
+.seg {
+  display: inline-flex;
+  gap: 0;
+  padding: 2px;
+  border-radius: 6px;
+  background: var(--d-raised);
+}
+.seg button {
+  flex: none;
+  min-width: 0;
+  white-space: nowrap;
+  height: 22px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--d-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.seg button:hover {
+  background: transparent;
+  color: var(--d-fg);
+}
+.seg button[data-state="on"],
+.seg button[aria-pressed="true"],
+.seg button[aria-checked="true"] {
+  background: var(--d-seg-on);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+  color: var(--d-fg);
+}
+.seg.small {
+  flex-wrap: wrap;
+}
+.seg.small button {
+  height: 20px;
+  padding: 0 6px;
+  font-size: 11px;
+}
+.seg.fill {
+  display: flex;
+  width: 100%;
+}
+.seg.fill button {
+  flex: 1 1 0;
+}
+.chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  max-width: 100%;
+  padding: 0 6px;
+  border: 1px solid var(--d-border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--d-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+button.chip:hover,
+label.chip:hover {
+  background: var(--d-hover);
+  color: var(--d-fg);
+}
+.chip.on {
+  border-color: transparent;
+  background: var(--d-accent-bg);
+  color: var(--d-accent);
+}
+.chip.ok {
+  border-color: transparent;
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+.chip.warn {
+  border-color: transparent;
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.chip.err {
+  border-color: transparent;
+  background: var(--err-bg);
+  color: var(--err);
+}
+.chip.ov {
+  border-color: var(--d-accent);
+  color: var(--d-accent);
+}
+.chip.off {
+  border-style: dashed;
+  color: var(--d-dim);
+  cursor: not-allowed;
+}
+label.chip:has(input:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--d-raised);
+  color: var(--d-muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+.count.err {
+  background: var(--err-bg);
+  color: var(--err);
+}
+.count.warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--d-dim);
+}
+.dot.ok {
+  background: var(--ok);
+}
+.dot.warn {
+  background: var(--warn);
+}
+.dot.err {
+  background: var(--err);
+}
+
+/* --- panels ---------------------------------------------------------------- */
+.side {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--d-panel);
+}
+/* A UiTabs drawn as the design's underlined panel tabs: the list stays put, the selected panel scrolls. */
+.ptabs,
+.ptabs > [data-part="root"] {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+}
+.ptabs [data-part="list"] {
+  display: flex;
+  flex: none;
+  justify-content: flex-start;
+  width: 100%;
+  height: 36px;
+  gap: 2px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--d-border);
+  border-radius: 0;
+  background: transparent;
+}
+.ptabs [data-part="trigger"] {
+  flex: none;
+  height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--d-muted);
+  font-size: 12px;
+}
+.ptabs [data-part="trigger"]:hover {
+  color: var(--d-fg);
+}
+.ptabs [data-part="trigger"][data-selected] {
+  border-color: transparent;
+  border-bottom-color: var(--d-accent);
+  background: transparent;
+  box-shadow: none;
+  color: var(--d-fg);
+}
+.ptabs [data-part="content"] {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+}
+.ptabs [data-part="content"][hidden] {
+  display: none;
+}
+.sec-h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  color: var(--d-dim);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.sec {
+  border-bottom: 1px solid var(--d-border);
+  padding-bottom: 6px;
+}
+.side-foot {
+  flex: none;
+  padding: 6px 10px;
+  border-top: 1px solid var(--d-border);
+  color: var(--d-dim);
+  font-size: 11px;
+}
+.empty {
+  padding: 14px 12px;
+  color: var(--d-muted);
+  text-align: center;
+}
+.empty strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--d-fg);
+  font-size: 12px;
+}
+.pad {
+  padding: 0 10px;
+}
+.tr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 24px;
+  padding: 0 10px;
+  color: var(--d-fg);
+  text-align: left;
+  white-space: nowrap;
+}
+.tr:hover {
+  background: var(--d-hover);
+}
+.tr.sel {
+  background: var(--d-accent-bg);
+  color: var(--d-accent);
+}
+.tr .trail {
+  margin-left: auto;
+}
+.mi {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 4px;
+  text-align: left;
+}
+.mi:hover {
+  background: var(--d-hover);
+}
+/* UiTree rows at the design's density. */
+ui-tree [role="treeitem"] {
+  min-height: 24px;
+  font-size: 12px;
+}
+ui-tree [role="treeitem"][aria-selected="true"] {
+  background: var(--d-accent-bg);
+  color: var(--d-accent);
+}
+.prop {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 2px 10px;
+}
+.prop > .l {
+  flex: none;
+  width: 62px;
+  overflow: hidden;
+  color: var(--d-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prop.overridden {
+  box-shadow: inset 2px 0 0 var(--d-accent);
+}
+.fld {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: var(--d-raised);
+  color: var(--d-fg);
+  font-size: 12px;
+  text-align: left;
+}
+input.fld,
+select.fld {
+  width: 100%;
+}
+select.fld {
+  padding: 0 4px;
+}
+.fld.ghost {
+  background: transparent;
+  border-color: var(--d-border);
+}
+.fld.none {
+  flex: none;
+}
+.fld:hover {
+  border-color: var(--d-border);
+}
+.fld:focus,
+.fld:focus-visible,
+.fld:focus-within {
+  border-color: var(--d-accent);
+  box-shadow: 0 0 0 3px var(--d-accent-bg);
+  outline: none;
+}
+input.fld::placeholder {
+  color: var(--d-dim);
+}
+.fld.ro {
+  border: 1px dashed var(--d-border);
+  background: transparent;
+  color: var(--d-dim);
+}
+.cls {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+  padding: 0 5px;
+  border: 1px solid var(--d-border);
+  border-radius: 4px;
+  font-family: var(--d-mono);
+  font-size: 11px;
+}
+.cls.new {
+  border-color: var(--d-accent);
+  color: var(--d-accent);
+}
+.cls.ro {
+  border-style: dashed;
+  color: var(--d-dim);
+}
+.cls.bp {
+  border-color: transparent;
+  background: var(--d-accent-bg);
+  color: var(--d-accent);
+}
+.cls button {
+  color: var(--d-dim);
+}
+.cls button:hover {
+  color: var(--d-fg);
+}
+.wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.sw {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border: 1px solid rgb(127 127 127 / 0.35);
+  border-radius: 3px;
+}
+.card {
+  border: 1px solid var(--d-border);
+  border-radius: 6px;
+  background: var(--d-panel2);
+}
+.callout {
+  margin: 6px 10px;
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--d-raised);
+  color: var(--d-muted);
+  font-size: 11.5px;
+}
+.callout.info {
+  background: var(--d-accent-bg);
+  color: var(--d-fg);
+}
+.callout.warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.callout.err {
+  background: var(--err-bg);
+  color: var(--err);
+}
+/* A UiSelect trigger at control height. */
+.fld-select {
+  height: 26px;
+  padding: 0 8px;
+  border-color: transparent;
+  border-radius: 5px;
+  background: var(--d-raised);
+  box-shadow: none;
+  font-size: 12px;
+}
+
+/* --- canvas ---------------------------------------------------------------- */
+.canvas {
+  background-color: var(--canvas);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.fh {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  margin-bottom: 6px;
+  color: var(--d-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.fh .name {
+  overflow: hidden;
+  border-radius: 3px;
+  color: var(--d-fg);
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+.fh .name:hover {
+  text-decoration: underline;
+}
+.fh.sel .name {
+  color: var(--d-accent);
+}
+.frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.3), 0 10px 30px rgb(0 0 0 / 0.25);
+}
+.frame.sel {
+  box-shadow: 0 0 0 2px var(--sel), 0 10px 30px rgb(0 0 0 / 0.25);
+}
+.canvas-msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--canvas);
+  text-align: center;
+}
+
+/* --- drawer ---------------------------------------------------------------- */
+.drawer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--d-panel);
+  border-top: 1px solid var(--d-border);
+}
+.dtabs {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+  padding: 0 8px;
+  background: var(--d-panel);
+  border-bottom: 1px solid var(--d-border);
+}
+.dtabs.collapsed {
+  border-top: 1px solid var(--d-border);
+  border-bottom: 0;
+}
+.dtabs [role="tab"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 8px;
+  border-bottom: 2px solid transparent;
+  color: var(--d-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.dtabs [role="tab"]:hover {
+  color: var(--d-fg);
+}
+.dtabs [role="tab"][aria-selected="true"] {
+  border-bottom-color: var(--d-accent);
+  color: var(--d-fg);
+}
+.dtabs.collapsed [role="tab"][aria-selected="true"] {
+  border-bottom-color: transparent;
+}
+.dbody {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+}
+.dbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 2px 10px;
+  border-bottom: 1px solid var(--d-border);
+}
+.code {
+  margin: 0;
+  padding: 6px 0;
+  color: var(--d-fg);
+  font: 11px/1.65 var(--d-mono);
+  white-space: pre;
+}
+.code .ln {
+  display: block;
+  padding: 0 10px 0 0;
+}
+.code .n {
+  display: inline-block;
+  width: 36px;
+  padding-right: 10px;
+  color: var(--d-dim);
+  text-align: right;
+  user-select: none;
+}
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  height: 100%;
+}
+.split > * {
+  min-width: 0;
+  overflow: auto;
+}
+.split > * + * {
+  border-left: 1px solid var(--d-border);
+}
+.tbl-row {
+  display: grid;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+  padding: 2px 10px;
+  border-bottom: 1px solid var(--d-border);
+}
+.bar-mini {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--d-accent);
+}
+/* UiVirtualTable at the design's density. */
+ui-virtual-table {
+  font-size: 12px;
+}
+
+/* --- dialogs, popovers, toasts ----------------------------------------------- */
+.dlg {
+  gap: 12px;
+  padding: 16px;
+  border-radius: 10px;
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.4);
+  font-size: 12px;
+}
+.dlg h2 {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.dlg p {
+  font-size: 12px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.form-row > span:first-child {
+  color: var(--d-muted);
+}
+.drop {
+  padding: 18px;
+  border: 1px dashed var(--d-border);
+  border-radius: 8px;
+  color: var(--d-muted);
+  text-align: center;
+}
+.pop {
+  width: 280px;
+  padding: 0;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.scale {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-height: 180px;
+  overflow: auto;
+}
+.scale button.swatch {
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgb(127 127 127 / 0.3);
+  border-radius: 3px;
+}
+[data-toaster-list] li {
+  padding: 10px 12px;
+  font-size: 12px;
+}
+/* The palette's rows at the design's density. */
+.palette [role="option"] {
+  min-height: 28px;
+  font-size: 12px;
+}
+
+/* --- the smaller pieces ------------------------------------------------------- */
+.btn-plain {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  color: var(--d-dim);
+}
+.btn-plain:hover {
+  background: var(--d-hover);
+  color: var(--d-fg);
+}
+.palette-btn {
+  width: 210px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.palette-btn > span:first-of-type {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.palette-btn .kbd {
+  flex: none;
+}
+.ctool .fld-zoom {
+  flex: none;
+  width: 72px;
+}
+.ctool .fld-device {
+  flex: none;
+  width: 170px;
+}
+.ctool .fld-num {
+  flex: none;
+  width: 64px;
+}
+.ctool .fld-dpr {
+  flex: none;
+  width: 52px;
+}
+.ctool .fld-scheme {
+  flex: none;
+  width: 72px;
+}
+.ctool .fld-preset {
+  flex: none;
+  width: 110px;
+}
+.scene {
+  height: 26px;
+}
+.mi[disabled] {
+  color: var(--d-dim);
+  cursor: not-allowed;
+}
+.mi[disabled]:hover {
+  background: transparent;
+}
+.inj-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 10px;
+  min-width: 0;
+}
+.insp-code {
+  margin-top: 4px;
+  padding: 6px 8px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.mock {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 10px 4px;
+  padding: 6px;
+}
+.route-tree {
+  padding: 0 4px;
+}
+.route-preview {
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  white-space: pre-wrap;
+}
+.route-note {
+  margin-bottom: 8px;
+}
+.http-row {
+  grid-template-columns: 90px 70px minmax(0, 1fr);
+}
+.hmr-row {
+  grid-template-columns: 60px minmax(0, 1fr) minmax(0, 2fr);
+}
+.patch {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+}
+.follow {
+  padding-top: 2px;
+  font-size: 11px;
+}
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 2px 10px 6px;
+  padding: 6px;
+}
+.cls.option:hover {
+  background: var(--d-hover);
+}
+.bind-list {
+  max-height: 180px;
+  overflow: auto;
+  border-top: 1px solid var(--d-border);
+}
+.msg-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: min(460px, 100%);
+  padding: 14px;
+  text-align: left;
+}
+.msg-card > :last-child {
+  align-self: stretch;
+}
+.msg-code {
+  align-self: stretch;
+  max-height: 160px;
+  padding: 6px 8px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.fld input:focus,
+.fld input:focus-visible,
+[data-part="input"]:focus-visible,
+[role="combobox"]:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+/* gable-ui's tabs list panels in the order they mount; Routes only exists in Page mode and comes first. */
+.ptabs [data-part="trigger"][data-value="routes"] {
+  order: -1;
+}
+.fld-select:focus,
+.fld-select:focus-visible {
+  border-color: var(--d-accent);
+  box-shadow: 0 0 0 3px var(--d-accent-bg);
+  outline: none;
+}

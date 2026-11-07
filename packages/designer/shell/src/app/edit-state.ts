@@ -1,12 +1,16 @@
 // Edit state: the selected element's editable model, the palette, and the undo history. Every edit is a request to the backend,
 // which patches the source file; the project's Vite then hot-updates the canvas and this state reselects the same element.
 import { computed, effect, inject, signal, untracked } from "@gable/core";
+import { ToastService } from "../components/ui/toast.js";
 import type { DescribeResult, EditOp, EditResult, HistoryInfo, NodeModel, PaletteEntry, TargetRef } from "../../../src/server/edit/types.js";
 import { DesignerState } from "./designer-state.js";
 
 export class EditState {
   static scope = "root";
   state = inject(DesignerState);
+  toast = inject(ToastService);
+  /** Set by the shell: where a toast's Open code goes (the drawer's Code tab). */
+  onShowPatch: () => void = () => undefined;
 
   model = signal<DescribeResult | null>(null);
   palette = signal<PaletteEntry[]>([]);
@@ -90,13 +94,26 @@ export class EditState {
     try {
       const r = await call();
       this.notice.set(r.ok ? { ok: true, text: r.label + (r.relocated ? " (found its place after the file changed)" : "") } : { ok: false, text: r.error });
+      this.#announce(r);
       if (r.ok && r.select) await this.#reselect(r.select);
       else if (r.ok) this.model.set(null);
     } catch (e) {
-      this.notice.set({ ok: false, text: e instanceof Error ? e.message : String(e) });
+      const text = e instanceof Error ? e.message : String(e);
+      this.notice.set({ ok: false, text });
+      this.toast.error("Couldn't apply this edit", { description: text, action: { label: "Open code", onClick: () => this.onShowPatch() } });
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /** Every edit says what it did and where, with the way back. */
+  #announce(r: EditResult): void {
+    if (!r.ok) return void this.toast.error("Couldn't apply this edit", { description: r.error, action: { label: "Open code", onClick: () => this.onShowPatch() } });
+    if (r.noop) return;
+    this.toast.show(r.label, {
+      description: this.state.relative(r.file) + (r.relocated ? " (found its place after the file changed)" : ""),
+      action: { label: "Undo", onClick: () => void this.undo() },
+    });
   }
 
   /** After HMR re-renders the template, select the same element again (the runtime ids went stale with the old template). */

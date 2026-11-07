@@ -186,6 +186,8 @@ export type AgentMessage =
   | (Envelope & { type: "pick"; node: DesignNode | null; chain: DesignNode[]; component: ComponentDetail | null })
   /** A diagnostic badge on the canvas was clicked. */
   | (Envelope & { type: "badge"; id: string })
+  /** A button of the selection's floating toolbar was clicked; the shell performs it (as a source edit, or by moving the selection). */
+  | (Envelope & { type: "action"; action: "parent" | "move-up" | "move-down" | "delete"; id: string })
   | (Envelope & { type: "scenes"; scenes: SceneInfo | null })
   /** A real (trusted) click, input or scroll in interact mode, for syncing the other frames. */
   | (Envelope & { type: "interaction"; interaction: Interaction })

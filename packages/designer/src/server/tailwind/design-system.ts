@@ -6,7 +6,7 @@
 //  - if the project cannot offer one (a pnpm layout that hides it, for instance) the Designer's own pinned copy is used
 //    (`@tailwindcss/node` in this package's dependencies, VERIFIED_TAILWIND), which still reads the project's stylesheet;
 //  - the shape of what comes back is checked against `Ds` below; any missing member, or a load error, turns the mode off with
-//    a message instead of throwing into the Edit tab. Nothing else in the Designer imports Tailwind.
+//    a message instead of throwing into the Content tab. Nothing else in the Designer imports Tailwind.
 import { readFileSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, relative, sep } from "node:path";
@@ -138,7 +138,7 @@ export async function loadDesignSystem(root: string): Promise<LoadResult> {
       ok: false,
       message: entry.v3
         ? 'This project uses Tailwind v3 (@tailwind directives). Tailwind mode needs Tailwind v4 (a stylesheet that starts with @import "tailwindcss").'
-        : 'This project does not use Tailwind v4: no stylesheet imports "tailwindcss". Tailwind mode is off; the Edit tab works as usual.',
+        : 'This project does not use Tailwind v4: no stylesheet imports "tailwindcss". Tailwind mode is off; the Content tab works as usual.',
     };
   const rel = relative(root, entry.file).split(sep).join("/");
   const loader = await locateLoader(root);

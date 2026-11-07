@@ -87,8 +87,14 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
 
   function draw(): void {
     for (const el of boxes.values()) delete el.dataset.used;
-    if (hovered && hovered !== selected) rectsOf(hovered).forEach((r, i) => box(`h${i}`, r, "border:1px solid #3b82f6;background:#3b82f61a"));
-    rectsOf(selected).forEach((r, i) => box(`s${i}`, r, "border:2px solid #e0457b;background:#e0457b1f"));
+    if (hovered && hovered !== selected) {
+      const tag = tagOf(hovered);
+      rectsOf(hovered).forEach((r, i) => {
+        box(`h${i}`, r, `border:1px dashed ${SEL};background:${SEL}12`);
+        if (i === 0 && tag) box("htag", new DOMRect(r.left, Math.max(0, r.top - 16), Math.min(tag.length * 7 + 10, 200), 16), tagStyle(0.75), tag);
+      });
+    }
+    selectionChrome();
     const byNode = new Map<string, CanvasDiagnostic[]>();
     for (const d of diagnostics) {
       const node = designer.nodeAt(d.raw, d.offset);
@@ -103,6 +109,44 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
       });
     }
     for (const [key, el] of boxes) if (!el.dataset.used) (el.remove(), boxes.delete(key));
+  }
+
+  // The design's selection chrome: outline, tag, corner handles, size badge and the floating action toolbar. Colours are literal
+  // because this draws in the previewed app's page, where the shell's variables do not exist.
+  const SEL = "#4f6df5";
+  const tagOf = (id: string): string => designer.nodeOf(designer.elementsOf(id)[0])?.tag ?? "";
+  const tagStyle = (opacity = 1) => `background:${SEL};color:#fff;font:600 10px/16px ui-monospace,monospace;padding:0 5px;border-radius:3px 3px 0 0;white-space:nowrap;overflow:hidden;opacity:${opacity}`;
+  const HANDLE = `background:#fff;border:1.5px solid ${SEL};border-radius:1px`;
+  const ACTIONS: Array<{ action: "parent" | "move-up" | "move-down" | "delete"; title: string; glyph: string }> = [
+    { action: "parent", title: "Select the parent", glyph: "↖" },
+    { action: "move-up", title: "Move before the previous sibling", glyph: "↑" },
+    { action: "move-down", title: "Move after the next sibling", glyph: "↓" },
+    { action: "delete", title: "Delete from the source", glyph: "×" },
+  ];
+
+  function selectionChrome(): void {
+    const rects = rectsOf(selected);
+    rects.forEach((r, i) => box(`s${i}`, r, `border:2px solid ${SEL}`));
+    const r = rects[0];
+    if (!r || !selected) return;
+    const tag = tagOf(selected);
+    if (tag) box("stag", new DOMRect(r.left, Math.max(0, r.top - 16), Math.min(tag.length * 7 + 10, 220), 16), tagStyle(), tag);
+    for (const [key, x, y] of [["nw", r.left, r.top], ["ne", r.right, r.top], ["sw", r.left, r.bottom], ["se", r.right, r.bottom]] as const) {
+      box(`sh${key}`, new DOMRect(x - 3.5, y - 3.5, 7, 7), HANDLE);
+    }
+    const label = `${Math.round(r.width)} × ${Math.round(r.height)}`;
+    const badgeWidth = label.length * 6 + 10;
+    box("ssize", new DOMRect(r.left + r.width / 2 - badgeWidth / 2, Math.min(innerHeight - 18, r.bottom + 4), badgeWidth, 16), `background:${SEL};color:#fff;font:600 10px/16px ui-monospace,monospace;text-align:center;border-radius:3px`, label);
+    if (mode !== "select") return;
+    const size = 22;
+    const total = ACTIONS.length * size + 4;
+    const left = Math.max(0, Math.min(innerWidth - total, r.right - total));
+    const top = r.top >= 44 ? r.top - 40 : Math.min(innerHeight - 28, r.bottom + 24);
+    box("sbar", new DOMRect(left, top, total, 26), "background:#1b1b1e;border-radius:7px;box-shadow:0 4px 14px rgb(0 0 0 / 0.35)");
+    ACTIONS.forEach((a, i) => {
+      box(`sact${a.action}`, new DOMRect(left + 2 + i * size, top + 2, size, 22), "color:#ededf0;font:500 13px/22px system-ui;text-align:center;border-radius:5px;cursor:pointer;pointer-events:auto", a.glyph, () => send({ type: "action", action: a.action, id: selected! }));
+      boxes.get(`sact${a.action}`)!.title = a.title;
+    });
   }
 
   const place = (): { placed: number; unplaced: number } => {
@@ -142,7 +186,7 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     document.addEventListener(
       type,
       (e) => {
-        if (mode !== "select") return;
+        if (mode !== "select" || (e.target instanceof Node && layer.contains(e.target))) return;
         e.preventDefault();
         e.stopImmediatePropagation();
         if (type === "click") select(designer.nodeOf(e.target)?.id ?? null, e.target as Element);

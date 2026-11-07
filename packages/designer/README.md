@@ -23,7 +23,7 @@ files run under `@gable/testing` with `mountScene`.
 
 ## Editing (source write-back)
 
-The Edit tab changes the project's own files; the Designer keeps no model of the design (ADR 0001). Every edit is a request to
+The Content and Style tabs change the project's own files; the Designer keeps no model of the design (ADR 0001). Every edit is a request to
 `/api/edit/apply` (token and Host checked) that the backend turns into a **minimal text patch**; the project's Vite then
 hot-updates the canvas and the shell selects the same element again.
 
@@ -76,6 +76,23 @@ The driven check (needs a built Designer and Edge/Chromium with a debugging port
 node packages/designer/e2e/device-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port> [--no-cdp] [--shot dir]
 ```
 
+## The chrome
+
+The shell's chrome follows the Claude Design boards: a top bar (mode, Select or Interact, connection, undo and redo, theme, palette),
+Structure, Insert and Routes on the left, the canvas with its device bar, a bottom drawer (Code, Problems, HMR timeline,
+Accessibility, HTTP) and Style, Content and Inspector on the right. Tokens live outside the gable-ui marker block in
+`shell/src/shell.css`, mapped onto gable-ui's variables, so components need no `dark:` variant here.
+
+Ctrl K opens the command palette, generated from the current state in `shell/src/app/commands.ts`. Panel sizes, the drawer and
+the theme are saved per project with the frame layout (`chrome` in the device settings), never in browser storage.
+
+Open project, install the agent, extract component, create Scenario and accessibility checks have no backend yet: they show the
+real part and say the rest is unavailable, with the action disabled. Nothing pretends to have run.
+
+```
+node packages/designer/e2e/chrome-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port>
+```
+
 ## Page mode
 
 The default target runs the whole app with its router. The bar above the canvas has a URL field (type a route and press Go),
@@ -100,19 +117,19 @@ export default {
 ```
 
 `http` goes through `mockHttp` (`@gable/core/http`), which replaces the `HttpBackend`; unmatched requests answer 404 and warn.
-In page mode the picker above the canvas reloads the page with `?__gable_scenario=<file>|<scene>`. The Designer's Vite
+In page mode the Scenario picker in the Routes tab reloads the page with `?__gable_scenario=<file>|<scene>`. The Designer's Vite
 plugin injects a module that sets `__GABLE_DESIGNER_HOOK__.rootProviders` (the mocks plus the scene's `providers`), which
-`bootstrap` appends after the app's own providers in development. The **HTTP** tab shows the mocks and the request log.
+`bootstrap` appends after the app's own providers in development. The drawer's **HTTP** tab shows the mocks and the request log.
 Limits: `inputs` are ignored in page mode, and a scene that needs the router belongs in page mode (component mode mounts
 the component alone).
 
 ## Tailwind mode
 
-The **Tailwind** tab edits the selected element's classes with the project's own Tailwind v4 design system. It is on when a
+The **Style** tab edits the selected element's classes with the project's own Tailwind v4 design system. It is on when a
 stylesheet of the project starts with `@import "tailwindcss"`; the `@theme` block there is the project's design tokens. The
 Designer keeps no class table of its own: scales (spacing, color, type, radius, shadow, layout, size), class names, variants
 and breakpoints all come from the loaded design system. When it cannot be loaded (no Tailwind v4, a v3 project, the loader
-failed or its API changed) the tab says why ("Tailwind mode is off: ...") and nothing else changes; the Edit tab keeps working.
+failed or its API changed) the tab says why ("Tailwind mode is off: ...") and nothing else changes; the Content tab keeps working.
 
 - **Loading.** `src/server/tailwind/design-system.ts` is the only file that touches Tailwind. It calls
   `__unstable__loadDesignSystem` from `@tailwindcss/node`, resolved from the project first (so custom `@theme`, `@plugin`,
@@ -121,7 +138,7 @@ failed or its API changed) the tab says why ("Tailwind mode is off: ...") and no
   unstable by Tailwind's own statement: the shape of what comes back is checked (`shapeProblem`), and a mismatch or a load
   error turns the mode off with a message instead of throwing. If Tailwind changes it, only that file and `ds` in it need
   to follow. A stylesheet change in the project reloads the design system (SSE `tailwind` event).
-- **Editing.** Only static class tokens are written, through the same `setAttr` class edit as the Edit tab (one write path,
+- **Editing.** Only static class tokens are written, through the same `setAttr` class edit as the Content tab (one write path,
   one undo history). A new class replaces an old one when the design system says they set the same CSS properties
   (`px-2` next to `p-4` stays; `p-8` replaces `p-4`; `text-lg` does not replace `leading-6` although both touch `--tw-leading`).
   Only classes with the same variants are compared (`md:p-8` leaves `p-4`). `{{ }}` and `[class.x]` bindings are read-only
@@ -131,7 +148,7 @@ failed or its API changed) the tab says why ("Tailwind mode is off: ...") and no
   has no class sorter, so edits here append.)
 - **Breakpoints.** The selected frame's width picks the breakpoint prefix, using the project's `--breakpoint-*` values (not
   Tailwind's defaults). The panel shows a value set at a smaller breakpoint as inherited (`from md`), mobile-first.
-- **States.** The state toolbar writes `hover`, `focus`, `focus-visible`, `active`, `disabled`, `group-hover`, `group-focus` and
+- **States.** The State segment writes `hover`, `focus`, `focus-visible`, `active`, `disabled`, `group-hover`, `group-focus` and
   `dark` variants (composed with the breakpoint: `dark:xl:hover:bg-red-500`). Forced-state preview: on WebView2 (CDP) hover,
   focus and active are forced with `CSS.forcePseudoState` on the selected element (`group-*` on its nearest `.group`); everything
   else (`disabled`, `dark`, and every state without CDP) is a temporary injected rule with `!important`, the pseudo-class
