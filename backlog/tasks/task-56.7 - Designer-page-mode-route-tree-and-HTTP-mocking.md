@@ -4,6 +4,7 @@ title: 'Designer: page mode, route tree and HTTP mocking'
 status: To Do
 assignee: []
 created_date: '2026-11-07T03:58:00Z'
+updated_date: '2026-11-07T05:22:00Z'
 labels:
   - needs-triage
 dependencies:
@@ -25,3 +26,15 @@ Whole pages need the real app running with routing and data, without requiring a
 - [ ] #3 Routes can be added and edited, written back to the route config
 - [ ] #4 Scenarios can be shared between page mode and component mode
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-11-07T05:22:00Z
+
+---
+
+From TASK-56.3 (merged): diagnostics are placed through nodeAt and need a rendered node, so anything behind a false @if shows only in the Problems list.
+
+---
+<!-- COMMENTS:END -->

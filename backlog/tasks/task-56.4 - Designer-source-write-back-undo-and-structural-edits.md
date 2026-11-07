@@ -4,7 +4,7 @@ title: 'Designer: source write-back, undo and structural edits'
 status: To Do
 assignee: []
 created_date: '2026-11-07T03:57:00Z'
-updated_date: '2026-11-07T04:24:00Z'
+updated_date: '2026-11-07T05:22:00Z'
 labels:
   - needs-triage
 dependencies:
@@ -37,6 +37,14 @@ created: 2026-11-07T04:24:00Z
 ---
 
 Spike finding: the runtime parser only has element positions. Make @gable/template-format lossless parser the position authority (text, attributes, expressions), with the runtime pos as a handle (ordinal in that tree) so two parsers cannot drift. The runtime parser reads cooked strings[0], so backslash escapes shift offsets; CRLF files differ too. Parse the raw string.
+
+---
+
+created: 2026-11-07T05:22:00Z
+
+---
+
+From TASK-56.3 (merged): positions are elements only, no text/attribute ranges. Templates containing escapes are flagged exact:false and not mapped. Identical literals in one file are ambiguous (first taken, flagged). Node ids go stale after an HMR template change and the selection is cleared. Backend (packages/designer) serves its API behind a per-session token and Host check; write-back endpoints belong there.
 
 ---
 <!-- COMMENTS:END -->

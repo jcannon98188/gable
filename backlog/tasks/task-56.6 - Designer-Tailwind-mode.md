@@ -4,7 +4,7 @@ title: 'Designer: Tailwind mode'
 status: To Do
 assignee: []
 created_date: '2026-11-07T03:58:00Z'
-updated_date: '2026-11-07T04:24:00Z'
+updated_date: '2026-11-07T05:22:00Z'
 labels:
   - needs-triage
 dependencies:
@@ -39,6 +39,14 @@ created: 2026-11-07T04:24:00Z
 ---
 
 Spike finding: class tokens are static attributes, so they become mappable once attribute positions exist (see TASK-56.4 comment).
+
+---
+
+created: 2026-11-07T05:22:00Z
+
+---
+
+From TASK-56.3 (merged): the shell theme and Tailwind are a separate build from the previewed project, so they cannot collide.
 
 ---
 <!-- COMMENTS:END -->
