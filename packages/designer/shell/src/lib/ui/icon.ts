@@ -1,5 +1,5 @@
 import { computed, effect, injectHost, input } from "@gable/core";
-import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsUpDown, Circle, CircleAlert, Ellipsis, GripVertical, Minus, X } from "lucide";
+import { Calendar, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsUpDown, Circle, CircleAlert, Ellipsis, GripVertical, Minus, X } from "lucide";
 import { cn } from "./cn.js";
 
 /** A lucide icon: the list of child elements of its 24x24 svg. */
@@ -10,6 +10,7 @@ export type IconNode = ReadonlyArray<readonly [tag: string, attrs: Record<string
  * are bundled, which is why the directive takes a name instead of importing lucide's whole set.
  */
 export const ICONS: Record<string, IconNode> = {
+  calendar: Calendar,
   check: Check,
   "chevron-down": ChevronDown,
   "chevron-left": ChevronLeft,

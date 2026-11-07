@@ -135,7 +135,7 @@ export class UiTree {
             <span class="shrink-0" [attr.style]="row.indent"></span>
             @if (row.expandable) {
               <span class="flex size-5 shrink-0 items-center justify-center text-muted-foreground" (click)="onToggle($event, row.index)">
-                <svg uiIcon="chevron-right" class="size-4 transition-transform" [attr.data-open]="row.open"></svg>
+                <svg uiIcon="chevron-right" class="size-4 transition-transform data-[open=true]:rotate-90 motion-reduce:transition-none" [attr.data-open]="row.open"></svg>
               </span>
             } @else {
               <span class="size-5 shrink-0"></span>
