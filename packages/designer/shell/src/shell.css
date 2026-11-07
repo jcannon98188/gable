@@ -1184,6 +1184,76 @@ ui-virtual-table {
 .net-filter {
   width: 180px;
 }
+/* The Changes tab (TASK-56.25): files on the left, the selected file's hunks (gable-ui code blocks) on the right. */
+.chg {
+  display: grid;
+  grid-template-columns: minmax(240px, 2fr) minmax(0, 3fr);
+  flex: 1 1 0;
+  min-height: 0;
+}
+.chg > * {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+.chg > * + * {
+  border-left: 1px solid var(--d-border);
+}
+.chg-list {
+  display: flex;
+  flex-direction: column;
+}
+.chg-files {
+  flex: 1 1 0;
+  min-height: 96px;
+  overflow: auto;
+}
+.chg-row {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content max-content;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+  padding: 1px 10px;
+  border-bottom: 1px solid var(--d-border);
+}
+.chg-row.sel {
+  background: var(--d-hover);
+}
+.chg-name {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.chg-counts {
+  min-width: 56px;
+  text-align: right;
+}
+.chg-commit {
+  flex: none;
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--d-border);
+}
+.chg-hunk {
+  margin: 8px 10px;
+}
+.chg-hunk-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+}
+.chg-hunk-bar > :first-child {
+  flex: 1 1 0;
+}
 .hmr-row {
   grid-template-columns: 60px minmax(0, 1fr) minmax(0, 2fr);
 }
@@ -1192,19 +1262,6 @@ ui-virtual-table {
   flex-direction: column;
   gap: 4px;
   padding-top: 8px;
-}
-/* The last patch as a unified diff: old and new line numbers, removed lines red, added lines green. */
-.code.diff .ln.add {
-  background: var(--ok-bg);
-}
-.code.diff .ln.del {
-  background: var(--err-bg);
-}
-.code.diff .ln.hunk {
-  color: var(--d-dim);
-}
-.code.diff .n {
-  width: 30px;
 }
 .diff-add {
   color: var(--ok);

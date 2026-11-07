@@ -4,6 +4,7 @@ import { computed, effect, html, inject, signal, untracked } from "@gable/core";
 import { CPU_RATES, NETWORK_PROFILES, type Throttle } from "../../../src/devices.js";
 import type { PerfElement, PerfMetric } from "../../../src/protocol.js";
 import { UiButton } from "../components/ui/button.js";
+import { UiCodeBlock } from "../components/ui/code-block.js";
 import { UiSelect } from "../components/ui/select.js";
 import { UiTooltip } from "../components/ui/tooltip.js";
 import { UiVirtualTable, type VirtualTableColumn } from "../components/ui/virtual-table.js";
@@ -15,6 +16,8 @@ import { EditState } from "./edit-state.js";
 import { SignalTimelineTab } from "./signal-timeline.js";
 import { NetworkPanel } from "./network-panel.js";
 import { StoragePanel } from "./storage-panel.js";
+import { ChangesPanel, languageOf } from "./changes-panel.js";
+import { ChangesState } from "./changes-state.js";
 import { DEV_NOTE, PerfState, RATING_LABEL, elementText, formatBytes, formatMetric, formatMs } from "./perf-state.js";
 import { staleNote } from "./stale-canvas.js";
 
@@ -23,7 +26,7 @@ export class CodeTab {
   static meta = {
     selector: "app-code-tab",
     host: { class: "block h-full" },
-    imports: [UiButton],
+    imports: [UiButton, UiCodeBlock],
     template: html`
       <div class="split">
         <div>
@@ -53,9 +56,8 @@ export class CodeTab {
               <div>{{ l.label }} <span class="mono"><span class="diff-add">+{{ l.added }}</span> <span class="diff-del">−{{ l.removed }}</span></span></div>
               <div class="mono dim">{{ l.file }}</div>
             </div>
-            @if (diffRows().length > 0) {
-              <pre class="code diff" data-part="patch-diff" aria-label="Unified diff of the last patch"><!--
-                -->@for (r of diffRows(); track r.key) {<span class="ln" [class.add]="r.add" [class.del]="r.del" [class.hunk]="r.hunk"><span class="n">{{ r.old }}</span><span class="n">{{ r.new }}</span>{{ r.text }}</span>}</pre>
+            @if (diffText()) {
+              <ui-code-block class="patch-code" data-part="patch-diff" language="diff" [code]="diffText()" [lineNumbers]="true" [copyable]="false" [diffLanguage]="diffLang()" label="Unified diff of the last patch"></ui-code-block>
             } @else {
               <p class="pad dim">The patch left every line as it was.</p>
             }
@@ -91,15 +93,9 @@ export class CodeTab {
       ? { label: item.label, file: this.state.relative(item.file), stale: item.stale, state: item.stale ? "file changed" : "applied", added: item.diff.added, removed: item.diff.removed }
       : null;
   });
-  /** The unified diff, one row per line: hunk headers, then context, removed and added lines with their old and new numbers. */
-  diffRows = computed(() => {
-    const diff = this.edit.history().last?.diff;
-    if (!diff) return [];
-    return diff.hunks.flatMap((h, i) => [
-      { key: `${i}@`, add: false, del: false, hunk: true, old: "", new: "", text: h.header },
-      ...h.lines.map((l, j) => ({ key: `${i}:${j}`, add: l.kind === "+", del: l.kind === "-", hunk: false, old: l.old ?? "", new: l.new ?? "", text: l.kind + l.text })),
-    ]);
-  });
+  /** The last patch as unified diff text; gable-ui's code block renders it (markers, hunks, line numbers, highlighting). */
+  diffText = computed(() => this.edit.history().last?.diff?.text ?? "");
+  diffLang = computed(() => languageOf(this.edit.history().last?.file ?? ""));
   externalText = computed(() => this.edit.external().join(", "));
 }
 
@@ -685,6 +681,7 @@ export class DrawerTabs {
   chrome = inject(ChromeState);
   a11y = inject(A11yState);
   perf = inject(PerfState);
+  changes = inject(ChangesState);
   open = this.chrome.drawerOpen;
   closed = computed(() => !this.chrome.drawerOpen());
   toggleText = computed(() => (this.chrome.drawerOpen() ? "Collapse the drawer" : "Open the drawer"));
@@ -703,6 +700,7 @@ export class DrawerTabs {
       { value: "perf", label: "Performance", badge: this.perf.poor() + this.perf.needsWork(), err: this.perf.poor() > 0, warn: this.perf.poor() === 0 && this.perf.needsWork() > 0 },
       { value: "http", label: "Network", badge: 0, err: false, warn: false },
       { value: "storage", label: "Storage", badge: 0, err: false, warn: false },
+      { value: "changes", label: "Changes", badge: this.changes.count(), err: false, warn: false },
     ].map((t) => ({ ...t, selected: String(t.value === current), tabId: `drawer-tab-${t.value}` }));
   });
   /** Clicking the open tab closes the drawer; any other tab opens it there. */
@@ -717,7 +715,7 @@ export class DrawerBody {
   static meta = {
     selector: "app-drawer-body",
     host: { class: "drawer" },
-    imports: [DrawerTabs, CodeTab, ProblemsTab, HmrTab, SignalTimelineTab, AccessibilityTab, PerformanceTab, NetworkPanel, StoragePanel],
+    imports: [DrawerTabs, CodeTab, ProblemsTab, HmrTab, SignalTimelineTab, AccessibilityTab, PerformanceTab, NetworkPanel, StoragePanel, ChangesPanel],
     template: html`
       <app-drawer-tabs></app-drawer-tabs>
       <div class="dbody" role="tabpanel" [attr.aria-labelledby]="labelledBy()">
@@ -735,6 +733,8 @@ export class DrawerBody {
           <app-network-panel></app-network-panel>
         } @else if (tab() === 'storage') {
           <app-storage-panel></app-storage-panel>
+        } @else if (tab() === 'changes') {
+          <app-changes-panel></app-changes-panel>
         } @else {
           <app-code-tab></app-code-tab>
         }

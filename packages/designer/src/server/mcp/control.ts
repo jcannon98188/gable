@@ -26,6 +26,8 @@ import { registerTokenTools } from "./token-tools.js";
 import { fileOfTarget, positionOf, projectFile, targetAt, unifiedDiff, type SourcePos } from "./targets.js";
 import { registerNetworkTools } from "./network-tools.js";
 import { registerStorageTools } from "./storage-tools.js";
+import { registerGitTools } from "./git-tools.js";
+import { GitService } from "../git.js";
 
 export interface ControlContext {
   root: string;
@@ -39,6 +41,10 @@ export interface ControlContext {
   compileErrors?(): CompileError[];
   /** Tells the shell the undo history changed (the backend's `history` SSE event). */
   historyChanged(): void;
+  /** The project's git service (the backend's, which keeps the revert undo list); made on demand when absent. */
+  git?: GitService;
+  /** Tells the shell the changes may have changed (the backend's `git` event). */
+  gitChanged?(): void;
   /** The webview's CDP port, when the backend has one. */
   cdpPort: number | null;
   /** Origins the shell's page is served from (to find it among CDP targets). */
@@ -698,6 +704,16 @@ export function createControlServer(ctx: ControlContext): McpServer {
   const kit = { server, shell, commit, live, read, write, guard, fail: (message: string): never => { throw new ToolError(message); } };
   registerNetworkTools(kit);
   registerStorageTools(kit);
+  let ownGit: GitService | null = null;
+  registerGitTools({
+    server,
+    git: () => ctx.git ?? (ownGit?.root === live.root ? ownGit : (ownGit = new GitService(live.root))),
+    changed: () => ctx.gitChanged?.(),
+    guard,
+    read,
+    write,
+    fail: kit.fail,
+  });
 
   return server;
 }

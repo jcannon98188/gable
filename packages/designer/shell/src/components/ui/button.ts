@@ -3,7 +3,7 @@ import { useHostClass } from "../../lib/ui/host-class.js";
 import { variants } from "../../lib/ui/variants.js";
 
 export type ButtonVariant = "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
-export type ButtonSize = "default" | "sm" | "lg" | "icon";
+export type ButtonSize = "default" | "sm" | "lg" | "icon" | "compact" | "icon-compact";
 
 export const buttonVariants = variants({
   base: [
@@ -26,6 +26,9 @@ export const buttonVariants = variants({
       sm: "h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5",
       lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
       icon: "size-9",
+      /** Dense: 26px tall, 12px text (the compact density; see `uiInput` density). */
+      compact: "h-6.5 gap-1 rounded-md px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+      "icon-compact": "size-6.5 rounded-md [&_svg:not([class*='size-'])]:size-3.5",
     },
   },
   defaultVariants: { variant: "default", size: "default" },

@@ -73,6 +73,8 @@ export class DesignerState {
   /** The selected frame's page made requests or changed its storage (the agent says so at most every 250 ms). */
   activity = signal<{ frame: string; what: "network" | "storage"; seq: number } | null>(null);
   #activitySeq = 0;
+  /** Bumped by the backend's `files` and `git` events (on the event stream this class already holds): the Changes tab re-reads git. */
+  changesTick = signal(0);
   /** Why the canvas is not showing the source as saved, for the banner over it; null when it is (stale-canvas.ts). */
   stale = computed(() => staleCanvas(this.compileErrors(), this.hmr()));
   /** Whether the file at `path` (module URL or path) does not compile, or the page refused its last hot update. */
@@ -164,7 +166,11 @@ export class DesignerState {
       void this.refreshDiagnostics();
       void this.api<CompileError[]>("/api/compile").then((c) => this.compileErrors.set(c), () => undefined);
       const events = new EventSource(`${this.config!.backend}/api/events?token=${this.config!.token}`);
-      events.addEventListener("files", (e) => this.sceneFiles.set((JSON.parse((e as MessageEvent).data) as { scenes: string[] }).scenes));
+      events.addEventListener("files", (e) => {
+        this.sceneFiles.set((JSON.parse((e as MessageEvent).data) as { scenes: string[] }).scenes);
+        this.changesTick.update((n) => n + 1);
+      });
+      events.addEventListener("git", () => this.changesTick.update((n) => n + 1));
       events.addEventListener("compile", (e) => this.compileErrors.set(JSON.parse((e as MessageEvent).data) as CompileError[]));
       events.addEventListener("diagnostics", (e) => {
         this.analysis.set(JSON.parse((e as MessageEvent).data) as Analysis);

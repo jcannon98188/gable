@@ -139,7 +139,8 @@ try {
 
   await q(`document.querySelector("#drawer-tab-code").click()`);
   await until(() => q(`return !!document.querySelector('[data-part="patch-diff"]')`), "the Code tab shows the diff");
-  const diff = await q(`return [...document.querySelectorAll('[data-part="patch-diff"] .ln')].map((l) => ({ cls: l.className, text: [...l.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("") }))`);
+  // The diff is gable-ui's code block (language="diff"): one span per row, class by kind, then gutters, marker and text cells.
+  const diff = await q(`return [...document.querySelectorAll('[data-part="patch-diff"] code > span')].map((l) => { const cells = [...l.children]; const text = cells.at(-1).textContent; const marker = cells.at(-2)?.textContent.trim() ?? ""; return { cls: /bg-emerald/.test(l.className) ? "add" : /bg-red/.test(l.className) ? "del" : /bg-sky/.test(l.className) ? "hunk" : "ctx", text: /bg-(emerald|red)/.test(l.className) ? marker + text : text }; })`);
   const added = diff.filter((l) => /\badd\b/.test(l.cls)).map((l) => l.text);
   const removed = diff.filter((l) => /\bdel\b/.test(l.cls)).map((l) => l.text);
   check(diff.some((l) => /\bhunk\b/.test(l.cls) && /^@@ -\d+(,\d+)? \+\d+(,\d+)? @@$/.test(l.text)), "the diff has unified hunk headers", diff.find((l) => /\bhunk\b/.test(l.cls))?.text);
