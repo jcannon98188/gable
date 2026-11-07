@@ -6,6 +6,7 @@ import type { DevtoolsEvent, GableDevtoolsHook } from "@gable/core/devtools";
 import type { DesignerHook, DesignNode } from "@gable/core/designer";
 import { RUN_CONTEXT, runOptions, toReport, type AxeLike } from "./a11y.js";
 import { GableCounter, PerfCollector, domSize, settled } from "./perf.js";
+import { SignalState } from "./signal-state.js";
 import {
   AXE_PATH,
   PROTOCOL_VERSION,
@@ -537,12 +538,18 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     a11y: () => checkA11y(),
     performance: () => measure(),
     reload: () => reload(),
+    setSignalValue: ({ id, text, force }) => signalState.set(id, text, force),
+    pinSignal: ({ id, text, force }) => signalState.pin(id, text, force),
+    pins: () => signalState.pins(),
+    sceneState: () => signalState.sceneState(),
     mountScene: ({ name }) => {
       if (!globalThis.__GABLE_SCENES__) throw new Error("This page is not a component-mode host.");
       globalThis.__GABLE_SCENES__.mount(name);
       return true;
     },
   };
+
+  const signalState = new SignalState(() => devtools, () => globalThis.__GABLE_SCENES__);
 
   const sceneInfo = (): SceneInfo | null => {
     const s = globalThis.__GABLE_SCENES__;
@@ -587,11 +594,19 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     // A flush carries every effect run; the shell only needs to know that signal values may have changed.
     send({ type: "event", event: event.type === "flush" ? { type: "flush", flush: { ...event.flush, runs: [], more: 0 } } : event });
     if (event.type === "tree" || event.type === "hmr") redraw();
+    signalState.onEvent(event);
   };
 
   const connect = (hook: GableDevtoolsHook) => {
     devtools = hook;
     hook.connect(forward);
+    // The State timeline (TASK-56.18): record the app's state writes from the start. A core without it says no; nothing to record then.
+    try {
+      void Promise.resolve(hook.call("recordHistory", { on: true })).catch(() => undefined);
+    } catch {
+      // an older devtools hook
+    }
+    void signalState.sync();
     announce();
   };
   designer.muted = true;

@@ -3,10 +3,10 @@
 // the shell, and the shell does what a click would do. The backend sends commands down a dedicated SSE stream
 // (`/api/shell/channel`) and the shell answers each with a POST to `/api/shell/reply`, both token-checked like the rest of
 // `/api/`. Types only: the shell imports this file without pulling in server code.
-import type { ComponentDetail, HmrEntry, RouterInfo, TreeNode } from "@gable/core/devtools";
+import type { ComponentDetail, HistoryInfo, HmrEntry, RouterInfo, TravelResult, TreeNode } from "@gable/core/devtools";
 import type { DesignNode } from "@gable/core/designer";
 import type { ColorScheme } from "./devices.js";
-import type { HttpLogEntry, PageScenarioInfo, PerfReport, SceneInfo } from "./protocol.js";
+import type { HttpLogEntry, PageScenarioInfo, PerfReport, SceneInfo, SceneStateReport, SignalPin, SignalWriteResult } from "./protocol.js";
 import type { SourceRange } from "./server/source.js";
 
 export interface FrameSnapshot {
@@ -85,6 +85,37 @@ export interface ControlCommands {
   reselect: { params: { raw: string; offset: number }; result: boolean };
   /** The selected frame's performance, as the Performance tab shows it; `reload` re-runs it on a fresh load first. */
   performance: { params: { reload?: boolean }; result: PerfResult };
+  /** Signal state editing in the selected frame, through the Inspector's service so the window shows it. */
+  signals: { params: SignalAction; result: SignalsResult };
+  /** The selected frame's state history (the drawer's State timeline), and travel through it, through the tab's service. */
+  history: { params: HistoryAction; result: HistoryResult };
+}
+
+/** What the `history` command does: report, travel (to a step; `start`: before the first; `live`: the newest), clear, record. */
+export type HistoryAction =
+  | { action: "report" }
+  | { action: "travel"; to: number | "start" | "live" }
+  | { action: "clear" }
+  | { action: "record"; on: boolean };
+
+export interface HistoryResult {
+  info: HistoryInfo;
+  /** The travel's outcome (`travel`). */
+  travel?: TravelResult;
+}
+
+/** What the `signals` command does: a checked write, a pin (`text: null` unpins), or just a report. */
+export type SignalAction =
+  | { action: "set"; id: string; text: string; force?: boolean }
+  | { action: "pin"; id: string; text: string | null; force?: boolean }
+  | { action: "report" };
+
+export interface SignalsResult {
+  /** The write's outcome (`set` and `pin`). */
+  write?: SignalWriteResult;
+  pins: SignalPin[];
+  /** Component mode: the mounted Component's inputs and writable signals, as "Save as Scenario" would write them. */
+  scene: SceneStateReport | null;
 }
 
 export interface PerfResult {

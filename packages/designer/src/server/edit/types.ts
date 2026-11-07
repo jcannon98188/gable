@@ -61,9 +61,10 @@ export type EditOp =
   | { op: "setToken"; file: string; name: string; selector: string | null; atRules?: string[]; value: string | null; expect?: string | null }
   /**
    * Adds a scene to a scenes file (root-relative, `/src/x.scenes.ts`): after its last scene, as written. `from` copies an
-   * existing scene's definition (its inputs, providers and mocks) and gives the copy `description`.
+   * existing scene's definition (its inputs, providers and mocks) and gives the copy `description`. `inputs` and `state`
+   * (plain data by field name) are set on the new scene over what it copied: what "Save as Scenario" writes.
    */
-  | { op: "addScene"; file: string; name: string; description?: string; from?: string }
+  | { op: "addScene"; file: string; name: string; description?: string; from?: string; inputs?: Record<string, unknown>; state?: Record<string, unknown> }
   /**
    * Moves an element (static markup only) into a new component `name` in a file beside the template's, and uses it in its place.
    * `all` also replaces the identical copies of the element in the same template.

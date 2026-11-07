@@ -47,6 +47,7 @@ export function hostModule(scenesModule: string, initial: string | null): string
   return `import * as scenesModule from ${path};
 import { createComponent, createInjector, RENDERER } from "@gable/core";
 import { mockHttp } from "@gable/core/http";
+import { applySceneState } from "@gable/core/tooling";
 import { dom } from "@gable/renderer-dom";
 
 const root = document.getElementById("gable-scene-root");
@@ -72,6 +73,7 @@ function mount(name) {
   injector = createInjector([{ provide: RENDERER, useValue: renderer }, ...(renderer.providers ?? []), ...mocks(scene), ...(scene.providers ?? [])]);
   ref = createComponent(definition.component, { injector, renderer, inputs: scene.inputs, parent: root });
   current = name;
+  applySceneState(ref.instance, scene.state, definition.component.name);
 }
 
 function publish() {

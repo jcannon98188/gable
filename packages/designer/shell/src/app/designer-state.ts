@@ -66,6 +66,8 @@ export class DesignerState {
   analysis = signal<Analysis | null>(null);
   placement = signal<{ placed: number; unplaced: number }>({ placed: 0, unplaced: 0 });
   flushes = signal(0);
+  /** The selected frame's last state history step (TASK-56.18; 0 when cleared): the State timeline refetches on it. */
+  historySeq = signal(0);
   /** Templates that do not compile as saved (the backend checks every save; the full analysis follows in seconds). */
   compileErrors = signal<CompileError[]>([]);
   /** Why the canvas is not showing the source as saved, for the banner over it; null when it is (stale-canvas.ts). */
@@ -303,6 +305,7 @@ export class DesignerState {
   #refreshTimer: ReturnType<typeof setTimeout> | undefined;
   #onEvent(event: Extract<AgentEvent, { type: "event" }>["event"]): void {
     if (event.type === "router") this.routerTick.update((n) => n + 1);
+    else if (event.type === "history") this.historySeq.set(event.seq);
     else if (event.type === "tree") void this.preview.call("tree", undefined).then((t) => this.tree.set(t));
     else if (event.type === "injectors") void this.refreshInjectors();
     else if (event.type === "hmr") {

@@ -3,7 +3,7 @@ import { InjectionToken, computed, effect, html, inject, input, model, output, s
 import { RouterOutlet, type Route } from "@gable/core/router";
 import { applyUpdate, registerModule } from "@gable/core/hmr";
 import { mount, mountApp } from "@gable/testing";
-import { createDevtools, parseEdit, preview, type DevtoolsEvent, type DevtoolsInstance } from "@gable/core/devtools";
+import { createDevtools, jsonOf, parseEdit, preview, type DevtoolsEvent, type DevtoolsInstance } from "@gable/core/devtools";
 
 let dt: DevtoolsInstance;
 const target: { __GABLE_DEVTOOLS_HOOK__?: any } = {};
@@ -130,6 +130,30 @@ describe("editing", () => {
     expect(call<any>("setSignal", { id: find<any>(detail.signals, "doubled").id, text: "1" }).ok).toBe(false);
     expect(call<any>("setSignal", { id: find<any>(detail.signals, "count").id, text: "{oops" }).error).toMatch(/Not valid JSON/);
     expect(call<any>("setSignal", { id: "s99999", text: "1" }).ok).toBe(false);
+  });
+
+  it("reads a signal's value as JSON when it is plain data", () => {
+    const f = mount(Counter);
+    const detail = call<any>("component", { id: idOfRoot(f) });
+    expect(call("signalJson", { id: find<any>(detail.signals, "count").id })).toEqual({ ok: true, text: "1", writable: true, kind: "state" });
+    expect(call("signalJson", { id: find<any>(detail.signals, "tag").id })).toEqual({ ok: true, text: '"x1"', writable: false, kind: "computed" });
+    expect(call<any>("signalJson", { id: "s99999" }).ok).toBe(false);
+  });
+
+  it("says why a value is not plain data", () => {
+    expect(jsonOf({ a: [1, { b: null }] })).toEqual({ ok: true, text: '{"a":[1,{"b":null}]}' });
+    expect(jsonOf(undefined)).toEqual({ ok: true, text: "undefined" });
+    expect(jsonOf(new Map())).toMatchObject({ ok: false, error: expect.stringMatching(/Map/) });
+    expect(jsonOf({ at: new Date(0) })).toMatchObject({ ok: false, error: expect.stringMatching(/value\.at is a Date/) });
+    expect(jsonOf([1, NaN])).toMatchObject({ ok: false, error: expect.stringMatching(/\[1\] is NaN/) });
+    expect(jsonOf({ f: () => 1 })).toMatchObject({ ok: false, error: expect.stringMatching(/function/) });
+    expect(jsonOf({ x: undefined })).toMatchObject({ ok: false });
+    const loop: any = {};
+    loop.self = loop;
+    expect(jsonOf(loop)).toMatchObject({ ok: false, error: expect.stringMatching(/refers back/) });
+    // Shared (not cyclic) references are fine.
+    const shared = { n: 1 };
+    expect(jsonOf([shared, shared]).ok).toBe(true);
   });
 
   it("parses edits", () => {
