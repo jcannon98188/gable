@@ -42,6 +42,22 @@ describe("constructors in components and services", () => {
   });
 });
 
+describe("injectHost() outside Setup", () => {
+  it("passes calls in field initialisers and in helpers", async () => {
+    expect((await check("host-pass")).diagnostics).toEqual([]);
+  });
+
+  it("flags module level, static fields, field-stored callbacks and methods, not field initialisers", async () => {
+    const { code, diagnostics } = await check("host-fail");
+    const flagged = ["atModuleLevel = ", "shared = ", "handler = () => ", "return "].map((prefix) => {
+      const pos = where("host-fail", prefix + "injectHost()", prefix.length);
+      return ["inject-host-context", pos.line, pos.column, "error"];
+    });
+    expect(found(diagnostics)).toEqual(flagged);
+    expect(code).toBe(1);
+  });
+});
+
 describe("module-level signals and subjects", () => {
   it("passes state kept in hotState, local state and plain constants", async () => {
     const { diagnostics, code } = await check("state-pass");

@@ -4,13 +4,14 @@ import { createEnv, evaluate, readModel, runHandler, writeModel, type Env, type 
 import { createScope, currentScope, runInScope, type Scope } from "./scope.js";
 import { FAILED, guard, guarded } from "./errors.js";
 import { DEV } from "./dev-hooks.js";
+import { disposeAndRemove } from "./removal.js";
 import { hooks, retireView } from "./dev-hooks.js";
 import { inputOf } from "./input.js";
 import { OutputEmitter } from "./output.js";
 import { prepare, type ComponentClass } from "./component.js";
 import { parseSelector, matchesNode } from "./select.js";
 import { viewOf, type Content, type ViewContext } from "./view-context.js";
-import { registerEntry, withContentTarget } from "./query.js";
+import { keepContentTarget, registerEntry, withContentTarget } from "./query.js";
 import { buildDefer } from "./defer.js";
 import { bindCustomField, bindNativeField, isCustomControl } from "./field-binding.js";
 import type { ElementNode, ForNode, IfNode, SwitchNode, TemplateNode } from "./template.js";
@@ -144,6 +145,7 @@ function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, par
 /** Dev: an element hosting components lives in its own scope so a hot update can re-create it in place. */
 function replaceable<N>(renderer: Renderer<N>, build: (before: N | null) => Part<N>, before: N | null): Part<N> {
   const outer = currentScope();
+  const inTarget = keepContentTarget();
   let scope = createScope(outer);
   let part = runInScope(scope, () => build(before));
   const region = {
@@ -152,7 +154,7 @@ function replaceable<N>(renderer: Renderer<N>, build: (before: N | null) => Part
       // The replacement goes in just before the live element; commit removes the old one.
       let nextPart: Part<N>;
       try {
-        nextPart = runInScope(next, () => build(part()[0] ?? null));
+        nextPart = inTarget(() => runInScope(next, () => build(part()[0] ?? null)));
       } catch (error) {
         next.dispose();
         throw error;
@@ -287,6 +289,7 @@ export function createSwitcher<N>(renderer: Renderer<N>, parent: N, before: N | 
   const anchor = renderer.createAnchor();
   renderer.insert(parent, anchor, before);
   const outer = currentScope();
+  const inTarget = keepContentTarget();
   let scope: Scope | null = null;
   let parts: Part<N>[] = [];
   return {
@@ -294,14 +297,15 @@ export function createSwitcher<N>(renderer: Renderer<N>, parent: N, before: N | 
     anchor,
     /** Disposes the current body and builds a new one (or none) in a fresh child scope. */
     show(build: (() => Part<N>[]) | null): void {
-      scope?.dispose();
-      for (const node of flatten(parts)) renderer.remove(node);
+      const old = flatten(parts);
+      const oldScope = scope;
       parts = [];
       scope = null;
+      disposeAndRemove(renderer, oldScope, old);
       if (!build) return;
       const fresh = createScope(outer);
       scope = fresh;
-      parts = untracked(() => runInScope(fresh, build));
+      parts = untracked(() => inTarget(() => runInScope(fresh, build)));
     },
   };
 }
@@ -396,6 +400,7 @@ function buildFor<N>(node: ForNode, renderer: Renderer<N>, env: Env, parent: N, 
   const anchor = renderer.createAnchor();
   renderer.insert(parent, anchor, before);
   const outer = currentScope();
+  const inTarget = keepContentTarget();
   const rows = new Map<unknown, Row<N>>();
   const count = signal(0);
   let empty: { scope: Scope; parts: Part<N>[] } | null = null;
@@ -404,11 +409,11 @@ function buildFor<N>(node: ForNode, renderer: Renderer<N>, env: Env, parent: N, 
     if (on && !empty && node.empty) {
       const scope = createScope(outer);
       const children = node.empty;
-      empty = { scope, parts: runInScope(scope, () => buildNodes(children, renderer, createEnv(env.instance, env), parent, anchor)) };
+      empty = { scope, parts: inTarget(() => runInScope(scope, () => buildNodes(children, renderer, createEnv(env.instance, env), parent, anchor))) };
     } else if (!on && empty) {
-      empty.scope.dispose();
-      for (const n of flatten(empty.parts)) renderer.remove(n);
+      const old = empty;
       empty = null;
+      disposeAndRemove(renderer, old.scope, flatten(old.parts));
     }
   };
 
@@ -424,7 +429,7 @@ function buildFor<N>(node: ForNode, renderer: Renderer<N>, env: Env, parent: N, 
     rowEnv.locals.set("$last", () => indexSig() === count() - 1);
     rowEnv.locals.set("$even", () => indexSig() % 2 === 0);
     rowEnv.locals.set("$odd", () => indexSig() % 2 === 1);
-    const parts = runInScope(scope, () => buildNodes(node.children, renderer, rowEnv, parent, nextBefore));
+    const parts = inTarget(() => runInScope(scope, () => buildNodes(node.children, renderer, rowEnv, parent, nextBefore)));
     return { scope, item: itemSig, index: indexSig, parts, value: item, pos: index };
   };
 
@@ -454,9 +459,8 @@ function buildFor<N>(node: ForNode, renderer: Renderer<N>, env: Env, parent: N, 
     untracked(() => {
       for (const [key, row] of rows) {
         if (seen.has(key)) continue;
-        row.scope.dispose();
-        for (const n of flatten(row.parts)) renderer.remove(n);
         rows.delete(key);
+        disposeAndRemove(renderer, row.scope, flatten(row.parts));
       }
       // Surviving rows on a longest increasing subsequence of their previous positions keep their nodes; the rest move.
       const survivors: Row<N>[] = [];

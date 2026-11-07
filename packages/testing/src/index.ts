@@ -185,6 +185,7 @@ let fixtures = 0;
 export function mount<T extends object>(Component: ComponentClass<T>, options: MountOptions = {}): Fixture<T> {
   const renderer = options.renderer ?? createTestRenderer();
   const container = createTestRoot();
+  (renderer as Partial<TestRenderer>).setOverlayContainer?.(container);
   const reports: Array<ErrorReport & { surfaced: boolean }> = [];
   class Collector extends ErrorHandler {
     override handleError(error: unknown, context: ErrorContext): void {
@@ -195,6 +196,8 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
   hookCleanup();
   const injector = createTestInjector([{ provide: DEFER_BLOCKS, useValue: defer }, { provide: ErrorHandler, useClass: Collector }, { provide: COMPONENT_OVERRIDES, useValue: new Map(options.overrides ?? []) }, ...(options.providers ?? [])]);
   const mounted = instantiate(Component, { renderer, parent: container, injector });
+  // Overlay content (portals) lives under the mounted host, so fixture queries and serialisation see it.
+  (renderer as Partial<TestRenderer>).setOverlayContainer?.(mounted.host);
   let destroyed = false;
   const unclaimed = () => {
     const fresh = reports.filter((r) => !r.surfaced);

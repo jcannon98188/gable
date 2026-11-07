@@ -123,10 +123,24 @@ function applyOverrides(injector: Injector | null, imports: readonly (ComponentC
 
 let hostContext: { renderer: Renderer<any>; host: unknown } | null = null;
 
-/** Internal seam (router outlet and link directives): the renderer and host node of the component whose Setup is running. */
-export function injectHost<N = unknown>(): { renderer: Renderer<N>; host: N } {
+/** The renderer and host node of the component whose Setup is running. */
+export interface HostRef<N = unknown> {
+  /** The renderer that owns the host node. */
+  renderer: Renderer<N>;
+  /** The component's host node (a DOM element under `@gable/renderer-dom`). */
+  host: N;
+}
+
+/**
+ * Returns the host node and renderer of the component whose Setup (field initialisers) is running, so a
+ * directive-style class can attach listeners, attributes or ARIA state to its own element.
+ * Like `inject()`, it only works during Setup; elsewhere it throws. Pass the renderer's node type
+ * (`injectHost<HTMLElement>()`) to type `host`; use `renderer` rather than touching the node directly so the
+ * code works with any Renderer. Safe to call in a helper that is itself called from a field initialiser.
+ */
+export function injectHost<N = unknown>(): HostRef<N> {
   if (!hostContext) throw new Error("injectHost() called outside a component Setup.");
-  return hostContext as { renderer: Renderer<N>; host: N };
+  return hostContext as HostRef<N>;
 }
 
 /** Runs a component's Setup (field initialisers) in its injection context and wires `meta.host`. */

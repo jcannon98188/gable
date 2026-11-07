@@ -40,13 +40,35 @@ export interface TestRenderer extends Renderer<TestNode> {
   readonly name: string;
   /** The in-memory Location, History and Title this renderer provides to `bootstrap`. */
   readonly platform: TestPlatform;
+  /** Sets the node the overlay root is attached to (as a child), so overlay content stays in the mounted tree. `mount` and `resolveTarget` call it. */
+  setOverlayContainer(container: TestNode): void;
 }
 
 /** The in-memory renderer: an inspectable node tree, no DOM. */
 export function createTestRenderer(options: { url?: string } = {}): TestRenderer {
   const styles = new Map<string, string>();
   const platform = createTestPlatform(options.url);
+  let container: TestNode | undefined;
+  let overlay: TestNode | undefined;
   return {
+    setOverlayContainer(root) {
+      container = root;
+      if (overlay && parents.get(overlay) !== root) {
+        detach(overlay);
+        parents.set(overlay, root);
+        root.children.push(overlay);
+      }
+    },
+    overlayRoot() {
+      if (!overlay) {
+        overlay = makeNode("element", "gable-overlay");
+        if (container) {
+          parents.set(overlay, container);
+          container.children.push(overlay);
+        }
+      }
+      return overlay;
+    },
     name: "test",
     styles,
     platform,
@@ -130,7 +152,10 @@ export function createTestRenderer(options: { url?: string } = {}): TestRenderer
       return options?.scoped === false ? "" : `g-${componentId}`;
     },
     resolveTarget(target) {
-      if (typeof target === "object" && target !== null && "kind" in target) return target as TestNode;
+      if (typeof target === "object" && target !== null && "kind" in target) {
+        this.setOverlayContainer(target as TestNode);
+        return target as TestNode;
+      }
       throw new Error(`The test renderer cannot resolve the target ${String(target)}: pass a node from createTestRoot().`);
     },
   };

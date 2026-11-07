@@ -16,6 +16,7 @@ export const RULES = {
   "unknown-event": "error",
   "lazy-outside-defer": "error",
   "constructor-in-class": "error",
+  "inject-host-context": "error",
   "module-level-state": "warn",
   "class-fragment": "warn",
   "class-fields-config": "error",

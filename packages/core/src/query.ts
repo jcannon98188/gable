@@ -50,6 +50,12 @@ export function withContentTarget<T>(host: QueryHost | null, fn: () => T): T {
   }
 }
 
+/** Captures the current content target; the returned wrapper re-establishes it for later builds (control flow re-rendering after the first pass). */
+export function keepContentTarget(): <T>(fn: () => T) => T {
+  const host = contentTarget;
+  return (fn) => withContentTarget(host, fn);
+}
+
 /** Offers a freshly built entry to the owner's view queries and to the enclosing content queries. Removes it when `scope` ends. */
 export function registerEntry(owner: QueryHost | undefined, entry: QueryEntry, scope: Scope | null): void {
   const queries = [...(owner?.view ?? []), ...(contentTarget?.content ?? [])];

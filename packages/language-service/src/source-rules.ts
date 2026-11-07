@@ -31,6 +31,9 @@ export function sourceRules(sf: ts.SourceFile, checker: ts.TypeChecker, template
     }
     if (ts.isTaggedTemplateExpression(node) && ts.isIdentifier(node.tag) && node.tag.text === templateTag) classFragments(sf, node.template, report);
     if (ts.isCallExpression(node)) reservedStateKey(sf, checker, node, report);
+    if (ts.isCallExpression(node) && isCoreCall(checker, node, "injectHost") && !inSetup(node)) {
+      report(node.getStart(sf), node.getWidth(sf), "inject-host-context", "injectHost() only works during Setup: call it in a field initialiser (or a helper those call), not at module level, in a method or in a callback");
+    }
     ts.forEachChild(node, visit);
   };
   visit(sf);
@@ -143,4 +146,28 @@ function reservedStateKey(sf: ts.SourceFile, checker: ts.TypeChecker, call: ts.C
     }
   };
   visit(read.getReturnType(), 0);
+}
+
+/** Whether `call` is a call to the named export of @gable/core (under any import alias). */
+function isCoreCall(checker: ts.TypeChecker, call: ts.CallExpression, name: string): boolean {
+  if (!ts.isIdentifier(call.expression)) return false;
+  const symbol = checker.getSymbolAtLocation(call.expression);
+  return !!symbol?.declarations?.some(
+    (d) => ts.isImportSpecifier(d) && (d.propertyName ?? d.name).text === name && ts.isStringLiteral(d.parent.parent.parent.moduleSpecifier) && /^@gable\/core(\/|$)/.test(d.parent.parent.parent.moduleSpecifier.text),
+  );
+}
+
+/** Setup is a non-static field initialiser. A plain function may be a helper called from one, so it passes; methods, constructors, accessors, callbacks stored in fields and module level do not. */
+function inSetup(node: ts.Node): boolean {
+  for (let n: ts.Node | undefined = node.parent; n; n = n.parent) {
+    if (ts.isPropertyDeclaration(n)) return !hasModifier(n, ts.SyntaxKind.StaticKeyword);
+    if (ts.isClassStaticBlockDeclaration(n) || ts.isMethodDeclaration(n) || ts.isConstructorDeclaration(n) || ts.isAccessor(n)) return false;
+    if (ts.isFunctionDeclaration(n)) return true;
+    if (ts.isArrowFunction(n) || ts.isFunctionExpression(n)) {
+      // A function stored in a field (a handler) runs later, outside Setup; any other function may be a Setup helper.
+      if (n.parent && ts.isPropertyDeclaration(n.parent) && n.parent.initializer === n) return false;
+      return true;
+    }
+  }
+  return false;
 }

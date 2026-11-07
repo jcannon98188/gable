@@ -118,6 +118,36 @@ describe("composition: queries", () => {
     expect(f.query("em")!.children[0]!.text).toBe("1");
   });
 
+  it("contentChildren picks up content created after first render by @if and @for, and tracks removals", async () => {
+    class Tabs {
+      static meta = { selector: "app-tabs", template: html`<slot></slot><em>{{ n() }}</em>` };
+      items = contentChildren(Item);
+      n = computed(() => this.items().length);
+    }
+    class Host {
+      static meta = {
+        selector: "app-host",
+        imports: [Tabs, Item],
+        template: html`<app-tabs>@if (on()) {<app-item></app-item>}@for (i of list(); track i) {<app-item></app-item>}</app-tabs>`,
+      };
+      on = signal(false);
+      list = signal<number[]>([]);
+    }
+    const f = mount(Host);
+    const count = () => f.query("em")!.children[0]!.text;
+    expect(count()).toBe("0");
+    f.instance.on.set(true);
+    await f.flush();
+    expect(count()).toBe("1");
+    f.instance.list.set([1, 2]);
+    await f.flush();
+    expect(count()).toBe("3");
+    f.instance.list.set([2]);
+    f.instance.on.set(false);
+    await f.flush();
+    expect(count()).toBe("1");
+  });
+
   it("does not leak a nested component's children into an outer content query", () => {
     class Wrap {
       static meta = { selector: "app-wrap", imports: [Item], template: html`<app-item></app-item>` };

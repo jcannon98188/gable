@@ -18,6 +18,8 @@ export interface DomRenderer extends Renderer<Node> {
 export interface DomRendererOptions extends PlatformOptions {
   /** The document to create nodes in. Defaults to the global `document`, read when first needed. */
   document?: Document;
+  /** Where portalled overlays go: an element, or a function returning one (called on each use). Defaults to `document.body`. It must be in the same document as the app. */
+  overlayRoot?: Element | (() => Element);
 }
 
 /** The namespace an element of `tag` created under `parent` belongs to; `foreignObject` and `annotation-xml` switch back to HTML. */
@@ -111,6 +113,11 @@ export function createDomRenderer(options: DomRendererOptions = {}): DomRenderer
     setText: (node, text) => void (node.textContent = text),
 
     insert: (parent, node, before) => void parent.insertBefore(node, before ?? null),
+    overlayRoot() {
+      const root = options.overlayRoot;
+      return (typeof root === "function" ? root() : root) ?? doc().body;
+    },
+
     remove: (node) => (node as ChildNode).remove(),
 
     listen(node, name, handler) {

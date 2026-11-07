@@ -51,6 +51,13 @@ export interface Renderer<N = unknown> {
   observeTrigger?(name: string, args: unknown[], placeholder: N | undefined, fire: () => void): () => void;
   /** Controls for the `[field]` directive on a native node. Absent: `[field]` on a native element is an error naming this renderer. */
   fieldControl?(node: N): FieldControl;
+  /**
+   * The node overlays (dialogs, popovers, tooltips) are moved into so they render outside their parent's clipping
+   * and stacking context. Optional: a renderer with no overlay layer omits it, and a portal under such a renderer
+   * fails with an error naming the renderer. The node must be in the same document/root node as the app (the DOM
+   * renderer returns `document.body` or a container in the same document), because machines look parts up by id.
+   */
+  overlayRoot?(): N;
   /** Optional DOM-state preservation around a view rebuild (HMR). */
   captureViewState?(rootNodes: N[]): unknown;
   restoreViewState?(newRootNodes: N[], token: unknown): void;
