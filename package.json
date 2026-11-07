@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "site"
   ],
   "scripts": {
     "build": "npm run build --if-present -w packages/core -w packages/renderer-dom -w packages/template-format -w packages/language-service -w packages/prettier-plugin -w packages/vite -w packages/testing -w packages/ui-primitives -w packages/ui -w packages/gable-ui -w packages/designer -w packages/store -w packages/editor -w packages/devtools-extension -w packages/vscode -w packages/create-gable",
@@ -14,7 +15,8 @@
     "package": "npm run package -w packages/vscode -w packages/create-gable",
     "pack:local": "node scripts/pack-local.mjs",
     "bench:hmr": "node examples/hmr-benchmark/bench.mjs",
-    "typecheck:tests": "tsc -p tsconfig.test.json"
+    "typecheck:tests": "tsc -p tsconfig.test.json",
+    "build:site": "npm run build -w site"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",

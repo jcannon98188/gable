@@ -1,0 +1,26 @@
+{
+  "name": "gable-site",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "check": "tsc --noEmit && gable-check"
+  },
+  "dependencies": {
+    "@gable/core": "*",
+    "@gable/renderer-dom": "*",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@gable/language-service": "*",
+    "@gable/testing": "*",
+    "@gable/vite": "*",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
+  }
+}
