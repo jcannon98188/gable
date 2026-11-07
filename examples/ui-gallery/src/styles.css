@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@gable/ui/theme.css";
+
+/* The component classes live in the package's compiled JavaScript: tell Tailwind to scan it. */
+@source "../node_modules/@gable/ui/dist";

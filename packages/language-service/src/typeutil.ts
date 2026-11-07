@@ -121,3 +121,8 @@ export function closest(name: string, candidates: string[]): string | undefined 
   return best;
 }
 
+
+/** A @gable/store store: its type carries the STATE_SOURCE unique-symbol member. */
+export function isStoreType(checker: ts.TypeChecker, type: ts.Type): boolean {
+  return checker.getNonNullableType(type).getProperties().some((p) => /^__@STATE_SOURCE@/.test(p.escapedName as string));
+}

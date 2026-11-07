@@ -1,5 +1,5 @@
 import { createScope, runInScope, type Scope } from "./scope.js";
-import { DEV, hooks } from "./dev-hooks.js";
+import { DEV, devtools, hooks } from "./dev-hooks.js";
 
 /** A class used as a Token. Abstract classes work too. */
 export type Type<T> = abstract new () => T;
@@ -95,6 +95,9 @@ class InjectorImpl implements Injector {
     this.scope.owner = { injector: this };
     if (parent) parent.#children.add(this);
     for (const p of providers) this.#register(p);
+    if (DEV && devtools.current) {
+      devtools.current.injector(this, parent, () => [...this.#records].map(([token, r]) => ({ token, value: r.value, resolved: r.resolved })), this.scope);
+    }
     if (DEV && hooks.current) {
       hooks.current.injectorCreated(this, {
         entries: () => [...this.#records].filter(([, r]) => r.resolved && r.tracked).map(([t, r]) => [t, r.value]),

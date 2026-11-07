@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { computed, effect, html, hotState, inject, signal, viewChildren } from "@gable/core";
 import { mount } from "@gable/testing";
+import { patchState, signalStore, withHotState, withMethods, withState } from "@gable/store";
 import { createTestRenderer } from "@gable/testing/renderer";
 
 // The nine scenarios of the HMR prototype (TASK-1.9), replayed through fixture.hotReplace.
@@ -506,5 +507,50 @@ describe("hotState", () => {
     const meta = { url: "file:///src/prod.ts" };
     const a = hotState(meta, "k", () => ({}));
     expect(hotState(meta, "k", () => ({}))).not.toBe(a);
+  });
+});
+
+describe("@gable/store across a hot update", () => {
+  // Each version of the store module is evaluated with its own import.meta.url, as a hot update would do.
+  const storeV = (file: string, t: number, extra: Record<string, unknown> = {}) =>
+    class CartStore extends signalStore(
+      withState({ items: 0, ...extra }),
+      withHotState({ url: `file:///src/${file}.ts?t=${t}`, hot: {} }, "CartStore"),
+      withMethods((store) => ({ add: () => patchState(store, (s) => ({ items: s.items + 1 })) })),
+    ) {
+      static scope = "root";
+    };
+  const viewV = (Store: ReturnType<typeof storeV>, label: "Items" | "Cart") =>
+    class CartView {
+      static meta = { selector: "app-cart-view", template: label === "Items" ? html`Items: {{ store.items() }}` : html`Cart: {{ store.items() }}` };
+      store = inject(Store);
+    };
+
+  it("a new version of the store module starts from the state the old one had (a full reload of the module, e.g. a fresh injector)", async () => {
+    const first = mount(viewV(storeV("cart-a", 1), "Items"));
+    first.instance.store.add();
+    first.instance.store.add();
+    await first.flush();
+    expect(first.text()).toBe("Items: 2");
+
+    // The store module is edited: a new class, a new state key, a new import.meta.url.
+    const second = mount(viewV(storeV("cart-a", 2, { coupon: "NONE" }), "Cart"));
+    await second.flush();
+    expect(second.text()).toBe("Cart: 2");
+    expect((second.instance.store as any).coupon()).toBe("NONE");
+    second.instance.store.add();
+    await second.flush();
+    expect(second.text()).toBe("Cart: 3");
+  });
+
+  it("a component hot update keeps the live store instance and its state", async () => {
+    const S = storeV("cart-b", 7);
+    const fixture = mount(viewV(S, "Items"));
+    fixture.instance.store.add();
+    const store = fixture.instance.store;
+    fixture.hotReplace(viewV(S, "Cart"));
+    await fixture.flush();
+    expect(fixture.instance.store).toBe(store);
+    expect(fixture.text()).toBe("Cart: 1");
   });
 });

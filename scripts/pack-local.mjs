@@ -14,14 +14,14 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 
-/** Non-private workspace packages: `{ name, dir }`. */
+/** Non-private workspace packages (and private ones flagged `"gablePack": true`, like @gable/ui): `{ name, dir }`. */
 export function publishablePackages(repo = root) {
   const packagesDir = join(repo, "packages");
   return readdirSync(packagesDir)
     .map((dir) => join(packagesDir, dir))
     .filter((dir) => existsSync(join(dir, "package.json")))
     .map((dir) => ({ dir, manifest: JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) }))
-    .filter(({ manifest }) => !manifest.private)
+    .filter(({ manifest }) => !manifest.private || manifest.gablePack)
     .map(({ dir, manifest }) => ({ name: manifest.name, dir, manifest }));
 }
 

@@ -28,6 +28,16 @@ export const RULES = {
   "rows-track-key": "warn",
   "custom-control-members": "error",
   "component-meta": "error",
+  "store-write-outside-patch": "error",
+  "store-method-in-template": "error",
+  "store-outside-injection-context": "error",
+  "a11y-img-alt": "warn",
+  "a11y-control-name": "warn",
+  "a11y-aria-valid": "warn",
+  "a11y-click-key": "warn",
+  "a11y-tabindex-positive": "warn",
+  "a11y-heading-order": "warn",
+  "a11y-autofocus": "warn",
 } as const satisfies Record<string, Severity>;
 
 export type RuleId = keyof typeof RULES;

@@ -3,9 +3,10 @@ import ts from "@typescript/typescript6";
 import { parseExpression, parseHandler } from "@gable/core/tooling";
 import { readConfig, type AnalyzerConfig, type RuleId, type Severity } from "./config.js";
 import { emit, type Emitted, type EventSite, type Group, type Ref, type TemplateModel } from "./emit.js";
-import { closest, findIdentifier, hasValueModel, inCallee, isFieldType, isObservableLike, isSignal, unwrap } from "./typeutil.js";
+import { closest, findIdentifier, hasValueModel, inCallee, isFieldType, isObservableLike, isSignal, unwrap, isStoreType } from "./typeutil.js";
 import { callSignalFix, extractFix, type Fix, type FixEnv } from "./fixes.js";
 import { templateRules } from "./file-rules.js";
+import { a11yRules } from "./a11y-rules.js";
 import { projectRules, sourceRules } from "./source-rules.js";
 import { componentMetaRules } from "./meta-rules.js";
 import { scanTemplate, ScanError, type ExprKind, type Src } from "./scan.js";
@@ -104,7 +105,11 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
     const models = findTemplates(sf, config.templateTag, (start, length, message) =>
       raw.push({ file: sf.fileName, start, length, rule: "template-syntax", message }),
     );
-    for (const model of models) templateRules(model, base.getTypeChecker(), (start, length, rule, message) => raw.push({ file: sf.fileName, start, length, rule, message }));
+    for (const model of models) {
+      const add = (start: number, length: number, rule: RuleId, message: string) => raw.push({ file: sf.fileName, start, length, rule, message });
+      templateRules(model, base.getTypeChecker(), add);
+      a11yRules(model, add);
+    }
     if (models.length) files.set(norm(sf.fileName), { sf, models, observed: new Set(), syntax: new Map() });
   }
 
@@ -312,6 +317,8 @@ function classifyRef(ref: Ref, sf: ts.SourceFile, checker: ts.TypeChecker, obser
     if (isSignal(checker, type)) return;
     if (isObservableLike(checker, type)) {
       report("call-observable", `"${shown}" is an Observable or Promise, not a signal: reference it without calling it (${shown}); it reads as T | undefined`);
+    } else if (ts.isPropertyAccessExpression(step) && isStoreType(checker, checker.getTypeAtLocation(step.expression))) {
+      report("store-method-in-template", `"${shown}" is a store method: methods change state, so call them from event handlers, never from a value expression. Read a signal or a withComputed value instead`);
     } else {
       report("call-non-signal", `"${shown}" is not a signal: value expressions only call signals. Move the logic into a computed signal on the component and read it`);
     }

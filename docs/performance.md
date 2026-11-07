@@ -170,3 +170,22 @@ Effect ordering is untouched (`order.test.ts` passes), and a guard test there as
 All other scenarios (deep-chain, wide-fanout, diamond, dynamic-deps, batched-writes, toSignal-chain) stayed within about 3% of both builds. The TASK-14/15 gains are intact (everything else vs HEAD is inside run-to-run spread).
 
 **What is not fully fixed.** At the default 31 samples the fixed build is 0.289 vs the 0.277 baseline (+4%), with overlapping ranges (fixed 0.267-0.298, baseline 0.272-0.288), so it is "back to roughly baseline", not demonstrably below it. At steady state (300 samples, 4 runs per side) the fixed build is ahead: 0.161 ms vs 0.187 for baseline and HEAD (in that particular set HEAD showed no gap, while two earlier 300-sample sets showed HEAD +18%, so the steady-state gap is itself not stable). Because the cause is JIT-sensitive, a future unrelated change near the polyfill hot path could move this scenario by a few percent either way.
+
+## TASK-44: virtual scroll (`useVirtualizer`) against plain `@for`
+
+`examples/virtual-benchmark` renders the js-framework-benchmark rows case (same row data generator, same row component with id, clickable label and remove link) two ways: every row as a node in an `@for` (`?mode=plain`), and through `useVirtualizer` from `@gable/ui-primitives` (`?mode=virtual`: 38 px fixed rows, `getKey` by row id, overscan 5) inside a 400 px scroll container. `node scripts/bench.mjs` builds it, drives headless Chrome with Playwright (the vite and playwright-core of `examples/js-framework-benchmark` are reused) and prints the median of fresh-page runs. Same measurement as the js-framework-benchmark script: click (or scroll assignment) to the next painted frame, quantized to about 16.7 ms.
+
+Chrome 156, 7 fresh pages per cell, median (ms, lower is better). "Rows in DOM" is the row node count after the operation.
+
+| operation | plain `@for` | virtual | rows in DOM (plain / virtual) |
+|---|---|---|---|
+| create 1,000 rows | 106.8 | 12.1 | 1,000 / 17 |
+| create 10,000 rows | 875 | 27.4 | 10,000 / 17 |
+| create 100,000 rows | 9,380 | 43.5 | 100,000 / 17 |
+| update every 10th row (10,000) | 59.3 | 16.1 | 10,000 / 17 |
+| jump to the middle (100,000 rows) | 61.9 | 15.8 | 100,000 / 17 |
+| scroll, median frame time over 60 frames of 10 rows (100,000 rows) | 36.7 | 16.7 | 100,000 / 17 |
+
+**Reading it.** Rendering cost with virtual scroll no longer depends on the row count: creating 100,000 rows costs one visible window plus the engine's `O(n)` setup (a key per row, a size per row and prefix sums, 16.9 ms of script at 100,000 rows, a typed-array fill and one `getKey` call per row). The non-virtual 100,000 rows case is dominated by layout and paint of 100,000 nodes, not by Gable's reconcile (script time was 18 ms there too). A virtual list holds at the 16.7 ms frame floor while scrolling because a scroll step swaps only the rows that left the window: the `@for` keyed by the item's key moves the rest.
+
+**Caveats.** Fixed row height only (variable heights add a ResizeObserver callback per newly rendered row and a prefix-sum recompute from the changed index; not measured here). The virtual column starts every operation from an empty store, so "update" touches the visible rows only by design (a row outside the window is not rendered; its data is updated). Frame times are quantized, and these are 7 runs on one machine: treat differences under about 5 ms as noise. The engine is Gable's own (`virtual-core.ts`), not `@tanstack/virtual-core`; see `docs/ui-primitives.md`.

@@ -33,6 +33,7 @@ export class TodoList {
       }
       <input #box [value]="title() ?? 'none'" [(model)]="title" (input)="rename($event)" />
       <p>{{ !loading() }} {{ profile.age ?? 0 }} {{ later }}</p>
+      <p [class.busy]="count() > 0 && !loading()">{{ mode() === "all" }} {{ title() !== "x" }} {{ (profile.age ?? 0) >= 18 || loading() }} {{ count() <= 1 }}</p>
     `,
   };
 

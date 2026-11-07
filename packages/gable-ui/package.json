@@ -1,0 +1,28 @@
+{
+  "name": "gable-ui",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "gable-ui CLI: copies gable-ui component source from a component registry into your project (init, add).",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "gable-ui": "./dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "registry"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node dist/bin.js build --ui ../ui --out registry"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0"
+  }
+}

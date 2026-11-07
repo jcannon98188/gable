@@ -12,6 +12,10 @@
     "./renderer": {
       "types": "./dist/renderer.d.ts",
       "import": "./dist/renderer.js"
+    },
+    "./a11y": {
+      "types": "./dist/a11y.d.ts",
+      "import": "./dist/a11y.js"
     }
   },
   "files": [
@@ -22,5 +26,13 @@
   },
   "dependencies": {
     "@gable/core": "0.0.0"
+  },
+  "peerDependencies": {
+    "axe-core": "^4.10.0"
+  },
+  "peerDependenciesMeta": {
+    "axe-core": {
+      "optional": true
+    }
   }
 }

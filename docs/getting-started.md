@@ -294,6 +294,10 @@ npm run check
 
 Runs `tsc --noEmit` and then `gable-check`, which type-checks the `html` templates against their component classes (unknown members, a signal read without `()`, wrong event names and more). It exits non-zero on errors, so use it in CI. In VS Code, install the recommended **Gable** extension (`gable.gable-vscode`) to see the same diagnostics, completions and highlighting as you type. The extension uses the workspace TypeScript through `typescript.tsdk` in `.vscode/settings.json`.
 
+Accessibility lint rules for templates (`a11y-img-alt`, `a11y-control-name`, `a11y-aria-valid`, `a11y-click-key`, `a11y-tabindex-positive`, `a11y-heading-order`, `a11y-autofocus`) warn by default and are described in `docs/accessibility.md`.
+
+Store-specific rules (`store-write-outside-patch`, `store-method-in-template`, `store-outside-injection-context`) are described in `docs/store.md`.
+
 `gable-check` also checks each `static meta` against `ComponentMeta`, since TypeScript cannot type a class’s static side without a base class or decorator. The `gable/component-meta` rule reports unknown keys (`selectr`), values of the wrong type, `imports` entries that are not components or `lazy()` entries, and a missing `selector`; its quick fix adds `satisfies ComponentMeta` (and the import), which hands the same check to the compiler. You can write it yourself by ending the initialiser with `satisfies ComponentMeta` (a type import from `@gable/core`). Once a meta has `satisfies ComponentMeta` or a type annotation, the rule stays out of the way. Set its severity, or turn it off, under `rules` in the plugin entry: `{ "name": "@gable/language-service", "rules": { "component-meta": "warn" } }`.
 
 ## Format
@@ -312,6 +316,10 @@ The production bundle contains no HMR code.
 ## Routing
 
 The starter has no routes. See the [Router guide](./router.md) for `provideRouter`, guards, lazy routes and hash mode.
+
+## Errors
+
+See [Error handling](./errors.md) for the `ErrorHandler`, reporting to a service such as Sentry, and `ErrorBoundary`.
 
 ## Adding Gable to an existing Vite app
 

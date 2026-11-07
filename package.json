@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --if-present -w packages/core -w packages/renderer-dom -w packages/template-format -w packages/language-service -w packages/prettier-plugin -w packages/vite -w packages/testing -w packages/ui-primitives -w packages/vscode -w packages/create-gable",
+    "build": "npm run build --if-present -w packages/core -w packages/renderer-dom -w packages/template-format -w packages/language-service -w packages/prettier-plugin -w packages/vite -w packages/testing -w packages/ui-primitives -w packages/ui -w packages/gable-ui -w packages/store -w packages/vscode -w packages/create-gable",
     "test": "vitest run",
     "changeset": "changeset",
     "version-packages": "changeset version",
@@ -17,8 +17,9 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
+    "axe-core": "^4.14.0",
+    "rxjs": "^7.8.2",
     "typescript": "^7.0.2",
-    "vitest": "^5.1.0",
-    "rxjs": "^7.8.2"
+    "vitest": "^5.1.0"
   }
 }

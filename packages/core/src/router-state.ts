@@ -2,21 +2,51 @@ import { Subject, type Observable } from "rxjs";
 import { toObservable } from "./rxjs.js";
 import { INJECTOR, InjectionToken, inject, type Provider } from "./di.js";
 import { reportError } from "./errors.js";
-import { History, Location, Title } from "./platform.js";
+import { FocusManager, History, Location, LiveAnnouncer, Meta, Title, mergeMeta, type FocusTarget, type Politeness } from "./platform.js";
 import { currentScope, runInScope, type Scope } from "./scope.js";
-import { computed, signal, untracked, type ReadonlySignal, type WritableSignal } from "./signals.js";
+import { computed, runAfterFlush, signal, untracked, type ReadonlySignal, type WritableSignal } from "./signals.js";
 import { isLazy } from "./lazy.js";
 import { hooks } from "./dev-hooks.js";
-import { DEV } from "./dev-hooks.js";
+import { DEV, devtools } from "./dev-hooks.js";
 import type { ComponentClass } from "./component.js";
 import { matchRoutes, parseUrl, runGuard, toHref, type Match, type Route, type RouteSnapshot } from "./router-config.js";
 
 export const ROUTES = new InjectionToken<readonly Route[]>("Routes");
 
-/** Provides the Router and the route config: `bootstrap(Root, { providers: provideRouter(routes) })`. */
-export function provideRouter(routes: readonly Route[]): Provider[] {
-  return [{ provide: ROUTES, useValue: routes }, Router];
+/** What a navigation tells the `announce` option, to word the live-region message. */
+export interface AnnounceContext {
+  /** The URL navigated to. */
+  url: string;
+  /** The page title: the deepest route `title`, else the platform `Title`. May be empty. */
+  title: string;
+  /** Route `data`, merged from the root down. */
+  data: Record<string, unknown>;
+  params: Record<string, string>;
 }
+
+/** Router accessibility: what is announced and where focus goes after each completed navigation. */
+export interface RouterAccessibilityOptions {
+  /**
+   * The live-region message. `false` announces nothing. A function receives the navigation and returns the text
+   * (`undefined` or empty: nothing). A route's own `announce` wins. Default: the page title.
+   */
+  announce?: false | ((context: AnnounceContext) => string | undefined);
+  /** How urgently the message is spoken. Default `polite`. */
+  politeness?: Politeness;
+  /** Where focus goes: a selector or a list tried in order, or `false` to leave focus alone. A route's own `focus` wins. Default `["main h1", "h1", "main", "router-outlet"]`. */
+  focus?: FocusTarget | false;
+  /** Also announce and move focus for the first navigation, when the app starts. Default `false`: the browser already presents a freshly loaded page. */
+  initial?: boolean;
+}
+
+export const ROUTER_A11Y = new InjectionToken<RouterAccessibilityOptions>("RouterAccessibility");
+
+/** Provides the Router and the route config: `bootstrap(Root, { providers: provideRouter(routes) })`. */
+export function provideRouter(routes: readonly Route[], options: { a11y?: RouterAccessibilityOptions } = {}): Provider[] {
+  return [{ provide: ROUTES, useValue: routes }, { provide: ROUTER_A11Y, useValue: options.a11y ?? {} }, Router];
+}
+
+export const DEFAULT_FOCUS: readonly string[] = ["main h1", "h1", "main", "router-outlet"];
 
 /** Router state for one level of nesting, injected by a routed component: `inject(ActiveRoute)`. */
 export abstract class ActiveRoute {
@@ -86,6 +116,12 @@ export class Router {
   #location = inject(Location);
   #history = inject(History);
   #title = inject(Title, { optional: true });
+  #meta = inject(Meta, { optional: true });
+  #announcer = inject(LiveAnnouncer, { optional: true });
+  #focus = inject(FocusManager, { optional: true });
+  #a11y = inject(ROUTER_A11Y, { optional: true }) ?? {};
+  #arrived = false;
+  #lastPath: string | undefined;
   #scope = currentScope();
   #id = 0;
   #chain: Route[] = [];
@@ -120,6 +156,18 @@ export class Router {
   #release = this.#scope?.onDispose(this.#follow);
   #initial = this.#start(this.#location.href, { push: false });
   _dev = DEV && hooks.current ? hooks.current.router({ scope: this.#scope, routes: () => this.#routes, replaceRoutes: (next) => this.#replaceRoutes(next as readonly Route[]) }) : undefined;
+
+  _tools = DEV && devtools.current ? devtools.current.router({
+    scope: this.#scope,
+    state: () => untracked(() => ({ url: this.#url(), params: this.#params(), queryParams: this.#queryParams(), fragment: this.#fragment(), data: this.#data(), navigating: this.#navigating() })),
+    routes: () => this.#routes,
+    active: () => this.#chain,
+    events: (listener) => {
+      const sub = this.#events.subscribe(listener);
+      return () => sub.unsubscribe();
+    },
+    navigate: (url) => this.navigate(url),
+  }) : undefined;
 
   #twin<T>(source: ReadonlySignal<T>): Observable<T> {
     return runInScope(this.#scope, () => toObservable(source));
@@ -235,6 +283,7 @@ export class Router {
 
       this.#commit(match, keep, parsed, options);
       this.#events.next({ type: "end", id, url });
+      this.#arrive(match, parsed);
       return { status: "success", url };
     } catch (error) {
       if (stale()) return cancel("superseded");
@@ -274,6 +323,34 @@ export class Router {
     }
   }
 
+  /** After a completed navigation: announce the page and move focus, once the new view has rendered. */
+  #arrive(match: Match[], parsed: ReturnType<typeof parseUrl>): void {
+    const first = !this.#arrived;
+    const path = parsed.path;
+    const moved = this.#lastPath !== path;
+    this.#arrived = true;
+    this.#lastPath = path;
+    // Query and fragment changes keep the page: no announcement, and focus stays where the user is.
+    if (!moved || (first && !this.#a11y.initial)) return;
+    const own = <K extends "announce" | "focus">(key: K) => [...match].reverse().find((m) => m.route[key] !== undefined)?.route[key];
+    const announce = own("announce");
+    const focus = own("focus") ?? this.#a11y.focus ?? DEFAULT_FOCUS;
+    const speak = announce !== undefined ? announce : this.#a11y.announce;
+    if (!this.#announcer && !this.#focus) return;
+    runAfterFlush(() => {
+      if (focus !== false) this.#focus?.focus(focus);
+      if (speak === false || !this.#announcer) return;
+      let message: string | undefined;
+      if (typeof speak === "string") message = speak;
+      else {
+        const title = [...match].reverse().find((m) => m.route.title !== undefined)?.route.title ?? this.#title?.get() ?? "";
+        const context: AnnounceContext = { url: parsed.url, title, data: mergeData(match), params: merge(match) };
+        message = typeof speak === "function" ? speak(context) : title;
+      }
+      if (message) this.#announcer.announce(message, this.#a11y.politeness ?? "polite");
+    }, this.#scope);
+  }
+
   #commit(match: Match[], keep: number, parsed: ReturnType<typeof parseUrl>, options: RunOptions): void {
     const old = this.#tree();
     const levels: Level[] = [];
@@ -305,6 +382,7 @@ export class Router {
     }
     const title = [...match].reverse().find((m) => m.route.title !== undefined)?.route.title;
     if (title !== undefined) this.#title?.set(title);
+    this.#meta?.set(mergeMeta(...match.map((m) => m.route.meta)));
   }
 }
 

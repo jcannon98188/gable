@@ -15,5 +15,10 @@ export { viewChild, viewChildren, contentChild, contentChildren } from "./query.
 export { createComponent, bootstrap, RENDERER } from "./app.js";
 export type { ComponentRef, CreateComponentOptions, BootstrapOptions, InputValues } from "./app.js";
 export { ErrorHandler } from "./errors.js";
+export { ErrorBoundary } from "./error-boundary.js";
 export { hotState } from "./hot-state.js";
+import { DEV } from "./dev-hooks.js";
+import { installDevtools } from "./devtools.js";
+// Dev, in a browser: the global hook the devtools extension connects to. Dead code (and so the module) in production.
+if (DEV && typeof window !== "undefined") installDevtools();
 export type { ErrorContext, ErrorSource } from "./errors.js";

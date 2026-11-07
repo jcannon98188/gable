@@ -13,6 +13,8 @@ export interface Scope {
 export interface ScopeOwner {
   component?: Function;
   injector?: object;
+  /** An error boundary: offered each failure reported from this scope or below; returns true when it took over. */
+  boundary?: (error: unknown, source: string) => boolean;
 }
 
 /** The nearest owner information at or above `scope`. */

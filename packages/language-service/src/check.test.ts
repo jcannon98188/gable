@@ -53,6 +53,8 @@ describe("gable-check", () => {
       ["call-observable", "user$()", 0],
       ["expression-syntax", "count() + 1", 0],
       ["expression-syntax", "describe(1)", 0],
+      ["expression-syntax", "count() == 1", 0],
+      ["type-mismatch", "count() === \"one\"", 0],
       ["unknown-member", "user$.nam", 6],
       ["type-mismatch", "count(); track n", 0],
       ["model-not-writable", "readonlyName", 0],

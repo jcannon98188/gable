@@ -11,6 +11,8 @@ export class Broken {
       <p>{{ user$() }}</p>
       <p>{{ count() + 1 }}</p>
       <p>{{ describe(1) }}</p>
+      <p>{{ count() == 1 }}</p>
+      <p>{{ count() === "one" }}</p>
       <p>{{ user$.nam }}</p>
       @for (n of count(); track n) {
         <i>{{ n }}</i>

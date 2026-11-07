@@ -1,0 +1,61 @@
+import { input } from "@gable/core";
+import { cn } from "../lib/cn.js";
+import { useHostClass } from "../lib/host-class.js";
+
+/**
+ * Table parts, attribute directives on the native table elements:
+ *
+ *   <div uiTableContainer>
+ *     <table uiTable>
+ *       <caption uiTableCaption>Invoices</caption>
+ *       <thead uiTableHeader><tr uiTableRow><th uiTableHead>Name</th></tr></thead>
+ *       <tbody uiTableBody><tr uiTableRow><td uiTableCell>Ada</td></tr></tbody>
+ *       <tfoot uiTableFooter>...</tfoot>
+ *     </table>
+ *   </div>
+ */
+export class UiTableContainer {
+  static meta = { selector: "[uiTableContainer]" };
+  class = input<string>("");
+  private apply = useHostClass(() => cn("relative w-full overflow-x-auto", this.class()));
+}
+export class UiTable {
+  static meta = { selector: "table[uiTable]" };
+  class = input<string>("");
+  private apply = useHostClass(() => cn("w-full caption-bottom text-sm", this.class()));
+}
+export class UiTableHeader {
+  static meta = { selector: "thead[uiTableHeader]" };
+  class = input<string>("");
+  private apply = useHostClass(() => cn("[&_tr]:border-b", this.class()));
+}
+export class UiTableBody {
+  static meta = { selector: "tbody[uiTableBody]" };
+  class = input<string>("");
+  private apply = useHostClass(() => cn("[&_tr:last-child]:border-0", this.class()));
+}
+export class UiTableFooter {
+  static meta = { selector: "tfoot[uiTableFooter]" };
+  class = input<string>("");
+  private apply = useHostClass(() => cn("border-t bg-muted/50 font-medium [&>tr]:last:border-b-0", this.class()));
+}
+export class UiTableRow {
+  static meta = { selector: "tr[uiTableRow]" };
+  class = input<string>("");
+  private apply = useHostClass(() => cn("border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted", this.class()));
+}
+export class UiTableHead {
+  static meta = { selector: "th[uiTableHead]" };
+  class = input<string>("");
+  private apply = useHostClass(() => cn("h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0", this.class()));
+}
+export class UiTableCell {
+  static meta = { selector: "td[uiTableCell]" };
+  class = input<string>("");
+  private apply = useHostClass(() => cn("p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0", this.class()));
+}
+export class UiTableCaption {
+  static meta = { selector: "caption[uiTableCaption]" };
+  class = input<string>("");
+  private apply = useHostClass(() => cn("mt-4 text-sm text-muted-foreground", this.class()));
+}

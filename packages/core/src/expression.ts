@@ -1,7 +1,9 @@
 import type { ViewContext } from "./view-context.js";
 // Gable's own expression language: parser plus tree-walking interpreter. No eval.
 // Value expressions allow property reads (`a.b`, `a?.b`), zero-argument signal
-// reads (`count()`), literals, `!` and `??`. Event handlers additionally allow
+// reads (`count()`), literals, `!`, `??`, strict comparison (`===`, `!==`, `<`, `>`,
+// `<=`, `>=`), logical `&&` / `||` and parentheses, with JavaScript precedence. As in
+// JavaScript, `??` cannot be mixed with `&&` / `||` without parentheses. Event handlers additionally allow
 // one call whose arguments are value expressions (references, literals, `$event`).
 
 import { connect, isStream } from "./bridge.js";
@@ -14,7 +16,9 @@ export type Expr =
   | { type: "member"; object: Expr; property: string; optional: boolean }
   | { type: "call"; callee: Expr; optional: boolean }
   | { type: "not"; operand: Expr }
-  | { type: "coalesce"; left: Expr; right: Expr };
+  | { type: "coalesce"; left: Expr; right: Expr }
+  | { type: "logical"; op: "&&" | "||"; left: Expr; right: Expr }
+  | { type: "binary"; op: "===" | "!==" | "<" | ">" | "<=" | ">="; left: Expr; right: Expr };
 
 /** A parsed event handler: `callee(args...)`. */
 export interface HandlerExpr {
@@ -39,7 +43,7 @@ export function createEnv(instance: object, parent: Env | null = null): Env {
 type Token = { kind: "id" | "num" | "str" | "punct" | "op"; text: string };
 
 const TOKEN =
-  /\s*(?:([A-Za-z_$][\w$]*)|(\d+(?:\.\d+)?)|'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"|(\?\?|\?\.|[.()!,])|([^\s\w$.()!,'"]+))/y;
+  /\s*(?:([A-Za-z_$][\w$]*)|(\d+(?:\.\d+)?)|'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"|(===|!==|<=|>=|&&|\|\||\?\?|\?\.|[.()!,<>])|([^\s\w$.()!,'"]+))/y;
 
 const OPERATOR_HINT = "Templates cannot compute: move derived values into a computed signal and read it.";
 
@@ -84,14 +88,21 @@ class Parser {
   unexpected(t: Token): never {
     if (t.kind === "op") {
       if (t.text.startsWith("|")) this.fail(`"${t.text}" is not allowed: pipes do not exist. Format values in a computed signal.`);
+      if (t.text === "==") this.fail(`loose equality "==" is not allowed. Use "===".`);
       if (t.text === "=>") this.fail(`arrow functions are not allowed. ${OPERATOR_HINT}`);
       if (t.text === "=") this.fail(`assignment is not allowed. Use [(model)] for two-way binding or call a handler.`);
       if (t.text === "?" || t.text === ":") this.fail(`the conditional operator is not allowed. Use @if or a computed signal.`);
       if (t.text === "[" || t.text === "{") this.fail(`"${t.text}" literals and indexing are not allowed. ${OPERATOR_HINT}`);
       this.fail(`operator "${t.text}" is not allowed. ${OPERATOR_HINT}`);
     }
+    if (this.isPunct(t, "!")) {
+      const next = this.tokens[this.tokens.indexOf(t) + 1];
+      if (next?.kind === "op" && next.text.startsWith("=")) this.fail(`loose inequality "!=" is not allowed. Use "!==".`);
+    }
     return this.fail(`unexpected "${t.text}"`);
   }
+  /** Parenthesized logical/coalesce nodes: they may sit beside `??` without ambiguity. */
+  readonly grouped = new Set<Expr>();
   noArgs(): void {
     this.pos++; // "("
     if (!this.isPunct(this.peek(), ")")) {
@@ -99,13 +110,57 @@ class Parser {
     }
     this.pos++;
   }
+  /** Full expression: `||` / `&&` chains or `??` chains, never mixed without parentheses (JavaScript's rule). */
   coalesce(): Expr {
-    let left = this.unary();
+    const first = this.or();
+    if (!this.isPunct(this.peek(), "??")) return first;
+    if (first.type === "logical" && !this.grouped.has(first)) this.mixed();
+    let left = first;
     while (this.isPunct(this.peek(), "??")) {
       this.pos++;
-      left = { type: "coalesce", left, right: this.unary() };
+      const right = this.compare();
+      left = { type: "coalesce", left, right };
+    }
+    const t = this.peek();
+    if (this.isPunct(t, "&&") || this.isPunct(t, "||")) this.mixed();
+    return left;
+  }
+  mixed(): never {
+    return this.fail('"??" cannot be mixed with "&&" or "||" without parentheses');
+  }
+  or(): Expr {
+    let left = this.and();
+    while (this.isPunct(this.peek(), "||")) {
+      this.pos++;
+      left = { type: "logical", op: "||", left, right: this.and() };
     }
     return left;
+  }
+  and(): Expr {
+    let left = this.equality();
+    while (this.isPunct(this.peek(), "&&")) {
+      this.pos++;
+      left = { type: "logical", op: "&&", left, right: this.equality() };
+    }
+    return left;
+  }
+  equality(): Expr {
+    let left = this.compare();
+    for (;;) {
+      const t = this.peek();
+      if (!this.isPunct(t, "===") && !this.isPunct(t, "!==")) return left;
+      this.pos++;
+      left = { type: "binary", op: t!.text as "===" | "!==", left, right: this.compare() };
+    }
+  }
+  compare(): Expr {
+    let left = this.unary();
+    for (;;) {
+      const t = this.peek();
+      if (!this.isPunct(t, "<") && !this.isPunct(t, ">") && !this.isPunct(t, "<=") && !this.isPunct(t, ">=")) return left;
+      this.pos++;
+      left = { type: "binary", op: t!.text as "<" | ">" | "<=" | ">=", left, right: this.unary() };
+    }
   }
   unary(): Expr {
     if (this.isPunct(this.peek(), "!")) {
@@ -156,6 +211,7 @@ class Parser {
       const inner = this.coalesce();
       if (!this.isPunct(this.peek(), ")")) this.fail("expected )");
       this.pos++;
+      if (inner.type === "logical" || inner.type === "coalesce") this.grouped.add(inner);
       return inner;
     }
     return this.unexpected(t);
@@ -251,6 +307,28 @@ export function evaluate(expr: Expr, env: Env): unknown {
       return !evaluate(expr.operand, env);
     case "coalesce":
       return evaluate(expr.left, env) ?? evaluate(expr.right, env);
+    case "logical": {
+      const left = evaluate(expr.left, env);
+      return expr.op === "&&" ? (left ? evaluate(expr.right, env) : left) : left ? left : evaluate(expr.right, env);
+    }
+    case "binary": {
+      const left = evaluate(expr.left, env) as any;
+      const right = evaluate(expr.right, env) as any;
+      switch (expr.op) {
+        case "===":
+          return left === right;
+        case "!==":
+          return left !== right;
+        case "<":
+          return left < right;
+        case ">":
+          return left > right;
+        case "<=":
+          return left <= right;
+        default:
+          return left >= right;
+      }
+    }
     case "member": {
       const object = evaluate(expr.object, env) as Record<string, unknown> | null | undefined;
       if (object == null) {

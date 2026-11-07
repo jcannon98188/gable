@@ -212,6 +212,69 @@ Route paths are the same in both modes. An empty hash reads as `/`. In path mode
 
 The `title` of a route is written to `document.title` in both modes.
 
+### Meta and SEO
+
+A route declares document metadata with `meta`, beside `title`:
+
+```ts
+const routes = [
+  {
+    path: '',
+    meta: { robots: 'index', twitter: { card: 'summary' } },
+    children: [
+      {
+        path: 'blog/:slug',
+        component: Post,
+        title: 'Post',
+        meta: {
+          description: 'A post',
+          canonical: 'https://example.com/blog',
+          themeColor: '#0b1020',
+          og: { title: 'Post', type: 'article' },
+        },
+      },
+    ],
+  },
+];
+```
+
+Fields: `description`, `robots`, `themeColor` (`theme-color`), `canonical` (`<link rel="canonical">`), `og` (`og:*` properties) and `twitter` (`twitter:*` names). Tags merge from the root route down: a child wins per field, and `og` and `twitter` merge per key. On every navigation the merged result replaces the previous route's tags, so nothing leaks between pages. A tag the page already has in `index.html` is updated in place and restored when no route sets it; tags Gable adds are removed.
+
+Inject `Meta` (from `@gable/core/renderer`) to set tags from code, for example once data has loaded: `meta.update({ description })` merges, `meta.set(tags)` replaces, `meta.clear()` removes. The next navigation resets them to the new route's declaration. Tags are written to `document.head` in the browser; they are not rendered into static HTML.
+
+In tests, `app.meta.entries` lists the current head entries (`{ kind: 'name' | 'property' | 'link', key, value }`) and `app.meta.get()` the tags.
+
+## Accessibility: announcements and focus
+
+A single-page navigation changes the page without a load, so assistive technology hears nothing and keyboard focus stays on the link that was clicked. After every completed navigation the router does two things, once the new view has rendered:
+
+1. **Announces the page** through a polite live region: the route's `announce` text, otherwise the route `title` (the deepest one), otherwise the platform `Title`.
+2. **Moves focus** to the first match of `["main h1", "h1", "main", "router-outlet"]`. The target gets `tabindex="-1"` when it is not natively focusable, so it can take focus without joining the tab order.
+
+Both are skipped for the first navigation (the browser already presents a freshly loaded page; set `initial: true` to include it) and for navigations that keep the same path, such as changing a query parameter or fragment, so a filter box keeps focus while it filters. Back and forward count as navigations.
+
+Configure it for the whole app in the second argument of `provideRouter`, and override or opt out per route:
+
+```ts
+provideRouter(routes, {
+  a11y: {
+    announce: ({ title, data }) => `${title}, ${data.section ?? 'site'}`, // or false for none
+    politeness: 'polite', // or 'assertive'
+    focus: ['#page-title', 'main'], // a selector, a list tried in order, or false
+    initial: false,
+  },
+});
+
+const routes = [
+  { path: 'results', component: Results, title: 'Results', announce: 'Results updated', focus: '#results-heading' },
+  { path: 'player', component: Player, focus: false, announce: false }, // leave both alone
+];
+```
+
+A route's `announce` and `focus` win over the app-wide options; the deepest route that sets one wins over its parents. `announce` as a function receives `{ url, title, params, data }`; returning `undefined` or an empty string announces nothing.
+
+The announcements come from the `LiveAnnouncer` service (see [Accessibility checks](accessibility.md)), which you can inject yourself. In tests, `mountApp` exposes `app.announcer.messages` and `app.focus.focused` (the node focus moved to).
+
 ## Testing
 
 `mountApp` from `@gable/testing` mounts a root component with a router and an in-memory Location, History and Title. No browser is needed, and `url` sets the starting URL.
@@ -234,3 +297,43 @@ await app.settle();
 ```
 
 `app.title.get()` reads the title. Pass `providers` to supply fakes, for example an `Auth` service for a guard. The test renderer has no hash mode: it takes app URLs directly, so routes behave the same as under `dom({ mode: 'hash' })`.
+
+## Transitions
+
+Route swaps are instant unless you opt in. There are two mechanisms, both opt-in and both skipped under `prefers-reduced-motion: reduce`.
+
+**CSS (the default mode).** The outlet marks the incoming view's host `data-state="open"` and the outgoing view's host `data-state="closed"`, and sets `data-transition` on the `<router-outlet>`. The outgoing view's scope is disposed straight away, but its nodes stay in the tree until its exit animation or transition ends (the same `holdRemoval` hook that `uiPresence` uses, so presence components inside the leaving page are waited for too). You write the animation:
+
+```html
+<router-outlet transition></router-outlet>
+```
+
+```css
+router-outlet { display: grid; }
+router-outlet > * { grid-area: 1 / 1; }              /* old and new views overlap while the old one leaves */
+router-outlet > [data-state='open']   { animation: in 250ms ease-out; }
+router-outlet > [data-state='closed'] { animation: out 250ms ease-in forwards; }
+```
+
+The end is detected from the host's own `animationend` / `transitionend`, with a timeout (computed duration plus 100 ms) as a safety net. A leaving view with no animation or transition on `[data-state='closed']` is removed at once. Add your own `@media (prefers-reduced-motion: reduce)` rules for anything the router cannot skip: the router already swaps instantly and does not set `data-state`, so keyframes keyed on it never run. A swap to the same route with different params keeps the instance, so nothing animates.
+
+**View Transitions API.** `transition="view"` runs the swap inside `document.startViewTransition(...)`. The browser snapshots the old view, the swap happens, and it cross-fades (or runs your `::view-transition-*` CSS; give the outlet or the views a `view-transition-name`). Where the API is missing the swap just happens immediately. The first render is never wrapped. The swap runs when the browser calls back, so `navigate()` can resolve before the DOM has changed.
+
+**Where to turn it on.** From most to least specific:
+
+1. `Route.transition` on the route being entered: `true` (router default mode), `'css'`, `'view'`, or `false` to opt out.
+2. `<router-outlet transition>` (default mode), `transition="view"`, `[transition]="false"`.
+3. `provideRouteTransitions({ mode })` next to `provideRouter` turns it on for every outlet (`mode` defaults to `'css'`). Pass `all: false` to only set options and keep opt-in per outlet or route.
+
+`provideRouteTransitions` also takes `exitDuration(host)`, `reducedMotion()` and `startViewTransition(update)` overrides. They matter for tests and non-DOM renderers: the in-memory renderer has no computed style, so `exitDuration: () => 200` makes the outgoing view wait for an `animationend` that you dispatch.
+
+```ts
+const app = mountApp(Root, { routes, providers: provideRouteTransitions({ exitDuration: () => 200 }) });
+await app.navigate('/about');
+expect(app.query('app-home')!.attrs['data-state']).toBe('closed'); // still mounted
+app.dispatch(app.query('app-home')!, 'animationend', { target: app.query('app-home') });
+```
+
+### Animating lists
+
+The same hook animates `@for`, `@if` and `@switch`. Put `uiPresence` (from `@gable/ui-primitives`) on the row: it sets `data-state` and keeps the row mounted until its exit animation ends. Style `[data-state='closed']` with the exit and the row's base style with the enter; keyed `@for` moves rows without replaying either. Components can call `usePresence()` directly. See `examples/ui-gallery/src/transitions-demo.ts` (open `/transitions.html` in the dev server) for a routed page set, a list with presence, and a jsdom test.

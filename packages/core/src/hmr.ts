@@ -1,6 +1,6 @@
 // The HMR runtime (`@gable/core/hmr`). Dev only: importing it installs the core's dev hooks, so an app that
 // never imports it (every production build) carries none of this. No semver promise.
-import { hooks, type ComponentBegin, type DevHooks, type InjectorOps, type Region, type RouterOps, type ServiceBegin, type Swap } from "./dev-hooks.js";
+import { devtools, hooks, type ComponentBegin, type DevHooks, type InjectorOps, type Region, type RouterOps, type ServiceBegin, type Swap } from "./dev-hooks.js";
 import { registerComponentStyles } from "./component.js";
 import { reportError } from "./errors.js";
 import type { Scope } from "./scope.js";
@@ -136,6 +136,7 @@ export function registerModule(url: string, namespace: Record<string, unknown>):
   for (const [name, value] of Object.entries(namespace)) {
     if (isRouteConfig(value) && !routeConfigs.has(`${moduleId(url)}#${name}`)) routeConfigs.set(`${moduleId(url)}#${name}`, value);
     if (isClass(value) && !entries.has(`${moduleId(url)}#${name}`)) register(`${moduleId(url)}#${name}`, value);
+    if (isClass(value)) devtools.current?.source(value, moduleId(url));
   }
 }
 
@@ -424,6 +425,12 @@ function withSession<T>(old: Rec[], pairs: Set<Function>, fn: () => T): T {
  * instances beside the old ones, and only then retire the old. Any failure undoes everything.
  */
 export function applyUpdate(updates: ModuleUpdate[], failures: unknown[] = [], roots?: object[]): HotResult {
+  const result = applyUpdateNow(updates, failures, roots);
+  devtools.current?.hmr({ status: result.status, errors: result.errors, modules: updates.map((u) => moduleId(u.url)) });
+  return result;
+}
+
+function applyUpdateNow(updates: ModuleUpdate[], failures: unknown[], roots?: object[]): HotResult {
   return untracked(() => {
     if (failures.length > 0) {
       for (const error of failures) reportError(error, "hmr", reporter(roots), "module failed to evaluate");

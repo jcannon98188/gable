@@ -5,7 +5,7 @@
 import ts from "@typescript/typescript6";
 import type { RuleId } from "./config.js";
 import type { Report } from "./file-rules.js";
-import { hasModifier, isSignal, unwrap } from "./typeutil.js";
+import { hasModifier, isSignal, isStoreType, unwrap } from "./typeutil.js";
 
 const staticMember = (cls: ts.ClassDeclaration, name: string) =>
   cls.members.some((m) => ts.isPropertyDeclaration(m) && ts.isIdentifier(m.name) && m.name.text === name && hasModifier(m, ts.SyntaxKind.StaticKeyword));
@@ -34,6 +34,10 @@ export function sourceRules(sf: ts.SourceFile, checker: ts.TypeChecker, template
     if (ts.isCallExpression(node) && isCoreCall(checker, node, "injectHost") && !inSetup(node)) {
       report(node.getStart(sf), node.getWidth(sf), "inject-host-context", "injectHost() only works during Setup: call it in a field initialiser (or a helper those call), not at module level, in a method or in a callback");
     }
+    if (ts.isNewExpression(node) && !inSetup(node) && isStoreType(checker, checker.getTypeAtLocation(node))) {
+      report(node.getStart(sf), node.getWidth(sf), "store-outside-injection-context", "A store runs its factories in the injection context: get it with inject(Store) in Setup, or list it in providers, instead of constructing it with new here");
+    }
+    if (ts.isCallExpression(node)) storeWrite(sf, checker, node, report);
     ts.forEachChild(node, visit);
   };
   visit(sf);
@@ -170,4 +174,16 @@ function inSetup(node: ts.Node): boolean {
     }
   }
   return false;
+}
+
+/** `store[STATE_SOURCE].set(...)`: state is written with patchState(), which is the only write path. */
+function storeWrite(sf: ts.SourceFile, checker: ts.TypeChecker, call: ts.CallExpression, report: Report): void {
+  const callee = call.expression;
+  if (!ts.isPropertyAccessExpression(callee) || !/^(set|update)$/.test(callee.name.text)) return;
+  const receiver = unwrap(callee.expression);
+  if (!ts.isElementAccessExpression(receiver) || !ts.isIdentifier(receiver.argumentExpression)) return;
+  const symbol = checker.getSymbolAtLocation(receiver.argumentExpression);
+  const declared = symbol && symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+  if (declared?.name !== "STATE_SOURCE") return;
+  report(call.getStart(sf), call.getWidth(sf), "store-write-outside-patch", "Store state is written with patchState(store, ...), not through its state source: patchState merges updaters in one write and is the only supported path");
 }

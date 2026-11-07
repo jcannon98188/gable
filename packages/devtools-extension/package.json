@@ -1,0 +1,16 @@
+{
+  "name": "@gable/devtools-extension",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Gable DevTools: a Manifest V3 browser extension (Chrome, Edge and other Chromium browsers) with a Gable panel in the browser devtools.",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@gable/core": "0.0.0",
+    "vite": "^8.3.6"
+  }
+}

@@ -3,7 +3,7 @@ import { createScope, runInScope, type Scope } from "./scope.js";
 import { untracked } from "./signals.js";
 import type { Renderer } from "./renderer.js";
 import { InjectionToken, assertNoConstructor, createInjector, type Injector, type Provider } from "./di.js";
-import { DEV, hooks, retireView, type Region, type Swap } from "./dev-hooks.js";
+import { DEV, devtools, hooks, retireView, type Region, type Swap } from "./dev-hooks.js";
 import { createEnv } from "./expression.js";
 import { addAttribute, parseTemplate, type ElementNode, type TemplateResult } from "./template.js";
 import { applyBindings, buildNodes } from "./view.js";
@@ -154,6 +154,7 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
   if (own && providers) scope.onDispose(() => own.destroy());
   scope.owner = { component: Class, injector: own ?? undefined };
   const dev = DEV ? hooks.current?.component(Class, own) : undefined;
+  const tools = DEV ? devtools.current : null;
   try {
     return setUp();
   } catch (error) {
@@ -178,6 +179,7 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
     };
     const instance = declareQueries(queries, () => (own ? own.run(() => runInScope(scope, make)) : make()));
     for (const out of describeFields(instance, Class.name)) scope.onDispose(() => completeOutput(out));
+    tools?.component({ Class, instance, host, scope, renderer, injector: own });
     const env = createEnv(instance);
     env.view = {
       imports: applyOverrides(own, imports ?? []).filter((e): e is ComponentClass<any> => !isLazy(e)),

@@ -4,10 +4,10 @@ title: Template syntax and expression evaluation without a compiler
 status: Done
 assignee:
   - '@jason'
-created_date: '2026-11-05 04:20'
-updated_date: '2026-11-05 04:58'
+created_date: 2026-11-05 04:20
+updated_date: '2026-11-07T03:29:00Z'
 labels:
-  - 'wayfinder:grilling'
+  - wayfinder:grilling
 dependencies: []
 parent_task_id: TASK-1
 ordinal: 5000
@@ -20,6 +20,12 @@ ordinal: 5000
 
 What is gable's template syntax (control flow, bindings, events, interpolation) and how are template expressions evaluated at runtime without a framework compiler: own expression parser vs Function/eval, CSP implications, and caching of parsed templates?
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Amendment 3 (TASK-36): value expressions additionally allow strict comparison (===, !==, <, >, <=, >=), logical && and ||, and parentheses, with JavaScript precedence (relational binds tighter than equality, then &&, then ||). ?? still cannot be mixed with && or || without parentheses (JavaScript's rule). Still rejected with hints: ==, !=, arithmetic, ternary, assignment, arrow functions, calls with arguments.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 

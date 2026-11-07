@@ -2,6 +2,7 @@ import { Signal } from "signal-polyfill";
 import { reportError } from "./errors.js";
 import { inReadPhase, readPhase } from "./read-phase.js";
 import { currentScope, createScope, runInScope, type Scope } from "./scope.js";
+import { DEV, devtools } from "./dev-hooks.js";
 
 // The TC39 polyfill is an implementation detail: it is imported only here and
 // never appears in a public type.
@@ -27,6 +28,7 @@ export function signal<T>(initial: T, options?: SignalOptions<T>): WritableSigna
   const read = (() => state.get()) as WritableSignal<T>;
   read.set = (value) => (firstRuns > 0 && writes++, state.set(value));
   read.update = (fn) => (firstRuns > 0 && writes++, state.set(fn(state.get())));
+  if (DEV) devtools.current?.signal(read, state, "state", currentScope());
   return read;
 }
 
@@ -38,17 +40,47 @@ export function signal<T>(initial: T, options?: SignalOptions<T>): WritableSigna
  */
 export function stateSource<T>(initial: T): { read: ReadonlySignal<T>; write: (value: T) => void } {
   const state = new Signal.State<T>(initial);
+  if (DEV && devtools.current) {
+    const read = () => state.get();
+    devtools.current.signal(read, state, "state", currentScope());
+    return { read, write: (value) => (firstRuns > 0 && writes++, state.set(value)) };
+  }
   return { read: () => state.get(), write: (value) => (firstRuns > 0 && writes++, state.set(value)) };
 }
 
 export function computed<T>(fn: () => T, options?: SignalOptions<T>): ReadonlySignal<T> {
   const c = new Signal.Computed<T>(fn, options?.equal ? { equals: options.equal } : undefined);
-  return () => c.get();
+  const read = () => c.get();
+  if (DEV) devtools.current?.signal(read, c, "computed", currentScope());
+  return read;
 }
 
 /** Reads signals without subscribing the running effect or computed to them. */
 export function untracked<T>(fn: () => T): T {
   return Signal.subtle.untrack(fn);
+}
+
+// --- devtools support (dev only; unused, so dropped, in production builds) ---
+
+/** Dependency edges and writability of a signal node, for the devtools. */
+export function inspectNode(node: object): { sources: object[]; sinks: object[]; state: boolean } {
+  const n = node as Signal.State<unknown> | Signal.Computed<unknown>;
+  const state = n instanceof Signal.State;
+  return {
+    sources: state ? [] : Signal.subtle.introspectSources(n as Signal.Computed<unknown>),
+    sinks: Signal.subtle.introspectSinks(n),
+    state,
+  };
+}
+
+/** Reads a node without subscribing anything to it. */
+export function peekNode(node: object): unknown {
+  return Signal.subtle.untrack(() => (node as Signal.State<unknown>).get());
+}
+
+/** Writes a state node directly (devtools editing). */
+export function pokeNode(node: object, value: unknown): void {
+  (node as Signal.State<unknown>).set(value);
 }
 
 // --- scheduler -------------------------------------------------------------
@@ -122,6 +154,9 @@ function byDepthThenCreation(a: EffectNode, b: EffectNode): number {
 }
 
 function flushNow(): void {
+  const dev = DEV ? devtools.current : null;
+  const t0 = dev?.timing ? performance.now() : 0;
+  let ran = 0;
   // Effects may write signals and so re-arm a watcher: loop until quiet.
   // Parents run before children; ties run in creation order.
   let rounds = 0;
@@ -153,14 +188,17 @@ function flushNow(): void {
     }
     for (const node of pending) {
       if (node.scope.disposed) continue;
+      const t = dev?.timing ? performance.now() : 0;
       try {
         node.get();
       } catch (error) {
         reportError(error, "effect", node.scope);
       }
+      if (dev?.timing) (ran++, dev.effectRun(node, performance.now() - t, false));
     }
   }
   scheduled = null;
+  if (dev?.timing) dev.flushed(t0, ran, rounds);
 }
 
 /** Resolves once the pending flush (if any) has completed. */
@@ -201,11 +239,14 @@ export function effect(fn: () => void): void {
     seq++,
     bucket,
   );
+  if (DEV) devtools.current?.effect(node, scope);
   scope.onDispose(() => {
     bucket.watcher.unwatch(node);
     if (bucket.size-- === BUCKET_SIZE) openBuckets.push(bucket);
   });
   const before = writes;
+  const dev = DEV ? devtools.current : null;
+  const t0 = dev?.timing ? performance.now() : 0;
   firstRuns++;
   try {
     node.get(); // the initial run is synchronous
@@ -214,6 +255,7 @@ export function effect(fn: () => void): void {
   } finally {
     firstRuns--;
   }
+  if (dev?.timing) dev.effectRun(node, performance.now() - t0, true);
   bucket.watcher.watch(node);
   if (writes !== before && !bucket.queued) {
     // The first run wrote a signal it had read; watch() does not notify for an already-dirty node, so look at this bucket on the next flush.

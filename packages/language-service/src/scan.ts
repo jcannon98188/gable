@@ -131,7 +131,8 @@ class Scanner {
         exprs.push(src(raw.slice(open + 2, close), this.base + from + open + 2));
         i = close + 2;
       }
-      if (exprs.length) out.push({ type: "text", exprs });
+      // Static text is kept (with no expressions) so rules can tell an element has content.
+      if (exprs.length || raw.trim() !== "") out.push({ type: "text", exprs });
     };
     while (this.i < s.length) {
       const text = this.scanText(context === "block");

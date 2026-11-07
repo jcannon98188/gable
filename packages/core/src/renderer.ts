@@ -1,6 +1,7 @@
 import type { Provider } from "./di.js";
 
-export { Location, History, Title } from "./platform.js";
+export { Location, History, Title, Meta, LiveAnnouncer, FocusManager, metaEntries, mergeMeta } from "./platform.js";
+export type { MetaTags, MetaEntry, Politeness, FocusTarget } from "./platform.js";
 
 /**
  * The Renderer contract: a small set of synchronous operations over opaque

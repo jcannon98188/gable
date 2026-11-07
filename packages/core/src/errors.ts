@@ -41,6 +41,12 @@ export function reportError(error: unknown, source: ErrorSource, scope: Scope | 
     console.error(error);
     console.error(handlerError);
   }
+  // The handler always sees the failure; the nearest boundary that accepts it then swaps in its fallback.
+  try {
+    for (let s = scope; s; s = s.parent) if (s.owner?.boundary?.(error, source)) return;
+  } catch (boundaryError) {
+    console.error(boundaryError);
+  }
 }
 
 /** Marks a failed evaluation so the caller can keep its last good value. */

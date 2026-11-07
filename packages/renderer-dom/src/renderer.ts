@@ -1,4 +1,4 @@
-import { History, Location, Title, type Renderer } from "@gable/core/renderer";
+import { FocusManager, History, Location, LiveAnnouncer, Meta, Title, type Renderer } from "@gable/core/renderer";
 import { controlBinding } from "./controls.js";
 import { DEV } from "./dev.js";
 import { createDomPlatform, type PlatformOptions } from "./platform.js";
@@ -74,6 +74,9 @@ export function createDomRenderer(options: DomRendererOptions = {}): DomRenderer
       { provide: Location, useFactory: () => services().location },
       { provide: History, useFactory: () => services().history },
       { provide: Title, useFactory: () => services().title },
+      { provide: Meta, useFactory: () => services().meta },
+      { provide: LiveAnnouncer, useFactory: () => services().announcer },
+      { provide: FocusManager, useFactory: () => services().focus },
     ],
 
     createElement(tag, parent) {

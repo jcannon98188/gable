@@ -107,3 +107,44 @@ export function retireView<N>(renderer: Renderer<N>, oldNodes: N[], newNodes: N[
     // DOM state is a nicety
   }
 }
+
+// --- devtools --------------------------------------------------------------
+
+/** What the router hands the devtools (dev only). */
+export interface RouterDevInfo {
+  scope: Scope | null;
+  /** Current URL state, read untracked. */
+  state(): { url: string; params: unknown; queryParams: unknown; fragment: unknown; data: unknown; navigating: boolean };
+  routes(): readonly unknown[];
+  /** The matched route chain, outermost first. */
+  active(): readonly unknown[];
+  /** Subscribes to navigation events; returns the unsubscribe. */
+  events(listener: (event: unknown) => void): () => void;
+  navigate(url: string): Promise<unknown>;
+}
+
+/** What the dev-only devtools layer (`devtools.ts`) receives from the runtime. Every call site is behind `DEV && devtools.current`. */
+export interface DevtoolsSink {
+  /** True while a client is connected: effect timings are only measured then. */
+  timing: boolean;
+  /** A signal or computed was created; `read` is its callable, `node` the underlying polyfill node. */
+  signal(read: Function, node: object, kind: "state" | "computed", scope: Scope | null): void;
+  /** `read` is an input or model wrapper over the signal `of`. */
+  alias(read: Function, of: Function, kind: "input" | "model"): void;
+  effect(node: object, scope: Scope): void;
+  effectRun(node: object, ms: number, first: boolean): void;
+  flushed(startedAt: number, ran: number, rounds: number): void;
+  component(info: { Class: Function; instance: object; host: unknown; scope: Scope; renderer: Renderer<any>; injector: object | null }): void;
+  injector(
+    injector: object,
+    parent: object | null,
+    entries: () => Array<{ token: unknown; value: unknown; resolved: boolean }>,
+    scope: Scope,
+  ): void;
+  router(info: RouterDevInfo): void;
+  hmr(result: { status: string; errors: unknown[]; modules: string[] }): void;
+  /** A module (by URL) exports `Class` (from the Vite plugin's accept line). */
+  source(Class: Function, url: string): void;
+}
+
+export const devtools: { current: DevtoolsSink | null } = { current: null };

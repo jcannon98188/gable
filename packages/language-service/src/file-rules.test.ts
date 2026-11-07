@@ -217,3 +217,69 @@ describe("component-meta", () => {
     }
   });
 });
+
+describe("store rules", () => {
+  it("passes reads in templates, methods in handlers, patchState and stores made in Setup", async () => {
+    expect((await check("store-pass")).diagnostics).toEqual([]);
+  });
+
+  it("flags state-source writes, store methods in value expressions, and new Store() outside Setup", async () => {
+    const { code, diagnostics } = await check("store-fail");
+    const at = (snippet: string, into = 0) => where("store-fail", snippet, into);
+    const sneaky = at("store[STATE_SOURCE].set");
+    const method = at("store.add() }}", "store.".length);
+    const orphan = at("new CartStore();\n\nexport class");
+    expect(found(diagnostics).sort()).toEqual(
+      [
+        ["store-write-outside-patch", sneaky.line, sneaky.column, "error"],
+        ["store-method-in-template", method.line, method.column, "error"],
+        ["store-outside-injection-context", orphan.line, orphan.column, "error"],
+      ].sort(),
+    );
+    expect(code).toBe(1);
+  });
+});
+
+describe("accessibility rules", () => {
+  it("passes accessible templates", async () => {
+    const { code, diagnostics } = await check("a11y-pass");
+    expect(diagnostics).toEqual([]);
+    expect(code).toBe(0);
+  });
+
+  it("warns on each accessibility mistake, at the offending template text", async () => {
+    const { code, diagnostics } = await check("a11y-fail");
+    const at = (snippet: string, into = 0) => where("a11y-fail", snippet, into);
+    const expected: Array<[string, { line: number; column: number }]> = [
+      ["a11y-heading-order", at("<h3>", 1)],
+      ["a11y-img-alt", at("<img", 1)],
+      ["a11y-control-name", at("<button", 1)],
+      ["a11y-control-name", at("<a href", 1)],
+      ["a11y-control-name", at("<input type=\"text\" placeholder", 1)],
+      ["a11y-control-name", at("<textarea", 1)],
+      ["a11y-aria-valid", at("role=\"buton\"")],
+      ["a11y-aria-valid", at("aria-lable")],
+      ["a11y-aria-valid", at("aria-hidden=\"yes\"")],
+      ["a11y-click-key", at("<div (click)", 6)],
+      ["a11y-click-key", at("<div role=\"button\" (click)", 20)],
+      ["a11y-tabindex-positive", at("tabindex=\"3\"")],
+      ["a11y-tabindex-positive", at("[attr.tabindex]", 1)],
+      ["a11y-autofocus", at("autofocus")],
+    ];
+    expect(found(diagnostics)).toEqual(expected.map(([rule, p]) => [rule, p.line, p.column, "warn"]));
+    expect(code).toBe(0);
+  });
+
+  it("suggests the intended ARIA attribute and names what a click handler lacks", async () => {
+    const { diagnostics } = await check("a11y-fail");
+    expect(diagnostics.find((d) => d.message.includes("aria-lable"))!.message).toMatch(/Did you mean "aria-label"/);
+    const clicks = diagnostics.filter((d) => d.rule === "a11y-click-key").map((d) => d.message);
+    expect(clicks[0]).toMatch(/a role and a keyboard handler/);
+    expect(clicks[1]).toMatch(/add a keyboard handler/);
+  });
+
+  it("honours severity configuration", async () => {
+    const { diagnostics } = await check("a11y-fail");
+    expect(new Set(diagnostics.map((d) => d.rule)).size).toBe(7);
+  });
+});

@@ -2,6 +2,7 @@ import { isObservable, firstValueFrom, type Observable } from "rxjs";
 import type { ComponentClass } from "./component.js";
 import type { Injector, Provider } from "./di.js";
 import type { LazyEntry } from "./lazy.js";
+import type { FocusTarget, MetaTags } from "./platform.js";
 
 /** What a guard sees of the navigation it guards. */
 export interface RouteSnapshot {
@@ -44,6 +45,14 @@ export interface Route {
   data?: Record<string, unknown>;
   /** Written to the platform `Title` when this is the deepest route with a title. */
   title?: string;
+  /** Document meta tags and canonical link. Merged from the root route down (children win, `og` and `twitter` per key) and applied to the platform `Meta` on every navigation, replacing the previous route's. */
+  meta?: MetaTags;
+  /** What the live region announces after navigating here: this text, or `false` for nothing. Default: the route title, then the page title (see `RouterOptions.announce`). The deepest route that sets it wins. */
+  announce?: string | false;
+  /** Where focus moves after navigating here: a CSS selector, a list tried in order, or `false` to leave focus alone. Default: `RouterOptions.focus`. The deepest route that sets it wins. */
+  focus?: FocusTarget | false;
+  /** Animates the swap to this route: `true` the router default mode, `"css"` or `"view"`; `false` opts out of a router-wide default. Overrides the outlet's `transition`. See "Transitions" in docs/router.md. */
+  transition?: import("./transition.js").RouteTransitionSetting;
   /** Absolute URL to go to when this route matches in full; `:param` is replaced by the matched param. */
   redirectTo?: string;
   canActivate?: readonly CanActivateFn[];

@@ -4,7 +4,8 @@
   "license": "MIT",
   "type": "module",
   "sideEffects": [
-    "./dist/hmr.js"
+    "./dist/hmr.js",
+    "./dist/index.js"
   ],
   "exports": {
     ".": {
@@ -22,6 +23,10 @@
     "./hmr": {
       "types": "./dist/hmr.d.ts",
       "import": "./dist/hmr.js"
+    },
+    "./devtools": {
+      "types": "./dist/devtools.d.ts",
+      "import": "./dist/devtools.js"
     },
     "./internal": {
       "types": "./dist/internal.d.ts",

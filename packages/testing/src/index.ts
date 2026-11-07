@@ -5,7 +5,7 @@ import { createTestInjector, httpTesting } from "./injector.js";
 import { HttpBackend } from "@gable/core/http";
 import { HttpTestingBackend } from "./http.js";
 import type { Renderer } from "@gable/core/renderer";
-import { Router, provideRouter, type NavigateOptions, type NavigationOutcome, type Route } from "@gable/core/router";
+import { Router, provideRouter, type NavigateOptions, type NavigationOutcome, type Route, type RouterAccessibilityOptions } from "@gable/core/router";
 import type { TestPlatform } from "./platform.js";
 import { createTestRenderer, type TestRenderer, createTestRoot, query, queryAll, serialize, textContent, type TestNode } from "./renderer.js";
 
@@ -325,6 +325,8 @@ export interface MountAppOptions extends Omit<MountOptions, "renderer"> {
   url?: string;
   /** Defaults to a test renderer starting at `url`; its in-memory Location, History and Title are provided. */
   renderer?: TestRenderer;
+  /** Router accessibility options (announcement and focus) passed to `provideRouter`. */
+  a11y?: RouterAccessibilityOptions;
 }
 
 /** A mounted app with a router. */
@@ -337,6 +339,12 @@ export interface AppFixture<T extends object> extends Fixture<T> {
   /** The in-memory History: `entries`, `index`, and `back()` / `forward()` as the browser buttons. */
   readonly history: TestPlatform["history"];
   readonly title: TestPlatform["title"];
+  /** The in-memory Meta: `entries` shows the tags the current route declared. */
+  readonly meta: TestPlatform["meta"];
+  /** The in-memory LiveAnnouncer: `messages` lists what was announced. */
+  readonly announcer: TestPlatform["announcer"];
+  /** The in-memory FocusManager: `focused` is the node focus moved to. */
+  readonly focus: TestPlatform["focus"];
 }
 
 /**
@@ -344,14 +352,17 @@ export interface AppFixture<T extends object> extends Fixture<T> {
  * Location, History and Title. `settle()` also waits for any navigation in flight, including the initial one.
  */
 export function mountApp<T extends object>(Root: ComponentClass<T>, options: MountAppOptions): AppFixture<T> {
-  const { routes, url, renderer = createTestRenderer({ url }), providers = [], ...rest } = options;
-  const fixture = mount(Root, { ...rest, renderer, providers: [...renderer.providers!, ...provideRouter(routes), ...providers] });
+  const { routes, url, a11y, renderer = createTestRenderer({ url }), providers = [], ...rest } = options;
+  const fixture = mount(Root, { ...rest, renderer, providers: [...renderer.providers!, ...provideRouter(routes, { a11y }), ...providers] });
   const router = fixture.injector.get(Router)!;
   const app: AppFixture<T> = Object.create(fixture, {
     router: { value: router },
     location: { value: renderer.platform.location },
     history: { value: renderer.platform.history },
     title: { value: renderer.platform.title },
+    meta: { value: renderer.platform.meta },
+    announcer: { value: renderer.platform.announcer },
+    focus: { value: renderer.platform.focus },
     settle: {
       value: async () => {
         await router.whenIdle();

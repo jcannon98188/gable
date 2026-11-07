@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { bootstrap, html, inject } from "@gable/core";
 import { History, Location, Title } from "@gable/core/renderer";
 import { dom, type DomRendererOptions } from "./index.js";
+import { createDomPlatform } from "./platform.js";
 
 interface Services {
   location: Location;
@@ -86,5 +87,45 @@ describe("DOM platform services", () => {
     s.history.push("/orders");
     expect(window.location.pathname + window.location.hash).toBe("/index.html#/orders");
     expect(s.location.href).toBe("/orders");
+  });
+});
+
+describe("Meta over document.head", () => {
+  const meta = () => createDomPlatform().meta;
+  afterEach(() => {
+    document.head.querySelectorAll("meta,link").forEach((e) => e.remove());
+  });
+
+  it("creates meta, property and link tags, and removes them on reset", () => {
+    const m = meta();
+    m.set({ description: "d", themeColor: "#fff", canonical: "https://x.test/a", og: { title: "T" }, twitter: { card: "summary" } });
+    expect(document.head.querySelector('meta[name="description"]')?.getAttribute("content")).toBe("d");
+    expect(document.head.querySelector('meta[name="theme-color"]')?.getAttribute("content")).toBe("#fff");
+    expect(document.head.querySelector('meta[property="og:title"]')?.getAttribute("content")).toBe("T");
+    expect(document.head.querySelector('meta[name="twitter:card"]')?.getAttribute("content")).toBe("summary");
+    expect(document.head.querySelector('link[rel="canonical"]')?.getAttribute("href")).toBe("https://x.test/a");
+    m.set({ description: "e" });
+    expect(document.head.querySelectorAll("meta").length).toBe(1);
+    expect(document.head.querySelector("link")).toBeNull();
+    m.clear();
+    expect(document.head.querySelector("meta")).toBeNull();
+  });
+
+  it("adopts a tag the page already has and restores it", () => {
+    document.head.innerHTML = '<meta name="description" content="static">';
+    const m = meta();
+    m.set({ description: "route" });
+    expect(document.head.querySelectorAll('meta[name="description"]').length).toBe(1);
+    expect(document.head.querySelector("meta")?.getAttribute("content")).toBe("route");
+    m.set({});
+    expect(document.head.querySelector("meta")?.getAttribute("content")).toBe("static");
+  });
+
+  it("update merges", () => {
+    const m = meta();
+    m.set({ og: { title: "a" } });
+    m.update({ og: { description: "b" }, robots: "noindex" });
+    expect(m.get()).toEqual({ og: { title: "a", description: "b" }, robots: "noindex" });
+    expect(document.head.querySelectorAll("meta").length).toBe(3);
   });
 });

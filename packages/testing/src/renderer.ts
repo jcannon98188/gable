@@ -49,6 +49,7 @@ export function createTestRenderer(options: { url?: string } = {}): TestRenderer
   const styles = new Map<string, string>();
   const platform = createTestPlatform(options.url);
   let container: TestNode | undefined;
+  platform.bindTree({ root: () => container, find: query });
   let overlay: TestNode | undefined;
   return {
     setOverlayContainer(root) {

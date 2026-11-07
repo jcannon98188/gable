@@ -94,6 +94,9 @@ export function createTestDom(anyNode: TestNode): TestDom {
       querySelector(selector: string) {
         return (el!.querySelectorAll as (s: string) => unknown[])(selector)[0] ?? null;
       },
+      // select, combobox and menu scroll the highlighted item into view; there is no layout to scroll in memory.
+      scrollIntoView() {},
+      scrollTo() {},
       focus() {
         if (active === node) return;
         active = node;

@@ -28,6 +28,7 @@ export function acceptLine(file: string): string {
  * tsconfig check, and one copy of `@gable/core`. Production builds get no Gable transform.
  */
 export function gable(): Plugin {
+  let root = "";
   return {
     name: "gable",
     config(_, { command }) {
@@ -39,7 +40,13 @@ export function gable(): Plugin {
       };
     },
     configResolved(config) {
+      root = config.root;
       checkTsconfig(config.root, config.tsconfig);
+    },
+    // Dev server only: tells the devtools extension where the project is, so it can open a component's source file.
+    transformIndexHtml(_, ctx) {
+      if (!ctx.server) return;
+      return [{ tag: "script", children: `globalThis.__GABLE_DEV_SERVER__ = ${JSON.stringify({ root })};`, injectTo: "head-prepend" }];
     },
     transform: {
       

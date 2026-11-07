@@ -1,6 +1,7 @@
 import { signal, type ReadonlySignal, type WritableSignal } from "./signals.js";
 import { OutputEmitter } from "./output.js";
 import { readPhase } from "./read-phase.js";
+import { DEV, devtools } from "./dev-hooks.js";
 
 const HANDLE = Symbol("gable.input");
 const UNSET = Symbol("gable.unset");
@@ -32,6 +33,7 @@ export function input<T>(initial?: T): InputSignal<T | undefined> {
   const state = signal<T | undefined>(initial);
   const read = (() => state()) as InputSignal<T | undefined>;
   attach(read, { set: (v) => state.set(v as T) });
+  if (DEV) devtools.current?.alias(read, state, "input");
   return read;
 }
 
@@ -63,6 +65,7 @@ input.required = function required<T>(): InputSignal<T> {
     return v;
   }) as InputSignal<T>;
   attach(read, { set: (v) => state.set(v as T) });
+  if (DEV) devtools.current?.alias(read, state, "input");
   return read;
 };
 
@@ -77,6 +80,7 @@ export function model<T>(initial: T): ModelSignal<T> {
   read.update = (fn) => read.set(fn(state()));
   Object.defineProperty(read, "changes", { value: changes });
   attach(read, { set: (v) => state.set(v as T), changes: changes as OutputEmitter<unknown> });
+  if (DEV) devtools.current?.alias(read, state, "model");
   return read;
 }
 
