@@ -1,5 +1,5 @@
 import { computed, html, signal } from '@gable/core';
-import { UiButton, UiVirtualList, UiVirtualTable, type VirtualListItem, type VirtualTableColumn } from '@gable/ui';
+import { UiBadge, UiButton, UiTable, UiTableBody, UiTableCell, UiTableContainer, UiTableHead, UiTableHeader, UiTableRow, UiVirtualList, UiVirtualTable, type VirtualListItem, type VirtualTableColumn } from '@gable/ui';
 
 const ROWS = 100_000;
 const FIRST = ['Ada', 'Grace', 'Alan', 'Linus', 'Margaret', 'Dennis', 'Barbara', 'Ken', 'Edsger', 'Radia'];
@@ -21,11 +21,29 @@ const COLUMNS: VirtualTableColumn[] = [
   { key: 'score', label: 'Score', width: '90px', align: 'right' },
 ];
 
+const SEVERITIES = ['error', 'warning', 'info', 'success'] as const;
+const MESSAGES = [
+  'Cannot find name "signalz". Did you mean "signal"?',
+  'The template expression uses a call with arguments, which is not allowed here; move it into a computed() so the template only reads a signal.',
+  'Module replaced (HMR).',
+  'Unused import "computed" in a very long path src/components/some/deeply/nested/folder/with-a-long-file-name.ts',
+];
+
+/** 5,000 diagnostics with messages of different lengths (variable row height). */
+export const makeProblems = (n = 5000) =>
+  Array.from({ length: n }, (_, i) => ({ id: i + 1, severity: SEVERITIES[i % 4]!, message: `${MESSAGES[(i * 3) % MESSAGES.length]!} (#${i + 1})`, file: `src/file-${i % 40}.ts` }));
+
+const PROBLEM_COLUMNS: VirtualTableColumn[] = [
+  { key: 'severity', label: 'Severity', width: '90px', kind: 'severity' },
+  { key: 'message', label: 'Message', width: '2fr', wrap: true },
+  { key: 'file', label: 'File', width: '120px' },
+];
+
 /** A virtualised list (with pinned group headers) and a virtualised table over 100,000 rows. Only ~20 rows of each are in the DOM. */
 export class VirtualDemo {
   static meta = {
     selector: 'app-root',
-    imports: [UiButton, UiVirtualList, UiVirtualTable],
+    imports: [UiBadge, UiButton, UiTable, UiTableBody, UiTableCell, UiTableContainer, UiTableHead, UiTableHeader, UiTableRow, UiVirtualList, UiVirtualTable],
     template: html`
       <main class="mx-auto flex max-w-3xl flex-col gap-8 p-8">
         <h1 class="text-2xl font-semibold tracking-tight">Virtual scroll, 100,000 rows</h1>
@@ -43,11 +61,33 @@ export class VirtualDemo {
           <h2 class="text-lg font-medium">Virtual table</h2>
           <ui-virtual-table class="h-96" label="People table" rowKey="id" [columns]="columns" [rows]="people" [rowHeight]="36"></ui-virtual-table>
         </section>
+
+        <section class="flex flex-col gap-3">
+          <h2 class="text-lg font-medium">Problems: wrapping rows of variable height, severity badge</h2>
+          <ui-virtual-table class="h-80" label="Problems" rowKey="id" [columns]="problemColumns" [rows]="problems" [rowHeight]="36" [autoHeight]="true"></ui-virtual-table>
+        </section>
+
+        <section class="flex flex-col gap-3">
+          <h2 class="text-lg font-medium">Native table with a wrapping cell</h2>
+          <div uiTableContainer>
+            <table uiTable aria-label="Recent problems" id="problems-table">
+              <thead uiTableHeader>
+                <tr uiTableRow><th uiTableHead>Severity</th><th uiTableHead>Message</th></tr>
+              </thead>
+              <tbody uiTableBody>
+                <tr uiTableRow><td uiTableCell><span uiBadge variant="error">error</span></td><td uiTableCell [wrap]="true">The template expression uses a call with arguments, which is not allowed here; move it into a computed().</td></tr>
+                <tr uiTableRow><td uiTableCell><span uiBadge variant="success">success</span></td><td uiTableCell [wrap]="true">Module replaced.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
       </main>
     `,
   };
 
   people = makePeople();
+  problems = makeProblems();
+  problemColumns = PROBLEM_COLUMNS;
   columns = COLUMNS;
   // A group header every 1,000 rows.
   listItems: VirtualListItem[] = this.people.map((p, i): VirtualListItem =>

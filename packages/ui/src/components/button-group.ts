@@ -14,6 +14,10 @@ const VERTICAL = [
   "[&>ui-dropdown-menu:not(:first-child)>*]:rounded-t-none [&>ui-dropdown-menu:not(:first-child)>*]:border-t-0 [&>ui-dropdown-menu:not(:last-child)>*]:rounded-b-none",
 ].join(" ");
 
+const SEGMENTED =
+  "overflow-hidden rounded-md border bg-muted/40 shadow-xs [&>*]:rounded-none [&>*]:border-0 [&>*]:bg-transparent [&>*]:shadow-none [&>*:not(:first-child)]:border-l [&>[aria-pressed=true]]:bg-background [&>[aria-pressed=true]]:font-semibold [&>[aria-pressed=true]]:shadow-xs [&>[aria-current=true]]:bg-background [&>[aria-current=true]]:font-semibold [&>[data-state=on]]:bg-background";
+const SMALL = "[&>*]:h-6.5 [&>*]:gap-1 [&>*]:px-2 [&>*]:text-xs [&>*_svg:not([class*='size-'])]:size-3.5";
+
 /**
  * A row (or column) of joined buttons, one `role="group"` with one accessible name.
  *
@@ -25,7 +29,10 @@ const VERTICAL = [
  * `label` becomes `aria-label` (give the group a name whenever it has more than one control); `orientation` is
  * `horizontal` (default) or `vertical`. Children keep their own variant: only the inner borders and radii are removed, and a
  * focused child is raised so its ring is not clipped by its neighbour. A `uiButtonGroupText` element is a non-interactive
- * addon (a unit, a prefix). The split button is this group holding a button and a chevron dropdown trigger: see
+ * addon (a unit, a prefix). `segmented` makes it a segmented control: a bordered track of ghost buttons where the one with
+ * `aria-pressed="true"` (or `aria-current`, `data-state="on"`) is the selected segment; `size="sm"` makes the buttons compact
+ * (26px). Buttons are separate tab stops: use `ui-toggle-group` (`segmented`) for a roving, single-tab-stop control. An icon-only
+ * button needs an `aria-label`. The split button is this group holding a button and a chevron dropdown trigger: see
  * docs/ui-primitives.md.
  */
 export class UiButtonGroup {
@@ -35,17 +42,24 @@ export class UiButtonGroup {
   };
   label = input<string>("");
   orientation = input<"horizontal" | "vertical">("horizontal");
+  /** A segmented control: bordered track, selected segment raised. */
+  segmented = input<boolean>(false);
+  size = input<"default" | "sm">("default");
   class = input<string>("");
   private apply = useHostClass(() =>
     cn(
       "flex w-fit items-stretch [&>*]:focus-visible:relative [&>*]:focus-visible:z-10",
       this.orientation() === "vertical" ? VERTICAL : HORIZONTAL,
+      this.segmented() && SEGMENTED,
+      this.size() === "sm" && SMALL,
       this.class(),
     ),
   );
   attrs = computed(() => ({
     role: "group",
     "data-orientation": this.orientation(),
+    "data-segmented": this.segmented() ? "" : undefined,
+    "data-size": this.size(),
     "aria-label": this.label() || undefined,
   }));
   private bind = bindProps(() => this.attrs());

@@ -2,7 +2,10 @@ import { computed, input } from "@gable/core";
 import { useHostClass } from "../lib/host-class.js";
 import { variants } from "../lib/variants.js";
 
-export type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
+export type BadgeVariant = "default" | "secondary" | "destructive" | "outline" | "error" | "warning" | "info" | "success";
+
+/** The severities of a diagnostics list (a problem row's leading cell). */
+export type BadgeSeverity = "error" | "warning" | "info" | "success";
 
 export const badgeVariants = variants({
   base: "inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-md border px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] [&>svg]:pointer-events-none [&>svg]:size-3",
@@ -12,12 +15,16 @@ export const badgeVariants = variants({
       secondary: "border-transparent bg-secondary text-secondary-foreground",
       destructive: "border-transparent bg-destructive text-white dark:bg-destructive/60",
       outline: "text-foreground",
+      error: "border-transparent bg-destructive/15 text-destructive",
+      warning: "border-transparent bg-warning/15 text-warning",
+      info: "border-transparent bg-info/15 text-info",
+      success: "border-transparent bg-success/15 text-success",
     },
   },
   defaultVariants: { variant: "default" },
 });
 
-/** `<span uiBadge variant="secondary">New</span>`: also works on an anchor (`<a uiBadge href="...">`). */
+/** `<span uiBadge variant="secondary">New</span>`; `variant="error|warning|info|success"` are severity badges (leading cell of a problems list): also works on an anchor (`<a uiBadge href="...">`). */
 export class UiBadge {
   static meta = { selector: "[uiBadge]" };
   variant = input<BadgeVariant>("default");

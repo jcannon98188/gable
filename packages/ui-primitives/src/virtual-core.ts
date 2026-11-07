@@ -81,7 +81,7 @@ export interface Virtualizer {
 }
 
 /** Called after measuring moved something, with the index the layout shifted from. */
-export function createVirtualizer(options: VirtualizerOptions, onLayout?: () => void): Virtualizer {
+export function createVirtualizer(options: VirtualizerOptions, onLayout?: (change?: { index: number; delta: number; start: number; oldSize: number }) => void): Virtualizer {
   /** The fixed height right now, if any (a function form lets a component input drive it). */
   const fixedSize = () => (typeof options.itemSize === "function" ? options.itemSize() : options.itemSize);
   const overscan = Math.max(0, options.overscan ?? 5);
@@ -227,10 +227,12 @@ export function createVirtualizer(options: VirtualizerOptions, onLayout?: () => 
       if (measured.get(key) === size && sizes[index] === size) return;
       measured.set(key, size);
       if (sizes[index] === size) return;
+      const oldSize = sizes[index]!;
+      const start = starts[index] ?? 0;
       sizes[index] = size;
       if (index < dirty) dirty = index;
       version.update((v) => v + 1);
-      onLayout?.();
+      onLayout?.({ index, delta: size - oldSize, start, oldSize });
     },
     offsetOf: (index) => (untracked(layout), starts[index] ?? 0),
     sizeOf: (index) => (untracked(layout), (starts[index + 1] ?? 0) - (starts[index] ?? 0)),

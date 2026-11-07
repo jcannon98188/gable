@@ -2,6 +2,9 @@ import { computed, contentChild, effect, html, input, output, signal } from "@ga
 import type { ErrorObject, FieldState, SubmitAction, SubmitResult } from "@gable/core/forms";
 import { bindProps } from "@gable/ui-primitives";
 import { cn } from "../lib/cn.js";
+import { useHostClass } from "../lib/host-class.js";
+import type { InputDensity } from "./input.js";
+import { UiSelect } from "./select.js";
 
 /**
  * Form and Field: label, description and error display on top of `@gable/core/forms`.
@@ -18,7 +21,13 @@ import { cn } from "../lib/cn.js";
  * `ui-field` shows its errors once the field is touched or the form has been submitted. The message is the error's own
  * `message` when it has one, else `messages[kind]`, else a built-in default for the common rule kinds.
  * `uiFieldControl` goes on the control inside a field: it gives it an id (the label points at it), `aria-describedby`
- * and `aria-invalid`.
+ * and `aria-invalid`. It works on `input[uiInput]`, `textarea` and native `select`. A `ui-select` inside a field needs no
+ * `uiFieldControl`: the field finds it, points the label at its trigger (`aria-labelledby`) and gives it `aria-describedby` and
+ * `aria-invalid`.
+ *
+ * `layout="horizontal"` puts the label beside the control (the label column is `--ui-field-label-width`, 8rem by default);
+ * `density="compact"` shrinks the label text. `hint` is an alias of `description`. Without a `state`, `error` shows a message
+ * you control.
  */
 export class UiForm {
   static meta = {
@@ -74,46 +83,77 @@ export class UiFieldControl {
 export class UiField {
   static meta = {
     selector: "ui-field",
-    host: { class: "grid gap-2" },
     imports: [],
     template: html`
       @if (label()) {
-        <label [attr.for]="controlId" [attr.class]="labelClasses()">{{ label() }}</label>
+        <label [attr.id]="labelId" [attr.for]="labelFor()" [attr.class]="labelClasses()">{{ label() }}</label>
       }
-      <slot></slot>
-      @if (description()) {
-        <p [attr.id]="descriptionId" class="text-sm text-muted-foreground">{{ description() }}</p>
+      <div [attr.class]="bodyClasses()"><slot></slot></div>
+      @if (hintText()) {
+        <p [attr.id]="descriptionId" [attr.class]="hintClasses()">{{ hintText() }}</p>
       }
       @if (hasErrors()) {
-        <p [attr.id]="errorId" role="alert" class="text-sm font-medium text-destructive">{{ firstError() }}</p>
+        <p [attr.id]="errorId" role="alert" [attr.class]="errorClasses()">{{ firstError() }}</p>
       }
     `,
   };
 
-  /** The state of the form field this shows errors for: `[state]="form.email.state"`. */
-  state = input.required<FieldState>();
+  /** The state of the form field this shows errors for: `[state]="form.email.state"`. Optional: without it only `error` shows. */
+  state = input<FieldState | null>(null);
   label = input<string>("");
   description = input<string>("");
+  /** An alias of `description`. */
+  hint = input<string>("");
+  /** An error message you control, shown instead of the state's errors. */
+  error = input<string>("");
+  /** `"horizontal"` puts the label beside the control. */
+  layout = input<"stacked" | "horizontal">("stacked");
+  /** `"compact"` is the dense variant: 12px label and hint text. */
+  density = input<InputDensity>("default");
+  class = input<string>("");
   /** Messages by error kind, e.g. `{ required: "Tell us your name." }`. */
   messages = input<Record<string, string>>({});
 
   readonly controlId = `ui-field-${++nextId}`;
   readonly descriptionId = `${this.controlId}-description`;
   readonly errorId = `${this.controlId}-error`;
+  readonly labelId = `${this.controlId}-label`;
+  /** Set by a `ui-select` in the field: the id of its trigger, which the label then points at. */
+  targetId = signal("");
+  labelFor = computed(() => this.targetId() || this.controlId);
+  hintText = computed(() => this.hint() || this.description());
 
   /** Errors show once the field was touched or the form was submitted. */
   hasErrors = computed(() => {
+    if (this.error()) return true;
     const state = this.state();
-    return (state.touched() || state.submitted()) && state.errors().length > 0;
+    return !!state && (state.touched() || state.submitted()) && state.errors().length > 0;
   });
   firstError = computed(() => {
-    const error = this.state().errors()[0];
+    if (this.error()) return this.error();
+    const error = this.state()?.errors()[0];
     if (!error) return "";
     return error.message ?? this.messages()[error.kind] ?? DEFAULT_MESSAGES[error.kind]?.(error) ?? "Invalid value.";
   });
-  describedBy = computed(() => [this.description() ? this.descriptionId : "", this.hasErrors() ? this.errorId : ""].filter(Boolean).join(" ") || undefined);
-  labelClasses = computed(() => cn("text-sm leading-none font-medium select-none", this.hasErrors() && "text-destructive"));
+  describedBy = computed(() => [this.hintText() ? this.descriptionId : "", this.hasErrors() ? this.errorId : ""].filter(Boolean).join(" ") || undefined);
+  private horizontal = computed(() => this.layout() === "horizontal");
+  private compact = computed(() => this.density() === "compact");
+  labelClasses = computed(() => cn("leading-none font-medium select-none", this.compact() ? "text-xs" : "text-sm", this.hasErrors() && "text-destructive"));
+  bodyClasses = computed(() => cn("grid min-w-0", this.compact() ? "gap-1" : "gap-2", this.horizontal() && !this.label() && "col-span-2"));
+  private messageClasses = computed(() => cn(this.compact() ? "text-xs" : "text-sm", this.horizontal() && (this.label() ? "col-start-2" : "col-span-2")));
+  hintClasses = computed(() => cn(this.messageClasses(), "text-muted-foreground"));
+  errorClasses = computed(() => cn(this.messageClasses(), "font-medium text-destructive"));
+  private apply = useHostClass(() =>
+    cn(
+      this.horizontal() ? "grid grid-cols-[var(--ui-field-label-width,8rem)_minmax(0,1fr)] items-center gap-x-3" : "grid",
+      this.horizontal() ? (this.compact() ? "gap-y-1" : "gap-y-1.5") : this.compact() ? "gap-1" : "gap-2",
+      this.class(),
+    ),
+  );
 
   control = contentChild(UiFieldControl);
   private link = effect(() => this.control()?.owner.set(this));
+  /** A `ui-select` in the field is wired the same way (owner push); it is not a native control, so it has its own hook. */
+  select = contentChild(UiSelect);
+  private linkSelect = effect(() => this.select()?.fieldOwner.set(this));
 }

@@ -1,6 +1,7 @@
 import { computed, html, inject, input, model, output } from "@gable/core";
 import { MenuState, UiPopup, UiPortal, UiProps, bindProps } from "@gable/ui-primitives";
 import { cn } from "../lib/cn.js";
+import type { InputDensity } from "./input.js";
 import { MENU_CONTENT, UiMenuRows, type MenuEntry } from "./dropdown-menu.js";
 
 /**
@@ -24,7 +25,7 @@ export class UiContextMenu {
       <ui-portal>
         <div [uiProps]="positionerProps()">
           <div [uiPopup]="contentProps()" [popupOpen]="open()" [attr.class]="contentClasses()">
-            <ui-menu-rows [state]="state" [entries]="entries()" (selected)="selected.emit($event)" (checkedChange)="checkedChange.emit($event)" (radioChange)="radioChange.emit($event)"></ui-menu-rows>
+            <ui-menu-rows [state]="state" [entries]="entries()" [density]="density()" (selected)="selected.emit($event)" (checkedChange)="checkedChange.emit($event)" (radioChange)="radioChange.emit($event)"></ui-menu-rows>
           </div>
         </div>
       </ui-portal>
@@ -35,6 +36,8 @@ export class UiContextMenu {
   /** Two-way: `[(open)]="open"`. */
   open = model(false);
   contentClass = input<string>("");
+  /** `"compact"` is the dense variant: 24px rows and 12px text. */
+  density = input<InputDensity>("default");
   selected = output<string>();
   checkedChange = output<{ value: string; checked: boolean }>();
   radioChange = output<{ group: string; value: string }>();

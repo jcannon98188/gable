@@ -1,9 +1,10 @@
 ---
 id: TASK-75.6
 title: 'Editor: comments plugin'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-07T06:33:00Z'
+updated_date: '2026-11-07T06:53:00Z'
 labels:
   - editor
 dependencies:

@@ -1,6 +1,7 @@
 import { computed, html, input } from "@gable/core";
 import { UiProps, bindProps, useVirtualizer } from "@gable/ui-primitives";
 import { cn } from "../lib/cn.js";
+import { UiBadge, type BadgeSeverity } from "./badge.js";
 import { useHostClass } from "../lib/host-class.js";
 
 /** One column of a virtual table. */
@@ -11,6 +12,10 @@ export interface VirtualTableColumn {
   /** A CSS grid track: `"80px"`, `"2fr"`. Default `"1fr"`. */
   width?: string;
   align?: "left" | "right" | "center";
+  /** Let the text wrap onto several lines instead of truncating (use with `autoHeight`). */
+  wrap?: boolean;
+  /** `severity`: the cell value (`error`, `warning`, `info`, `success`) renders as a severity badge. */
+  kind?: "text" | "severity";
 }
 
 const HEADER_HEIGHT = 40;
@@ -31,7 +36,7 @@ const HEADER_HEIGHT = 40;
 export class UiVirtualTable {
   static meta = {
     selector: "ui-virtual-table",
-    imports: [UiProps],
+    imports: [UiProps, UiBadge],
     template: html`
       <div role="row" aria-rowindex="1" [attr.style]="headerStyle()" class="sticky top-0 z-10 border-b bg-background font-medium text-foreground">
         @for (col of headerCells(); track col.key) {
@@ -42,7 +47,13 @@ export class UiVirtualTable {
         @for (row of body(); track row.key) {
           <div [uiProps]="row.props">
             @for (cell of row.cells; track cell.key) {
-              <div role="gridcell" [attr.class]="cell.class">{{ cell.text }}</div>
+              <div role="gridcell" [attr.class]="cell.class">
+                @if (cell.severity) {
+                  <span uiBadge [variant]="cell.severity">{{ cell.text }}</span>
+                } @else {
+                  {{ cell.text }}
+                }
+              </div>
             }
           </div>
         }
@@ -55,15 +66,18 @@ export class UiVirtualTable {
   rows = input<Array<Record<string, unknown>>>([]);
   /** Property that identifies a row. */
   rowKey = input<string>("");
-  /** Row height in px. */
+  /** Row height in px (the estimate until a row is measured, with `autoHeight`). */
   rowHeight = input<number>(40);
+  /** Rows take the height of their content (wrapping cells) and are measured as they render; the scroll position stays put while rows above the view are measured. */
+  autoHeight = input<boolean>(false);
   /** Accessible name. */
   label = input<string>("");
   class = input<string>("");
 
   list = useVirtualizer({
     count: () => this.rows().length,
-    itemSize: () => this.rowHeight(),
+    itemSize: () => (this.autoHeight() ? undefined : this.rowHeight()),
+    estimateSize: () => this.rowHeight(),
     getKey: (i) => {
       const key = this.rowKey();
       return (key ? (this.rows()[i]?.[key] as string | number | undefined) : undefined) ?? i;
@@ -78,9 +92,9 @@ export class UiVirtualTable {
   private apply = useHostClass(() => cn("relative block h-96 overflow-auto rounded-md border bg-background text-sm", this.class()));
   private attrs = bindProps(() => ({ role: "grid", "aria-label": this.label() || undefined, ...this.list.rootProps() }));
 
-  private grid = computed(() => `display:grid;grid-template-columns:${this.columns().map((c) => c.width ?? "1fr").join(" ")};align-items:center;`);
+  private grid = computed(() => `display:grid;grid-template-columns:${this.columns().map((c) => c.width ?? "1fr").join(" ")};align-items:${this.autoHeight() ? "start" : "center"};`);
   headerStyle = computed(() => `${this.grid()}height:${HEADER_HEIGHT}px;`);
-  private cellClass = (c: VirtualTableColumn, header: boolean) => cn("truncate px-2", header ? "text-left" : "", c.align === "right" && "text-right", c.align === "center" && "text-center");
+  private cellClass = (c: VirtualTableColumn, header: boolean) => cn(c.wrap && !header ? "min-w-0 px-2 py-2 break-words whitespace-normal" : cn("truncate px-2", !header && this.autoHeight() && "py-2"), header ? "text-left" : "", c.align === "right" && "text-right", c.align === "center" && "text-center");
   headerCells = computed(() => this.columns().map((c) => ({ key: c.key, label: c.label, class: this.cellClass(c, true) })));
 
   body = computed(() => {
@@ -96,7 +110,10 @@ export class UiVirtualTable {
         class: cn("border-b outline-none hover:bg-muted/50 focus-visible:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset", row.index % 2 === 1 && "bg-muted/20"),
         "data-active": row.index === active ? "" : undefined,
       };
-      return { key: row.key, props, cells: columns.map((c) => ({ key: c.key, text: String(record[c.key] ?? ""), class: this.cellClass(c, false) })) };
+      return { key: row.key, props, cells: columns.map((c) => {
+          const text = String(record[c.key] ?? "");
+          return { key: c.key, text, class: this.cellClass(c, false), severity: c.kind === "severity" ? (text as BadgeSeverity) : "" };
+        }) };
     });
   });
 }

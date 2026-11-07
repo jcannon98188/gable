@@ -20,7 +20,7 @@ describe('tree demo', () => {
     await new Promise((r) => setTimeout(r, 20));
     await whenFlushed();
     const trees = document.querySelectorAll('[role=tree]');
-    expect(trees).toHaveLength(3);
+    expect(trees).toHaveLength(6);
     expect(makeBigTree().flatMap((f) => f.children!)).toHaveLength(10_000);
     const big = document.querySelector('[aria-label="Big tree"]')!;
     expect(big.querySelectorAll('[role=treeitem]').length).toBeLessThan(60);
@@ -28,6 +28,14 @@ describe('tree demo', () => {
     first.click();
     await whenFlushed();
     expect(document.getElementById('tree-state')!.textContent).toContain('Selected: 1');
+    const routes = document.querySelector('[aria-label=Routes]')!;
+    expect([...routes.querySelectorAll('[role=treeitem]')].map((r) => r.getAttribute('aria-level'))).toEqual(['1', '2', '2', '3', '3', '2']);
+    expect(routes.querySelector('[aria-selected=true]')!.textContent).toContain('about');
+    (routes.querySelector('button[aria-label="Open /about"]') as HTMLElement).click();
+    await whenFlushed();
+    expect(document.getElementById('route-state')!.textContent).toContain('open /about');
+    const narrow = document.querySelector('#narrow-json [title=name]');
+    expect(narrow).not.toBeNull();
     await expectNoA11yViolations(document.getElementById('app')!);
   });
 });

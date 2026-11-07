@@ -12,6 +12,8 @@ export interface CommandItem {
   keywords?: string[];
   /** A label shown at the end of the row ("Alt+P"). It does not bind the key: the app handles the keys. */
   shortcut?: string;
+  /** A small tag after the label, such as a signal's type ("number"). It is searchable too. */
+  badge?: string;
   disabled?: boolean;
 }
 
@@ -21,7 +23,7 @@ let counter = 0;
 export function commandMatches(item: CommandItem, query: string): boolean {
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (!words.length) return true;
-  const haystack = [item.label, item.group ?? "", ...(item.keywords ?? [])].join(" ").toLowerCase();
+  const haystack = [item.label, item.group ?? "", item.badge ?? "", ...(item.keywords ?? [])].join(" ").toLowerCase();
   return words.every((w) => haystack.includes(w));
 }
 
@@ -66,7 +68,7 @@ export const fuzzyFilter: CommandFilter = (items, query) => {
   const scored: { item: CommandItem; score: number; index: number }[] = [];
   items.forEach((item, index) => {
     const label = item.label.toLowerCase();
-    const keywords = (item.keywords ?? []).map((k) => k.toLowerCase());
+    const keywords = [...(item.keywords ?? []), ...(item.badge ? [item.badge] : [])].map((k) => k.toLowerCase());
     const group = (item.group ?? "").toLowerCase();
     let total = 0;
     for (const w of words) {
@@ -84,7 +86,7 @@ export const fuzzyFilter: CommandFilter = (items, query) => {
  *
  *   <ui-command [items]="commands" (selected)="run($event)" placeholder="Type a command or search..."></ui-command>
  *
- * `items` is `{ value, label, group?, keywords?, shortcut?, disabled? }` data; commands appear under their `group` heading
+ * `items` is `{ value, label, group?, keywords?, shortcut?, badge?, disabled? }` data; commands appear under their `group` heading
  * in order of first appearance (commands without a group come first, with no heading). Typing filters: every word must
  * match the label, group or keywords, case-insensitively. Focus stays in the search box (the ARIA combobox pattern with
  * `aria-activedescendant`): ArrowDown and ArrowUp move the highlight and wrap around, Home and End jump, Enter runs the
@@ -143,6 +145,9 @@ export class UiCommand {
                   class="relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground"
                 >
                   <span class="truncate">{{ row.label }}</span>
+                  @if (row.badge) {
+                    <span data-part="badge" class="ml-auto shrink-0 rounded-sm border px-1.5 py-0 font-mono text-[11px] leading-5 text-muted-foreground">{{ row.badge }}</span>
+                  }
                   @if (row.shortcut) {
                     <span class="ml-auto text-xs tracking-widest text-muted-foreground">{{ row.shortcut }}</span>
                   }
@@ -216,6 +221,7 @@ export class UiCommand {
         value: item.value,
         label: item.label,
         shortcut: item.shortcut,
+        badge: item.badge,
         id: this.optionId(item.value),
         selected: item.value === active ? "true" : "false",
         dataSelected: item.value === active ? "true" : undefined,

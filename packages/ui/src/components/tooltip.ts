@@ -16,6 +16,14 @@ const CONTENT =
  * It owns a Zag tooltip machine and creates the tooltip itself (a positioner and a panel in the overlay root) through the
  * renderer, since a directive has no template. It opens after `delay` ms of hover and on keyboard focus, closes on leave,
  * blur, Escape and click, and describes the trigger with `aria-describedby`.
+ *
+ * A disabled control gets no pointer events and cannot take focus, so put the tooltip on a wrapper and set `focusable`:
+ *
+ *   <span uiTooltip="Unavailable on macOS" [focusable]="true" class="inline-flex [&>*]:pointer-events-none"><button uiButton disabled>Install</button></span>
+ *
+ * The wrapper joins the tab order (tabindex 0), opens the tooltip on hover and keyboard focus, and carries
+ * `aria-describedby`; the button inside keeps its own `disabled` or `aria-disabled`. `pointer-events-none` on the child lets
+ * the hover reach the wrapper in every browser.
  */
 export class UiTooltip {
   static meta = { selector: "[uiTooltip]" };
@@ -27,6 +35,8 @@ export class UiTooltip {
   delay = input<number>(300);
   /** Extra classes for the panel; they win over the defaults. */
   tooltipClass = input<string>("");
+  /** Puts the host in the tab order (tabindex 0) so keyboard focus opens the tooltip: for a wrapper around a disabled control. */
+  focusable = input<boolean>(false);
   private classes = computed(() => cn(CONTENT, this.tooltipClass()));
 
   private host = injectHost();
@@ -52,6 +62,7 @@ export class UiTooltip {
     bindProps(() => api().getTriggerProps(), { renderer, host });
     bindProps(() => api().getPositionerProps(), { renderer, host: positioner });
     bindProps(() => delayHidden(api().getContentProps(), presence), { renderer, host: content });
+    effect(() => renderer.setAttribute(host, "tabindex", this.focusable() ? "0" : null));
     effect(() => renderer.setAttribute(content, "class", this.classes()));
     effect(() => renderer.setText(text, this.uiTooltip()));
   })();

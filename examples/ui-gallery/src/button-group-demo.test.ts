@@ -36,8 +36,8 @@ describe('button group demo (jsdom)', () => {
   it('renders labelled groups, the split button works, and there are no axe violations', async () => {
     await boot();
     const groups = [...document.querySelectorAll('ui-button-group')];
-    expect(groups.map((g) => g.getAttribute('role'))).toEqual(['group', 'group', 'group', 'group']);
-    expect(groups.map((g) => g.getAttribute('aria-label'))).toEqual(['Text alignment', 'Zoom', 'Address', 'Save options']);
+    expect(groups.map((g) => g.getAttribute('role'))).toEqual(['group', 'group', 'group', 'group', 'group']);
+    expect(groups.map((g) => g.getAttribute('aria-label'))).toEqual(['Text alignment', 'Zoom', 'Address', 'Save options', 'Device']);
     expect(groups[1]!.getAttribute('data-orientation')).toBe('vertical');
     await expectNoA11yViolations(document.body);
 
@@ -55,5 +55,22 @@ describe('button group demo (jsdom)', () => {
     copy.click();
     await settle();
     expect(text('#picked')).toBe('copy');
+  });
+
+  it('has a small segmented toggle group and button group with a selected state', async () => {
+    await boot();
+    const items = [...document.querySelectorAll('.modes [data-part=item]')] as HTMLElement[];
+    expect(items.map((i) => i.getAttribute('data-state'))).toEqual(['on', 'off', 'off', 'off']);
+    items[1]!.click();
+    await settle();
+    expect(text('#mode')).toBe('code');
+    expect(items[3]!.querySelector('.sr-only')!.textContent).toBe('Schedule view');
+    const buttons = [...document.querySelectorAll('.devices button')] as HTMLElement[];
+    expect(buttons.map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false']);
+    buttons[2]!.click();
+    await settle();
+    expect(text('#device')).toBe('desktop');
+    expect(buttons[2]!.getAttribute('aria-pressed')).toBe('true');
+    await expectNoA11yViolations(document.body);
   });
 });

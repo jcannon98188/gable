@@ -109,6 +109,52 @@ describe("ui-virtual-table", () => {
     const first = rows.find((r) => r.attrs["data-index"] === "5000")!;
     expect(first.attrs["aria-rowindex"]).toBe("5002"); // + header row
     expect(first.attrs.style).toContain("grid-template-columns:80px 1fr");
-    expect(queryAll(first, "[role=gridcell]").map((c) => f.textOf(c))).toEqual(["5001", "Name 5001"]);
+    expect(queryAll(first, "[role=gridcell]").map((c) => f.textOf(c).trim())).toEqual(["5001", "Name 5001"]);
+  });
+});
+
+const PROBLEMS: VirtualTableColumn[] = [
+  { key: "severity", label: "Severity", width: "90px", kind: "severity" },
+  { key: "message", label: "Message", wrap: true },
+];
+
+class ProblemsApp {
+  static meta = {
+    selector: "app-root",
+    imports: [UiVirtualTable],
+    template: html`<ui-virtual-table class="x-problems" label="Problems" [columns]="columns" [rows]="rows" [rowHeight]="32" [autoHeight]="auto()"></ui-virtual-table>`,
+  };
+  columns = PROBLEMS;
+  rows = Array.from({ length: 50 }, (_, i) => ({ severity: i % 2 ? "warning" : "error", message: `Message ${i} that is rather long and wraps onto several lines in a narrow column` }));
+  auto = signal(true);
+}
+
+describe("ui-virtual-table with variable height rows", () => {
+  it("does not fix the row height, wraps the message and starts from the estimate", async () => {
+    const f = mount(ProblemsApp);
+    await f.settle();
+    f.dispatch(f.query(".x-problems")!, "scroll", { target: { scrollTop: 0, clientHeight: 320 } });
+    await f.settle();
+    const row = f.queryAll("[role=row][data-index]")[0]!;
+    expect(row.attrs.style).not.toContain("height:32px");
+    expect(row.attrs.style).toContain("align-items:start");
+    const [severity, message] = queryAll(row, "[role=gridcell]");
+    expect(message!.attrs.class).toContain("whitespace-normal");
+    expect(message!.attrs.class).not.toContain("truncate");
+    expect(queryAll(severity!, "span").length).toBe(1);
+  });
+
+  it("renders a severity cell as a badge with the severity variant, and a fixed height when autoHeight is off", async () => {
+    const f = mount(ProblemsApp);
+    await f.settle();
+    f.dispatch(f.query(".x-problems")!, "scroll", { target: { scrollTop: 0, clientHeight: 320 } });
+    await f.settle();
+    const badges = f.queryAll("[role=gridcell] span");
+    expect(badges[0]!.attrs.class).toContain("text-destructive");
+    expect(badges[1]!.attrs.class).toContain("text-warning");
+    expect(f.textOf(badges[1]!)).toBe("warning");
+    f.instance.auto.set(false);
+    await f.settle();
+    expect(f.queryAll("[role=row][data-index]")[0]!.attrs.style).toContain("height:32px");
   });
 });

@@ -83,8 +83,15 @@ export function useVirtualizer(options: UseVirtualizerOptions, target: { rendere
       ...options,
       keepIndexes: () => [...(options.keepIndexes?.() ?? []), ...(options.keyboard ? [activeIndex()] : [])],
     },
-    () => {
-      if (!pending) return;
+    (change) => {
+      if (!pending) {
+        // A row above the viewport changed height: shift the scroll by the same amount so the rows in view do not jump.
+        if (change && change.delta !== 0 && change.start + change.oldSize <= untracked(engine.scrollOffset) + 0.5) {
+          const current = node.scrollTop ?? untracked(engine.scrollOffset);
+          writeScroll(Math.max(0, current + change.delta));
+        }
+        return;
+      }
       const top = engine.offsetForIndex(pending.index, pending.align);
       const moved = Math.abs(top - (node.scrollTop ?? untracked(engine.scrollOffset))) > 0.5;
       pending.top = top;

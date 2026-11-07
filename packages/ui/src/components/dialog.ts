@@ -60,7 +60,7 @@ export class UiDialog {
             }
           </div>
           <slot></slot>
-          <div class="flex flex-col-reverse gap-2 empty:hidden sm:flex-row sm:justify-end"><slot name="footer"></slot></div>
+          <div data-slot="dialog-footer" class="flex flex-col-reverse gap-2 empty:hidden sm:flex-row sm:items-center sm:justify-end"><slot name="footer"></slot></div>
           <button
             uiDialogClose
             class="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity outline-none hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"

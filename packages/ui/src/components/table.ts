@@ -52,7 +52,9 @@ export class UiTableHead {
 export class UiTableCell {
   static meta = { selector: "td[uiTableCell]" };
   class = input<string>("");
-  private apply = useHostClass(() => cn("p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0", this.class()));
+  /** Let the text wrap (a message column); the row grows to fit. Default: one line. */
+  wrap = input<boolean>(false);
+  private apply = useHostClass(() => cn("p-2 align-middle [&:has([role=checkbox])]:pr-0", this.wrap() ? "break-words whitespace-normal" : "whitespace-nowrap", this.class()));
 }
 export class UiTableCaption {
   static meta = { selector: "caption[uiTableCaption]" };

@@ -2,6 +2,7 @@ import { computed, html, injectHost, input, model, output, signal, untracked } f
 import { whenFlushed } from "@gable/core/internal";
 import { UiProps, bindProps, useVirtualizer } from "@gable/ui-primitives";
 import { cn } from "../lib/cn.js";
+import { UiBadge, type BadgeVariant } from "./badge.js";
 import { useHostClass } from "../lib/host-class.js";
 import { UiIcon } from "../lib/icon.js";
 
@@ -12,6 +13,14 @@ export interface TreeAction {
   label: string;
   /** Visible text (default: the label). */
   text?: string;
+  /** Name of an icon registered in `lib/icon.ts`: an icon button (the label is its accessible name and tooltip). */
+  icon?: string;
+}
+
+/** A small badge at the end of a row (a route kind, a count, a status). */
+export interface TreeBadge {
+  text: string;
+  variant?: BadgeVariant;
 }
 
 /** One node of a tree. Branches have `children`, or `lazy: true` when `loadChildren` supplies them on first expand. */
@@ -29,6 +38,9 @@ export interface TreeNode {
   description?: string;
   /** Classes for the description (colour it by type). */
   descriptionClass?: string;
+  /** A badge after the label and description (a route kind, a count). */
+  badge?: TreeBadge;
+  /** Buttons at the end of the row. */
   actions?: TreeAction[];
 }
 
@@ -122,12 +134,17 @@ const ROW =
  * and keyboard moves scroll the target in and focus it. It measures the real element, so it needs a browser (tests mock layout
  * and send a `scroll` event with `scrollTop` and `clientHeight`).
  *
+ * Row content: a node can have a `badge` (`{ text, variant }`, after the label), a `description`, and `actions` (text or icon
+ * buttons; hidden until hover or focus, or always with `actionsAlways`). `stacked` puts the description under the label and
+ * `wrap` lets labels wrap (narrow columns). Rows are data-driven: arbitrary per-row templates are not supported because a
+ * template cannot be instantiated per row from a static `html` string.
+ *
  * Built natively: `@zag-js/tree-view` is not installed and a virtualised, flattened model does not map onto its nested parts.
  */
 export class UiTree {
   static meta = {
     selector: "ui-tree",
-    imports: [UiProps, UiIcon],
+    imports: [UiProps, UiIcon, UiBadge],
     template: html`
       <div [attr.style]="spacerStyle()">
         @for (row of rows(); track row.key) {
@@ -143,14 +160,25 @@ export class UiTree {
             @if (row.icon) {
               <svg [uiIcon]="row.icon" class="size-4 text-muted-foreground"></svg>
             }
-            <span class="truncate">{{ row.label }}</span>
-            @if (row.description) {
-              <span [attr.class]="row.descriptionClass">{{ row.description }}</span>
+            <span [attr.class]="textClass()">
+              <span [attr.class]="labelClass()" [attr.title]="row.label">{{ row.label }}</span>
+              @if (row.description) {
+                <span [attr.class]="row.descriptionClass">{{ row.description }}</span>
+              }
+            </span>
+            @if (row.badge) {
+              <span uiBadge [variant]="row.badgeVariant" class="ml-auto">{{ row.badge }}</span>
             }
             @if (row.actions.length > 0) {
-              <span class="ml-auto flex shrink-0 gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-data-[active]:opacity-100">
+              <span [attr.class]="row.actionsClass">
                 @for (a of row.actions; track a.id) {
-                  <button type="button" class="rounded-sm border px-1.5 text-xs text-muted-foreground hover:bg-background hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 outline-none" [attr.aria-label]="a.label" [attr.tabindex]="a.tabindex" (click)="onAction($event, row.index, a.id)">{{ a.text }}</button>
+                  <button type="button" class="rounded-sm border px-1.5 text-xs text-muted-foreground hover:bg-background hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 outline-none" [attr.aria-label]="a.label" [attr.tabindex]="a.tabindex" [attr.title]="a.title" (click)="onAction($event, row.index, a.id)">
+                    @if (a.icon) {
+                      <svg [uiIcon]="a.icon" class="size-3.5"></svg>
+                    } @else {
+                      {{ a.text }}
+                    }
+                  </button>
                 }
               </span>
             }
@@ -170,6 +198,12 @@ export class UiTree {
   virtual = input<boolean>(false);
   /** Row height in px in `virtual` mode. */
   itemSize = input<number>(28);
+  /** Description under the label instead of beside it (narrow columns). With `virtual`, raise `itemSize` to fit two lines. */
+  stacked = input<boolean>(false);
+  /** Labels wrap onto several lines instead of truncating, and the row grows. Not for `virtual` (fixed row height). */
+  wrap = input<boolean>(false);
+  /** Row action buttons stay visible instead of appearing on hover and focus. */
+  actionsAlways = input<boolean>(false);
   /** Indent per level, px. */
   indent = input<number>(16);
   /** Accessible name. */
@@ -238,6 +272,8 @@ export class UiTree {
   }));
   private apply = useHostClass(() => cn("relative block overflow-auto rounded-md border bg-background p-1 text-sm", this.virtual() && "h-80", this.class()));
 
+  textClass = computed(() => cn("flex min-w-0", this.stacked() ? "flex-col" : "items-baseline gap-1"));
+  labelClass = computed(() => (this.wrap() ? "min-w-0 break-words whitespace-normal" : "truncate"));
   spacerStyle = computed(() => (this.virtual() ? this.list.spacerStyle() : ""));
 
   rows = computed(() => {
@@ -247,6 +283,9 @@ export class UiTree {
     const selected = this.selectedSet();
     const busy = this.busy();
     const indent = this.indent();
+    const stacked = this.stacked();
+    const wrap = this.wrap();
+    const always = this.actionsAlways();
     const entries: Array<{ key: PropertyKey; index: number; base: Record<string, unknown> }> = this.virtual()
       ? this.list.rows().map((r) => ({ key: r.key, index: r.index, base: r.props }))
       : flat.map((f, index) => ({ key: f.id, index, base: { "data-index": index } }));
@@ -259,7 +298,7 @@ export class UiTree {
       const props: Record<string, unknown> = {
         ...base,
         role: "treeitem",
-        class: cn(ROW, "group", isSelected && "bg-accent text-accent-foreground", f.disabled && "pointer-events-none opacity-50"),
+        class: cn(ROW, "group", (stacked || wrap) && "h-auto min-h-7 items-start py-1", isSelected && "bg-accent text-accent-foreground", f.disabled && "pointer-events-none opacity-50"),
         tabindex: isActive ? 0 : -1,
         "aria-level": f.level,
         "aria-setsize": f.setSize,
@@ -283,7 +322,10 @@ export class UiTree {
         label: node.label,
         description: node.description ?? "",
         descriptionClass: cn("truncate text-xs text-muted-foreground", node.descriptionClass),
-        actions: (node.actions ?? []).map((a) => ({ id: a.id, label: a.label, text: a.text ?? a.label, tabindex: isActive ? 0 : -1 })),
+        badge: node.badge?.text ?? "",
+        badgeVariant: node.badge?.variant ?? "secondary",
+        actionsClass: cn("flex shrink-0 gap-1", !node.badge && "ml-auto", !always && "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-data-[active]:opacity-100"),
+        actions: (node.actions ?? []).map((a) => ({ id: a.id, label: a.label, text: a.text ?? a.label, icon: a.icon ?? "", title: a.icon ? a.label : undefined, tabindex: isActive ? 0 : -1 })),
       });
     }
     return out;

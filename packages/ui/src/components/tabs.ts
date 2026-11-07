@@ -1,5 +1,7 @@
 import { computed, contentChildren, effect, html, inject, input, model, signal } from "@gable/core";
 import { TABS, TabsState, bindProps } from "@gable/ui-primitives";
+import { cn } from "../lib/cn.js";
+import type { InputDensity } from "./input.js";
 
 /**
  * One panel of `<ui-tabs>`: `<ui-tab value="account" label="Account">...</ui-tab>`.
@@ -18,6 +20,10 @@ export class UiTab {
     return owner && this.value() ? owner.api().getContentProps({ value: this.value() }) : null;
   });
 }
+
+const LIST = "inline-flex w-fit items-center justify-center rounded-lg bg-muted p-[3px] text-muted-foreground";
+const TRIGGER =
+  "inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent whitespace-nowrap text-foreground font-medium transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 data-[selected]:bg-background data-[selected]:shadow-sm dark:text-muted-foreground dark:data-[selected]:border-input dark:data-[selected]:bg-input/30 dark:data-[selected]:text-foreground";
 
 /**
  * Tabs.
@@ -38,12 +44,12 @@ export class UiTabs {
     imports: [...TABS],
     template: html`
       <div uiTabsRoot class="flex flex-col gap-2">
-        <div uiTabsList class="inline-flex h-9 w-fit items-center justify-center rounded-lg bg-muted p-[3px] text-muted-foreground">
+        <div uiTabsList [attr.class]="listClasses()">
           @for (tab of tabs(); track tab.value) {
             <button
               [uiTabTrigger]="tab.value"
               [disabled]="tab.disabled"
-              class="inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap text-foreground transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 data-[selected]:bg-background data-[selected]:shadow-sm dark:text-muted-foreground dark:data-[selected]:border-input dark:data-[selected]:bg-input/30 dark:data-[selected]:text-foreground"
+              [attr.class]="triggerClasses()"
             >
               {{ tab.label }}
             </button>
@@ -56,6 +62,10 @@ export class UiTabs {
 
   /** Two-way: `[(value)]="tab"`. */
   value = model("");
+  /** `"compact"` is the dense variant: a 26px tab list and 12px text. */
+  density = input<InputDensity>("default");
+  listClasses = computed(() => cn(LIST, this.density() === "compact" ? "h-6.5 p-0.5" : "h-9"));
+  triggerClasses = computed(() => cn(TRIGGER, this.density() === "compact" ? "px-1.5 text-xs" : "px-2 py-1 text-sm"));
   panels = contentChildren(UiTab);
   tabs = computed(() => this.panels().map((panel) => panel.item()));
   /** The selected value: the model, or the first enabled tab while it is empty. */

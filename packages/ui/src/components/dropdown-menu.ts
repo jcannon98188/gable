@@ -3,6 +3,7 @@ import { MenuState, UiPopup, UiPortal, UiProps, bindProps, type PropBag } from "
 import { cn } from "../lib/cn.js";
 import { UiIcon } from "../lib/icon.js";
 import type { Placement } from "../lib/placement.js";
+import type { InputDensity } from "./input.js";
 
 /** An option of a radio group in a menu. */
 export interface MenuRadioItem {
@@ -30,6 +31,9 @@ export const MENU_CONTENT =
 
 const ITEM =
   "relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50";
+/** Added to the item classes in the compact density (24px rows, 12px text); `cn` lets it win over the defaults. */
+const COMPACT_ITEM = "min-h-6 py-0.5 text-xs";
+const COMPACT_LABEL = "px-2 py-1 text-xs font-medium";
 const SUB_TRIGGER = cn(ITEM, "data-[state=open]:bg-accent data-[state=open]:text-accent-foreground");
 const DESTRUCTIVE = "text-destructive data-[highlighted]:bg-destructive/10 data-[highlighted]:text-destructive dark:data-[highlighted]:bg-destructive/20";
 
@@ -62,7 +66,11 @@ export function menuRows(
   api: ReturnType<MenuState["api"]>,
   onCheckedChange: (value: string, checked: boolean) => void,
   onRadioChange: (group: string, value: string) => void = () => {},
+  density: InputDensity = "default",
 ): MenuRow[] {
+  const compact = density === "compact";
+  const item = compact ? cn(ITEM, COMPACT_ITEM) : ITEM;
+  const label = compact ? COMPACT_LABEL : "px-2 py-1.5 text-sm font-medium";
   return entries.map((entry, index) => {
     const base: MenuRow = {
       key: entry.type === "radio-group" ? `group-${entry.name}` : "value" in entry ? entry.value : `${entry.type}-${index}`,
@@ -79,20 +87,20 @@ export function menuRows(
       classes: "",
     };
     if (entry.type === "separator") return { ...base, kind: "separator", props: api.getSeparatorProps(), classes: "-mx-1 my-1 h-px bg-border" };
-    if (entry.type === "label") return { ...base, kind: "label", classes: "px-2 py-1.5 text-sm font-medium" };
+    if (entry.type === "label") return { ...base, kind: "label", classes: label };
     if (entry.type === "submenu") return { ...base, kind: "submenu", entries: entry.entries };
     if (entry.type === "radio-group") {
       const options = entry.items.map((item): MenuRow => {
         const option = { type: "radio" as const, value: item.value, checked: item.value === entry.value, disabled: item.disabled, onCheckedChange: () => onRadioChange(entry.name, item.value) };
-        return { ...base, key: item.value, label: item.label, checked: option.checked, props: api.getOptionItemProps(option), indicatorProps: api.getItemIndicatorProps(option), classes: cn(ITEM, "pr-2 pl-8") };
+        return { ...base, key: item.value, label: item.label, checked: option.checked, props: api.getOptionItemProps(option), indicatorProps: api.getItemIndicatorProps(option), classes: cn(item, "pr-2 pl-8") };
       });
-      return { ...base, kind: "radio-group", options, props: api.getItemGroupProps({ id: entry.name }), labelProps: api.getItemGroupLabelProps({ htmlFor: entry.name }), classes: "px-2 py-1.5 text-sm font-medium" };
+      return { ...base, kind: "radio-group", options, props: api.getItemGroupProps({ id: entry.name }), labelProps: api.getItemGroupLabelProps({ htmlFor: entry.name }), classes: label };
     }
     if (entry.type === "checkbox") {
       const option = { type: "checkbox" as const, value: entry.value, checked: entry.checked, disabled: entry.disabled, onCheckedChange: (checked: boolean) => onCheckedChange(entry.value, checked) };
-      return { ...base, kind: "checkbox", checked: entry.checked, props: api.getOptionItemProps(option), indicatorProps: api.getItemIndicatorProps(option), classes: cn(ITEM, "pr-2 pl-8") };
+      return { ...base, kind: "checkbox", checked: entry.checked, props: api.getOptionItemProps(option), indicatorProps: api.getItemIndicatorProps(option), classes: cn(item, "pr-2 pl-8") };
     }
-    return { ...base, kind: "item", props: api.getItemProps({ value: entry.value, disabled: entry.disabled, valueText: entry.label }), classes: cn(ITEM, entry.destructive && DESTRUCTIVE) };
+    return { ...base, kind: "item", props: api.getItemProps({ value: entry.value, disabled: entry.disabled, valueText: entry.label }), classes: cn(item, entry.destructive && DESTRUCTIVE) };
   });
 }
 
@@ -141,7 +149,7 @@ export class UiMenuRows {
           </div>
         }
         @if (row.kind === 'submenu') {
-          <ui-menu-sub [parent]="state()" [value]="row.key" [label]="row.label" [disabled]="row.disabled" [entries]="row.entries" (selected)="selected.emit($event)" (checkedChange)="checkedChange.emit($event)" (radioChange)="radioChange.emit($event)"></ui-menu-sub>
+          <ui-menu-sub [parent]="state()" [value]="row.key" [label]="row.label" [disabled]="row.disabled" [entries]="row.entries" [density]="density()" (selected)="selected.emit($event)" (checkedChange)="checkedChange.emit($event)" (radioChange)="radioChange.emit($event)"></ui-menu-sub>
         }
       }
     `,
@@ -150,6 +158,7 @@ export class UiMenuRows {
   /** The menu these lines belong to. */
   state = input<MenuState | null>(null);
   entries = input<MenuEntry[]>([]);
+  density = input<InputDensity>("default");
   selected = output<string>();
   checkedChange = output<{ value: string; checked: boolean }>();
   radioChange = output<{ group: string; value: string }>();
@@ -161,6 +170,7 @@ export class UiMenuRows {
       state.api(),
       (value, checked) => this.checkedChange.emit({ value, checked }),
       (group, value) => this.radioChange.emit({ group, value }),
+      this.density(),
     );
   });
 }
@@ -178,14 +188,14 @@ export class UiMenuSub {
     providers: [MenuState],
     imports: [UiPortal, UiPopup, UiProps, UiIcon, UiMenuRows],
     template: html`
-      <div [uiProps]="triggerProps()" [attr.class]="triggerClasses">
+      <div [uiProps]="triggerProps()" [attr.class]="triggerClasses()">
         {{ label() }}
         <svg uiIcon="chevron-right" class="ml-auto size-4"></svg>
       </div>
       <ui-portal>
         <div [uiProps]="positionerProps()">
           <div [uiPopup]="contentProps()" [popupOpen]="open()" [attr.class]="contentClasses">
-            <ui-menu-rows [state]="state" [entries]="entries()" (selected)="selected.emit($event)" (checkedChange)="checkedChange.emit($event)" (radioChange)="radioChange.emit($event)"></ui-menu-rows>
+            <ui-menu-rows [state]="state" [entries]="entries()" [density]="density()" (selected)="selected.emit($event)" (checkedChange)="checkedChange.emit($event)" (radioChange)="radioChange.emit($event)"></ui-menu-rows>
           </div>
         </div>
       </ui-portal>
@@ -199,10 +209,11 @@ export class UiMenuSub {
   label = input<string>("");
   disabled = input<boolean>(false);
   entries = input<MenuEntry[]>([]);
+  density = input<InputDensity>("default");
   selected = output<string>();
   checkedChange = output<{ value: string; checked: boolean }>();
   radioChange = output<{ group: string; value: string }>();
-  triggerClasses = SUB_TRIGGER;
+  triggerClasses = computed(() => (this.density() === "compact" ? cn(SUB_TRIGGER, COMPACT_ITEM) : SUB_TRIGGER));
   contentClasses = MENU_CONTENT;
 
   state = inject(MenuState).bind(() => ({
@@ -262,7 +273,7 @@ export class UiDropdownMenu {
       <ui-portal>
         <div [uiProps]="positionerProps()">
           <div [uiPopup]="contentProps()" [popupOpen]="open()" [attr.class]="contentClasses()">
-            <ui-menu-rows [state]="state" [entries]="entries()" (selected)="selected.emit($event)" (checkedChange)="checkedChange.emit($event)" (radioChange)="radioChange.emit($event)"></ui-menu-rows>
+            <ui-menu-rows [state]="state" [entries]="entries()" [density]="density()" (selected)="selected.emit($event)" (checkedChange)="checkedChange.emit($event)" (radioChange)="radioChange.emit($event)"></ui-menu-rows>
           </div>
         </div>
       </ui-portal>
@@ -274,6 +285,8 @@ export class UiDropdownMenu {
   open = model(false);
   placement = input<Placement>("bottom-start");
   contentClass = input<string>("");
+  /** `"compact"` is the dense variant: 24px rows and 12px text, submenus included. */
+  density = input<InputDensity>("default");
   /** The value of the chosen item. */
   selected = output<string>();
   /** A checkbox item was toggled. */

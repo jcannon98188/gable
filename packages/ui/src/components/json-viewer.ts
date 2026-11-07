@@ -1,4 +1,5 @@
-import { computed, html, input, model, output, signal } from "@gable/core";
+import { computed, html, injectHost, input, model, output, signal } from "@gable/core";
+import { currentScope } from "@gable/core/internal";
 import { cn } from "../lib/cn.js";
 import { useHostClass } from "../lib/host-class.js";
 import { UiTree, expandableIds, type TreeNode } from "./tree.js";
@@ -95,6 +96,11 @@ const TYPE_CLASS = "font-mono before:mr-1 before:text-muted-foreground before:co
  * and stay closed. Containers with more than `chunkSize` entries group them as `[0..99]`, `[100..199]` and so on (nested
  * for very long ones), so a 100,000 item array opens as a handful of rows.
  *
+ * Narrow columns (a 300px side panel): long keys always truncate with an ellipsis and carry the full key in a tooltip
+ * (`title`; the whole key is in the DOM, so screen readers read it); `wrapKeys` wraps them instead (not with `virtual`).
+ * `compact` tightens the indentation (8px per level) and puts each value on a second line under its key; `compactBelow`
+ * switches that on by itself when the viewer is narrower than that many px (it follows the element's width).
+ *
  * `expanded` is two-way and holds node paths (`$`, `$.items`, `$.items[0]`); chunk rows use `$.items#0-99`.
  */
 export class UiJsonViewer {
@@ -107,7 +113,7 @@ export class UiJsonViewer {
         <button type="button" class="rounded-md border bg-background px-2 py-1 font-sans text-xs shadow-xs outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50" (click)="collapseAll()">Collapse all</button>
         <span class="sr-only" role="status" aria-live="polite">{{ status() }}</span>
       </div>
-      <ui-tree [nodes]="nodes()" [(expanded)]="expanded" selectionMode="single" [virtual]="virtual()" [itemSize]="itemSize()" [label]="label()" [loadChildren]="loader" [class]="treeClass()" (action)="onAction($event)"></ui-tree>
+      <ui-tree [nodes]="nodes()" [(expanded)]="expanded" selectionMode="single" [virtual]="virtual()" [itemSize]="rowSize()" [indent]="indent()" [stacked]="isCompact()" [wrap]="wrapKeys() && !virtual()" [label]="label()" [loadChildren]="loader" [class]="treeClass()" (action)="onAction($event)"></ui-tree>
     `,
   };
 
@@ -128,6 +134,12 @@ export class UiJsonViewer {
   /** Render only the rows in view (set a height with `treeClass`). */
   virtual = input<boolean>(false);
   itemSize = input<number>(28);
+  /** Tighter indentation and the value on a second line under the key. */
+  compact = input<boolean>(false);
+  /** Become `compact` while the viewer is narrower than this many px (0: never). */
+  compactBelow = input<number>(0);
+  /** Long keys wrap instead of truncating. */
+  wrapKeys = input<boolean>(false);
   /** Classes of the inner tree (default caps the height and scrolls). */
   treeClass = input<string>("max-h-96");
   class = input<string>("");
@@ -138,7 +150,26 @@ export class UiJsonViewer {
   status = signal("");
   private meta = new Map<string, Meta>();
   private built = new Map<string, TreeNode[]>();
-  private apply = useHostClass(() => cn("block font-mono text-sm", this.class()));
+  private hostRef = injectHost<HTMLElement>();
+  private width = signal(0);
+  private observe = (() => {
+    const host = this.hostRef.host as HTMLElement | undefined;
+    const RO = host?.ownerDocument?.defaultView?.ResizeObserver;
+    if (!RO || !host) return;
+    const read = (w: number) => {
+      if (w > 0 && Math.round(w) !== this.width()) this.width.set(Math.round(w));
+    };
+    const observer = new RO((entries) => read(entries[entries.length - 1]?.contentRect.width ?? host.clientWidth));
+    observer.observe(host);
+    currentScope()?.onDispose(() => observer.disconnect());
+    queueMicrotask(() => read(host.clientWidth));
+  })();
+  /** Compact layout is on: asked for, or narrower than `compactBelow`. */
+  isCompact = computed(() => this.compact() || (this.compactBelow() > 0 && this.width() > 0 && this.width() < this.compactBelow()));
+  indent = computed(() => (this.isCompact() ? 8 : 16));
+  /** Two-line rows need room in the virtual list. */
+  rowSize = computed(() => (this.isCompact() ? Math.max(this.itemSize(), 44) : this.itemSize()));
+  private apply = useHostClass(() => cn("block min-w-0 font-mono text-sm", this.isCompact() && "text-xs", this.class()));
 
   nodes = computed(() => {
     this.meta = new Map();

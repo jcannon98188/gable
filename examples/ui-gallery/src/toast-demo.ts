@@ -39,7 +39,7 @@ export class ToastDemo {
     this.toast.info('A new version is available');
   }
   withAction(): void {
-    this.toast.show('File deleted', { duration: 8000, action: { label: 'Undo', onClick: () => this.toast.success('Restored') } });
+    this.toast.show('File deleted', { description: 'src/styles/app.css:42', duration: 8000, action: { label: 'Undo', onClick: () => this.toast.success('Restored') } });
   }
   promise(): void {
     const work = new Promise<string>((resolve, reject) => setTimeout(() => (Math.random() > 0.3 ? resolve('Report') : reject(new Error('timeout'))), 1500));

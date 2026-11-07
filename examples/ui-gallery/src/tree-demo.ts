@@ -17,6 +17,29 @@ export const FILES: TreeNode[] = [
   { id: 'package.json', label: 'package.json', actions: [{ id: 'open', label: 'Open package.json', text: 'open' }] },
 ];
 
+/** A route tree (the designer's page mode): nested routes, a badge per row and an icon action. */
+export const ROUTES: TreeNode[] = [
+  {
+    id: '/',
+    label: '/',
+    badge: { text: 'layout' },
+    children: [
+      { id: '/about', label: 'about', badge: { text: 'page', variant: 'outline' }, actions: [{ id: 'open', label: 'Open /about', icon: 'x' }] },
+      {
+        id: '/users',
+        label: 'users',
+        badge: { text: '3 routes', variant: 'info' },
+        actions: [{ id: 'add', label: 'Add a child route to /users', text: '+' }],
+        children: [
+          { id: '/users/:id', label: ':id', description: 'dynamic', badge: { text: 'page', variant: 'outline' } },
+          { id: '/users/new', label: 'new', badge: { text: 'page', variant: 'outline' } },
+        ],
+      },
+      { id: '/blog', label: 'blog', badge: { text: 'error', variant: 'error' }, children: [{ id: '/blog/:slug', label: ':slug', description: 'dynamic' }] },
+    ],
+  },
+];
+
 /** 100 folders of 100 files: 10,100 nodes. */
 export const makeBigTree = (): TreeNode[] =>
   Array.from({ length: 100 }, (_, f) => ({
@@ -58,11 +81,28 @@ export class TreeDemo {
         </section>
 
         <section class="flex flex-col gap-2">
+          <h2 class="text-lg font-medium">Route tree (badges, icon action, selected route)</h2>
+          <ui-tree label="Routes" class="w-80" selectionMode="single" [nodes]="routes" [(expanded)]="routeOpen" [(selected)]="route" [actionsAlways]="true" (action)="onRouteAction($event)"></ui-tree>
+          <p class="text-sm text-muted-foreground" id="route-state">Route: {{ route() }}. Action: {{ routeAction() }}.</p>
+        </section>
+
+        <section class="flex flex-col gap-2">
           <h2 class="text-lg font-medium">Virtualised, 10,100 nodes</h2>
           <ui-tree label="Big tree" selectionMode="single" [virtual]="true" [nodes]="big" [(expanded)]="bigOpen"></ui-tree>
         </section>
 
         <h1 class="text-2xl font-semibold tracking-tight">JSON viewer</h1>
+        <section class="flex flex-col gap-2">
+          <h2 class="text-lg font-medium">In a 300px column (compact below 320px, long keys truncate with a tooltip)</h2>
+          <div class="flex items-start gap-6">
+            <div class="w-[300px] shrink-0 rounded-md border p-2" id="narrow-json">
+              <ui-json-viewer label="Narrow package" [value]="sample" [maxString]="40" [compactBelow]="320"></ui-json-viewer>
+            </div>
+            <div class="w-[300px] shrink-0 rounded-md border p-2">
+              <ui-json-viewer label="Wrapped keys" [value]="longKeys" [wrapKeys]="true"></ui-json-viewer>
+            </div>
+          </div>
+        </section>
         <section class="flex flex-col gap-2">
           <ui-json-viewer label="Package" [value]="sample" [maxString]="60" (copied)="onCopied($event)"></ui-json-viewer>
           <p class="text-sm text-muted-foreground" id="json-copied">Copied {{ copied() }}</p>
@@ -79,7 +119,16 @@ export class TreeDemo {
   big = makeBigTree();
   bigOpen = signal<string[]>(this.big.slice(0, 50).map((n) => n.id));
   sample = makeSample();
+  longKeys = { a_remarkably_long_property_name_that_cannot_fit_in_a_narrow_panel: 1, short: 'x' };
+  routes = ROUTES;
+  routeOpen = signal<string[]>(['/', '/users']);
+  route = signal<string[]>(['/about']);
+  routeAction = signal('none');
   copied = signal('');
+
+  onRouteAction(e: { action: string; node: TreeNode }): void {
+    this.routeAction.set(`${e.action} ${e.node.id}`);
+  }
 
   onCopied(e: { kind: string; text: string }): void {
     this.copied.set(`${e.kind}: ${e.text}`);

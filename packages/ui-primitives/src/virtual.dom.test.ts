@@ -126,6 +126,23 @@ describe("useVirtualizer (jsdom, mocked layout)", () => {
     expect(app.querySelector("#spacer")!.getAttribute("style")).toContain(`height:${20000 + 60 - 20 + 40 - 20}px`);
   });
 
+  it("keeps the scroll position stable when a row above the viewport is measured taller", async () => {
+    await start();
+    await scrollTo(2000); // rows 100.. are in view (20px each)
+    const before = scrollTops.get(app)!;
+    const rowTop = (i: number) => instance.list.offsetOf(i) - before;
+    const anchorOffset = rowTop(100);
+    // row 90 sits above the viewport and turns out 50px taller than its estimate
+    instance.list.measure(90, 70);
+    await settle();
+    expect(scrollTops.get(app)).toBe(before + 50);
+    expect(instance.list.offsetOf(100) - scrollTops.get(app)!).toBe(anchorOffset); // the row in view did not move
+    // a row below the view changes nothing
+    instance.list.measure(200, 90);
+    await settle();
+    expect(scrollTops.get(app)).toBe(before + 50);
+  });
+
   it("re-renders the window on scroll and keeps the tab stop row", async () => {
     await start();
     await scrollTo(2000);

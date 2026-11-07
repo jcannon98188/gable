@@ -137,7 +137,7 @@ export const COMPONENT_META: ComponentMeta[] = [
     files: ["context-menu.ts"],
     exports: ["UiContextMenu"],
     dependencies: ["@gable/core", "@gable/ui-primitives"],
-    registryDependencies: ["dropdown-menu"],
+    registryDependencies: ["dropdown-menu", "input"],
     lib: ["cn"],
   },
   {
@@ -161,7 +161,7 @@ export const COMPONENT_META: ComponentMeta[] = [
     files: ["dropdown-menu.ts"],
     exports: ["MenuEntry", "MenuRadioItem", "MENU_CONTENT", "MenuRow", "menuRows", "UiMenuRows", "UiMenuSub", "MenuTrigger", "UiDropdownMenu"],
     dependencies: ["@gable/core", "@gable/ui-primitives"],
-    registryDependencies: [],
+    registryDependencies: ["input"],
     lib: ["cn", "icon", "placement"],
   },
   {
@@ -169,8 +169,8 @@ export const COMPONENT_META: ComponentMeta[] = [
     files: ["form.ts"],
     exports: ["UiForm", "DEFAULT_MESSAGES", "UiFieldControl", "UiField"],
     dependencies: ["@gable/core", "@gable/ui-primitives"],
-    registryDependencies: [],
-    lib: ["cn"],
+    registryDependencies: ["input", "select"],
+    lib: ["cn", "host-class"],
   },
   {
     name: "hover-card",
@@ -183,7 +183,23 @@ export const COMPONENT_META: ComponentMeta[] = [
   {
     name: "input",
     files: ["input.ts"],
-    exports: ["UiInput"],
+    exports: ["InputDensity", "inputVariants", "UiInput"],
+    dependencies: ["@gable/core"],
+    registryDependencies: [],
+    lib: ["host-class", "variants"],
+  },
+  {
+    name: "input-clear",
+    files: ["input-clear.ts"],
+    exports: ["UiInputClear"],
+    dependencies: ["@gable/core"],
+    registryDependencies: ["input"],
+    lib: ["cn", "host-class", "icon"],
+  },
+  {
+    name: "section-header",
+    files: ["section-header.ts"],
+    exports: ["SECTION_HEADER", "UiSectionHeader"],
     dependencies: ["@gable/core"],
     registryDependencies: [],
     lib: ["cn", "host-class"],
@@ -247,9 +263,9 @@ export const COMPONENT_META: ComponentMeta[] = [
   {
     name: "select",
     files: ["select.ts"],
-    exports: ["UiSelect"],
+    exports: ["SelectFieldOwner", "UiSelect"],
     dependencies: ["@gable/core", "@gable/ui-primitives"],
-    registryDependencies: [],
+    registryDependencies: ["input"],
     lib: ["cn", "icon"],
   },
   {
@@ -313,8 +329,8 @@ export const COMPONENT_META: ComponentMeta[] = [
     files: ["tabs.ts"],
     exports: ["UiTab", "UiTabs"],
     dependencies: ["@gable/core", "@gable/ui-primitives"],
-    registryDependencies: [],
-    lib: [],
+    registryDependencies: ["input"],
+    lib: ["cn"],
   },
   {
     name: "textarea",
@@ -330,7 +346,7 @@ export const COMPONENT_META: ComponentMeta[] = [
     exports: ["ToggleGroupItem", "UiToggleGroup"],
     dependencies: ["@gable/core", "@gable/ui-primitives"],
     registryDependencies: ["toggle"],
-    lib: ["cn"],
+    lib: ["cn", "icon"],
   },
   {
     name: "toggle",
@@ -339,6 +355,22 @@ export const COMPONENT_META: ComponentMeta[] = [
     dependencies: ["@gable/core", "@gable/ui-primitives"],
     registryDependencies: [],
     lib: ["host-class", "variants"],
+  },
+  {
+    name: "swatch-grid",
+    files: ["swatch-grid.ts"],
+    exports: ["SwatchItem", "UiSwatchGrid"],
+    dependencies: ["@gable/core"],
+    registryDependencies: [],
+    lib: ["cn"],
+  },
+  {
+    name: "binding-picker",
+    files: ["binding-picker.ts"],
+    exports: ["UiBindingPicker"],
+    dependencies: ["@gable/core"],
+    registryDependencies: ["button", "command", "popover"],
+    lib: ["placement"],
   },
   {
     name: "tooltip",
@@ -361,7 +393,7 @@ export const COMPONENT_META: ComponentMeta[] = [
     files: ["virtual-table.ts"],
     exports: ["UiVirtualTable"],
     dependencies: ["@gable/core", "@gable/ui-primitives"],
-    registryDependencies: [],
+    registryDependencies: ["badge"],
     lib: ["cn", "host-class"],
   },
   {
@@ -425,7 +457,7 @@ export const COMPONENT_META: ComponentMeta[] = [
     files: ["tree.ts"],
     exports: ["UiTree", "flattenTree", "expandableIds"],
     dependencies: ["@gable/core", "@gable/ui-primitives"],
-    registryDependencies: [],
+    registryDependencies: ["badge"],
     lib: ["cn", "host-class", "icon"],
   },
   {

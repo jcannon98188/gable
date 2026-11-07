@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { html } from "@gable/core";
+import { expectNoA11yViolations } from "@gable/testing/a11y";
 import { UiButton } from "./button.js";
 import { UiTooltip } from "./tooltip.js";
 import { $, key, pointer, settle, useDomApp } from "../test-utils.js";
@@ -46,5 +47,40 @@ describe("Tooltip in jsdom", () => {
     key(document.body, "Escape");
     await settle();
     expect($("[role=tooltip]").getAttribute("data-state")).toBe("closed");
+  });
+});
+
+class DisabledApp {
+  static meta = {
+    selector: "app-root",
+    imports: [UiTooltip, UiButton],
+    template: html`<span id="wrap" uiTooltip="Unavailable on macOS" [focusable]="true" [delay]="20" class="inline-flex [&>*]:pointer-events-none"><button id="inner" uiButton disabled>Install</button></span>`,
+  };
+}
+
+describe("Tooltip on a disabled control", () => {
+  it("makes the wrapper focusable, opens on focus, describes the wrapper and keeps the button disabled", async () => {
+    await boot(DisabledApp);
+    expect($("#wrap").getAttribute("tabindex")).toBe("0");
+    $("#wrap").focus();
+    await settle();
+    expect($("[role=tooltip]").hidden).toBe(false);
+    expect($("[role=tooltip]").textContent).toBe("Unavailable on macOS");
+    expect($("#wrap").getAttribute("aria-describedby")).toBe($("[role=tooltip]").id);
+    expect($<HTMLButtonElement>("#inner").disabled).toBe(true);
+    await expectNoA11yViolations(document.body);
+  });
+
+  it("opens on hover of the wrapper", async () => {
+    await boot(DisabledApp);
+    pointer($("#wrap"), "pointermove");
+    await new Promise((r) => setTimeout(r, 60));
+    await settle();
+    expect($("[role=tooltip]").hidden).toBe(false);
+  });
+
+  it("is not focusable by default", async () => {
+    await boot(App);
+    expect($("#save").hasAttribute("tabindex")).toBe(false);
   });
 });
