@@ -93,7 +93,7 @@ node packages/designer/e2e/device-check.mjs --port <cdp port> --shell 127.0.0.1:
 
 The shell's chrome follows the Claude Design boards: a top bar (mode, Select or Interact, connection, undo and redo, theme, palette),
 Structure, Insert and Routes on the left, the canvas with its device bar, a bottom drawer (Code, Problems, HMR timeline,
-Accessibility, HTTP) and Style, Content and Inspector on the right. Tokens live outside the gable-ui marker block in
+Accessibility, Performance, HTTP) and Style, Content and Inspector on the right. Tokens live outside the gable-ui marker block in
 `shell/src/shell.css`, mapped onto gable-ui's variables, so components need no `dark:` variant here.
 
 Ctrl K opens the command palette, generated from the current state in `shell/src/app/commands.ts`. Panel sizes, the drawer and
@@ -125,6 +125,35 @@ method; it is additive, so `PROTOCOL_VERSION` is unchanged. Automated checks fin
 
 ```
 node packages/designer/e2e/a11y-diff-check.mjs     # spawns the backend on test-fixtures/a11y-app and a headless Edge, stops only those
+```
+
+## Performance
+
+The drawer's **Performance** tab shows what the browser itself measured in the selected frame's page: the Preview agent
+observes the Performance Timeline from the moment it starts (`PerformanceObserver`, buffered: paint, largest-contentful-paint,
+layout-shift, longtask, event, navigation, resource; `src/agent/perf.ts`) and turns it into TTFB, FCP, LCP, CLS (session
+windows), INP (each interaction's longest event, the 98th percentile past 50) and TBT (long tasks past 50 ms from FCP to the
+measurement, as there is no TTI), plus DOM size, rated with the web-vitals thresholds (Lighthouse's for TBT and DOM size). The
+LCP element, each layout shift's sources and the slowest interaction's target are resolved to their template node: clicking
+one selects it on the canvas. Below are navigation timing, long tasks, interactions, a request summary (the Designer's own
+requests counted apart) and what the devtools hook already counts (signal flushes, effect runs, the slowest flush, the first
+component tree, the last hot update's time to the next rendered frame). Nothing is simulated: a metric whose entries the engine
+does not report is shown as n/a with the reason, never as zero, and INP waits
+for an interaction (Interact mode). The numbers come from the dev server (unminified modules, the HMR client, no compression),
+so they are indicative of the page, not of a production build; every report says so, and names the frame's size and throttling.
+
+The shell measures when the frame connects or reloads, after a hot update or a navigation (each a second after it settles), and
+on **Re-run**, which reloads the frame (the agent keeps the session and, in Component mode, the Scene) and measures the fresh
+load. With CDP (the Windows desktop app, or a browser started with a debugging port) the tab throttles the selected frame's
+CPU (4×, 6×, 20×) and network (DevTools' Fast 4G, Slow 4G, Slow 3G) through `/api/devices/throttle`
+(`Emulation.setCPUThrottlingRate`, `Network.emulateNetworkConditions` on the frame's target); throttling is per frame, not saved,
+and re-applied when the frame reconnects. Elsewhere it is labelled unavailable. The protocol gained the `performance` and
+`reload` methods; both are additive, so `PROTOCOL_VERSION` is unchanged. MCP `get_performance` returns the same report
+(`reload: true` measures a fresh load first).
+
+```
+node packages/designer/e2e/perf-check.mjs            # spawns the backend (with CDP) on test-fixtures/perf-app and a headless Edge, stops only those
+node packages/designer/e2e/perf-check.mjs --no-cdp   # the same without CDP: throttling labelled unavailable
 ```
 
 ## Projects and the dev server
@@ -301,7 +330,7 @@ left out to mean the element selected in the window.
 
 | Group | Tools |
 | --- | --- |
-| Read | `get_status` (call first), `list_components`, `list_scenes`, `list_routes`, `get_problems`, `get_history`, `describe_element`, `get_selection`, `get_styles`, `get_tree`, `get_signals`, `get_hmr_timeline`, `get_http_log` |
+| Read | `get_status` (call first), `list_components`, `list_scenes`, `list_routes`, `get_problems`, `get_history`, `describe_element`, `get_selection`, `get_styles`, `get_tree`, `get_signals`, `get_hmr_timeline`, `get_http_log`, `get_performance` |
 | Window | `set_mode`, `show_page`, `show_component`, `set_scene`, `set_scenario`, `navigate`, `add_frame`, `update_frame`, `remove_frame`, `select_frame`, `select_element` (by position or CSS selector) |
 | Edit | `edit_text`, `set_attribute`, `bind`, `insert_element`, `delete_element`, `move_element`, `wrap_element`, `set_component_meta`, `set_css`, `edit_classes` (Tailwind, at a breakpoint and state), `undo`, `redo` |
 | See | `screenshot`: a PNG of a frame as MCP image content |

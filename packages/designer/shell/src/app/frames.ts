@@ -18,6 +18,8 @@ import {
   type Emulation,
   type FrameConfig,
   type ProjectSettings,
+  NO_THROTTLE,
+  type Throttle,
 } from "../../../src/devices.js";
 import { PreviewClient, type AgentEvent } from "./preview-client.js";
 
@@ -44,6 +46,12 @@ export class Frame {
   readonly config;
   readonly connection = signal<Connection>("connecting");
   readonly emulation = signal<EmulationStatus>({ kind: "idle", touchEvents: true, error: null });
+  /** CPU and network throttling over CDP (Performance tab). Not saved; re-applied whenever the frame connects. */
+  readonly throttle = signal<Throttle>(NO_THROTTLE);
+  /** What CDP last confirmed for this frame (`throttle` is what was asked for; they differ while it is being applied). */
+  readonly throttleApplied = signal<Throttle>(NO_THROTTLE);
+  /** Why the last throttle request failed, or null. */
+  readonly throttleError = signal<string | null>(null);
   /** The rendered size: the portrait size, swapped when rotated. */
   readonly size = computed(() => sizeOf(this.config()));
   /** Emulation requests run one after another, each with the frame's config at that moment, so the last edit wins. */
@@ -276,6 +284,22 @@ export class FrameSet {
       .api<{ ok: boolean; error?: string }>("/api/devices/emulation", { nonce: frame.client.nonce, emulation: emulation satisfies Emulation })
       .catch((e: unknown) => ({ ok: false, error: String(e) }));
     frame.emulation.set({ kind: result.ok ? "applied" : "failed", touchEvents, error: result.ok ? null : (result.error ?? "failed") });
+    // A reload can hand the frame a new target: throttling is applied again with the emulation.
+    const t = frame.throttle();
+    if (t.cpu !== 1 || t.network !== "none") await this.#applyThrottle(frame, t);
+  }
+
+  /** Throttles a frame's CPU and network over CDP (only with CDP; the Performance tab says so otherwise). */
+  setThrottle(frame: Frame, throttle: Throttle): Promise<void> {
+    frame.throttle.set(throttle);
+    return (frame.applying = frame.applying.then(() => this.#applyThrottle(frame, throttle)));
+  }
+
+  async #applyThrottle(frame: Frame, throttle: Throttle): Promise<void> {
+    if (!this.capabilities().cdp || frame.connection() !== "ready") return;
+    const result = await this.#host.api<{ ok: boolean; error?: string }>("/api/devices/throttle", { nonce: frame.client.nonce, throttle }).catch((e: unknown) => ({ ok: false, error: String(e) }));
+    frame.throttleError.set(result.ok ? null : (result.error ?? "failed"));
+    if (result.ok) frame.throttleApplied.set(throttle);
   }
 
   /** Opens the project's page in the system browser against the same dev server. */

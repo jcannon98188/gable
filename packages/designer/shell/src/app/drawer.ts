@@ -1,7 +1,10 @@
 // The bottom drawer: the selected element's source and the last patch, the project's problems, the hot-update timeline,
-// accessibility, and the mocked HTTP traffic. The tab strip stays when the drawer is closed, so its badges can still be read.
-import { computed, html, inject, signal } from "@gable/core";
+// accessibility, performance, and the mocked HTTP traffic. The tab strip stays when the drawer is closed, so its badges can still be read.
+import { computed, effect, html, inject, signal, untracked } from "@gable/core";
+import { CPU_RATES, NETWORK_PROFILES, type Throttle } from "../../../src/devices.js";
+import type { PerfElement, PerfMetric } from "../../../src/protocol.js";
 import { UiButton } from "../components/ui/button.js";
+import { UiSelect } from "../components/ui/select.js";
 import { UiTooltip } from "../components/ui/tooltip.js";
 import { UiVirtualTable, type VirtualTableColumn } from "../components/ui/virtual-table.js";
 import { UiIcon } from "../lib/ui/icon.js";
@@ -10,6 +13,7 @@ import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";
 import { EditState } from "./edit-state.js";
 import { HttpPanel } from "./page-mode.js";
+import { DEV_NOTE, PerfState, RATING_LABEL, elementText, formatBytes, formatMetric, formatMs } from "./perf-state.js";
 import { staleNote } from "./stale-canvas.js";
 
 /** The selected element's source on the left; what the last edit did on the right. */
@@ -353,6 +357,305 @@ export class AccessibilityTab {
   }
 }
 
+const thresholdText = (m: PerfMetric): string => {
+  const f = (v: number) => formatMetric({ value: v, unit: m.unit }).replace(" elements", "");
+  return `good ≤ ${f(m.thresholds[0])}, poor > ${f(m.thresholds[1])}`;
+};
+
+/** A request's URL without the origin, and without Vite's cache-busting query. */
+function shortUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.pathname + (u.search && !/^\?(v|t)=/.test(u.search) ? u.search : "");
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * The selected frame's performance as the browser measured it in the page (Performance Timeline, read by the Preview agent):
+ * web-vitals with their ratings, the elements behind LCP and the layout shifts (a click selects one), long tasks, requests,
+ * DOM size and what the devtools hook counts. Re-run reloads the frame and measures the fresh load. Not a Lighthouse run.
+ */
+export class PerformanceTab {
+  static meta = {
+    selector: "app-performance-tab",
+    host: { class: "block" },
+    imports: [UiButton, UiSelect, UiTooltip],
+    template: html`
+      <div class="dbar">
+        <span class="chip" [class.err]="perf.poor() > 0" [class.warn]="mixed()" [class.ok]="allGood()" [class.off]="!perf.report()" data-part="perf-status">{{ status() }}</span>
+        <span class="dim truncate perf-detail" [attr.title]="detail()">{{ detail() }}</span>
+        <span class="spacer"></span>
+        <button uiButton variant="outline" size="sm" class="btn sm" data-part="perf-rerun" uiTooltip="Reload the frame and measure the fresh load" [disabled]="!canRun()" (click)="perf.rerun()">{{ runLabel() }}</button>
+      </div>
+      <div class="perf-env">
+        <span class="dim truncate" data-part="perf-device" [attr.title]="device()">{{ device() }}</span>
+        <span class="spacer"></span>
+        @if (ctx().cdp) {
+          <span class="dim">CPU</span>
+          <!-- TODO(gable-ui): UiSelect has no aria-label input, so these selects are named by the text before them only. -->
+          <ui-select triggerClass="fld-select perf-throttle" data-part="perf-cpu" [items]="cpuItems" [(value)]="cpuPick"></ui-select>
+          <span class="dim">Network</span>
+          <ui-select triggerClass="fld-select perf-throttle" data-part="perf-network" [items]="networkItems" [(value)]="networkPick"></ui-select>
+        } @else {
+          <span class="chip off" data-part="perf-throttle-off" uiTooltip="CPU and network throttling go through CDP, which only the Windows desktop app has" tabindex="0">Throttling unavailable</span>
+        }
+      </div>
+      @if (perf.error(); as e) {
+        <p class="callout err" role="alert">The measurement did not run: {{ e }}</p>
+      }
+      @if (perf.report()) {
+        <p class="callout info" data-part="perf-dev-note">{{ devNote }}</p>
+        @for (m of metricRows(); track m.id) {
+          <div class="tbl-row perf-row" data-part="perf-metric" [attr.data-metric]="m.id" [attr.data-rating]="m.rating">
+            <span class="perf-what"><span>{{ m.label }}</span><span class="dim mono">{{ m.id }}</span></span>
+            <span class="mono" data-part="perf-value">{{ m.value }}</span>
+            <span><span class="chip" [class.ok]="m.good" [class.warn]="m.warn" [class.err]="m.bad" [class.off]="m.none">{{ m.ratingText }}</span></span>
+            <span class="dim truncate" [attr.title]="m.note">{{ m.note }}</span>
+            @if (m.elementKey) {
+              <button class="chip mono elink" data-part="perf-element" [attr.data-for]="m.id" [attr.aria-current]="m.current" [disabled]="!m.linked" [attr.title]="m.elementTitle" (click)="choose(m.elementKey)" (mouseenter)="hover(m.elementKey)" (mouseleave)="hover(null)">{{ m.element }}</button>
+            } @else {
+              <span></span>
+            }
+          </div>
+        }
+        @if (shiftRows().length) {
+          <div class="sec-h">Layout shifts in the CLS window</div>
+          @for (s of shiftRows(); track s.key) {
+            <div class="tbl-row perf-shift" data-part="perf-shift">
+              <span class="mono">{{ s.value }}</span>
+              <span class="mono dim">at {{ s.at }}</span>
+              <span class="wrap">
+                @for (e of s.sources; track e.key) {
+                  <button class="chip mono elink" data-part="perf-shift-element" [attr.aria-current]="e.current" [disabled]="!e.linked" [attr.title]="e.title" (click)="choose(e.key)" (mouseenter)="hover(e.key)" (mouseleave)="hover(null)">{{ e.text }}</button>
+                }
+                @if (s.none) {
+                  <span class="dim">the browser named no element</span>
+                }
+              </span>
+            </div>
+          }
+        }
+        <div class="perf-facts">
+          @for (g of facts(); track g.title) {
+            <div class="perf-fact" [attr.data-part]="g.part">
+              <div class="sec-h">{{ g.title }}</div>
+              @for (f of g.rows; track f.k) {
+                <div class="perf-kv"><span class="dim">{{ f.k }}</span><span class="mono truncate" [attr.title]="f.v">{{ f.v }}</span></div>
+              }
+            </div>
+          }
+        </div>
+        @if (unsupported()) {
+          <p class="callout warn" data-part="perf-unsupported">{{ unsupported() }}</p>
+        }
+      } @else if (!perf.error()) {
+        <div class="empty" data-part="perf-empty"><strong>{{ empty().title }}</strong>{{ empty().text }}</div>
+      }
+    `,
+  };
+  perf = inject(PerfState);
+  state = inject(DesignerState);
+  devNote = DEV_NOTE;
+  cpuItems = CPU_RATES.map((r) => ({ value: String(r), label: r === 1 ? "No throttling" : `${r}× slower` }));
+  networkItems = [{ value: "none", label: "No throttling" }, ...Object.entries(NETWORK_PROFILES).map(([value, p]) => ({ value, label: p.label }))];
+  ctx = this.perf.context;
+
+  // Throttling: the selects follow the selected frame's setting, and a pick sets it.
+  cpuPick = signal("1");
+  networkPick = signal("none");
+  follow = effect(() => {
+    const t = this.ctx().throttle;
+    untracked(() => (this.cpuPick.set(String(t.cpu)), this.networkPick.set(t.network)));
+  });
+  apply = effect(() => {
+    const cpu = Number(this.cpuPick());
+    const network = this.networkPick() as Throttle["network"];
+    const t = untracked(() => this.ctx().throttle);
+    if (cpu !== t.cpu || network !== t.network) untracked(() => this.perf.setThrottle({ cpu, network }));
+  });
+
+  canRun = computed(() => this.state.connection() === "ready" && !this.perf.reloading());
+  runLabel = computed(() => (this.perf.reloading() ? "Reloading…" : this.perf.running() ? "Measuring…" : "Re-run"));
+  allGood = computed(() => !!this.perf.report() && this.perf.poor() === 0 && this.perf.needsWork() === 0);
+  mixed = computed(() => this.perf.poor() === 0 && this.perf.needsWork() > 0);
+  status = computed(() => {
+    if (!this.perf.report()) return this.perf.reloading() ? "Reloading…" : this.perf.running() ? "Measuring…" : "Not measured";
+    const poor = this.perf.poor();
+    const work = this.perf.needsWork();
+    if (!poor && !work) return "All measured metrics good";
+    return [poor ? `${poor} poor` : "", work ? `${work} need${work === 1 ? "s" : ""} work` : ""].filter(Boolean).join(", ");
+  });
+  detail = computed(() => {
+    const r = this.perf.report();
+    if (!r) return "";
+    return `After ${this.perf.reason() || "load"} · ${r.url} · measured ${formatMs(r.at)} after navigation start`;
+  });
+  device = computed(() => {
+    const c = this.ctx();
+    const r = this.perf.report();
+    // The page's own viewport, when it is not the frame's (a scrollbar, an emulation that did not apply).
+    const d = r?.device;
+    const page = d && (d.width !== c.width || d.height !== c.height || d.dpr !== c.dpr) ? ` (the page sees ${d.width} × ${d.height} @${d.dpr}x)` : "";
+    return `${c.frame} ${c.width} × ${c.height} @${c.dpr}x${page} · throttling: ${c.throttling}`;
+  });
+
+  /** Every element a row can link to, by key. */
+  #elements = computed(() => {
+    const r = this.perf.report();
+    const map = new Map<string, PerfElement>();
+    if (!r) return map;
+    for (const m of r.metrics) if (m.element) map.set(m.id, m.element);
+    r.shifts.forEach((s, i) => s.sources.forEach((e, j) => map.set(`shift:${i}:${j}`, e)));
+    return map;
+  });
+  #link(key: string, e: PerfElement) {
+    const picked = this.state.picked()?.node.id;
+    return {
+      key,
+      text: elementText(e),
+      linked: !!e.node,
+      current: e.node && e.node.id === picked ? "true" : null,
+      title: `${e.label}${e.connected ? "" : " (no longer on the page)"}\n${e.node ? "Select this element" : "No template renders this element"}`,
+    };
+  }
+
+  metricRows = computed(() =>
+    this.perf.metrics().map((m) => {
+      const link = m.element ? this.#link(m.id, m.element) : null;
+      return {
+        id: m.id,
+        label: m.label,
+        value: formatMetric(m),
+        rating: m.rating ?? "none",
+        ratingText: m.rating ? RATING_LABEL[m.rating] : "n/a",
+        good: m.rating === "good",
+        warn: m.rating === "needs-improvement",
+        bad: m.rating === "poor",
+        none: !m.rating,
+        note: m.unavailable ?? thresholdText(m),
+        elementKey: link?.key ?? "",
+        element: link?.text ?? "",
+        elementTitle: link?.title ?? "",
+        linked: link?.linked ?? false,
+        current: link?.current ?? null,
+      };
+    }),
+  );
+
+  shiftRows = computed(() =>
+    (this.perf.report()?.shifts ?? []).map((s, i) => ({
+      key: `${i}:${s.at}`,
+      value: s.value.toFixed(4),
+      at: formatMs(s.at),
+      sources: s.sources.map((e, j) => this.#link(`shift:${i}:${j}`, e)),
+      none: s.sources.length === 0,
+    })),
+  );
+
+  facts = computed(() => {
+    const r = this.perf.report();
+    if (!r) return [];
+    const groups: Array<{ title: string; part: string; rows: Array<{ k: string; v: string }> }> = [];
+    if (r.navigation) {
+      const n = r.navigation;
+      groups.push({
+        title: "Navigation",
+        part: "perf-navigation",
+        rows: [
+          { k: "Type", v: n.type },
+          { k: "DOM interactive", v: formatMs(n.domInteractive) },
+          { k: "DOMContentLoaded", v: formatMs(n.domContentLoaded) },
+          { k: "Load", v: n.load ? formatMs(n.load) : "not finished" },
+          { k: "Document", v: formatBytes(n.transferBytes) },
+        ],
+      });
+    }
+    if (r.longTasks) {
+      const t = r.longTasks;
+      groups.push({
+        title: "Long tasks",
+        part: "perf-long-tasks",
+        rows: [
+          { k: "Count", v: String(t.count) },
+          { k: "Longest", v: t.count ? formatMs(t.longestMs) : "—" },
+          { k: "Total", v: formatMs(t.totalMs) },
+          ...t.tasks.slice(0, 3).map((x, i) => ({ k: `#${i + 1}`, v: `${formatMs(x.duration)} at ${formatMs(x.at)}` })),
+        ],
+      });
+    }
+    if (r.interactions) {
+      const w = r.interactions.worst;
+      groups.push({
+        title: "Interactions",
+        part: "perf-interactions",
+        rows: [
+          { k: "Count", v: String(r.interactions.count) },
+          { k: "Slowest", v: w ? `${w.type} ${formatMs(w.duration)}` : "—" },
+        ],
+      });
+    }
+    if (r.resources) {
+      const x = r.resources;
+      groups.push({
+        title: "Requests",
+        part: "perf-resources",
+        rows: [
+          { k: "Count", v: `${x.count}${x.designer ? ` (+${x.designer} Designer)` : ""}` },
+          { k: "Transferred", v: `${formatBytes(x.transferBytes)}${x.unsized ? ` (${x.unsized} unsized)` : ""}` },
+          { k: "Decoded", v: formatBytes(x.decodedBytes) },
+          { k: "By type", v: x.byType.map((b) => `${b.type} ${b.count}`).join(", ") || "—" },
+          ...x.slowest.slice(0, 3).map((s, i) => ({ k: `Slowest #${i + 1}`, v: `${formatMs(s.duration)} ${shortUrl(s.name)}` })),
+        ],
+      });
+    }
+    groups.push({
+      title: "DOM",
+      part: "perf-dom",
+      rows: [
+        { k: "Elements", v: String(r.dom.elements) },
+        { k: "Depth", v: String(r.dom.depth) },
+        { k: "Most children", v: String(r.dom.maxChildren) },
+      ],
+    });
+    if (r.gable) {
+      const g = r.gable;
+      const hot = g.lastHotUpdate;
+      groups.push({
+        title: "Gable",
+        part: "perf-gable",
+        rows: [
+          { k: "First component tree", v: g.firstTree === null ? "—" : formatMs(g.firstTree) },
+          { k: "Signal flushes", v: String(g.flushes) },
+          { k: "Effect runs", v: `${g.effectRuns} (${formatMs(g.effectMs)})` },
+          { k: "Slowest flush", v: g.slowestFlush ? `${g.slowestFlush.ms.toFixed(1)} ms${g.slowestFlush.effect ? ` · ${g.slowestFlush.effect}` : ""}` : "—" },
+          { k: "Last hot update", v: hot ? `${hot.status}, next frame ${hot.toFrameMs === null ? "pending" : formatMs(hot.toFrameMs)} after it applied` : "none since load" },
+        ],
+      });
+    }
+    return groups;
+  });
+
+  unsupported = computed(() => {
+    const u = this.perf.report()?.unsupported ?? [];
+    return u.length ? `This engine does not report ${u.join(", ")} entries; the metrics that need them show n/a, not zero.` : "";
+  });
+
+  empty = computed(() => {
+    if (this.state.connection() !== "ready") return { title: "No page to measure", text: "The selected frame's page is measured once it is connected." };
+    if (this.perf.reloading()) return { title: "Reloading…", text: "The frame is reloading; its fresh load is measured when it is back." };
+    return { title: "Measuring…", text: "The Preview agent reads what the browser measured once the page has loaded and painted." };
+  });
+
+  choose(key: string): void {
+    this.perf.select(this.#elements().get(key));
+  }
+  hover(key: string | null): void {
+    this.perf.hover(key ? this.#elements().get(key) : null);
+  }
+}
+
 /** The tab strip and the open tab. */
 export class DrawerTabs {
   static meta = {
@@ -379,6 +682,7 @@ export class DrawerTabs {
   state = inject(DesignerState);
   chrome = inject(ChromeState);
   a11y = inject(A11yState);
+  perf = inject(PerfState);
   open = this.chrome.drawerOpen;
   closed = computed(() => !this.chrome.drawerOpen());
   toggleText = computed(() => (this.chrome.drawerOpen() ? "Collapse the drawer" : "Open the drawer"));
@@ -393,6 +697,7 @@ export class DrawerTabs {
       { value: "problems", label: "Problems", badge: problems, err: errors > 0, warn: errors === 0 && problems > 0 },
       { value: "hmr", label: "HMR timeline", badge: 0, err: false, warn: false },
       { value: "a11y", label: "Accessibility", badge: this.a11y.violations(), err: this.a11y.severe(), warn: !this.a11y.severe() && this.a11y.violations() > 0 },
+      { value: "perf", label: "Performance", badge: this.perf.poor() + this.perf.needsWork(), err: this.perf.poor() > 0, warn: this.perf.poor() === 0 && this.perf.needsWork() > 0 },
       { value: "http", label: "HTTP", badge: 0, err: false, warn: false },
     ].map((t) => ({ ...t, selected: String(t.value === current), tabId: `drawer-tab-${t.value}` }));
   });
@@ -408,7 +713,7 @@ export class DrawerBody {
   static meta = {
     selector: "app-drawer-body",
     host: { class: "drawer" },
-    imports: [DrawerTabs, CodeTab, ProblemsTab, HmrTab, AccessibilityTab, HttpPanel],
+    imports: [DrawerTabs, CodeTab, ProblemsTab, HmrTab, AccessibilityTab, PerformanceTab, HttpPanel],
     template: html`
       <app-drawer-tabs></app-drawer-tabs>
       <div class="dbody" role="tabpanel" [attr.aria-labelledby]="labelledBy()">
@@ -418,6 +723,8 @@ export class DrawerBody {
           <app-hmr-tab></app-hmr-tab>
         } @else if (tab() === 'a11y') {
           <app-accessibility-tab></app-accessibility-tab>
+        } @else if (tab() === 'perf') {
+          <app-performance-tab></app-performance-tab>
         } @else if (tab() === 'http') {
           <app-http-panel></app-http-panel>
         } @else {

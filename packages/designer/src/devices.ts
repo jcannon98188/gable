@@ -144,6 +144,39 @@ export function breakpointOf(width: number, breakpoints: ReadonlyArray<{ name: s
 /** Which of an emulation's parts a platform cannot provide. Empty on WebView2 (CDP); see `unsupported`. */
 export type EmulationPart = "touch-events" | "pointer-media" | "color-scheme" | "reduced-motion" | "user-agent" | "dpr-media";
 
+/**
+ * Per-frame CPU and network throttling for the Performance tab, over CDP only (`Emulation.setCPUThrottlingRate`,
+ * `Network.emulateNetworkConditions` on the frame's own target). Not saved: it lasts while the frame is open.
+ */
+export interface Throttle {
+  /** CPU slowdown factor; 1 is none. */
+  cpu: number;
+  network: NetworkProfileId;
+}
+export type NetworkProfileId = "none" | "fast-4g" | "slow-4g" | "slow-3g";
+/** Chrome DevTools' presets: latency in ms, throughput in bytes per second. */
+export const NETWORK_PROFILES: Record<Exclude<NetworkProfileId, "none">, { label: string; latency: number; download: number; upload: number }> = {
+  "fast-4g": { label: "Fast 4G", latency: 60 * 2.75, download: ((9 * 1000 * 1000) / 8) * 0.9, upload: ((1.5 * 1000 * 1000) / 8) * 0.9 },
+  "slow-4g": { label: "Slow 4G", latency: 150 * 3.75, download: ((1.6 * 1000 * 1000) / 8) * 0.9, upload: ((750 * 1000) / 8) * 0.9 },
+  "slow-3g": { label: "Slow 3G", latency: 400 * 5, download: ((500 * 1000) / 8) * 0.8, upload: ((500 * 1000) / 8) * 0.8 },
+};
+export const CPU_RATES = [1, 4, 6, 20] as const;
+export const NO_THROTTLE: Throttle = { cpu: 1, network: "none" };
+
+/** Only known values pass (the endpoint's validation): an unknown rate or profile is none. */
+export function sanitizeThrottle(value: unknown): Throttle {
+  const v = (value ?? {}) as Partial<Throttle>;
+  const cpu = (CPU_RATES as readonly number[]).includes(v.cpu as number) ? (v.cpu as number) : 1;
+  const network = typeof v.network === "string" && Object.hasOwn(NETWORK_PROFILES, v.network) ? v.network : "none";
+  return { cpu, network };
+}
+
+/** How a throttle reads in the UI: `CPU 4×, Slow 4G`, or `none`. */
+export function throttleLabel(t: Throttle): string {
+  const parts = [...(t.cpu > 1 ? [`CPU ${t.cpu}×`] : []), ...(t.network !== "none" ? [NETWORK_PROFILES[t.network].label] : [])];
+  return parts.length ? parts.join(", ") : "none";
+}
+
 export interface Capabilities {
   /** The backend has a CDP connection to the webview (Windows WebView2 in the desktop app, or any Chromium started with a debugging port). */
   cdp: boolean;

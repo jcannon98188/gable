@@ -49,6 +49,8 @@ export class DesignerState {
   pageScenario = signal<{ scenes: string; name: string } | null>(null);
   /** Counts router events from the agent (navigations), so page-mode panels know to refresh. */
   routerTick = signal(0);
+  /** Counts `ready` from the selected frame's agent: each (re)load of its page, and each reconnect. */
+  loads = signal(0);
   mode = signal<"select" | "interact">("select");
   connection = signal<Connection>("connecting");
   incompatible = signal<string | null>(null);
@@ -271,6 +273,7 @@ export class DesignerState {
     switch (m.type) {
       case "ready":
         this.connection.set("ready");
+        this.loads.update((n) => n + 1);
         void this.preview.call("setMode", { mode: this.mode() }).then(() => this.refreshAll());
         void this.#placeDiagnostics();
         break;

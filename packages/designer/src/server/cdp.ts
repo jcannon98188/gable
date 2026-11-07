@@ -4,7 +4,7 @@
 // session nonce the agent keeps in the frame's `window.name` (see `windowNameStorage` in protocol.ts), so no extra
 // identification has to be added to the page. `Emulation.setDeviceMetricsOverride` and `setEmitTouchEventsForMouse` only
 // work on top-level targets, so size is CSS (the shell sizes the iframe) and touch events are synthesised by the agent.
-import type { Emulation } from "../devices.js";
+import { NETWORK_PROFILES, type Emulation, type Throttle } from "../devices.js";
 import { SESSION_NAME_PREFIX } from "../protocol.js";
 
 interface Pending {
@@ -115,6 +115,19 @@ export class CdpEmulator {
     });
     await send("Emulation.setUserAgentOverride", { userAgent: emulation.userAgent ?? "", platform: platformOf(emulation.userAgent) });
     return ["touch", "pointer-media", "color-scheme", "reduced-motion", "user-agent"];
+  }
+
+  /**
+   * CPU and network throttling of the frame bound to `nonce` (its own target, so other frames are not slowed). `cpu: 1` and
+   * `network: "none"` remove them.
+   */
+  async throttle(nonce: string, throttle: Throttle): Promise<void> {
+    const sessionId = await this.#sessionFor(nonce);
+    if (!sessionId) throw new Error("No preview frame with that session was found over CDP.");
+    await this.#send("Emulation.setCPUThrottlingRate", { rate: throttle.cpu }, sessionId);
+    await this.#send("Network.enable", {}, sessionId);
+    const p = throttle.network === "none" ? null : NETWORK_PROFILES[throttle.network];
+    await this.#send("Network.emulateNetworkConditions", { offline: false, latency: p?.latency ?? 0, downloadThroughput: p?.download ?? -1, uploadThroughput: p?.upload ?? -1 }, sessionId);
   }
 
   /** Per frame session, the DOM nodes pseudo-states were forced on (to be released before the next force). */

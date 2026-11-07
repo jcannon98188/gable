@@ -1190,6 +1190,68 @@ ui-virtual-table {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Performance tab: a row per metric (name, value, rating, thresholds or why it is missing, its element). */
+.perf-row {
+  grid-template-columns: minmax(150px, 1.1fr) 84px 96px minmax(0, 1.6fr) minmax(0, max-content);
+}
+.perf-what {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+.perf-shift {
+  grid-template-columns: 70px 90px minmax(0, 1fr);
+}
+.perf-row .elink,
+.perf-shift .elink {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.perf-row .elink[aria-current="true"],
+.perf-shift .elink[aria-current="true"] {
+  border-color: var(--sel);
+}
+.perf-detail {
+  min-width: 0;
+}
+.perf-throttle {
+  width: 132px;
+}
+.perf-env {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--d-border);
+  font-size: 11px;
+}
+.perf-env > [data-part="perf-device"] {
+  min-width: 0;
+  flex: 1 1 260px;
+}
+.perf-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0 12px;
+  padding-bottom: 8px;
+}
+.perf-fact {
+  min-width: 0;
+}
+.perf-kv {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: 8px;
+  padding: 1px 10px;
+  font-size: 12px;
+}
+.perf-kv > :last-child {
+  text-align: right;
+}
 .follow {
   padding-top: 2px;
   font-size: 11px;

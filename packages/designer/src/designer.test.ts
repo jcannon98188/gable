@@ -244,6 +244,22 @@ describe("device settings and api", () => {
     expect((await call({ cdp: failing }, "/api/devices/emulation", "POST", { nonce: "n", emulation: NO_EMULATION })).sent[0]?.body).toMatchObject({ ok: false, error: "No preview frame" });
   });
 
+  it("throttles a frame through CDP with validated settings only, and says why it cannot without CDP", async () => {
+    const none = await call({}, "/api/devices/throttle", "POST", { nonce: "n", throttle: { cpu: 4, network: "slow-4g" } });
+    expect(none.sent[0]?.body).toMatchObject({ ok: false, error: expect.stringContaining("needs CDP") });
+    const seen: unknown[] = [];
+    const cdp = { available: async () => true, throttle: async (nonce: string, t: unknown) => void seen.push([nonce, t]) } as never;
+    const r = await call({ cdp }, "/api/devices/throttle", "POST", { nonce: "n1", throttle: { cpu: 4, network: "slow-4g", extra: 1 } });
+    expect(r.sent[0]?.body).toEqual({ ok: true, throttle: { cpu: 4, network: "slow-4g" } });
+    await call({ cdp }, "/api/devices/throttle", "POST", { nonce: "n1", throttle: { cpu: 1000, network: "__proto__" } });
+    expect(seen).toEqual([
+      ["n1", { cpu: 4, network: "slow-4g" }],
+      ["n1", { cpu: 1, network: "none" }],
+    ]);
+    expect((await call({ cdp }, "/api/devices/throttle", "POST", { throttle: {} })).sent[0]?.status).toBe(400);
+    expect((await call({ cdp }, "/api/devices/throttle", "GET")).sent[0]?.status).toBe(405);
+  });
+
   it("opens only the project's dev server in the system browser", async () => {
     const opened: string[] = [];
     const openExternal = (u: string) => void opened.push(u);
