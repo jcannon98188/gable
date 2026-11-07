@@ -6,7 +6,7 @@
 import type { ComponentDetail, HistoryInfo, HmrEntry, RouterInfo, TravelResult, TreeNode } from "@gable/core/devtools";
 import type { DesignNode } from "@gable/core/designer";
 import type { ColorScheme } from "./devices.js";
-import type { HttpLogEntry, PageScenarioInfo, PerfReport, SceneInfo, SceneStateReport, SignalPin, SignalWriteResult } from "./protocol.js";
+import type { A11yReport, A11yTreeReport, FocusOrderReport, FocusStepResult, HttpLogEntry, PageScenarioInfo, PerfReport, SceneInfo, SceneStateReport, SignalPin, SignalWriteResult } from "./protocol.js";
 import type { NetworkCommand, NetworkCommandResult } from "./network.js";
 import type { StorageCommand, StorageCommandResult } from "./storage.js";
 import type { MatrixCommand, MatrixCommandResult } from "./matrix.js";
@@ -103,6 +103,8 @@ export interface ControlCommands {
   why: { params: WhyAction; result: WhyResult };
   /** The Why tab's "Highlight updates": the canvas outlines the elements whose bindings re-run. */
   highlightUpdates: { params: { on: boolean }; result: { on: boolean; error: string } };
+  /** Accessibility of the selected frame (TASK-56.26): the checker report, focus order, accessibility tree, stepping focus and the canvas view. */
+  a11y: { params: A11yCommand; result: A11yCommandResult };
 }
 
 export type WhyAction = { scope?: "element" | "component"; id?: string };
@@ -111,6 +113,26 @@ export interface WhyResult {
   /** Null when there is nothing to show; `empty` says why. */
   shown: WhyShown | null;
   empty: string;
+}
+
+/** What the `a11y` command does. `view` sets the canvas overlay and keyboard-only mode (the Focus & tree panel shows them). */
+export type A11yCommand =
+  | { action: "report"; rerun?: boolean }
+  | { action: "focusOrder" }
+  | { action: "tree"; id?: string }
+  | { action: "step"; to: "next" | "prev" | "first" | "last" | { id: string }; steps?: number }
+  | { action: "view"; focusOrder?: boolean; keyboardOnly?: boolean };
+
+export interface A11yCommandResult {
+  frame: { name: string; width: number; height: number };
+  /** The canvas view after the command. */
+  view: { focusOrder: boolean; keyboardOnly: boolean };
+  report?: A11yReport | null;
+  /** Why the checker report is missing. */
+  error?: string | null;
+  focus?: FocusOrderReport;
+  tree?: A11yTreeReport;
+  step?: FocusStepResult;
 }
 
 /** What the `history` command does: report, travel (to a step; `start`: before the first; `live`: the newest), clear, record. */

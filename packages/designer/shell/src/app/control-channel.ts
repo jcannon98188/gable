@@ -9,6 +9,8 @@ import { DesignerState } from "./designer-state.js";
 import { NetworkState } from "./network-state.js";
 import { StorageState } from "./storage-state.js";
 import { MatrixState } from "./matrix-state.js";
+import { A11yState } from "./a11y-state.js";
+import { FocusState } from "./focus-state.js";
 import { PageState } from "./page-state.js";
 import { DEV_NOTE, PerfState } from "./perf-state.js";
 import { SignalEdits } from "./signal-edits.js";
@@ -30,6 +32,8 @@ export class ControlChannel {
   network = inject(NetworkState);
   storage = inject(StorageState);
   matrix = inject(MatrixState);
+  a11y = inject(A11yState);
+  focus = inject(FocusState);
 
   booted = this.#boot();
 
@@ -244,6 +248,26 @@ export class ControlChannel {
         frame: { name: c.frame, width: c.width, height: c.height, dpr: c.dpr, throttling: c.throttling },
         note: DEV_NOTE,
       };
+    },
+
+    a11y: async (a) => {
+      this.#ready();
+      const frame = this.state.frames.selected();
+      const c = frame.config();
+      const size = frame.size();
+      const at = { name: c.name, width: size.width, height: size.height };
+      const view = () => ({ focusOrder: this.focus.overlay(), keyboardOnly: this.focus.keyboardOnly() });
+      if (a.action === "view") {
+        this.focus.setView(a);
+        // The agent applies it through the view effect; wait for that call so the answer is what the page now does.
+        await this.state.preview.call("a11yView", view());
+        return { frame: at, view: view() };
+      }
+      if (a.action === "focusOrder") return { frame: at, view: view(), focus: await this.focus.readOrder() };
+      if (a.action === "tree") return { frame: at, view: view(), tree: await this.focus.readTree(a.id) };
+      if (a.action === "step") return { frame: at, view: view(), step: await this.focus.step(a.to, a.steps) };
+      if (a.rerun || !this.a11y.report()) await this.a11y.run();
+      return { frame: at, view: view(), report: this.a11y.report(), error: this.a11y.error() };
     },
 
     signals: async (a) => {

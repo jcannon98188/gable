@@ -127,6 +127,34 @@ method; it is additive, so `PROTOCOL_VERSION` is unchanged. Automated checks fin
 node packages/designer/e2e/a11y-diff-check.mjs     # spawns the backend on test-fixtures/a11y-app and a headless Edge, stops only those
 ```
 
+## Focus order, keyboard mode and the accessibility tree
+
+The drawer's **Focus & tree** tab (`shell/src/app/focus-panel.ts`, state in `focus-state.ts`, page-side logic in
+`src/agent/a11y-depth.ts`) goes deeper than the axe checks, with a **Focus order** view and an **Accessibility tree** view of
+the selected frame's page as rendered. Everything is read-only; nothing is written to source.
+
+- **Focus order** lists every Tab stop in the order the browser visits them (a positive `tabindex` first, then document order),
+  with role, accessible name and the template node that renders it, and what is wrong: a positive tabindex, no name, focusable
+  inside `aria-hidden`, a jump back up the page. Controls the keyboard cannot reach (a control role or inline click handler on a
+  non-focusable element) are listed separately. *Next stop* / *Previous stop* move the page's real focus by script (a synthetic
+  Tab key does not move focus) and say whether the stop shows a visible focus indicator. The tab's badge counts problems.
+- **Show order on canvas** draws numbered badges and a path over the page (amber where a stop has a problem) and outlines the
+  focused element with a "Focus: <tag> "name"" chip.
+- **Keyboard only** makes the page ignore the mouse in Interact mode (trusted mouse, pointer and touch events are cancelled);
+  Enter and Space on a focused control still work.
+- **Accessibility tree** is an outline of role, name and states, with Tab stops marked and warnings for controls or images with no
+  name, empty headings and heading level skips. Nodes collapse; *Selected element only* starts at the selection. It is computed
+  from the DOM (roles per HTML-AAM, names per accname), so it is close to, not identical with, the browser's own tree: shadow DOM,
+  `aria-owns` and CSS-generated content are not followed.
+
+The overlay and keyboard-only mode live in the shell and are sent again when the frame reloads. The protocol gained
+`focusOrder`, `a11yTree`, `focusStep` and `a11yView`; they are additive, so `PROTOCOL_VERSION` is unchanged. No new connection is
+opened: the shell reuses its preview client.
+
+```
+node packages/designer/e2e/a11y-depth-check.mjs     # spawns the backend (with CDP) on test-fixtures/focus-app and a headless Edge, stops only those
+```
+
 ## Performance
 
 The drawer's **Performance** tab shows what the browser itself measured in the selected frame's page: the Preview agent
@@ -607,6 +635,7 @@ left out to mean the element selected in the window.
 | Network | `get_network`, `set_network_condition`, `record_http`, `get_recording`, `save_recording_as_scenario`, `list_mocks`, `edit_mock`, `remove_mock` (see Network) |
 | Storage | `get_storage`, `set_storage_item`, `remove_storage_item`, `clear_storage`, `set_cookie`, `delete_cookie` (see Storage) |
 | Matrix | `get_matrix`, `run_matrix`, `get_matrix_cell`, `save_matrix_baselines`, `forget_matrix_baselines` (see Matrix) |
+| Focus and accessibility tree | `get_accessibility`, `get_focus_order`, `get_a11y_tree`, `step_focus`, `set_a11y_view` (see Focus order, keyboard mode and the accessibility tree) |
 | See | `screenshot`: a PNG of a frame as MCP image content |
 
 **Screenshots.** In the desktop app (WebView2 with a CDP port) the live frame is captured over CDP: the frame's own target

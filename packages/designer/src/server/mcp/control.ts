@@ -29,6 +29,7 @@ import { fileOfTarget, positionOf, projectFile, targetAt, unifiedDiff, type Sour
 import { registerNetworkTools } from "./network-tools.js";
 import { registerStorageTools } from "./storage-tools.js";
 import { registerMatrixTools } from "./matrix-tools.js";
+import { registerA11yTools } from "./a11y-tools.js";
 
 export interface ControlContext {
   root: string;
@@ -736,6 +737,7 @@ export function createControlServer(ctx: ControlContext): McpServer {
   registerNetworkTools(kit);
   registerStorageTools(kit);
   registerMatrixTools(kit);
+  registerA11yTools(kit);
 
   return server;
 }

@@ -9,6 +9,8 @@ import { UiTooltip } from "../components/ui/tooltip.js";
 import { UiVirtualTable, type VirtualTableColumn } from "../components/ui/virtual-table.js";
 import { UiIcon } from "../lib/ui/icon.js";
 import { A11yState } from "./a11y-state.js";
+import { FocusPanel } from "./focus-panel.js";
+import { FocusState } from "./focus-state.js";
 import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";
 import { EditState } from "./edit-state.js";
@@ -688,6 +690,7 @@ export class DrawerTabs {
   chrome = inject(ChromeState);
   matrix = inject(MatrixState);
   a11y = inject(A11yState);
+  focus = inject(FocusState);
   perf = inject(PerfState);
   open = this.chrome.drawerOpen;
   closed = computed(() => !this.chrome.drawerOpen());
@@ -705,6 +708,7 @@ export class DrawerTabs {
       { value: "state", label: "State timeline", badge: 0, err: false, warn: false },
       { value: "why", label: "Why updated", badge: 0, err: false, warn: false },
       { value: "a11y", label: "Accessibility", badge: this.a11y.violations(), err: this.a11y.severe(), warn: !this.a11y.severe() && this.a11y.violations() > 0 },
+      { value: "focus", label: "Focus & tree", badge: this.focus.problems(), err: false, warn: this.focus.problems() > 0 },
       { value: "perf", label: "Performance", badge: this.perf.poor() + this.perf.needsWork(), err: this.perf.poor() > 0, warn: this.perf.poor() === 0 && this.perf.needsWork() > 0 },
       { value: "http", label: "Network", badge: 0, err: false, warn: false },
       { value: "storage", label: "Storage", badge: 0, err: false, warn: false },
@@ -723,7 +727,7 @@ export class DrawerBody {
   static meta = {
     selector: "app-drawer-body",
     host: { class: "drawer" },
-    imports: [DrawerTabs, CodeTab, ProblemsTab, HmrTab, SignalTimelineTab, WhyTab, AccessibilityTab, PerformanceTab, NetworkPanel, StoragePanel, MatrixPanel],
+    imports: [DrawerTabs, CodeTab, ProblemsTab, HmrTab, SignalTimelineTab, WhyTab, AccessibilityTab, FocusPanel, PerformanceTab, NetworkPanel, StoragePanel, MatrixPanel],
     template: html`
       <app-drawer-tabs></app-drawer-tabs>
       <div class="dbody" role="tabpanel" [attr.aria-labelledby]="labelledBy()">
@@ -737,6 +741,8 @@ export class DrawerBody {
           <app-why-tab></app-why-tab>
         } @else if (tab() === 'a11y') {
           <app-accessibility-tab></app-accessibility-tab>
+        } @else if (tab() === 'focus') {
+          <app-focus-panel></app-focus-panel>
         } @else if (tab() === 'perf') {
           <app-performance-tab></app-performance-tab>
         } @else if (tab() === 'http') {

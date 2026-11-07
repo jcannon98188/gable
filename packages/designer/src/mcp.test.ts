@@ -59,6 +59,7 @@ const jsonOf = <T = Record<string, unknown>>(r: CallToolResult): T => {
 class FakeShell {
   received: ControlRequest[] = [];
   selection: SelectionSnapshot | null = null;
+  a11yView = { focusOrder: false, keyboardOnly: false };
   mode: "select" | "interact" = "select";
   disconnect: () => void;
   constructor(
@@ -127,6 +128,19 @@ class FakeShell {
           frame: { name: "Desktop", width: 1280, height: 800, dpr: 1, throttling: "none" },
           note: "dev server",
         };
+      case "a11y": {
+        const frame = { name: "Desktop", width: 1280, height: 800 };
+        const view = { focusOrder: this.a11yView.focusOrder, keyboardOnly: this.a11yView.keyboardOnly };
+        if (p!.action === "view") {
+          const v = p as { focusOrder?: boolean; keyboardOnly?: boolean };
+          this.a11yView = { focusOrder: v.focusOrder ?? this.a11yView.focusOrder, keyboardOnly: v.keyboardOnly ?? this.a11yView.keyboardOnly };
+          return { frame, view: this.a11yView };
+        }
+        if (p!.action === "focusOrder") return { frame, view, focus: { url: "/", mode: "page", stops: [{ index: 1, tag: "button", role: "button", name: "Follow", tabindex: null, box: { left: 0, top: 0, width: 10, height: 10 }, focused: true, warnings: [], node: { id: "t1:4", tag: "button", component: "ProfileCard" } }], scripted: [], unreachable: [], focused: 1, activeElement: { tag: "button", name: "Follow", node: null }, notes: [] } };
+        if (p!.action === "tree") return { frame, view, tree: { url: "/", mode: "page", root: null, nodes: 1, truncated: false, unnamed: 0, headingSkips: 0, tree: [{ role: "button", name: "Follow", states: {}, focusable: true, warnings: [], node: null, children: [] }], notes: [] } };
+        if (p!.action === "step") return { frame, view, step: { visited: [{ index: 1, tag: "button", role: "button", name: "Follow", indicator: true, node: null }], stops: 1, trapped: null, wrapped: false, note: "" } };
+        return { frame, view, report: { engine: "axe-core 4", url: "/", mode: "page", rules: 10, skipped: [], passed: 9, ms: 1, checks: [] }, error: null };
+      }
       case "frameRect":
         return { frame: "f1", nonce: "n1", rect: { x: 0, y: 0, width: 640, height: 400 }, width: 1280, height: 800, scale: 0.5, url: "http://localhost:1/", dpr: 1, emulation: this.snapshot().frames[0]!.emulation };
       default:
@@ -204,7 +218,7 @@ describe("mcp: tools against the fixture", () => {
     try {
       const { tools } = await m.client.listTools();
       const names = tools.map((t) => t.name);
-      for (const n of ["get_status", "list_components", "list_scenes", "list_routes", "get_selection", "get_tree", "get_signals", "get_problems", "get_hmr_timeline", "get_performance", "set_mode", "show_component", "set_scenario", "navigate", "add_frame", "update_frame", "select_element", "edit_text", "set_attribute", "insert_element", "edit_classes", "undo", "redo", "screenshot"]) expect(names).toContain(n);
+      for (const n of ["get_status", "list_components", "list_scenes", "list_routes", "get_selection", "get_tree", "get_signals", "get_problems", "get_hmr_timeline", "get_performance", "get_accessibility", "get_focus_order", "get_a11y_tree", "step_focus", "set_a11y_view", "set_mode", "show_component", "set_scenario", "navigate", "add_frame", "update_frame", "select_element", "edit_text", "set_attribute", "insert_element", "edit_classes", "undo", "redo", "screenshot"]) expect(names).toContain(n);
       for (const t of tools) {
         expect(t.description!.length).toBeGreaterThan(20);
         expect(t.inputSchema.type).toBe("object");
@@ -462,6 +476,20 @@ describe("mcp: tools against the fixture", () => {
       const unmeasured = jsonOf<{ report: null; error: string }>(await m.call("get_performance"));
       expect(shell.received.at(-1)).toMatchObject({ name: "performance", params: { reload: false } });
       expect(unmeasured).toMatchObject({ report: null, error: "The page could not be measured." });
+
+      // accessibility: the window reads the page; the tools shape what it answers
+      const order = jsonOf<{ stops: number; order: string[]; focus: { name: string } }>(await m.call("get_focus_order"));
+      expect(shell.received.at(-1)).toMatchObject({ name: "a11y", params: { action: "focusOrder" } });
+      expect(order).toMatchObject({ stops: 1, order: ['1. button "Follow" <button> in ProfileCard <- focus'], focus: { name: "Follow" } });
+      expect(jsonOf<{ tree: string[] }>(await m.call("get_a11y_tree")).tree).toEqual(['button "Follow" (tab)']);
+      const selTree = await m.call("get_a11y_tree", { fromSelection: true });
+      expect(shell.received.at(-1)).toMatchObject({ name: "a11y", params: { action: "tree", id: "t1:" + String(shell.selection!.node.start) } });
+      expect(selTree.isError).toBeFalsy();
+      expect(jsonOf<{ stopsOnPage: number }>(await m.call("step_focus", { to: "next", steps: 3 })).stopsOnPage).toBe(1);
+      expect(shell.received.at(-1)).toMatchObject({ name: "a11y", params: { action: "step", to: "next", steps: 3 } });
+      expect(jsonOf<{ view: unknown }>(await m.call("set_a11y_view", { focusOrder: true })).view).toEqual({ focusOrder: true, keyboardOnly: false });
+      expect(jsonOf<{ violations: number; rulesRun: number }>(await m.call("get_accessibility", { rerun: true }))).toMatchObject({ violations: 0, rulesRun: 10 });
+      expect(shell.received.at(-1)).toMatchObject({ name: "a11y", params: { action: "report", rerun: true } });
 
       // screenshot: no CDP port and no browser here, so it explains what is missing
       const shot = await m.call("screenshot");
