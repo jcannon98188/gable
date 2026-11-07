@@ -4,6 +4,7 @@ import { UiTab, UiTabs } from "../components/ui/tabs.js";
 import { UiToggleGroup, type ToggleGroupItem } from "../components/ui/toggle-group.js";
 import { UiTooltip } from "../components/ui/tooltip.js";
 import { DesignerState } from "./designer-state.js";
+import { EditPanel } from "./edit-panel.js";
 import { ComponentTree, HmrTimeline, InjectorTree, Inspector, Problems, ScenesPanel } from "./panels.js";
 
 /** The preview iframe. The state loads the project's page (or the component-mode host) into it and speaks the protocol with it. */
@@ -38,7 +39,7 @@ export class Canvas {
 export class Shell {
   static meta = {
     selector: "app-root",
-    imports: [Canvas, ComponentTree, InjectorTree, ScenesPanel, Inspector, Problems, HmrTimeline, UiTabs, UiTab, UiToggleGroup, UiBadge, UiTooltip],
+    imports: [Canvas, ComponentTree, InjectorTree, ScenesPanel, Inspector, EditPanel, Problems, HmrTimeline, UiTabs, UiTab, UiToggleGroup, UiBadge, UiTooltip],
     // TODO(gable-ui): ResizablePanelGroup (TASK-53). The three columns are fixed widths until it exists.
     template: html`
       <div class="grid h-screen grid-rows-[auto_1fr] bg-background text-foreground">
@@ -61,6 +62,7 @@ export class Shell {
           <aside class="min-h-0 overflow-auto border-l p-2">
             <ui-tabs [(value)]="right">
               <ui-tab value="inspector" label="Inspector"><app-inspector></app-inspector></ui-tab>
+              <ui-tab value="edit" label="Edit"><app-edit-panel></app-edit-panel></ui-tab>
               <ui-tab value="problems" label="Problems"><app-problems></app-problems></ui-tab>
               <ui-tab value="hmr" label="HMR"><app-hmr-timeline></app-hmr-timeline></ui-tab>
             </ui-tabs>

@@ -1,18 +1,55 @@
 import { VOID } from "@gable/core/tooling";
 /**
- * A tolerant, structure-preserving parser for Gable template bodies, used only by the formatter.
+ * A tolerant, structure-preserving parser for Gable template bodies: the formatter's parser, and the position authority
+ * for the Designer (every item carries its source offsets, so edits can be minimal text patches).
  * It never throws: malformed input degrades to text. `${}` holes and `{{ }}` interpolations stay opaque.
  */
 
-export type Item =
+/** An attribute as written: its whole text and the ranges of its name and (unquoted) value, as offsets into the parsed source. */
+export interface AttrInfo {
+  text: string;
+  start: number;
+  end: number;
+  name: string;
+  /** Offset just after the name. */
+  nameEnd: number;
+  /** The value text without its quotes; both -1 when the attribute has no `=value`. */
+  valueStart: number;
+  valueEnd: number;
+  /** `"`, `'` or empty (unquoted or no value). */
+  quote: string;
+}
+
+/** Where an item sits in the parsed source: offsets into the exact string given to `parseTemplate`. */
+export interface Span {
+  start: number;
+  end: number;
+}
+
+export type Item = (
   | { k: "word"; text: string; space: boolean; blank: boolean }
   | { k: "comment"; text: string; blank: boolean }
   | { k: "let"; text: string; blank: boolean }
-  | { k: "chain"; parts: { head: string; items: Item[] }[]; blank: boolean }
+  | {
+      k: "chain";
+      parts: {
+        head: string;
+        items: Item[];
+        /** The block head, `@if (cond) {`, as written. */
+        headStart: number;
+        headEnd: number;
+        /** The body: just after the `{` to the `}` (or the end of input when it is missing). */
+        bodyStart: number;
+        bodyEnd: number;
+      }[];
+      blank: boolean;
+    }
   | {
       k: "el";
       name: string;
       attrs: string[];
+      /** `attrs` with their source ranges. */
+      attrInfo: AttrInfo[];
       selfClose: boolean;
       closed: boolean;
       raw: string | null;
@@ -21,7 +58,15 @@ export type Item =
       endSpace: boolean;
       space: boolean;
       blank: boolean;
-    };
+      /** Offset just after the opening tag's `>`. */
+      openEnd: number;
+      /** Offset of the closing tag's `</`, or -1 when there is none (void, self-closing, unclosed). */
+      closeStart: number;
+      /** Offset just after the tag name. */
+      nameEnd: number;
+    }
+) &
+  Span;
 
 const RAW = new Set(["pre", "textarea", "script", "style"]);
 const BLOCK_KW = /^@(?:if|else|for|empty|switch|case|default|let|defer|placeholder|loading|error)(?![\w$])/;
@@ -66,7 +111,7 @@ class Parser {
   constructor(private s: string) {}
 
   /** Parses items until EOF, a stray `}` (when inBlock), or a closing tag for an ancestor. */
-  parseItems(inBlock: boolean, ancestors: string[]): { items: Item[]; endSpace: boolean; closedBy: string | null } {
+  parseItems(inBlock: boolean, ancestors: string[]): { items: Item[]; endSpace: boolean; closedBy: string | null; closeAt: number } {
     const s = this.s;
     const items: Item[] = [];
     let space = false;
@@ -85,19 +130,19 @@ class Parser {
         this.i++;
         continue;
       }
-      if (c === "}" && inBlock) return { items, endSpace: space, closedBy: null };
+      if (c === "}" && inBlock) return { items, endSpace: space, closedBy: null, closeAt: -1 };
       if (c === "<") {
         if (s.startsWith("<!--", this.i)) {
           const end = s.indexOf("-->", this.i + 4);
           const stop = end === -1 ? s.length : end + 3;
-          items.push({ k: "comment", text: s.slice(this.i, stop), blank: take().blank });
+          items.push({ k: "comment", text: s.slice(this.i, stop), blank: take().blank, start: this.i, end: stop });
           this.i = stop;
           continue;
         }
         if (s[this.i + 1] === "!") {
           const end = s.indexOf(">", this.i);
           const stop = end === -1 ? s.length : end + 1;
-          items.push({ k: "comment", text: s.slice(this.i, stop), blank: take().blank });
+          items.push({ k: "comment", text: s.slice(this.i, stop), blank: take().blank, start: this.i, end: stop });
           this.i = stop;
           continue;
         }
@@ -106,14 +151,15 @@ class Parser {
           if (m) {
             const name = m[1]!;
             if (ancestors.length && name.toLowerCase() === ancestors[ancestors.length - 1]!.toLowerCase()) {
+              const closeAt = this.i;
               this.i += m[0].length;
-              return { items, endSpace: space, closedBy: name };
+              return { items, endSpace: space, closedBy: name, closeAt };
             }
             if (ancestors.some((a) => a.toLowerCase() === name.toLowerCase())) {
-              return { items, endSpace: space, closedBy: null };
+              return { items, endSpace: space, closedBy: null, closeAt: -1 };
             }
             const t = take();
-            items.push({ k: "word", text: m[0], space: t.space, blank: t.blank });
+            items.push({ k: "word", text: m[0], space: t.space, blank: t.blank, start: this.i, end: this.i + m[0].length });
             this.i += m[0].length;
             continue;
           }
@@ -134,10 +180,11 @@ class Parser {
       }
       // Text: one word (no whitespace), glued to the previous item unless whitespace preceded it.
       const t = take();
+      const wordStart = this.i;
       const word = this.readWord();
-      items.push({ k: "word", text: word, space: t.space, blank: t.blank });
+      items.push({ k: "word", text: word, space: t.space, blank: t.blank, start: wordStart, end: this.i });
     }
-    return { items, endSpace: space, closedBy: null };
+    return { items, endSpace: space, closedBy: null, closeAt: -1 };
   }
 
   /** Reads text up to whitespace or a construct boundary (`<tag`, block keyword, `}`), keeping `${}` and `{{}}` whole. */
@@ -186,7 +233,7 @@ class Parser {
 
   blockDepth = 0;
 
-  private parseElement(ancestors: string[], space: boolean, blank: boolean): Item {
+  private parseElement(ancestors: string[], space: boolean, blank: boolean): Extract<Item, { k: "el" }> {
     const s = this.s;
     this.i++; // <
     let name = "";
@@ -198,6 +245,9 @@ class Parser {
       } else name += s[this.i++];
     }
     const attrs: string[] = [];
+    const attrInfo: AttrInfo[] = [];
+    const nameEnd = this.i;
+    const elStart = nameEnd - name.length - 1;
     let selfClose = false;
     for (;;) {
       while (isWs(s[this.i])) this.i++;
@@ -211,36 +261,59 @@ class Parser {
         this.i += 2;
         break;
       }
+      const attrStart = this.i;
       let attr = this.readAttrPart(false);
+      const attrNameEnd = this.i;
+      let valueStart = -1;
+      let valueEnd = -1;
+      let quote = "";
       let j = this.i;
       while (isWs(s[j])) j++;
       if (s[j] === "=" && !attr.includes("=")) {
         j++;
         while (isWs(s[j])) j++;
         this.i = j;
-        attr += "=" + this.readAttrPart(true);
+        const from = this.i;
+        const part = this.readAttrPart(true);
+        attr += "=" + part;
+        if (part[0] === '"' || part[0] === "'") {
+          quote = part[0];
+          valueStart = from + 1;
+          valueEnd = part.length > 1 && part.endsWith(quote) ? this.i - 1 : this.i;
+        } else {
+          valueStart = from;
+          valueEnd = this.i;
+        }
       }
       attrs.push(attr);
+      attrInfo.push({ text: attr, start: attrStart, end: this.i, name: s.slice(attrStart, attrNameEnd), nameEnd: attrNameEnd, valueStart, valueEnd, quote });
     }
     const lname = name.toLowerCase();
-    const el: Item = { k: "el", name, attrs, selfClose, closed: true, raw: null, items: [], endSpace: false, space, blank };
+    const el: Extract<Item, { k: "el" }> = {
+      k: "el", name, attrs, attrInfo, selfClose, closed: true, raw: null, items: [], endSpace: false, space, blank,
+      start: elStart, end: this.i, openEnd: this.i, closeStart: -1, nameEnd,
+    };
     if (selfClose || VOID.has(lname)) return el;
     if (RAW.has(lname)) {
       const m = new RegExp(`</${lname}\\s*>`, "i").exec(s.slice(this.i));
       if (m) {
         el.raw = s.slice(this.i, this.i + m.index);
+        el.closeStart = this.i + m.index;
         this.i += m.index + m[0].length;
       } else {
         el.raw = s.slice(this.i);
         this.i = s.length;
         el.closed = false;
       }
+      el.end = this.i;
       return el;
     }
     const r = this.parseItems(this.blockDepth > 0, [...ancestors, name]);
     el.items = r.items;
     el.endSpace = r.endSpace;
     el.closed = r.closedBy !== null;
+    el.closeStart = r.closeAt;
+    el.end = this.i;
     return el;
   }
 
@@ -288,7 +361,7 @@ class Parser {
     return -1;
   }
 
-  private parseBlockOrLet(ancestors: string[], blank: boolean): Item | null {
+  private parseBlockOrLet(ancestors: string[], blank: boolean): Extract<Item, { k: "chain" | "let" }> | null {
     const s = this.s;
     const startAt = this.i;
     const head = this.readBlockHead();
@@ -296,14 +369,17 @@ class Parser {
       this.i = startAt;
       return null;
     }
-    if (head.name === "let") return { k: "let", text: head.text, blank };
-    const parts: { head: string; items: Item[] }[] = [];
+    if (head.name === "let") return { k: "let", text: head.text, blank, start: startAt, end: this.i };
+    const parts: Extract<Item, { k: "chain" }>["parts"] = [];
     let cur = head;
+    let headStart = startAt;
+    let headEnd = this.i;
     for (;;) {
+      const bodyStart = this.i;
       this.blockDepth++;
       const r = this.parseItems(true, ancestors);
       this.blockDepth--;
-      parts.push({ head: cur.text, items: r.items });
+      parts.push({ head: cur.text, items: r.items, headStart, headEnd, bodyStart, bodyEnd: this.i });
       if (s[this.i] === "}") this.i++;
       // Chain continuation.
       let j = this.i;
@@ -319,13 +395,15 @@ class Parser {
             break;
           }
           cur = next;
+          headStart = j;
+          headEnd = this.i;
           continue;
         }
         this.i = save;
       }
       break;
     }
-    return { k: "chain", parts, blank };
+    return { k: "chain", parts, blank, start: startAt, end: this.i };
   }
 
   /** Reads `@name (args) {` (or `@let ...;`), normalising spacing. Null (position unspecified) when malformed. */

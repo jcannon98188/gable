@@ -1,9 +1,11 @@
 import { VOID } from "@gable/core/tooling";
 import { parseTemplate, type Item } from "./parse.js";
-import { findHtmlLiterals } from "./scan.js";
+import { findHtmlLiterals, type TemplateLiteralSpan } from "./scan.js";
 
 export { runCli, type CliIo } from "./cli.js";
-export { findHtmlLiterals } from "./scan.js";
+export { findHtmlLiterals, type TemplateLiteralSpan } from "./scan.js";
+/** The lossless, position-carrying parse of a template body (the Designer's position authority). Offsets are into the exact string given. */
+export { parseTemplate as parseTemplateTree, type AttrInfo, type Item as TemplateItem, type Span } from "./parse.js";
 
 export interface FormatOptions {
   /** Spaces per indent level (and the width of a tab). Default 2. */
@@ -39,23 +41,26 @@ export function formatTemplate(source: string, options: FormatOptions = {}): str
   return lines.map((l) => (l === "" ? l : base + l)).join("\n");
 }
 
+/** The text a template literal's body should have (between the backticks), as the formatter prints it. `span` comes from `findHtmlLiterals(source)`. */
+export function formatTemplateLiteral(source: string, span: TemplateLiteralSpan, options: LiteralFormatOptions = {}): string {
+  const indentSize = options.indentSize ?? 2;
+  const unit = options.useTabs ? "\t" : " ".repeat(indentSize);
+  const body = source.slice(span.open, span.close);
+  const lineStart = source.lastIndexOf("\n", span.tagStart - 1) + 1;
+  const lineIndent = /^[ \t]*/.exec(source.slice(lineStart, span.tagStart))![0];
+  const flat = formatTemplate(body, { ...options, printWidth: Infinity });
+  if (flat === "") return "";
+  if (!body.includes("\n") && !flat.includes("\n")) return flat;
+  return "\n" + formatTemplate(body, { ...options, baseIndent: lineIndent + unit }) + "\n" + lineIndent;
+}
+
 /** Rewrites only the `html` template literals in a TS/JS source; every other byte is untouched. */
 export function formatTemplateLiterals(source: string, options: LiteralFormatOptions = {}): string {
   const tag = options.tag ?? "html";
-  const indentSize = options.indentSize ?? 2;
-  const unit = options.useTabs ? "\t" : " ".repeat(indentSize);
   let out = "";
   let at = 0;
   for (const lit of findHtmlLiterals(source, tag)) {
-    const body = source.slice(lit.open, lit.close);
-    const lineStart = source.lastIndexOf("\n", lit.tagStart - 1) + 1;
-    const lineIndent = /^[ \t]*/.exec(source.slice(lineStart, lit.tagStart))![0];
-    const flat = formatTemplate(body, { ...options, printWidth: Infinity });
-    let text: string;
-    if (flat === "") text = "";
-    else if (!body.includes("\n") && !flat.includes("\n")) text = flat;
-    else text = "\n" + formatTemplate(body, { ...options, baseIndent: lineIndent + unit }) + "\n" + lineIndent;
-    out += source.slice(at, lit.open) + text;
+    out += source.slice(at, lit.open) + formatTemplateLiteral(source, lit, options);
     at = lit.close;
   }
   return out + source.slice(at);

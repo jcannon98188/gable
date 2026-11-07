@@ -10,6 +10,8 @@ import { createRequire } from "node:module";
 import { dirname, extname, join, normalize, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type { AnalysisOutput } from "./analyze-worker.js";
+import { EditService } from "./edit/service.js";
+import type { EditOp, TargetRef } from "./edit/types.js";
 import { resolveNode, type NodeReport } from "./source.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -131,6 +133,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
     }));
 
   // --- events (SSE) and file watching -----------------------------------------------
+  const edits = new EditService(root);
   const clients = new Set<ServerResponse>();
   const broadcast = (event: string, data: unknown) => {
     for (const res of clients) res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
@@ -140,6 +143,8 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
     if (!file || !/\.(ts|tsx|css|html)$/.test(file)) return;
     if (file.split(/[\\/]/).some((p) => SKIP.has(p))) return;
     clearTimeout(debounce);
+    // An edit made outside the Designer: undo history for that file is marked, and the shell is told.
+    if (edits.noteFileChanged(resolve(root, file))) broadcast("history", edits.history());
     debounce = setTimeout(() => {
       broadcast("files", { file: file.split(sep).join("/"), scenes: findScenes(root) });
       if (file.endsWith(".ts")) void runAnalysis();
@@ -192,6 +197,23 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
           const report = JSON.parse(await readBody(req)) as NodeReport;
           return json(res, 200, resolveNode(root, report));
         }
+        case "/api/edit/describe":
+          return json(res, 200, edits.describe(JSON.parse(await readBody(req)) as TargetRef));
+        case "/api/edit/apply": {
+          const result = edits.apply(JSON.parse(await readBody(req)) as EditOp);
+          if (result.ok) broadcast("history", edits.history());
+          return json(res, 200, result);
+        }
+        case "/api/edit/undo":
+        case "/api/edit/redo": {
+          const result = url.pathname.endsWith("undo") ? edits.undo() : edits.redo();
+          broadcast("history", edits.history());
+          return json(res, 200, result);
+        }
+        case "/api/edit/history":
+          return json(res, 200, edits.history());
+        case "/api/edit/palette":
+          return json(res, 200, edits.palette());
         case "/api/events":
           res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive" });
           res.write(": ok\n\n");
