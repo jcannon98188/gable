@@ -2,7 +2,7 @@
 // requests it does not recognise there (token and Host are already checked by then).
 import { spawn } from "node:child_process";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { sanitizeSettings, type Capabilities, type Emulation } from "../devices.js";
+import { sanitizeSettings, sanitizeThrottle, type Capabilities, type Emulation } from "../devices.js";
 import type { CdpEmulator } from "./cdp.js";
 import { readSettings, writeSettings } from "./settings.js";
 
@@ -45,6 +45,20 @@ export async function handleDeviceApi(ctx: DeviceApiContext, req: IncomingMessag
         json(res, 200, { ok: true, applied: await ctx.cdp.apply(body.nonce, emulation) });
       } catch (e) {
         json(res, 200, { ok: false, applied: [], error: e instanceof Error ? e.message : String(e) });
+      }
+      return true;
+    }
+    case "/api/devices/throttle": {
+      if (req.method !== "POST") return json(res, 405, { error: "POST only" }), true;
+      const body = JSON.parse(await ctx.readBody(req)) as { nonce?: string; throttle?: unknown };
+      if (!ctx.cdp) return json(res, 200, { ok: false, error: "Throttling needs CDP (the Windows desktop app, or a browser started with a debugging port)." }), true;
+      if (typeof body.nonce !== "string") return json(res, 400, { error: "nonce is required" }), true;
+      const throttle = sanitizeThrottle(body.throttle);
+      try {
+        await ctx.cdp.throttle(body.nonce, throttle);
+        json(res, 200, { ok: true, throttle });
+      } catch (e) {
+        json(res, 200, { ok: false, error: e instanceof Error ? e.message : String(e) });
       }
       return true;
     }

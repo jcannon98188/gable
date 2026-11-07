@@ -5,6 +5,7 @@
 import type { DevtoolsEvent, GableDevtoolsHook } from "@gable/core/devtools";
 import type { DesignerHook, DesignNode } from "@gable/core/designer";
 import { RUN_CONTEXT, runOptions, toReport, type AxeLike } from "./a11y.js";
+import { GableCounter, PerfCollector, domSize, settled } from "./perf.js";
 import {
   AXE_PATH,
   PROTOCOL_VERSION,
@@ -21,6 +22,7 @@ import {
   type Interaction,
   type HttpLogEntry,
   type PageScenarioInfo,
+  type PerfReport,
   type Request,
   type SceneInfo,
 } from "../protocol.js";
@@ -51,6 +53,9 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
   const hook: DesignerHook | undefined = globalThis.__GABLE_DESIGNER_HOOK__;
   if (!hook) return console.warn("[gable-designer] installDesigner() did not run before the agent; the preview is not inspectable.");
   const designer: DesignerHook = hook;
+  // Performance entries are buffered by the browser, but observing from the start also keeps long tasks and shifts.
+  const perf = new PerfCollector();
+  const gableCounter = new GableCounter();
   let mode: "select" | "interact" = "select";
   let selected: string | null = null;
   let hovered: string | null = null;
@@ -461,6 +466,36 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     return run;
   }
 
+  // --- performance (see perf.ts) -------------------------------------------------------------------------------------------
+
+  // The Designer's own modules (this agent, the checker, the component-mode host) are not the app's requests.
+  const agentDir = new URL(".", import.meta.url).href;
+  const isDesigner = (url: string) => url.startsWith(agentDir) || url.includes("/__gable-designer/") || url.includes("/@id/__x00__gable-designer");
+  async function measure(): Promise<PerfReport> {
+    await settled(document);
+    return perf.snapshot({
+      url: location.href,
+      mode: globalThis.__GABLE_SCENES__ ? "component" : "page",
+      nodeOf: (n) => designer.nodeOf(n),
+      dom: domSize(document.documentElement, (el) => el === layer),
+      gable: devtools ? gableCounter.numbers() : null,
+      device: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
+      isDesigner,
+    });
+  }
+
+  function reload(): true {
+    // Component mode mounts the first scene on load unless the URL names one: keep the mounted scene.
+    const scenes = globalThis.__GABLE_SCENES__;
+    if (scenes) {
+      const url = new URL(location.href);
+      url.searchParams.set("scene", scenes.current);
+      history.replaceState(history.state, "", url.pathname + url.search + url.hash);
+    }
+    setTimeout(() => location.reload(), 0);
+    return true;
+  }
+
   // --- the shell's requests -----------------------------------------------
 
   const handlers: { [M in keyof AgentMethods]?: (p: AgentMethods[M]["params"]) => AgentMethods[M]["result"] | Promise<AgentMethods[M]["result"]> } = {
@@ -500,6 +535,8 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     pageScenario: () => globalThis.__GABLE_PAGE_SCENARIO__ ?? null,
     httpLog: () => [...(globalThis.__GABLE_DESIGNER_HTTP__ ?? [])],
     a11y: () => checkA11y(),
+    performance: () => measure(),
+    reload: () => reload(),
     mountScene: ({ name }) => {
       if (!globalThis.__GABLE_SCENES__) throw new Error("This page is not a component-mode host.");
       globalThis.__GABLE_SCENES__.mount(name);
@@ -544,6 +581,9 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
   };
 
   const forward = (event: DevtoolsEvent) => {
+    if (event.type === "flush") gableCounter.flush(event.flush);
+    else if (event.type === "tree") gableCounter.tree(performance.now());
+    else if (event.type === "hmr") gableCounter.hotUpdate(event.entry.at, event.entry.status, (done) => requestAnimationFrame(() => setTimeout(() => done(performance.now()), 0)));
     // A flush carries every effect run; the shell only needs to know that signal values may have changed.
     send({ type: "event", event: event.type === "flush" ? { type: "flush", flush: { ...event.flush, runs: [], more: 0 } } : event });
     if (event.type === "tree" || event.type === "hmr") redraw();

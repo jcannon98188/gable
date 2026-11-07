@@ -6,7 +6,7 @@
 import type { ComponentDetail, HmrEntry, RouterInfo, TreeNode } from "@gable/core/devtools";
 import type { DesignNode } from "@gable/core/designer";
 import type { ColorScheme } from "./devices.js";
-import type { HttpLogEntry, PageScenarioInfo, SceneInfo } from "./protocol.js";
+import type { HttpLogEntry, PageScenarioInfo, PerfReport, SceneInfo } from "./protocol.js";
 import type { SourceRange } from "./server/source.js";
 
 export interface FrameSnapshot {
@@ -83,6 +83,18 @@ export interface ControlCommands {
   frameRect: { params: { frame?: string }; result: FrameRect };
   /** Selects the element at a template offset once HMR has re-rendered it (after an edit). */
   reselect: { params: { raw: string; offset: number }; result: boolean };
+  /** The selected frame's performance, as the Performance tab shows it; `reload` re-runs it on a fresh load first. */
+  performance: { params: { reload?: boolean }; result: PerfResult };
+}
+
+export interface PerfResult {
+  /** Null when the frame could not be measured (`error` says why). */
+  report: PerfReport | null;
+  error: string | null;
+  /** What the report followed: the page load, a hot update, a navigation, Re-run or this call. */
+  after: string;
+  frame: { name: string; width: number; height: number; dpr: number; throttling: string };
+  note: string;
 }
 
 export type Inspect =

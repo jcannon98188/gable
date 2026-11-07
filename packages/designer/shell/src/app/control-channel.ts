@@ -6,6 +6,7 @@ import { inject } from "@gable/core";
 import type { ControlCommands, ControlName, ControlRequest, FrameRect, SelectionSnapshot, ShellSnapshot } from "../../../src/control-protocol.js";
 import { DesignerState } from "./designer-state.js";
 import { PageState } from "./page-state.js";
+import { DEV_NOTE, PerfState } from "./perf-state.js";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -15,6 +16,7 @@ export class ControlChannel {
   static scope = "root";
   state = inject(DesignerState);
   page = inject(PageState);
+  perf = inject(PerfState);
 
   booted = this.#boot();
 
@@ -216,6 +218,19 @@ export class ControlChannel {
         case "scenes":
           return (await preview.call("scenes", undefined))!;
       }
+    },
+
+    performance: async ({ reload }) => {
+      this.#ready();
+      const report = reload ? await this.perf.rerunAndWait() : await this.perf.measure("MCP");
+      const c = this.perf.context();
+      return {
+        report,
+        error: report ? null : (this.perf.error() ?? (reload ? "The frame did not come back after the reload." : "The page could not be measured (a measurement may already be running; try again).")),
+        after: report ? this.perf.reason() : "",
+        frame: { name: c.frame, width: c.width, height: c.height, dpr: c.dpr, throttling: c.throttling },
+        note: DEV_NOTE,
+      };
     },
 
     frameRect: ({ frame: id }): FrameRect => {

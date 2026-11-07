@@ -123,6 +123,97 @@ export interface AgentMethods extends DevtoolsMethods {
   httpLog: { params: void; result: HttpLogEntry[] };
   /** Runs the accessibility checker (axe-core, loaded on first use) on the page as it is now. Added after version 1 shipped; additive. */
   a11y: { params: void; result: A11yReport };
+  /**
+   * The page's performance as the browser measured it (Performance Timeline: paint, LCP, layout shifts, long tasks, event
+   * timing, navigation and resource timing), plus DOM size and what the devtools hook counts. Waits for the page's `load`
+   * and a painted frame first. Added after version 1 shipped; additive.
+   */
+  performance: { params: void; result: PerfReport };
+  /**
+   * Reloads the frame's document (the session survives in `window.name`, so the agent says `ready` again). Component mode
+   * keeps the mounted scene. Added after version 1 shipped; additive.
+   */
+  reload: { params: void; result: true };
+}
+
+/** web-vitals' rating names. */
+export type PerfRating = "good" | "needs-improvement" | "poor";
+
+/** An element a metric points at, tied to the template node that renders it (or its nearest ancestor a template renders). */
+export interface PerfElement {
+  /** A short description of the element: `img.hero`, `p#intro`. */
+  label: string;
+  node: { id: string; tag: string; component: string | null } | null;
+  /** False when the element is no longer in the page (the metric still counts it). */
+  connected: boolean;
+}
+
+export type PerfMetricId = "ttfb" | "fcp" | "lcp" | "cls" | "inp" | "tbt" | "dom";
+
+/** One headline number with its rating. `value` is null when the page has not produced it yet or the engine cannot measure it (`unavailable` says which). */
+export interface PerfMetric {
+  id: PerfMetricId;
+  label: string;
+  value: number | null;
+  unit: "ms" | "score" | "elements";
+  rating: PerfRating | null;
+  /** The good and poor limits the rating uses: good at or below the first, poor above the second. */
+  thresholds: [number, number];
+  /** Why there is no value: the engine does not report it, or the page has not produced it yet. */
+  unavailable: string | null;
+  /** The element behind it (LCP, the worst interaction's target). */
+  element?: PerfElement | null;
+}
+
+/** One layout shift of the worst session window (the one CLS is). */
+export interface PerfShift {
+  value: number;
+  /** ms since the navigation started. */
+  at: number;
+  sources: PerfElement[];
+}
+
+export interface PerfReport {
+  url: string;
+  mode: "page" | "component";
+  /** When it was measured, in ms since the navigation started. */
+  at: number;
+  metrics: PerfMetric[];
+  lcp: { at: number; size: number; url: string | null; element: PerfElement | null } | null;
+  /** CLS's session window, biggest shift first (at most 10). */
+  shifts: PerfShift[];
+  /** null when the engine does not report long tasks. `blockingMs` is TBT: past FCP, until `at` (there is no TTI here). */
+  longTasks: { count: number; totalMs: number; longestMs: number; blockingMs: number; tasks: Array<{ at: number; duration: number }> } | null;
+  /** null when the engine has no Event Timing. */
+  interactions: { count: number; worst: { type: string; duration: number; at: number; element: PerfElement | null } | null } | null;
+  navigation: { type: string; ttfb: number; domInteractive: number; domContentLoaded: number; load: number; transferBytes: number } | null;
+  resources: {
+    count: number;
+    transferBytes: number;
+    decodedBytes: number;
+    /** Requests whose size the browser does not expose (cross-origin without Timing-Allow-Origin) or that came from cache. */
+    unsized: number;
+    /** The Designer's own requests (agent, checker), left out of the numbers. */
+    designer: number;
+    byType: Array<{ type: string; count: number; transferBytes: number }>;
+    slowest: Array<{ name: string; type: string; duration: number; transferBytes: number }>;
+  } | null;
+  dom: { elements: number; depth: number; maxChildren: number };
+  /** What the devtools hook counted since the agent connected (before the app bootstrapped). null without the hook. */
+  gable: {
+    flushes: number;
+    effectRuns: number;
+    effectMs: number;
+    slowestFlush: { ms: number; at: number; effect: string | null } | null;
+    /** When the first component tree was reported, ms since the navigation started. */
+    firstTree: number | null;
+    /** The last hot update: when it was applied and how long until the next frame after it. */
+    lastHotUpdate: { at: number; toFrameMs: number | null; status: string } | null;
+  } | null;
+  /** The page's own view of its device: CSS viewport and the pixel ratio scripts read. */
+  device: { width: number; height: number; dpr: number };
+  /** Performance entry types this engine does not report (their metrics are unavailable, not zero). */
+  unsupported: string[];
 }
 
 /** What the accessibility checker found on the page. Only failures and undecided checks are listed; passes are counted. */

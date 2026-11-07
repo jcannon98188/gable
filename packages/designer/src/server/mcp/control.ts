@@ -343,6 +343,15 @@ export function createControlServer(ctx: ControlContext): McpServer {
   );
 
   server.registerTool(
+    "get_performance",
+    {
+      ...read("Get performance", "The selected frame's performance as the Performance tab shows it: web-vitals (TTFB, FCP, LCP, CLS, INP, TBT) and DOM size with their ratings, the elements behind LCP and each layout shift (a CSS-style label such as `img#hero.cover`, which select_element accepts as a selector, and the rendering component when a template renders it), long tasks, interactions, requests, and Gable's own counts. A metric the browser did not report is null with the reason, never zero. Numbers are from the dev server: indicative, not a production measurement. `reload` reloads the frame first and measures the fresh load."),
+      inputSchema: { reload: z.boolean().default(false).describe("Reload the frame and measure the fresh load (as Re-run does).") },
+    },
+    guard(async ({ reload }) => shell("performance", { reload })),
+  );
+
+  server.registerTool(
     "get_http_log",
     read("Get mocked HTTP", "The active Scenario's HTTP mocks and the requests they answered in the selected frame (method, URL, which mock, outcome)."),
     guard(async () => shell("inspect", { what: "http" })),

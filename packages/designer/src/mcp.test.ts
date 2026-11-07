@@ -119,6 +119,14 @@ class FakeShell {
           ];
         if (p!.what === "component") return { id: "c1", name: "ProfileCard", source: null, inputs: [], signals: [{ id: "s1", name: "followed", kind: "signal", writable: true, value: { t: "boolean", s: "false" } }], outputs: [], effects: [] };
         return [];
+      case "performance":
+        return {
+          report: p!.reload ? { url: "/", mode: "page", metrics: [{ id: "lcp", label: "Largest Contentful Paint", value: 1200, unit: "ms", rating: "good", thresholds: [2500, 4000], unavailable: null, element: { label: "img#hero", node: { id: "t1:4", tag: "img", component: "Hero" }, connected: true } }] } : null,
+          error: p!.reload ? null : "The page could not be measured.",
+          after: p!.reload ? "Re-run" : "",
+          frame: { name: "Desktop", width: 1280, height: 800, dpr: 1, throttling: "none" },
+          note: "dev server",
+        };
       case "frameRect":
         return { frame: "f1", nonce: "n1", rect: { x: 0, y: 0, width: 640, height: 400 }, width: 1280, height: 800, scale: 0.5, url: "http://localhost:1/", dpr: 1, emulation: this.snapshot().frames[0]!.emulation };
       default:
@@ -196,7 +204,7 @@ describe("mcp: tools against the fixture", () => {
     try {
       const { tools } = await m.client.listTools();
       const names = tools.map((t) => t.name);
-      for (const n of ["get_status", "list_components", "list_scenes", "list_routes", "get_selection", "get_tree", "get_signals", "get_problems", "get_hmr_timeline", "set_mode", "show_component", "set_scenario", "navigate", "add_frame", "update_frame", "select_element", "edit_text", "set_attribute", "insert_element", "edit_classes", "undo", "redo", "screenshot"]) expect(names).toContain(n);
+      for (const n of ["get_status", "list_components", "list_scenes", "list_routes", "get_selection", "get_tree", "get_signals", "get_problems", "get_hmr_timeline", "get_performance", "set_mode", "show_component", "set_scenario", "navigate", "add_frame", "update_frame", "select_element", "edit_text", "set_attribute", "insert_element", "edit_classes", "undo", "redo", "screenshot"]) expect(names).toContain(n);
       for (const t of tools) {
         expect(t.description!.length).toBeGreaterThan(20);
         expect(t.inputSchema.type).toBe("object");
@@ -404,6 +412,15 @@ describe("mcp: tools against the fixture", () => {
       const bad = await m.call("select_element", { selector: "h2" });
       expect(bad.isError).toBe(true);
       expect(textOf(bad)).toContain("selectors are not faked");
+
+      // performance: the window measures; reload asks it to re-run on a fresh load first
+      const perf = jsonOf<{ report: { metrics: Array<{ id: string; rating: string; element: { node: { id: string } } }> }; after: string }>(await m.call("get_performance", { reload: true }));
+      expect(shell.received.at(-1)).toMatchObject({ name: "performance", params: { reload: true } });
+      expect(perf.after).toBe("Re-run");
+      expect(perf.report.metrics[0]).toMatchObject({ id: "lcp", rating: "good", element: { node: { id: "t1:4" } } });
+      const unmeasured = jsonOf<{ report: null; error: string }>(await m.call("get_performance"));
+      expect(shell.received.at(-1)).toMatchObject({ name: "performance", params: { reload: false } });
+      expect(unmeasured).toMatchObject({ report: null, error: "The page could not be measured." });
 
       // screenshot: no CDP port and no browser here, so it explains what is missing
       const shot = await m.call("screenshot");
