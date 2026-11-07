@@ -134,7 +134,7 @@ export class CommandPalette {
     for (const [value, label] of [["style", "Style"], ["content", "Content"], ["inspector", "Inspector"]] as const) {
       cmd(`right.${value}`, `Show ${label}`, "Panels", () => chrome.right.set(value));
     }
-    for (const [value, label] of [["code", "Code"], ["problems", "Problems"], ["hmr", "HMR timeline"], ["state", "State timeline"], ["why", "Why updated"], ["a11y", "Accessibility"], ["focus", "Focus order and accessibility tree"], ["perf", "Performance"], ["http", "Network"], ["storage", "Storage"], ["matrix", "Matrix"]] as const) {
+    for (const [value, label] of [["code", "Code"], ["problems", "Problems"], ["hmr", "HMR timeline"], ["state", "State timeline"], ["why", "Why updated"], ["a11y", "Accessibility"], ["focus", "Focus order and accessibility tree"], ["perf", "Performance"], ["http", "Network"], ["storage", "Storage"], ["matrix", "Matrix"], ["changes", "Changes (source control)"]] as const) {
       cmd(`drawer.${value}`, `Show ${label} in the drawer`, "Panels", () => chrome.showDrawer(value));
     }
     for (const f of ["all", "error", "warning"]) {

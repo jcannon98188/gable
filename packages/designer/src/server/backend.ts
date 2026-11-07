@@ -19,6 +19,8 @@ import { handleDeviceApi } from "./device-api.js";
 import { handleNetworkApi } from "./network-api.js";
 import { handleMatrixApi } from "./matrix-api.js";
 import { MatrixStore } from "./matrix.js";
+import { GitService } from "./git.js";
+import { handleGitApi } from "./git-api.js";
 import { resolveNode, type NodeReport } from "./source.js";
 import { sceneIndex } from "./scene-index.js";
 import { editRouteConfig, listComponents, locateRouteConfig, type RouteEdit } from "./route-config.js";
@@ -103,6 +105,7 @@ interface Session {
   readonly server: DevServer;
   readonly log: ProjectLog;
   readonly edits: EditService;
+  readonly git: GitService;
   readonly tailwind: TailwindService;
   /** Templates that do not compile (compile-check.ts), re-checked on every change. */
   readonly compile: CompileChecks;
@@ -170,6 +173,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
 
     // --- file watching ---------------------------------------------------------------
     const edits = new EditService(root);
+    const git = new GitService(root);
     const tailwind = new TailwindService(root);
     const compile = new CompileChecks(root);
     let debounce: NodeJS.Timeout | undefined;
@@ -201,6 +205,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
       server,
       log,
       edits,
+      git,
       tailwind,
       compile,
       check: checkProject(root),
@@ -246,6 +251,10 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
     get tailwind() {
       return session.tailwind;
     },
+    get git() {
+      return session.git;
+    },
+    gitChanged: () => broadcast("git", { at: Date.now() }),
     cdpPort: options.cdpPort ?? null,
     sessionDir: options.mcpSessionDir,
     diagnostics: async (refresh) => {
@@ -403,6 +412,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
       if (await handleTailwindApi({ service: tailwind, cdp, json, readBody }, req, res, url)) return;
       if (await handleTokenApi({ root, tailwind, json, readBody }, req, res, url)) return;
       if (await handleDeviceApi({ root, previewUrl, cdp, json, readBody }, req, res, url)) return;
+      if (await handleGitApi({ git: s.git, changed: () => s === session && broadcast("git", { at: Date.now() }), json, readBody }, req, res, url)) return;
       if (await handleNetworkApi({ root, cdp, json, readBody }, req, res, url)) return;
       if (await handleMatrixApi({ store: matrixStore, json, readBody }, req, res, url)) return;
       const projectApi = { root: () => root, dataDir: data, log: () => s.log.text(), open: switchProject, install, restart: async () => (await s.server.restart(), s.info()), json, readBody };

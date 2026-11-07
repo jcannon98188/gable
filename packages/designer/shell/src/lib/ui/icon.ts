@@ -1,5 +1,5 @@
 import { computed, effect, injectHost, input } from "@gable/core";
-import { Calendar, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsUpDown, Circle, CircleAlert, Ellipsis, GripVertical, Minus, X } from "lucide";
+import { Calendar, Check, Copy, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsUpDown, Circle, CircleAlert, Ellipsis, GripVertical, Minus, X } from "lucide";
 import { cn } from "./cn.js";
 
 /** A lucide icon: the list of child elements of its 24x24 svg. */
@@ -18,6 +18,7 @@ export const ICONS: Record<string, IconNode> = {
   "chevron-up": ChevronUp,
   "chevrons-up-down": ChevronsUpDown,
   circle: Circle,
+  copy: Copy,
   "circle-alert": CircleAlert,
   ellipsis: Ellipsis,
   "grip-vertical": GripVertical,

@@ -93,7 +93,7 @@ node packages/designer/e2e/device-check.mjs --port <cdp port> --shell 127.0.0.1:
 
 The shell's chrome follows the Claude Design boards: a top bar (mode, Select or Interact, connection, undo and redo, theme, palette),
 Structure, Insert and Routes on the left, the canvas with its device bar, a bottom drawer (Code, Problems, HMR timeline,
-State timeline, Accessibility, Performance, Network, Storage, Matrix) and Style, Content and Inspector on the right. Tokens live outside the gable-ui marker block in
+State timeline, Accessibility, Performance, Network, Storage, Matrix, Changes) and Style, Content and Inspector on the right. Tokens live outside the gable-ui marker block in
 `shell/src/shell.css`, mapped onto gable-ui's variables, so components need no `dark:` variant here.
 
 Ctrl K opens the command palette, generated from the current state in `shell/src/app/commands.ts`. Panel sizes, the drawer and
@@ -108,7 +108,8 @@ node packages/designer/e2e/chrome-check.mjs --port <cdp port> --shell 127.0.0.1:
 ## Last patch and accessibility checks
 
 The drawer's **Code** tab shows the unified diff of the patch Undo would take back (`src/server/edit/diff.ts`: a line diff of
-the file before and after the write, three lines of context, `a/` and `b/` headers, CRLF compared as LF). It is computed when
+the file before and after the write, three lines of context, `a/` and `b/` headers, CRLF compared as LF), drawn by gable-ui's
+`ui-code-block` (`language="diff"`, with the diff and syntax renderer copied into `shell/src/lib/ui/` by the gable-ui CLI). It is computed when
 the patch is written (and again on redo) and sent as `last` in the history (`/api/edit/history` and the `history` event); only
 that one diff is sent. Undo and Redo sit next to it.
 
@@ -315,6 +316,36 @@ MCP: `get_network` (with `filter`, `kind`, `failed`), `set_network_condition` (w
 ```
 node packages/designer/e2e/network-check.mjs            # spawns the backend (with CDP) on test-fixtures/net-app and a headless Edge, stops only those
 node packages/designer/e2e/network-check.mjs --no-cdp   # the same without CDP: whole-frame offline labelled unavailable
+```
+
+## Source control (the Changes tab)
+
+The drawer's **Changes** tab shows what the project's working tree has changed since the last commit, so the edits the Designer
+(or an agent) wrote can be reviewed, committed or taken back without leaving it. Git runs in the backend (`src/server/git.ts`,
+the `git` CLI through `execFile`; the shell never runs git). The working tree stays the truth (ADR 0001): the tab keeps no copy
+and re-reads after every write. The project folder may sit inside a larger repository (as `examples/` do); only changes under it are shown.
+
+- **Changed files** are grouped as components and templates, scenarios, styles, pages, config and other, each with its status
+  (modified, added, deleted, renamed, untracked, conflicted) and lines added and removed. The tab's badge counts them.
+- **Diffs** are split into hunks and rendered by gable-ui's `ui-code-block` (`language="diff"`, line numbers, syntax highlighting
+  in the file's language); the Code tab's last-patch diff uses the same renderer. Diffs over 400 KB are not sent whole.
+- **Commit** takes the ticked files (staged or not) and a message, and commits exactly those: other changes stay changed. A
+  subject is suggested from the chosen files.
+- **Revert** takes one hunk or a whole file back to the last commit, after a confirmation. A new (untracked) file is reverted by
+  deleting it; only modified files offer per-hunk revert. Only paths that are currently changed are accepted, and a hunk revert
+  refuses when the file changed since the diff was read. Each revert is saved, in memory, so **Undo revert** (the last 20) puts
+  it back byte for byte, staged or not. That undo list is lost when the backend restarts.
+
+The tab refreshes on the event stream the shell already has: the backend broadcasts a `git` event after each commit or revert
+(and the existing `files` event covers edits), so no connection was added and `PROTOCOL_VERSION` is unchanged. HTTP (token
+checked): `GET /api/git/status`, `GET /api/git/diff?path=`, `POST /api/git/commit` (`{paths, message}`), `POST /api/git/revert`
+(`{path, hunk?, header?}`), `POST /api/git/undo-revert`. A folder that is not in a git repository says so instead of failing.
+
+MCP tools for an agent: `get_changes` (grouped changes and what Undo revert would restore), `get_file_diff`, `commit_changes`,
+`revert_changes` (a file, or one `hunk`) and `undo_revert`; the tab follows what they do.
+
+```
+npm run build -w packages/designer && node packages/designer/e2e/git-check.mjs [--browser <path>] [--shot <file>]   # a throwaway git repo under dist/, its own backend and headless Edge, stops only those
 ```
 
 ## Storage
