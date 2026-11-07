@@ -200,7 +200,8 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     if (e.source !== parent || e.origin !== shellOrigin || !isOurs(e.data, nonce)) return;
     const m = e.data as { type: string; v: number };
     if (m.v !== PROTOCOL_VERSION) return send({ type: "incompatible", agent: PROTOCOL_VERSION, shell: m.v });
-    if (m.type === "hello") announce();
+    // Before the app has installed its devtools hook there is nothing to report; `connect` announces when it does.
+    if (m.type === "hello") devtools && announce();
     else if (m.type === "call") void onCall(e.data as unknown as Request);
   });
 

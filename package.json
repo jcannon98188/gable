@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --if-present -w packages/core -w packages/renderer-dom -w packages/template-format -w packages/language-service -w packages/prettier-plugin -w packages/vite -w packages/testing -w packages/ui-primitives -w packages/ui -w packages/gable-ui -w packages/store -w packages/vscode -w packages/create-gable",
+    "build": "npm run build --if-present -w packages/core -w packages/renderer-dom -w packages/template-format -w packages/language-service -w packages/prettier-plugin -w packages/vite -w packages/testing -w packages/ui-primitives -w packages/ui -w packages/gable-ui -w packages/designer -w packages/store -w packages/vscode -w packages/create-gable",
     "test": "vitest run",
     "changeset": "changeset",
     "version-packages": "changeset version",
