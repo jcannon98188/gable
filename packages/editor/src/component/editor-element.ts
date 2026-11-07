@@ -11,6 +11,7 @@ import type { Awareness } from "y-protocols/awareness";
 import { GablePresence } from "./presence.js";
 import { formattingPlugins, historyPlugin } from "../plugins/formatting.js";
 import type { EditorPlugin, ToolbarItem } from "../plugin.js";
+import { installContentStyles } from "../content-styles.js";
 import { placeBubble } from "../bubble-position.js";
 import { watchToolbar, type ToolbarItemState } from "../toolbar-model.js";
 
@@ -174,6 +175,7 @@ export class GableEditorElement {
 
   private create(el: HTMLElement, plugins: readonly EditorPlugin[], ydoc: Y.Doc | null): void {
     this.teardown();
+    installContentStyles(el.ownerDocument);
     const awareness = this.awareness();
     const all = ydoc
       ? [
@@ -225,7 +227,9 @@ export class GableEditorElement {
     try {
       const a = ed.editor.view.coordsAtPos(from);
       const b = ed.editor.view.coordsAtPos(to);
-      const box = frame.getBoundingClientRect();
+      const frameBox = frame.getBoundingClientRect();
+      // Flip below when there is no room above *the text area*: the toolbar sits above it and must not be covered.
+      const box = el.getBoundingClientRect();
       // The bubble's width is not known until it renders: estimate from the number of buttons (compact buttons are ~32px).
       const size = { width: this.bubbleRows().length * 32 + 8, height: 40 };
       const at = placeBubble(
@@ -233,7 +237,9 @@ export class GableEditorElement {
         box,
         size,
       );
-      this.bubble.set({ style: `top:${Math.round(at.top)}px;left:${Math.round(at.left)}px` });
+      const top = at.top + (box.top - frameBox.top);
+      const left = at.left + (box.left - frameBox.left);
+      this.bubble.set({ style: `top:${Math.round(top)}px;left:${Math.round(left)}px` });
     } catch {
       this.bubble.set(null);
     }

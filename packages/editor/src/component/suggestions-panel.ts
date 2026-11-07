@@ -40,7 +40,7 @@ export class GableSuggestions {
           <article [attr.class]="r.cardClass" [attr.data-suggestion-id]="r.id">
             <p class="m-0">
               <span class="font-medium" [attr.style]="r.color">{{ r.author }}</span>
-              <span class="text-xs text-muted-foreground">{{ r.label }}</span>
+              <span class="ml-1 text-xs text-muted-foreground">{{ r.label }}</span>
               <time class="ml-1 text-xs text-muted-foreground">{{ r.time }}</time>
             </p>
             <p class="m-0 break-words">“{{ r.text }}”</p>

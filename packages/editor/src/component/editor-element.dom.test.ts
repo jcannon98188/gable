@@ -30,6 +30,7 @@ describe("<gable-editor>", () => {
   it("renders the document and a labelled toolbar with no axe violations", async () => {
     await boot(App);
     expect($(".ProseMirror").textContent).toBe("hello");
+    expect(document.querySelectorAll("#gable-editor-content-styles")).toHaveLength(1); // installed once, no stylesheet import needed
     expect($("[role=toolbar]").getAttribute("aria-label")).toBe("Formatting");
     expect($$("[data-toolbar-item]").map((b) => b.getAttribute("aria-label"))).toContain("Bold");
     await expectNoA11yViolations(document.body);
