@@ -12,6 +12,7 @@ import { ensureImport, ensureMetaImport, setMetaString } from "./meta.js";
 import { buildPalette } from "./palette.js";
 import { extractCheck, planExtract } from "./extract.js";
 import { planScene } from "./scenario.js";
+import { planMocks, type MockOp } from "./mocks.js";
 import { templateOutline, type OutlineRow } from "./outline.js";
 import { DEFAULT_FORMAT, applyPlan, describeElement, elementsOf, fail, findTarget, locateLiteral, plan, type FormatOptions } from "./template.js";
 import type { DescribeResult, EditDone, EditError, EditOp, EditResult, HistoryInfo, HistoryItem, PaletteEntry, TargetRef } from "./types.js";
@@ -169,6 +170,7 @@ export class EditService {
   #apply(op: EditOp): EditResult {
     if (op.op === "setCss") return this.#css(op);
     if (op.op === "addScene") return this.#scene(op);
+    if (op.op === "addMockScene" || op.op === "setMock" || op.op === "removeMock") return this.#mocks(op);
     const t = this.#template(op.target);
     if ("ok" in t) return t;
     const { abs, src, lit, body } = t;
@@ -286,6 +288,17 @@ export class EditService {
     if (typeof abs !== "string") return abs;
     const src = sourceText(readFileSync(abs, "utf8"));
     const planned = planScene(src.text, op);
+    if ("ok" in planned) return planned;
+    return this.#commit(abs, src.original, this.#toOriginal(src, planned.hunks), planned.label, null);
+  }
+
+  /** Recorded mocks written as a new Scenario, or one mock changed or removed (see mocks.ts). */
+  #mocks(op: MockOp): EditResult {
+    if (!/\.scenes\.ts$/.test(op.file)) return fail("invalid", "Mocks are written to a *.scenes.ts file.");
+    const abs = this.#fileOf({ file: op.file.replace(/^\//, "") });
+    if (typeof abs !== "string") return abs;
+    const src = sourceText(readFileSync(abs, "utf8"));
+    const planned = planMocks(src.text, op);
     if ("ok" in planned) return planned;
     return this.#commit(abs, src.original, this.#toOriginal(src, planned.hunks), planned.label, null);
   }

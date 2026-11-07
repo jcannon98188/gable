@@ -16,6 +16,7 @@ import { EditService } from "./edit/service.js";
 import type { EditOp, TargetRef } from "./edit/types.js";
 import { CdpEmulator } from "./cdp.js";
 import { handleDeviceApi } from "./device-api.js";
+import { handleNetworkApi } from "./network-api.js";
 import { resolveNode, type NodeReport } from "./source.js";
 import { sceneIndex } from "./scene-index.js";
 import { editRouteConfig, listComponents, locateRouteConfig, type RouteEdit } from "./route-config.js";
@@ -383,6 +384,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
       if (await control.handleShell(req, res, url, readBody, json)) return;
       if (await handleTailwindApi({ service: tailwind, cdp, json, readBody }, req, res, url)) return;
       if (await handleDeviceApi({ root, previewUrl, cdp, json, readBody }, req, res, url)) return;
+      if (await handleNetworkApi({ root, cdp, json, readBody }, req, res, url)) return;
       const projectApi = { root: () => root, dataDir: data, log: () => s.log.text(), open: switchProject, install, restart: async () => (await s.server.restart(), s.info()), json, readBody };
       if (await handleProjectApi(projectApi, req, res, url)) return;
       return json(res, 404, { error: "no such endpoint" });

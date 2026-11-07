@@ -5,6 +5,7 @@
 import { inject } from "@gable/core";
 import type { ControlCommands, ControlName, ControlRequest, FrameRect, SelectionSnapshot, ShellSnapshot } from "../../../src/control-protocol.js";
 import { DesignerState } from "./designer-state.js";
+import { NetworkState } from "./network-state.js";
 import { PageState } from "./page-state.js";
 import { DEV_NOTE, PerfState } from "./perf-state.js";
 
@@ -17,6 +18,7 @@ export class ControlChannel {
   state = inject(DesignerState);
   page = inject(PageState);
   perf = inject(PerfState);
+  network = inject(NetworkState);
 
   booted = this.#boot();
 
@@ -232,6 +234,8 @@ export class ControlChannel {
         note: DEV_NOTE,
       };
     },
+
+    network: (command) => this.network.command(command),
 
     frameRect: ({ frame: id }): FrameRect => {
       const frame = this.#frameOf(id);

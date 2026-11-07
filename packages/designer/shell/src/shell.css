@@ -1147,6 +1147,35 @@ ui-virtual-table {
 .http-row {
   grid-template-columns: 90px 70px minmax(0, 1fr);
 }
+/* Network panel: the condition bar, a scenario's mocks, the mock body editor. */
+.net-mode {
+  width: 136px;
+}
+.net-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.net-num {
+  width: 76px;
+}
+.net-match {
+  width: 180px;
+}
+.net-mock {
+  grid-template-columns: 52px minmax(0, 1fr) minmax(0, max-content) minmax(0, max-content);
+}
+.net-actions {
+  display: inline-flex;
+  gap: 2px;
+}
+.net-pad {
+  padding: 4px 10px;
+}
+.net-body {
+  min-height: 140px;
+  resize: vertical;
+}
 .hmr-row {
   grid-template-columns: 60px minmax(0, 1fr) minmax(0, 2fr);
 }

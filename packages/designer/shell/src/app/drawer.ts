@@ -1,5 +1,5 @@
 // The bottom drawer: the selected element's source and the last patch, the project's problems, the hot-update timeline,
-// accessibility, performance, and the mocked HTTP traffic. The tab strip stays when the drawer is closed, so its badges can still be read.
+// accessibility, performance, and the network (network-panel.ts). The tab strip stays when the drawer is closed, so its badges can still be read.
 import { computed, effect, html, inject, signal, untracked } from "@gable/core";
 import { CPU_RATES, NETWORK_PROFILES, type Throttle } from "../../../src/devices.js";
 import type { PerfElement, PerfMetric } from "../../../src/protocol.js";
@@ -12,7 +12,7 @@ import { A11yState } from "./a11y-state.js";
 import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";
 import { EditState } from "./edit-state.js";
-import { HttpPanel } from "./page-mode.js";
+import { NetworkPanel } from "./network-panel.js";
 import { DEV_NOTE, PerfState, RATING_LABEL, elementText, formatBytes, formatMetric, formatMs } from "./perf-state.js";
 import { staleNote } from "./stale-canvas.js";
 
@@ -713,7 +713,7 @@ export class DrawerBody {
   static meta = {
     selector: "app-drawer-body",
     host: { class: "drawer" },
-    imports: [DrawerTabs, CodeTab, ProblemsTab, HmrTab, AccessibilityTab, PerformanceTab, HttpPanel],
+    imports: [DrawerTabs, CodeTab, ProblemsTab, HmrTab, AccessibilityTab, PerformanceTab, NetworkPanel],
     template: html`
       <app-drawer-tabs></app-drawer-tabs>
       <div class="dbody" role="tabpanel" [attr.aria-labelledby]="labelledBy()">
@@ -726,7 +726,7 @@ export class DrawerBody {
         } @else if (tab() === 'perf') {
           <app-performance-tab></app-performance-tab>
         } @else if (tab() === 'http') {
-          <app-http-panel></app-http-panel>
+          <app-network-panel></app-network-panel>
         } @else {
           <app-code-tab></app-code-tab>
         }

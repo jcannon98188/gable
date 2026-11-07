@@ -1,5 +1,5 @@
 // The page-mode UI: the Routes tab (route tree with add and edit written back to the route config, the scenario picker, the
-// active scenario's mocks) and the HTTP tab of the drawer (the mocked traffic). The URL bar lives in the canvas toolbar
+// active scenario's mocks); the drawer's Network panel is network-panel.ts. The URL bar lives in the canvas toolbar
 // (see DeviceBar). Like the panels, templates only read signals; the components turn the state into display-ready rows in `computed`s.
 import { computed, effect, html, inject, signal, untracked } from "@gable/core";
 import { UiButton } from "../components/ui/button.js";
@@ -296,42 +296,3 @@ export class RoutesPanel {
   }
 }
 
-/** The mocks of the active scenario and the requests they answered. */
-export class HttpPanel {
-  static meta = {
-    selector: "app-http-panel",
-    host: { class: "block" },
-    template: html`
-      <div class="dbar"><span class="dim">{{ summary() }}</span></div>
-      <div class="tbl-row http-row dim"><span>Outcome</span><span>Method</span><span>URL</span></div>
-      @for (r of requests(); track r.key) {
-        <div class="tbl-row http-row">
-          <span class="chip" [class.err]="r.bad" [class.ok]="!r.bad">{{ r.outcome }}</span>
-          <span class="mono">{{ r.method }}</span>
-          <span class="mono truncate" [attr.title]="r.url">{{ r.url }}</span>
-        </div>
-      }
-      @if (noRequests()) {
-        <div class="empty"><strong>No requests yet</strong>Calls the app makes under a scenario appear here.</div>
-      }
-    `,
-  };
-  page = inject(PageState);
-  state = inject(DesignerState);
-  summary = computed(() => {
-    if (this.state.target().kind === "component") return this.state.sceneInfo() ? "Component mode: the scene's HTTP mocks answer its calls." : "";
-    const s = this.page.scenario();
-    if (!s) return "No scenario: the app talks to its real backend. Pick a scenario in the Routes tab to mock it.";
-    return `Scenario ${s.name}: ${s.mocks.length} mock${s.mocks.length === 1 ? "" : "s"}. The app's HTTP calls go to them, not the network.`;
-  });
-  requests = computed(() =>
-    this.page.httpLog().map((e, i) => ({
-      key: `${i}:${e.at}`,
-      method: e.method,
-      url: e.url,
-      outcome: e.mock < 0 ? "no mock" : e.outcome,
-      bad: e.mock < 0 || e.outcome === "network" || Number(e.outcome) >= 400,
-    })),
-  );
-  noRequests = computed(() => this.page.httpLog().length === 0);
-}

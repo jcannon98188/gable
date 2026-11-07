@@ -156,6 +156,48 @@ node packages/designer/e2e/perf-check.mjs            # spawns the backend (with 
 node packages/designer/e2e/perf-check.mjs --no-cdp   # the same without CDP: throttling labelled unavailable
 ```
 
+## Network: conditions, recording and mocks
+
+The drawer's **HTTP** tab is the selected frame's network panel (`shell/src/app/network-panel.ts`, `network-state.ts`). The
+Preview agent wraps the page's `fetch` and `XMLHttpRequest` before the app's code runs (`src/agent/network.ts`) and logs each
+API request: method, URL, status, time, size, content type, the app code that made it (the first stack frame outside the
+agent, Vite and dependencies), and what a condition did to it. A request a Scenario's mock answered is logged as `mock`, with
+the mock's index; one no mock matched says so. The Designer's own and Vite's requests are not listed.
+
+**Conditions** (per frame, kept across reloads of that frame in its sessionStorage, in every engine): *Slow* holds each request
+back by a delay, *Server error* answers with a status (4xx/5xx, marked as simulated) without reaching the server, *Offline* fails
+it like a dropped connection and makes `navigator.onLine` false (with an `offline` event); a URL filter narrows any of them.
+They apply to `fetch`, `XMLHttpRequest` and the Scenario's mocks, not to the page's assets and module loads. **Whole frame**
+offline also takes the frame's target offline over CDP (`Network.emulateNetworkConditions` through `/api/network/offline`,
+`src/server/cdp.ts`), so assets, module imports and sockets fail too: that needs CDP (the Windows desktop app, or a browser
+started with a debugging port), and is labelled unavailable elsewhere, never claimed.
+
+**Recording.** *Record* keeps the real responses to the frame's API requests (*Record from reload* starts over and reloads the
+frame, so its first requests are recorded too; recording survives reloads, in the frame's sessionStorage). While recording, a
+`fetch` body is read in full before the app gets it (a copy of the response). *Save as Scenario…* writes them as a new scene of
+a `*.scenes.ts` file through the edit service, like any other source edit (ADR 0001): one mock per method and URL (the URL
+without its query; the last response wins), each with the recorded status and JSON or text body, as one minimal insertion
+with undo (`src/server/edit/mocks.ts`, op `addMockScene`). Binary and over-512 KB bodies are left out and listed. Nothing is
+held by the Designer itself: the recording lives in the page until saved, and the saved mocks only in the file. *Use it*
+applies the new Scenario (page mode: the Scenario picker; component mode: the scene).
+
+**Editing mocks.** The panel lists the active Scenario's mocks as written (`GET /api/mocks?file=`); *Edit* changes a reply's
+status, delay, error or JSON body and *Remove* drops a mock, each a minimal patch with undo (ops `setMock`, `removeMock`), and
+refused when the mock at that index is no longer for that URL. A computed reply or list is shown read-only.
+
+Limits: a Scenario's mocks answer requests made through `@gable/core/http`'s `Http` client only (`mockHttp` replaces its
+backend). A recorded raw `fetch` or `XMLHttpRequest` still becomes a mock, but the raw call keeps going to the network.
+Conditions on raw calls do apply. The protocol gained `network`, `setNetworkCondition`, `record`, `recording` and the
+`activity` message; all additive, so `PROTOCOL_VERSION` is unchanged.
+
+MCP: `get_network`, `set_network_condition` (with `wholeFrame`), `record_http` (`start`/`stop`/`clear`, `reload`),
+`get_recording`, `save_recording_as_scenario` (answers with the diff), `list_mocks`, `edit_mock`, `remove_mock`.
+
+```
+node packages/designer/e2e/network-check.mjs            # spawns the backend (with CDP) on test-fixtures/net-app and a headless Edge, stops only those
+node packages/designer/e2e/network-check.mjs --no-cdp   # the same without CDP: whole-frame offline labelled unavailable
+```
+
 ## Projects and the dev server
 
 The project name in the top bar opens **Open a project**: a folder field, the recent projects and a folder lister (folders
@@ -263,7 +305,7 @@ export default {
 `http` goes through `mockHttp` (`@gable/core/http`), which replaces the `HttpBackend`; unmatched requests answer 404 and warn.
 In page mode the Scenario picker in the Routes tab reloads the page with `?__gable_scenario=<file>|<scene>`. The Designer's Vite
 plugin injects a module that sets `__GABLE_DESIGNER_HOOK__.rootProviders` (the mocks plus the scene's `providers`), which
-`bootstrap` appends after the app's own providers in development. The drawer's **HTTP** tab shows the mocks and the request log.
+`bootstrap` appends after the app's own providers in development. The drawer's **HTTP** tab shows the mocks and the request log (see Network).
 Limits: `inputs` are ignored in page mode, and a scene that needs the router belongs in page mode (component mode mounts
 the component alone).
 
@@ -337,6 +379,7 @@ left out to mean the element selected in the window.
 | Read | `get_status` (call first), `list_components`, `list_scenes`, `list_routes`, `get_problems`, `get_history`, `describe_element`, `get_selection`, `get_styles`, `get_tree`, `get_signals`, `get_hmr_timeline`, `get_http_log`, `get_performance` |
 | Window | `set_mode`, `show_page`, `show_component`, `set_scene`, `set_scenario`, `navigate`, `add_frame`, `update_frame`, `remove_frame`, `select_frame`, `select_element` (by position or CSS selector) |
 | Edit | `edit_text`, `set_attribute`, `bind`, `insert_element`, `delete_element`, `move_element`, `wrap_element`, `set_component_meta`, `set_css`, `edit_classes` (Tailwind, at a breakpoint and state), `undo`, `redo` |
+| Network | `get_network`, `set_network_condition`, `record_http`, `get_recording`, `save_recording_as_scenario`, `list_mocks`, `edit_mock`, `remove_mock` (see Network) |
 | See | `screenshot`: a PNG of a frame as MCP image content |
 
 **Screenshots.** In the desktop app (WebView2 with a CDP port) the live frame is captured over CDP: the frame's own target

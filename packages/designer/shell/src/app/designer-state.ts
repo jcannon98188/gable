@@ -68,6 +68,9 @@ export class DesignerState {
   flushes = signal(0);
   /** Templates that do not compile as saved (the backend checks every save; the full analysis follows in seconds). */
   compileErrors = signal<CompileError[]>([]);
+  /** The selected frame's page made requests or changed its storage (the agent says so at most every 250 ms). */
+  activity = signal<{ frame: string; what: "network" | "storage"; seq: number } | null>(null);
+  #activitySeq = 0;
   /** Why the canvas is not showing the source as saved, for the banner over it; null when it is (stale-canvas.ts). */
   stale = computed(() => staleCanvas(this.compileErrors(), this.hmr()));
   /** Whether the file at `path` (module URL or path) does not compile, or the page refused its last hot update. */
@@ -235,6 +238,8 @@ export class DesignerState {
 
   #onFrameEvent(frame: Frame, m: AgentEvent): void {
     const selected = frame === this.frames.selected();
+    // The page's network or storage changed (Network and Storage panels): only the selected frame's are shown.
+    if (m.type === "activity") return void (selected && this.activity.set({ frame: frame.id, what: m.what, seq: ++this.#activitySeq }));
     if (m.type === "interaction") return this.#sync(frame, m.interaction);
     if (m.type === "ready") {
       frame.connection.set("ready");

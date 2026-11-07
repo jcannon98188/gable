@@ -21,6 +21,7 @@ import type { ShellBridge } from "./bridge.js";
 import type { CompileError } from "../compile-check.js";
 import { captureHeadless, captureLive, findBrowser, type Shot } from "./screenshot.js";
 import { fileOfTarget, positionOf, projectFile, targetAt, unifiedDiff, type SourcePos } from "./targets.js";
+import { registerNetworkTools } from "./network-tools.js";
 
 export interface ControlContext {
   root: string;
@@ -684,6 +685,8 @@ export function createControlServer(ctx: ControlContext): McpServer {
       };
     }),
   );
+
+  registerNetworkTools({ server, shell, commit, live, read, write, guard, fail: (message) => { throw new ToolError(message); } });
 
   return server;
 }

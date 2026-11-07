@@ -6,6 +6,7 @@ import type { DevtoolsEvent, GableDevtoolsHook } from "@gable/core/devtools";
 import type { DesignerHook, DesignNode } from "@gable/core/designer";
 import { RUN_CONTEXT, runOptions, toReport, type AxeLike } from "./a11y.js";
 import { GableCounter, PerfCollector, domSize, settled } from "./perf.js";
+import { startNetwork, throttled } from "./network.js";
 import {
   AXE_PATH,
   PROTOCOL_VERSION,
@@ -471,6 +472,9 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
   // The Designer's own modules (this agent, the checker, the component-mode host) are not the app's requests.
   const agentDir = new URL(".", import.meta.url).href;
   const isDesigner = (url: string) => url.startsWith(agentDir) || url.includes("/__gable-designer/") || url.includes("/@id/__x00__gable-designer");
+  // The page's requests, the network condition and recording (see network.ts): installed before the app's code runs.
+  const network = startNetwork(window, isDesigner, throttled(() => send({ type: "activity", what: "network" }), 250));
+
   async function measure(): Promise<PerfReport> {
     await settled(document);
     return perf.snapshot({
@@ -499,6 +503,7 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
   // --- the shell's requests -----------------------------------------------
 
   const handlers: { [M in keyof AgentMethods]?: (p: AgentMethods[M]["params"]) => AgentMethods[M]["result"] | Promise<AgentMethods[M]["result"]> } = {
+    ...network.handlers,
     setMode: ({ mode: next }) => {
       mode = next;
       designer.muted = next === "select";

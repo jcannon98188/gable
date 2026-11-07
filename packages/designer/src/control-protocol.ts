@@ -6,6 +6,7 @@
 import type { ComponentDetail, HmrEntry, RouterInfo, TreeNode } from "@gable/core/devtools";
 import type { DesignNode } from "@gable/core/designer";
 import type { ColorScheme } from "./devices.js";
+import type { NetworkCommand, NetworkCommandResult } from "./network.js";
 import type { HttpLogEntry, PageScenarioInfo, PerfReport, SceneInfo } from "./protocol.js";
 import type { SourceRange } from "./server/source.js";
 
@@ -85,6 +86,8 @@ export interface ControlCommands {
   reselect: { params: { raw: string; offset: number }; result: boolean };
   /** The selected frame's performance, as the Performance tab shows it; `reload` re-runs it on a fresh load first. */
   performance: { params: { reload?: boolean }; result: PerfResult };
+  /** The Network panel: a frame's requests, its network condition, recording real responses. */
+  network: { params: NetworkCommand; result: NetworkCommandResult };
 }
 
 export interface PerfResult {

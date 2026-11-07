@@ -126,8 +126,33 @@ export class CdpEmulator {
     if (!sessionId) throw new Error("No preview frame with that session was found over CDP.");
     await this.#send("Emulation.setCPUThrottlingRate", { rate: throttle.cpu }, sessionId);
     await this.#send("Network.enable", {}, sessionId);
-    const p = throttle.network === "none" ? null : NETWORK_PROFILES[throttle.network];
-    await this.#send("Network.emulateNetworkConditions", { offline: false, latency: p?.latency ?? 0, downloadThroughput: p?.download ?? -1, uploadThroughput: p?.upload ?? -1 }, sessionId);
+    this.#profiles.set(nonce, throttle.network);
+    await this.#emulateNetwork(nonce, sessionId);
+  }
+
+  /** Per frame (by nonce): its network throttling profile, and the session it was taken offline in (see `setOffline`). */
+  #profiles = new Map<string, Throttle["network"]>();
+  #offline = new Map<string, string>();
+
+  /** One `Network.emulateNetworkConditions` for both: the throttling profile and whether the frame is offline. */
+  async #emulateNetwork(nonce: string, sessionId: string): Promise<void> {
+    const network = this.#profiles.get(nonce) ?? "none";
+    const p = network === "none" ? null : NETWORK_PROFILES[network];
+    await this.#send("Network.emulateNetworkConditions", { offline: this.#offline.has(nonce), latency: p?.latency ?? 0, downloadThroughput: p?.download ?? -1, uploadThroughput: p?.upload ?? -1 }, sessionId);
+  }
+
+  /**
+   * Takes the whole frame bound to `nonce` offline (documents, assets, sockets; `navigator.onLine` turns false), or back
+   * online. A frame reloaded while offline shows the browser's error page, which has no session name: the session it was
+   * taken offline in still brings it back.
+   */
+  async setOffline(nonce: string, offline: boolean): Promise<void> {
+    const sessionId = (await this.#sessionFor(nonce).catch(() => null)) ?? this.#offline.get(nonce) ?? null;
+    if (!sessionId) throw new Error("No preview frame with that session was found over CDP.");
+    if (offline) this.#offline.set(nonce, sessionId);
+    else this.#offline.delete(nonce);
+    await this.#send("Network.enable", {}, sessionId);
+    await this.#emulateNetwork(nonce, sessionId);
   }
 
   /** Per frame session, the DOM nodes pseudo-states were forced on (to be released before the next force). */
