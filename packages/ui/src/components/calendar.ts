@@ -186,7 +186,7 @@ export class UiCalendar {
   class = input<string>("");
 
   private hostRef = injectHost<HTMLElement>();
-  private apply = useHostClass(() => cn("inline-block rounded-md p-3", this.class()));
+  private apply = useHostClass(() => cn("inline-block w-fit rounded-md p-3", this.class()));
 
   captionId = `ui-calendar-${++counter}-caption`;
   selectClass = SELECT;

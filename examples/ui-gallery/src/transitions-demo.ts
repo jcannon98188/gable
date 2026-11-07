@@ -56,6 +56,8 @@ export class TransitionsDemo {
   static meta = {
     selector: 'app-root',
     imports: [RouterOutlet, RouterLink, RouterLinkActive],
+    // Not scoped: the rules style the routed pages, which are other components.
+    encapsulation: 'none' as const,
     styles: `
       app-root nav { display: flex; gap: 1rem; padding: 1rem; }
       app-root a.on { font-weight: 600; text-decoration: underline; }

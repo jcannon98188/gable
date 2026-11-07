@@ -10,7 +10,7 @@ export interface CommandItem {
   group?: string;
   /** Extra search words that are not shown, e.g. "preferences" for "Settings". */
   keywords?: string[];
-  /** A hint shown at the end of the row, e.g. "Ctrl+P". Display only. */
+  /** A label shown at the end of the row ("Alt+P"). It does not bind the key: the app handles the keys. */
   shortcut?: string;
   disabled?: boolean;
 }

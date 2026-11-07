@@ -127,6 +127,9 @@ export function getDndManager(doc: Document): DndManager {
   return m;
 }
 
+/** Pixels past the end of a sortable list that still count as dropping at its end. */
+const END_SLACK = 48;
+
 export class DndManager {
   private zones = new Map<string, DndZone>();
   private session: Session | null = null;
@@ -306,11 +309,18 @@ export class DndManager {
     if (!s || s.mode !== "pointer") return;
     const { x, y } = s.point;
     const hits: DndZone[] = [];
+    const near: DndZone[] = [];
     for (const zone of this.zones.values()) {
       if (!this.accepts(zone, s.source)) continue;
       const r = zone.element.getBoundingClientRect();
       if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) hits.push(zone);
+      else if (zone.sortable) {
+        // A list ends at its last row, so dropping "at the end" means releasing just past it: allow some slack there.
+        const v = zone.sortable.orientation() === "vertical";
+        if (v ? x >= r.left && x <= r.right && y > r.bottom && y <= r.bottom + END_SLACK : y >= r.top && y <= r.bottom && x > r.right && x <= r.right + END_SLACK) near.push(zone);
+      }
     }
+    if (!hits.length) hits.push(...near);
     // The innermost zone wins: drop any zone that contains another hit.
     const zone = hits.filter((z) => !hits.some((o) => o !== z && z.element.contains(o.element)))[0];
     this.setTarget(zone ? { zone, index: zone.sortable ? this.indexAt(zone, s.source, x, y) : undefined } : null, false);

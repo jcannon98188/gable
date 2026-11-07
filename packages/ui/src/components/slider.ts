@@ -95,8 +95,10 @@ export class UiRangeSlider {
           @for (thumb of thumbs(); track thumb.index) {
             <div
               [uiProps]="thumb.props"
-              class="block size-4 shrink-0 rounded-full border border-primary bg-white shadow-sm ring-ring/50 transition-[color,box-shadow] outline-none hover:ring-4 data-[focus-visible]:ring-4 data-[disabled]:pointer-events-none"
+              class="flex size-5 shrink-0 cursor-grab items-center justify-center gap-0.5 rounded-full border-2 border-primary bg-white shadow-sm ring-ring/50 transition-[color,box-shadow] outline-none hover:ring-4 active:cursor-grabbing data-[dragging]:ring-4 data-[focus-visible]:ring-4 data-[disabled]:pointer-events-none"
             >
+              <span aria-hidden="true" class="h-2 w-px rounded-full bg-primary/60"></span>
+              <span aria-hidden="true" class="h-2 w-px rounded-full bg-primary/60"></span>
               <input [uiProps]="thumb.inputProps" (blur)="touched.emit()" />
             </div>
           }

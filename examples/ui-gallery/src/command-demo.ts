@@ -5,9 +5,9 @@ const COMMANDS: CommandItem[] = [
   { value: 'calendar', label: 'Calendar', group: 'Suggestions' },
   { value: 'emoji', label: 'Search Emoji', group: 'Suggestions', keywords: ['smile', 'face'] },
   { value: 'calculator', label: 'Calculator', group: 'Suggestions', disabled: true },
-  { value: 'profile', label: 'Profile', group: 'Settings', shortcut: 'Ctrl+P', keywords: ['account'] },
-  { value: 'billing', label: 'Billing', group: 'Settings', shortcut: 'Ctrl+B' },
-  { value: 'settings', label: 'Settings', group: 'Settings', shortcut: 'Ctrl+S', keywords: ['preferences'] },
+  { value: 'profile', label: 'Profile', group: 'Settings', shortcut: 'Alt+P', keywords: ['account'] },
+  { value: 'billing', label: 'Billing', group: 'Settings', shortcut: 'Alt+B' },
+  { value: 'settings', label: 'Settings', group: 'Settings', shortcut: 'Alt+S', keywords: ['preferences'] },
 ];
 
 /** A command list on the page, and the same list as a dialog palette (open it with the button or Ctrl+K). */
@@ -16,7 +16,7 @@ export class CommandDemo {
     selector: 'app-root',
     imports: [UiButton, UiCommand, UiCommandDialog],
     template: html`
-      <main class="mx-auto flex max-w-xl flex-col gap-8 p-8" (keydown)="onKey($event)">
+      <main class="mx-auto flex max-w-xl flex-col gap-8 p-8">
         <h1 class="text-2xl font-semibold tracking-tight">Command</h1>
 
         <section class="flex flex-col gap-3">
@@ -29,7 +29,7 @@ export class CommandDemo {
           <h2 class="text-lg font-medium">In a dialog</h2>
           <div class="flex items-center gap-3">
             <button id="open" uiButton variant="outline" (click)="open.set(true)">Open palette</button>
-            <span class="text-sm text-muted-foreground">or press Ctrl+K</span>
+            <span class="text-sm text-muted-foreground">or press Ctrl+K. The Alt+P, Alt+B and Alt+S shortcuts shown in the list work anywhere on this page.</span>
           </div>
           <ui-command-dialog [(open)]="open" [items]="commands" (selected)="ran.set($event)"></ui-command-dialog>
         </section>
@@ -42,11 +42,20 @@ export class CommandDemo {
   ran = signal('');
   ranLabel = computed(() => COMMANDS.find((c) => c.value === this.ran())?.label ?? 'none');
 
-  onKey(event: unknown): void {
-    const e = event as { key: string; ctrlKey: boolean; metaKey: boolean; preventDefault(): void };
-    if (e.key.toLowerCase() === 'k' && (e.ctrlKey || e.metaKey)) {
+  // A command item's `shortcut` is only a label: the app binds the keys itself. Alt+letter avoids the browser's own Ctrl shortcuts.
+  private _keys = typeof document === 'undefined' ? null : document.addEventListener('keydown', (e) => this.onKey(e));
+
+  onKey(e: KeyboardEvent): void {
+    const key = e.key.toLowerCase();
+    if (key === 'k' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       this.open.set(true);
+      return;
+    }
+    const hit = e.altKey && !e.ctrlKey && !e.metaKey ? COMMANDS.find((c) => c.shortcut === `Alt+${key.toUpperCase()}`) : undefined;
+    if (hit) {
+      e.preventDefault();
+      this.ran.set(hit.value);
     }
   }
 }
