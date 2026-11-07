@@ -143,6 +143,8 @@ export interface DevtoolsSink {
   ): void;
   router(info: RouterDevInfo): void;
   hmr(result: { status: string; errors: unknown[]; modules: string[] }): void;
+  /** An element was built from template node `node` (an `ElementNode`; its `pos` says where in the source). Optional: used by design tooling. */
+  element?(el: unknown, node: object): void;
   /** A module (by URL) exports `Class` (from the Vite plugin's accept line). */
   source(Class: Function, url: string): void;
 }

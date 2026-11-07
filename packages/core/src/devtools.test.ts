@@ -304,3 +304,21 @@ describe("preview", () => {
     expect(kids.m!.s).toBe("Map(1)");
   });
 });
+
+describe("template source (design tooling)", () => {
+  it("maps a rendered element to its range inside the template literal, and a child's element to the child's template", () => {
+    const f = mount(Counter);
+    const p = f.query("p")!;
+    const src = dt.hook.templateSourceOf(p)!;
+    expect(src.tag).toBe("p");
+    expect(src.component?.name).toBe("Counter");
+    expect(src.raw.slice(src.start, src.end)).toBe("<p>{{ doubled() }}</p>");
+    expect(src.raw.slice(src.start, src.openEnd)).toBe("<p>");
+    const b = dt.hook.templateSourceOf(f.query("b")!)!;
+    expect(b.component?.name).toBe("Child");
+    expect(b.raw.slice(b.start, b.end)).toBe("<b>{{ label() }}</b>");
+    const host = dt.hook.templateSourceOf(f.query("app-child")!)!;
+    expect(host.component?.name).toBe("Counter");
+    expect(host.raw.slice(host.start, host.end)).toMatch(/^<app-child .*><\/app-child>$/);
+  });
+});

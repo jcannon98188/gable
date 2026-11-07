@@ -218,6 +218,21 @@ export interface DevtoolsMethods {
   inspectors: { params: void; result: InspectorInfo[] };
 }
 
+/** Where a rendered element came from: offsets are into `raw` (the template literal's text), not into the file. */
+export interface TemplateSource {
+  /** The component whose template contains the element (a projected element belongs to its author, not its host). */
+  component: { id: string; name: string; source: SourceInfo | null } | null;
+  tag: string;
+  /** The literal's text as written (`strings.raw[0]`); a file-level tool finds the literal by this. */
+  raw: string;
+  /** `<` of the opening tag. */
+  start: number;
+  /** Just after the opening tag. */
+  openEnd: number;
+  /** Just after the element. */
+  end: number;
+}
+
 export interface GableDevtoolsHook {
   readonly version: 1;
   /** Subscribes to pushed events. Effect timings are only measured while at least one client is connected. */
@@ -227,6 +242,8 @@ export interface GableDevtoolsHook {
   element(id: string): unknown;
   /** The id of the nearest component whose host is `node` or an ancestor of it. */
   componentFor(node: unknown): string | null;
+  /** Design tooling: the template element that produced `node` (or its nearest ancestor that has one), with its range inside the template's string. */
+  templateSourceOf(node: unknown): TemplateSource | null;
   /** Lets a package show its own state and history in the panel. */
   registerInspector(id: string, spec: InspectorSpec): InspectorHandle;
 }
@@ -419,6 +436,7 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
   const routers = new Set<Rtr>();
   const inspectors = new Map<string, Insp>();
   const sources = new WeakMap<Function, string>();
+  const elementNodes = new WeakMap<object, { tag: string; pos?: { start: number; openEnd: number; end: number; tpl: TemplateStringsArray } }>();
   const listeners = new Set<(event: DevtoolsEvent) => void>();
   const flushes: FlushRecord[] = [];
   const hmrLog: HmrEntry[] = [];
@@ -782,6 +800,9 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
     source(Class, url) {
       sources.set(Class, url);
     },
+    element(el, node) {
+      if (el && typeof el === "object") elementNodes.set(el, node as never);
+    },
   };
 
   const methods: { [M in keyof DevtoolsMethods]: (params: DevtoolsMethods[M]["params"]) => DevtoolsMethods[M]["result"] | Promise<DevtoolsMethods[M]["result"]> } = {
@@ -871,6 +892,20 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
       for (let n = node as any; n && typeof n === "object"; n = n.parentNode ?? n.parent) {
         const c = compByHost.get(n);
         if (c) return c.id;
+      }
+      return null;
+    },
+    templateSourceOf(node) {
+      for (let n = node as any; n && typeof n === "object"; n = n.parentNode ?? n.parent) {
+        const tn = elementNodes.get(n);
+        if (!tn?.pos) continue;
+        const { start, openEnd, end, tpl } = tn.pos;
+        let owner: Comp | null = null;
+        for (const c of comps) if ((c.Class as { meta?: { template?: { strings?: unknown } } }).meta?.template?.strings === tpl) owner = c;
+        return {
+          component: owner ? { id: owner.id, name: owner.Class.name, source: sourceOf(owner.Class) } : null,
+          tag: tn.tag, raw: tpl.raw[0]!, start, openEnd, end,
+        };
       }
       return null;
     },

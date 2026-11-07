@@ -1,3 +1,4 @@
+import { DEV } from "./dev-hooks.js";
 import { parseExpression, parseHandler, type Expr, type HandlerExpr } from "./expression.js";
 
 export type BindingKind = "prop" | "attr" | "class" | "style";
@@ -13,6 +14,19 @@ export interface ElementNode {
   /** `#name` template refs. */
   refs: string[];
   children: TemplateNode[];
+  /** Dev only: where this element sits in its template's source string (offsets into `strings[0]`), and which template. */
+  pos?: SourcePos;
+}
+
+export interface SourcePos {
+  /** Offset of the `<`. */
+  start: number;
+  /** Offset just after the opening tag's `>`. */
+  openEnd: number;
+  /** Offset just after the element (after the closing tag, or the opening tag for void/self-closing elements). */
+  end: number;
+  /** The call site's strings array: identifies the template. */
+  tpl: TemplateStringsArray;
 }
 
 export interface IfNode {
@@ -70,7 +84,7 @@ export function parseTemplate(result: TemplateResult): TemplateNode[] {
   let parsed = cache.get(result.strings);
   if (!parsed) {
     if (result.values.length > 0) throw new Error("html`` does not support ${} holes: templates are static strings. Use a small component for reusable markup (TASK-30)");
-    parsed = new Parser(result.strings[0]!).parseChildren("root");
+    parsed = new Parser(result.strings[0]!, DEV ? result.strings : undefined).parseChildren("root");
     cache.set(result.strings, parsed);
   }
   return parsed;
@@ -81,7 +95,7 @@ const ATTR = /\s*([^\s=>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))?/y;
 
 class Parser {
   i = 0;
-  constructor(readonly source: string) {}
+  constructor(readonly source: string, readonly tpl?: TemplateStringsArray) {}
 
   /** Parses nodes until the end of the enclosing element (`</tag>`, consumed), block (`}`, consumed) or the source. */
   parseChildren(context: "root" | "element" | "block", tag = ""): TemplateNode[] {
@@ -310,7 +324,9 @@ class Parser {
       addAttribute(el, m[1]!, m[2] ?? m[3] ?? "");
     }
     this.i = p;
+    const openEnd = p;
     if (!selfClosing && !VOID.has(tag)) el.children = this.parseChildren("element", tag);
+    if (this.tpl) el.pos = { start: lt, openEnd, end: this.i, tpl: this.tpl };
     return el;
   }
 }

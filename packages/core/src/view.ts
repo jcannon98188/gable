@@ -5,7 +5,7 @@ import { createScope, currentScope, runInScope, type Scope } from "./scope.js";
 import { FAILED, guard, guarded } from "./errors.js";
 import { DEV } from "./dev-hooks.js";
 import { disposeAndRemove } from "./removal.js";
-import { hooks, retireView } from "./dev-hooks.js";
+import { devtools, hooks, retireView } from "./dev-hooks.js";
 import { inputOf } from "./input.js";
 import { OutputEmitter } from "./output.js";
 import { prepare, type ComponentClass } from "./component.js";
@@ -191,6 +191,7 @@ function buildElementOf<N>(
   matches: ComponentClass<any>[],
 ): Part<N> {
   const el = renderer.createElement(node.tag, parent);
+  if (DEV) devtools.current?.element?.(el, node);
   const scope = currentScope();
   if (view?.scopeToken) renderer.setAttribute(el, view.scopeToken, "");
   renderer.insert(parent, el, before);
