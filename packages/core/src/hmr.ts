@@ -1,6 +1,6 @@
 // The HMR runtime (`@gable/core/hmr`). Dev only: importing it installs the core's dev hooks, so an app that
 // never imports it (every production build) carries none of this. No semver promise.
-import { devtools, hooks, type ComponentBegin, type DevHooks, type InjectorOps, type Region, type RouterOps, type ServiceBegin, type Swap } from "./dev-hooks.js";
+import { devtools, hooks, type ComponentBegin, type HmrChange, type DevHooks, type InjectorOps, type Region, type RouterOps, type ServiceBegin, type Swap } from "./dev-hooks.js";
 import { registerComponentStyles } from "./component.js";
 import { reportError } from "./errors.js";
 import type { Scope } from "./scope.js";
@@ -419,14 +419,18 @@ function withSession<T>(old: Rec[], pairs: Set<Function>, fn: () => T): T {
   }
 }
 
+/** What the update being applied does to each class it touches (for the devtools HMR log). */
+let lastChanges: HmrChange[] = [];
+
 /**
  * Applies a batch of re-evaluated modules as one atomic transaction: stage and classify, patch the canonical
  * classes, re-set-up what changed (services, then the components that need it, parents before children) on new
  * instances beside the old ones, and only then retire the old. Any failure undoes everything.
  */
 export function applyUpdate(updates: ModuleUpdate[], failures: unknown[] = [], roots?: object[]): HotResult {
+  lastChanges = [];
   const result = applyUpdateNow(updates, failures, roots);
-  devtools.current?.hmr({ status: result.status, errors: result.errors, modules: updates.map((u) => moduleId(u.url)) });
+  devtools.current?.hmr({ status: result.status, errors: result.errors, modules: updates.map((u) => moduleId(u.url)), changes: lastChanges });
   return result;
 }
 
@@ -457,6 +461,7 @@ function applyUpdateNow(updates: ModuleUpdate[], failures: unknown[], roots?: ob
       s.kind = classify(s.entry, s.def, s.meta);
       if (s.mode === "reset" && s.kind !== "none") s.kind = "resetup";
     }
+    lastChanges = staged.map((s) => ({ name: s.entry.canonical.name, kind: s.kind }));
     const dropAliases = () => staged.forEach((s) => s.next !== s.entry.canonical && s.next !== s.entry.latest && entryOf.delete(s.next));
     if (staged.some((s) => s.mode === "reload" && s.kind !== "none")) {
       dropAliases();

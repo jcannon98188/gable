@@ -17,6 +17,7 @@ export default defineConfig({
       { find: /^@gable\/core\/tooling$/, replacement: src("core/src/tooling.ts") },
       { find: /^@gable\/core\/hmr$/, replacement: src("core/src/hmr.ts") },
       { find: /^@gable\/core\/devtools$/, replacement: src("core/src/devtools.ts") },
+      { find: /^@gable\/core\/designer$/, replacement: src("core/src/designer.ts") },
       { find: /^@gable\/core\/internal$/, replacement: src("core/src/internal.ts") },
       { find: /^@gable\/testing$/, replacement: src("testing/src/index.ts") },
       { find: /^@gable\/testing\/renderer$/, replacement: src("testing/src/renderer.ts") },
