@@ -7,3 +7,5 @@ export { yToDoc, updateYFragment } from "./yjs/convert.js";
 export * from "./plugins/formatting.js";
 export * from "./toolbar-model.js";
 export * from "./component/editor-element.js";
+export * from "./plugins/table.js";
+export * from "./plugins/image.js";

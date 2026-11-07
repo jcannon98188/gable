@@ -1,10 +1,10 @@
 ---
 id: TASK-75.2
 title: 'Editor: own Yjs <-> ProseMirror binding (replaces y-prosemirror)'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-07T06:33:00Z'
-updated_date: '2026-11-07T06:40:00Z'
+updated_date: '2026-11-07T06:47:00Z'
 labels:
   - editor
 dependencies:
@@ -21,7 +21,7 @@ We chose to write our own sync layer instead of using y-prosemirror. This is the
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Local ProseMirror transactions apply to the Y.Doc and remote Y updates apply to the editor state, for every schema node and mark, including nested structures like tables
+- [x] #1 Local ProseMirror transactions apply to the Y.Doc and remote Y updates apply to the editor state, for every schema node and mark, including nested structures like tables
 - [x] #2 Two or more peers converge under concurrent and offline edits (randomised convergence tests)
 - [x] #3 Binding-origin transactions are excluded from local undo; undo/redo is per-user (Y.UndoManager or equivalent)
 - [x] #4 Remote selections and relative positions (Y.RelativePosition) survive concurrent edits
@@ -43,4 +43,12 @@ We chose to write our own sync layer instead of using y-prosemirror. This is the
 
 <!-- SECTION:NOTES:BEGIN -->
 Own binding in packages/editor/src/yjs (convert.ts, binding.ts, collab-plugin.ts); y-prosemirror-compatible data layout. 39 tests: round-trip of headings/lists/blockquotes/marks/attrs, 25-seed randomized 3-peer offline convergence, per-user undo, relative positions, 2 real TipTap editors in jsdom. AC1 left open: nested structures verified (lists, blockquotes) but tables do not exist yet; verify in TASK-75.4. Known limits: PM->Yjs reconcile is O(doc) per local change (deep equality scan); duplicate seeding if two peers init non-empty content before syncing (init only after provider sync); text typed inside another user's format span is un-formatted when that user undoes it (inherent to Yjs format markers).
+
+AC1 closed: tables (with spans/header cells) and images sync between two real editors in table-image.test.ts.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Own Yjs<->ProseMirror binding (convert, binding, collab plugin) with per-user undo and relative positions; verified by randomized convergence tests, two-editor jsdom tests incl. tables. See notes for known limits.
+<!-- SECTION:FINAL_SUMMARY:END -->

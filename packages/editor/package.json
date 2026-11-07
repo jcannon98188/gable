@@ -17,6 +17,8 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
+    "@gable/core": "0.0.0",
+    "@gable/ui": "0.0.0",
     "@tiptap/core": "^3.33.0",
     "@tiptap/extension-blockquote": "^3.33.0",
     "@tiptap/extension-bold": "^3.33.0",
@@ -26,18 +28,18 @@
     "@tiptap/extension-hard-break": "^3.33.0",
     "@tiptap/extension-heading": "^3.33.0",
     "@tiptap/extension-horizontal-rule": "^3.33.0",
+    "@tiptap/extension-image": "^3.33.0",
     "@tiptap/extension-italic": "^3.33.0",
     "@tiptap/extension-link": "^3.33.0",
     "@tiptap/extension-list": "^3.33.0",
     "@tiptap/extension-paragraph": "^3.33.0",
     "@tiptap/extension-strike": "^3.33.0",
+    "@tiptap/extension-table": "^3.33.0",
     "@tiptap/extension-text": "^3.33.0",
     "@tiptap/extension-underline": "^3.33.0",
     "@tiptap/extensions": "^3.33.0",
     "@tiptap/pm": "^3.33.0",
-    "yjs": "^13.6.33",
-    "@gable/core": "0.0.0",
-    "@gable/ui": "0.0.0"
+    "yjs": "^13.6.33"
   },
   "devDependencies": {
     "@gable/renderer-dom": "0.0.0",
