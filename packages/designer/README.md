@@ -168,3 +168,79 @@ The driven check runs against a Tailwind project (`examples/ui-gallery`) and a p
 node packages/designer/e2e/tailwind-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port> --source examples/ui-gallery/src/gallery.ts [--no-cdp] [--shot dir]
 node packages/designer/e2e/tailwind-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port> --off
 ```
+
+## Agents (MCP)
+
+The backend hosts an [MCP](https://modelcontextprotocol.io) server (`src/server/mcp/`, official TypeScript SDK) so a coding agent
+can drive the Designer the way a person does: read the project, change what the window shows, select and edit elements,
+and look at the result. The agent and the human share one Designer:
+
+- **Project facts** (components, scenes, routes, problems, undo history, Tailwind) are read from backend state.
+- **UI state** (mode, page/component target, scene, Scenario, route, frames, selection) and the running app (component tree,
+  signals, HMR, mocked HTTP) live only in the shell. Those tools send a command to the open window over a channel of its own
+  (`/api/shell/channel` SSE down, `POST /api/shell/reply` up; `src/control-protocol.ts`), and the shell does what the click
+  would (`shell/src/app/control-channel.ts`). The person sees every change, and the shell stays the only owner of UI state.
+  When no window is open, these tools answer with the URL to open.
+- **Every edit** goes through the edit service, so it is the same minimal patch as a UI edit, on the same undo stack. Each
+  edit answers with the unified diff it wrote and the edited element's new source position.
+
+Elements are named by source position, `{ file, line, column }` (1-based, project-relative, anywhere inside the element), or
+left out to mean the element selected in the window.
+
+| Group | Tools |
+| --- | --- |
+| Read | `get_status` (call first), `list_components`, `list_scenes`, `list_routes`, `get_problems`, `get_history`, `describe_element`, `get_selection`, `get_styles`, `get_tree`, `get_signals`, `get_hmr_timeline`, `get_http_log` |
+| Window | `set_mode`, `show_page`, `show_component`, `set_scene`, `set_scenario`, `navigate`, `add_frame`, `update_frame`, `remove_frame`, `select_frame`, `select_element` (by position or CSS selector) |
+| Edit | `edit_text`, `set_attribute`, `bind`, `insert_element`, `delete_element`, `move_element`, `wrap_element`, `set_component_meta`, `set_css`, `edit_classes` (Tailwind, at a breakpoint and state), `undo`, `redo` |
+| See | `screenshot`: a PNG of a frame as MCP image content |
+
+**Screenshots.** In the desktop app (WebView2 with a CDP port) the live frame is captured over CDP: the frame's own target
+when the browser allows it, otherwise the frame's rectangle clipped from the Designer window and scaled back to 100%.
+Without CDP (the browser mode), the frame's URL (route and Scenario included) is rendered fresh in a headless Chromium or
+Edge at the frame's size, pixel ratio and emulation. State that only the open window holds (typed input, an opened menu) is
+not in that render. Set `GABLE_CHROME` to the browser to use when it is not found.
+
+**Transport and auth.** Streamable HTTP at `<backend>/mcp`, on 127.0.0.1 only, with the same Host check as the rest of the
+API (DNS rebinding). Each backend makes a random **per-session MCP token**, separate from the shell's token. A request
+without `Authorization: Bearer <token>` gets 401. The URL and token are printed in the `GABLE_DESIGNER_READY` line
+(`"mcp": { "url", "token" }`) and written to a **session file** that only the user can read:
+`<data dir>/mcp/<project hash>.json`, in the same user data directory as the frame settings (`GABLE_DESIGNER_DATA`, else
+the platform's per-user `gable-designer` directory). It is removed on exit.
+
+**stdio.** `gable-designer mcp <projectDir>` is a stdio MCP server that proxies to the Designer running for that project,
+found through its session file. If none is running it starts a backend in-process and prints the URL to open on stderr
+(`--no-start` refuses instead). `--url` and `--token` skip the session file.
+
+Client config, stdio (Claude Code `.mcp.json`, Claude Desktop, Cursor and others use the same shape):
+
+```json
+{
+  "mcpServers": {
+    "gable-designer": {
+      "command": "node",
+      "args": ["<repo>/packages/designer/dist/server/cli.js", "mcp", "<path to the project>"]
+    }
+  }
+}
+```
+
+Streamable HTTP (a client that speaks it, with the URL and token from the READY line or the session file):
+
+```json
+{
+  "mcpServers": {
+    "gable-designer": {
+      "type": "http",
+      "url": "http://127.0.0.1:4700/mcp",
+      "headers": { "Authorization": "Bearer <token>" }
+    }
+  }
+}
+```
+
+The tools are covered against `test-fixtures/mcp-app` in `src/mcp.test.ts`, which uses an in-memory client and a fake
+window. The driven check runs a real backend, the shell in headless Edge, and clients over HTTP and stdio:
+
+```
+npm run build -w packages/designer && node packages/designer/e2e/mcp-check.mjs [--browser <path>] [--shot dir]
+```

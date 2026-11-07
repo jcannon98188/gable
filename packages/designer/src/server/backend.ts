@@ -18,6 +18,7 @@ import { resolveNode, type NodeReport } from "./source.js";
 import { sceneIndex } from "./scene-index.js";
 import { editRouteConfig, listComponents, locateRouteConfig, type RouteEdit } from "./route-config.js";
 import { TailwindService, handleTailwindApi } from "./tailwind/api.js";
+import { createControlPlane } from "./mcp/plane.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -29,6 +30,8 @@ export interface BackendOptions {
   previewPort?: number;
   /** The webview's Chrome DevTools Protocol port (Windows WebView2 in the desktop app): enables device emulation. */
   cdpPort?: number;
+  /** Where the MCP session file is written (the user data directory by default); `false` writes none. */
+  mcpSessionDir?: string | false;
 }
 
 export interface ProjectInfo {
@@ -44,6 +47,8 @@ export interface Backend {
   readonly url: string;
   readonly token: string;
   readonly previewUrl: string;
+  /** The MCP control plane for agents (streamable HTTP; `Authorization: Bearer <token>`). */
+  readonly mcp: { url: string; token: string };
   close(): Promise<void>;
 }
 
@@ -144,6 +149,19 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
   // --- events (SSE) and file watching -----------------------------------------------
   const edits = new EditService(root);
   const tailwind = new TailwindService(root);
+  const control = createControlPlane({
+    root,
+    info,
+    edits,
+    tailwind,
+    cdpPort: options.cdpPort ?? null,
+    sessionDir: options.mcpSessionDir,
+    diagnostics: async (refresh) => {
+      if (!diagnostics || refresh) await runAnalysis();
+      return diagnostics!;
+    },
+    historyChanged: () => broadcast("history", edits.history()),
+  });
   const clients = new Set<ServerResponse>();
   const broadcast = (event: string, data: unknown) => {
     for (const res of clients) res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
@@ -191,6 +209,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
       res.setHeader("access-control-allow-headers", "authorization, content-type");
     }
     if (req.method === "OPTIONS") return void ((res.statusCode = 204), res.end());
+    if (await control.handleMcp(req, res, url)) return;
 
     if (url.pathname.startsWith("/api/")) {
       const bearer = req.headers.authorization === `Bearer ${token}` || url.searchParams.get("token") === token;
@@ -248,6 +267,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
           req.on("close", () => clients.delete(res));
           return;
       }
+      if (await control.handleShell(req, res, url, readBody, json)) return;
       if (await handleTailwindApi({ service: tailwind, cdp, json, readBody }, req, res, url)) return;
       if (await handleDeviceApi({ root, previewUrl, cdp, json, readBody }, req, res, url)) return;
       return json(res, 404, { error: "no such endpoint" });
@@ -267,12 +287,15 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
   await new Promise<void>((ok) => server.listen(port, "127.0.0.1", ok));
   actualPort = (server.address() as { port: number }).port;
   origin = `http://127.0.0.1:${actualPort}`;
+  control.listening(origin);
 
   return {
     url: origin,
     token,
     previewUrl,
+    mcp: { url: control.url, token: control.mcp.token },
     async close() {
+      await control.close();
       clearTimeout(debounce);
       watcher.close();
       for (const c of clients) c.end();

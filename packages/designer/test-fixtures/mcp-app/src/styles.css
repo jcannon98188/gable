@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #ff0066;
+}
+
+.card {
+  border-radius: 8px;
+}
