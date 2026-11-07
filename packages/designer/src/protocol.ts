@@ -12,17 +12,41 @@ export const PROTOCOL_VERSION = 1;
 export const CHANNEL = "gable-designer";
 
 /**
- * The shell sets the preview iframe's `name` to `PREFIX nonce SEPARATOR shellOrigin`: the agent reads it (as
- * `window.name`) before any app code runs, and only then talks, to exactly that origin. A page opened outside the
- * Designer has no such name, so its agent stays dormant.
+ * The shell loads the preview with `?__gable_designer=<nonce>|<shellOrigin>`: the agent reads it before any app code runs,
+ * keeps it in sessionStorage (so a reload of the frame stays bound), strips it from the URL, and only then talks, to exactly
+ * that origin. A page opened outside the Designer has no such parameter, so its agent stays dormant. (The iframe's
+ * `window.name` was the first idea; browsers clear it on a cross-site navigation, which the preview always is.)
  */
-export const NAME_PREFIX = "gable-designer:";
-export const nameFor = (nonce: string, shellOrigin: string) => `${NAME_PREFIX}${nonce}|${shellOrigin}`;
-export function parseName(name: string): { nonce: string; shellOrigin: string } | null {
-  if (!name.startsWith(NAME_PREFIX)) return null;
-  const rest = name.slice(NAME_PREFIX.length);
-  const bar = rest.indexOf("|");
-  return bar > 0 ? { nonce: rest.slice(0, bar), shellOrigin: rest.slice(bar + 1) } : null;
+export const SESSION_PARAM = "__gable_designer";
+const STORE_KEY = "gable-designer-session";
+export const withSession = (url: string, nonce: string, shellOrigin: string): string => {
+  const u = new URL(url);
+  u.searchParams.set(SESSION_PARAM, `${nonce}|${shellOrigin}`);
+  return u.href;
+};
+export function parseSession(value: string | null): { nonce: string; shellOrigin: string } | null {
+  const bar = value ? value.indexOf("|") : -1;
+  return value && bar > 0 ? { nonce: value.slice(0, bar), shellOrigin: value.slice(bar + 1) } : null;
+}
+/** The agent's side: the session from the URL (removing it there) or, after a reload, from sessionStorage. */
+export function takeSession(loc: Location, history: History, storage: Storage | null): { nonce: string; shellOrigin: string } | null {
+  const url = new URL(loc.href);
+  const fromUrl = url.searchParams.get(SESSION_PARAM);
+  if (fromUrl !== null) {
+    url.searchParams.delete(SESSION_PARAM);
+    history.replaceState(history.state, "", url.pathname + url.search + url.hash);
+    try {
+      storage?.setItem(STORE_KEY, fromUrl);
+    } catch {
+      // storage blocked: the session lasts until the next reload
+    }
+    return parseSession(fromUrl);
+  }
+  try {
+    return parseSession(storage?.getItem(STORE_KEY) ?? null);
+  } catch {
+    return null;
+  }
 }
 
 interface Envelope {

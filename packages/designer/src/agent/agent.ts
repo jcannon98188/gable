@@ -8,7 +8,7 @@ import {
   PROTOCOL_VERSION,
   envelope,
   isOurs,
-  parseName,
+  takeSession,
   type AgentMessage,
   type AgentMethods,
   type CanvasDiagnostic,
@@ -30,12 +30,14 @@ declare global {
 }
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
-const session = typeof window !== "undefined" && parent !== window ? parseName(window.name) : null;
+const session = typeof window !== "undefined" && parent !== window ? takeSession(location, history, sessionStorage) : null;
 if (session) start(session);
 
 function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): void {
   let devtools: GableDevtoolsHook | undefined;
-  const designer: DesignerHook = globalThis.__GABLE_DESIGNER_HOOK__!;
+  const hook: DesignerHook | undefined = globalThis.__GABLE_DESIGNER_HOOK__;
+  if (!hook) return console.warn("[gable-designer] installDesigner() did not run before the agent; the preview is not inspectable.");
+  const designer: DesignerHook = hook;
   let mode: "select" | "interact" = "select";
   let selected: string | null = null;
   let hovered: string | null = null;
@@ -89,8 +91,7 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
       const color = error ? "#dc2626" : "#d97706";
       rectsOf(id).forEach((r, i) => {
         box(`d${id}:${i}`, r, `border:2px dashed ${color}`);
-        const badge = box;
-        badge(`b${id}:${i}`, new DOMRect(r.right - 20, r.top - 9, 18, 18), `background:${color};color:#fff;border-radius:9px;font:700 11px/18px system-ui;text-align:center;pointer-events:auto;cursor:pointer`, String(items.length), () => send({ type: "badge", id: items[0]!.id }));
+        box(`b${id}:${i}`, new DOMRect(r.right - 20, r.top - 9, 18, 18), `background:${color};color:#fff;border-radius:9px;font:700 11px/18px system-ui;text-align:center;pointer-events:auto;cursor:pointer`, String(items.length), () => send({ type: "badge", id: items[0]!.id }));
       });
     }
     for (const [key, el] of boxes) if (!el.dataset.used) (el.remove(), boxes.delete(key));

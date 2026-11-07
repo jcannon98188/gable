@@ -6,6 +6,8 @@ import type { Plugin } from "vite";
 
 const PAGE = "/__gable-designer/component";
 const HOST = "/__gable-designer/host.js";
+const INSTALL = "/__gable-designer/install.js";
+const INSTALL_ID = "\0gable-designer-install";
 const VIRTUAL = "\0gable-designer-host:";
 
 /** The generated module that mounts one scene of a scenes file. It lives in the project's module graph so it shares its `@gable/core` and renderer, and HMR works. */
@@ -89,9 +91,13 @@ export function designerPlugin(options: { agentFile: string }): Plugin {
       });
     },
     resolveId(id) {
+      if (id === INSTALL) return INSTALL_ID;
       if (id.startsWith(HOST)) return VIRTUAL + id.slice(HOST.length);
     },
     load(id) {
+      if (id === INSTALL_ID) return `import { installDesigner } from "@gable/core/designer";
+installDesigner();
+`;
       if (!id.startsWith(VIRTUAL)) return;
       const query = new URLSearchParams(id.slice(VIRTUAL.length));
       return hostModule(query.get("scenes")!, query.get("scene"));
@@ -100,7 +106,7 @@ export function designerPlugin(options: { agentFile: string }): Plugin {
       if (!ctx.server) return;
       return [
         // Two scripts, in this order: the hook has to exist before the agent module is evaluated, and static imports run first.
-        { tag: "script", attrs: { type: "module" }, children: `import { installDesigner } from "@gable/core/designer"; installDesigner();`, injectTo: "head-prepend" },
+        { tag: "script", attrs: { type: "module", src: INSTALL }, injectTo: "head-prepend" },
         { tag: "script", attrs: { type: "module", src: agentUrl }, injectTo: "head-prepend" },
       ];
     },
