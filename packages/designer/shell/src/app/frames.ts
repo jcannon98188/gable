@@ -13,6 +13,7 @@ import {
   frameFrom,
   sizeOf,
   type Capabilities,
+  type ChromeSettings,
   type DevicePreset,
   type Emulation,
   type FrameConfig,
@@ -90,6 +91,10 @@ export class FrameSet {
   readonly sync = signal(false);
   readonly capabilities = signal<Capabilities>({ cdp: false, platform: "" });
   readonly saved = signal<DevicePreset[]>([]);
+  /** The window's own settings, kept in the same file as the frames (see ChromeState). Null until something saved them. */
+  readonly chrome = signal<ChromeSettings | null>(null);
+  /** The project's settings have been read; before that nothing is written back. */
+  readonly settled = signal(false);
 
   readonly selected = computed(() => this.frames().find((f) => f.id === this.selectedId()) ?? this.frames()[0]!);
   /** The width the selected frame renders at, and the Tailwind breakpoint it reaches (TASK-56.6 drives its variants from these). */
@@ -144,7 +149,9 @@ export class FrameSet {
       this.frames.set(frames);
       this.selectedId.set(frames[0]!.id);
     }
+    this.chrome.set(settings.chrome ?? null);
     this.#loaded = true;
+    this.settled.set(true);
   }
 
   // --- frames -------------------------------------------------------------
@@ -217,9 +224,25 @@ export class FrameSet {
     return preset;
   }
 
+  /** A new frame with the same size, device and orientation as this one. */
+  duplicate(id: string) {
+    const c = this.frames().find((f) => f.config().id === id)?.config();
+    if (!c) return null;
+    const added = this.add(c.presetId ?? undefined);
+    if (!added) return null;
+    if (!c.presetId) this.update(added.config().id, { width: c.width, height: c.height, dpr: c.dpr, name: c.name, presetId: null });
+    if (c.landscape) this.rotate(added.config().id);
+    return added;
+  }
+
   deletePreset(presetId: string): void {
     this.saved.update((all) => all.filter((p) => p.id !== presetId));
     for (const f of this.frames()) if (f.config().presetId === presetId) f.config.update((c) => ({ ...c, presetId: null }));
+    this.#persist();
+  }
+
+  setChrome(chrome: ChromeSettings): void {
+    this.chrome.set(chrome);
     this.#persist();
   }
 
@@ -266,7 +289,8 @@ export class FrameSet {
     if (!this.#loaded) return;
     clearTimeout(this.#saveTimer);
     this.#saveTimer = setTimeout(() => {
-      const settings: ProjectSettings = { presets: this.saved(), frames: this.frames().map((f) => f.config()), sync: this.sync() };
+      const chrome = this.chrome();
+      const settings: ProjectSettings = { presets: this.saved(), frames: this.frames().map((f) => f.config()), sync: this.sync(), ...(chrome ? { chrome } : {}) };
       void this.#host.api("/api/devices/settings", settings).catch(() => undefined);
     }, 400);
   }

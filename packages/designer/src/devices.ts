@@ -44,6 +44,20 @@ export interface ProjectSettings {
   presets: DevicePreset[];
   frames: FrameConfig[] | null;
   sync: boolean;
+  /** The shell's own chrome: theme, open tabs and panel sizes. Left out until the shell has saved it. */
+  chrome?: ChromeSettings;
+}
+
+/** What the window remembers per project. Not in localStorage: the desktop window's origin changes with every launch. */
+export interface ChromeSettings {
+  theme: "system" | "light" | "dark";
+  /** Left, centre and right widths in percent, or null for the defaults. */
+  panels: number[] | null;
+  /** Canvas and drawer heights in percent while the drawer is open, or null for the defaults. */
+  column: number[] | null;
+  drawerOpen: boolean;
+  drawerTab: string;
+  rightTab: string;
 }
 
 export const EMPTY_SETTINGS: ProjectSettings = { presets: [], frames: null, sync: false };
@@ -138,6 +152,23 @@ export function unsupported(caps: Capabilities): Array<{ part: EmulationPart; wh
   return out;
 }
 
+const percents = (value: unknown, count: number): number[] | null =>
+  Array.isArray(value) && value.length === count && value.every((n) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 100) ? (value as number[]) : null;
+
+function sanitizeChrome(value: unknown): ChromeSettings | null {
+  if (!value || typeof value !== "object") return null;
+  const c = value as Partial<ChromeSettings>;
+  const tab = (s: unknown, fallback: string) => (typeof s === "string" && /^[a-z]{1,20}$/.test(s) ? s : fallback);
+  return {
+    theme: c.theme === "light" || c.theme === "dark" ? c.theme : "system",
+    panels: percents(c.panels, 3),
+    column: percents(c.column, 2),
+    drawerOpen: c.drawerOpen === true,
+    drawerTab: tab(c.drawerTab, "code"),
+    rightTab: tab(c.rightTab, "style"),
+  };
+}
+
 /** Normalises a settings file read from disk: anything malformed is dropped rather than trusted. */
 export function sanitizeSettings(value: unknown): ProjectSettings {
   const v = (value ?? {}) as Partial<ProjectSettings>;
@@ -166,5 +197,6 @@ export function sanitizeSettings(value: unknown): ProjectSettings {
         }),
       )
     : null;
-  return { presets, frames: frames && frames.length ? frames : null, sync: v.sync === true };
+  const chrome = sanitizeChrome(v.chrome);
+  return { presets, frames: frames && frames.length ? frames : null, sync: v.sync === true, ...(chrome ? { chrome } : {}) };
 }

@@ -230,6 +230,19 @@ export class DesignerState {
     }
   }
 
+  /** A path as the panels show it: relative to the project when it is inside it. */
+  relative(file: string): string {
+    const root = this.project()?.root.replaceAll("\\", "/").replace(/\/$/, "");
+    const path = file.replaceAll("\\", "/");
+    return root && path.startsWith(root + "/") ? path.slice(root.length + 1) : file;
+  }
+
+  #actionSeq = 0;
+  /** A diagnostic badge on the canvas was clicked (the shell opens Problems). */
+  badgeClicks = signal(0);
+  /** The last button pressed on the selection's floating toolbar (the shell performs it). */
+  canvasAction = signal<{ action: "parent" | "move-up" | "move-down" | "delete"; id: string; seq: number } | null>(null);
+
   #onAgent(m: AgentEvent): void {
     switch (m.type) {
       case "ready":
@@ -249,6 +262,10 @@ export class DesignerState {
         void this.#picked(m.node, m.chain, m.component);
         break;
       case "badge":
+        this.badgeClicks.update((n) => n + 1);
+        break;
+      case "action":
+        this.canvasAction.set({ action: m.action, id: m.id, seq: this.#actionSeq++ });
         break;
       case "event":
         this.#onEvent(m.event);

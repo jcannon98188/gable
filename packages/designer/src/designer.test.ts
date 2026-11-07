@@ -169,6 +169,15 @@ describe("device geometry", () => {
     expect(clean.presets[0]).toMatchObject({ name: "Mine", width: MIN_SIZE, height: MAX_SIZE, dpr: 5, emulation: { touch: true, colorScheme: "auto", userAgent: null } });
     expect(clean.frames).toHaveLength(MAX_FRAMES);
   });
+
+  it("keeps the shell's remembered chrome only when it is well formed", () => {
+    expect(sanitizeSettings({}).chrome).toBeUndefined();
+    const good = sanitizeSettings({ chrome: { theme: "dark", panels: [20, 55, 25], column: [70, 30], drawerOpen: true, drawerTab: "problems", rightTab: "content" } });
+    expect(good.chrome).toEqual({ theme: "dark", panels: [20, 55, 25], column: [70, 30], drawerOpen: true, drawerTab: "problems", rightTab: "content" });
+    const bad = sanitizeSettings({ chrome: { theme: "sepia", panels: [1, "x"], column: "no", drawerOpen: "yes", drawerTab: "<script>", rightTab: 3 } });
+    expect(bad.chrome).toMatchObject({ theme: "system", drawerOpen: false, drawerTab: "code", rightTab: "style" });
+    expect(bad.chrome?.panels).not.toEqual([1, "x"]);
+  });
 });
 
 describe("the frame's session in window.name", () => {

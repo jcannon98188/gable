@@ -3,7 +3,7 @@
 //
 //   node e2e/tailwind-check.mjs --port 9444 --shell 127.0.0.1:5190 [--cdp|--no-cdp] [--off] [--source <file>] [--shot dir]
 //
-// It drives the shell like a user (click a node on the canvas, use the Tailwind tab) and reads what the frames report about
+// It drives the shell like a user (click a node on the canvas, use the Style tab) and reads what the frames report about
 // themselves (computed styles in the previewed page) and what lands in the source file, so it proves the edit, the
 // breakpoint prefix and the forced states really happened, not just that the shell asked. `--source` is the file holding
 // the `<h1 class="text-2xl font-semibold tracking-tight">` the check edits (it is restored at the end).
@@ -49,18 +49,18 @@ const frame = async () => (await browser.frames()).find((f) => true);
 const inFrame = async (expr) => (await frame()).ev(expr);
 
 try {
-  await until(async () => (await text()).includes(off ? "Gable Designer" : "ready"), "the shell is connected");
+  await until(async () => (await text()).includes(off ? "Gable Designer" : "Connected"), "the shell is connected");
   await sleep(1500);
-  await clickButton(`b.textContent.trim() === "Tailwind"`);
+  await clickButton(`b.textContent.trim() === "Style"`);
   await sleep(400);
 
   if (off) {
     const t = await text();
     check(/Tailwind mode is off: /.test(t), "a project without Tailwind v4 shows Tailwind mode as off with the reason", (/Tailwind mode is off: ([^\n]*)/.exec(t) ?? [])[1]);
     check(!(await ev(`!!document.querySelector('[data-part="palette"]')`)), "no palette or style panels are shown while it is off");
-    await clickButton(`b.textContent.trim() === "Edit"`);
+    await clickButton(`b.textContent.trim() === "Content"`);
     await sleep(300);
-    check((await text()).includes("Undo"), "the Edit tab still works when Tailwind mode is off");
+    check((await text()).includes("Undo"), "the Content tab still works when Tailwind mode is off");
     process.exit(failed ? 1 : 0);
   }
 
@@ -77,7 +77,7 @@ try {
   await until(async () => (await text()).includes("<h1>"), "the h1 is selected");
   await sleep(800);
   const t1 = (await text()).replace(/\s+/g, " ");
-  check(/Tailwind 4\.\d+\.\d+/.test(t1), "the Tailwind tab shows the design system's version and entry stylesheet");
+  check(/Tailwind 4\.\d+\.\d+/.test(t1), "the Style tab shows the design system's version and entry stylesheet");
   check(/xl: 1280px and up/.test(t1), "the selected frame (1280 wide) reaches the project's xl breakpoint", (/(\w+: \d+px and up|base)/.exec(t1) ?? [])[1]);
   for (const s of ["Layout", "Size", "Spacing", "Typography", "Color", "Border & radius", "Shadow & effects"]) check(t1.toLowerCase().includes(s.toLowerCase()), `style panel: ${s}`);
   check(/text-2xl/.test(t1) && /font-semibold/.test(t1), "the element's classes are listed");
@@ -117,7 +117,7 @@ try {
   await sleep(1500);
 
   // Mobile-first: at a phone width the xl value does not apply, at xl it is overridden.
-  await clickButton(`b.textContent.trim() === "Tailwind"`);
+  await clickButton(`b.textContent.trim() === "Style"`);
   const paddingOf = () => inFrame(`getComputedStyle(document.querySelector("main h1")).paddingTop`);
   check((await paddingOf()) === "24px", "the canvas shows xl:p-6 at 1280 wide", await paddingOf());
   await ev(`(() => { const s = document.querySelector('select[aria-label="Device"]'); s.value = "iphone-15"; s.dispatchEvent(new Event("change", { bubbles: true })); })()`);
