@@ -167,6 +167,8 @@ export class EditPanel {
             <button uiButton variant="outline" size="sm" class="btn sm" [disabled]="!n.next" (click)="moveDown()">Move down</button>
             <button uiButton variant="outline" size="sm" class="btn sm" (click)="remove()">Delete</button>
             <button uiButton variant="ghost" size="sm" class="btn sm" (click)="chrome.dialog.set('extract')">Extract to component…</button>
+            <button uiButton variant="ghost" size="sm" class="btn sm" data-part="rename-component" (click)="chrome.dialog.set('rename')">Rename component…</button>
+            <button uiButton variant="ghost" size="sm" class="btn sm" data-part="find-uses" (click)="chrome.dialog.set('find-uses')">Find uses…</button>
           </div>
         </div>
       } @else {

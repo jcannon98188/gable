@@ -140,6 +140,11 @@ export class Dialogs {
             <span class="flex items-center gap-2"><input type="checkbox" data-part="extract-all" [checked]="extractAll()" (change)="extractAll.set($event.currentTarget.checked)" />Replace all {{ extractCopies() }} identical copies here</span>
           </label>
         }
+        @if (extractPropsOffered()) {
+          <label class="form-row"><span>Props</span>
+            <span class="flex items-center gap-2"><input type="checkbox" data-part="extract-props" [checked]="extractProps()" (change)="extractProps.set($event.currentTarget.checked)" />Pass {{ extractPropNames() }} as inputs</span>
+          </label>
+        }
         @if (extractWhy()) {
           <p class="callout warn" role="status" data-part="extract-why">{{ extractWhy() }}</p>
         }
@@ -196,6 +201,8 @@ export class Dialogs {
 
   extractName = signal("");
   extractAll = signal(true);
+  /** Carry the selection's signal reads over as inputs of the new component. */
+  extractProps = signal(false);
   extractError = signal("");
   scenarioName = signal("");
   scenarioDescription = signal("");
@@ -365,12 +372,31 @@ export class Dialogs {
   extractUsage = computed(() => {
     if (!this.#validName()) return "-";
     const tag = this.#kebab().startsWith("app-") ? this.#kebab() : `app-${this.#kebab()}`;
-    return `<${tag}></${tag}>`;
+    return `<${tag}${this.#propNames().map((p) => ` [${p}]="${p}()"`).join("")}></${tag}>`;
   });
   #check = computed(() => this.edit.node()?.extract ?? null);
+  /** The signal reads that can become inputs, when the selection is not static markup but only reads signals. */
+  #propNames = computed(() => {
+    const c = this.#check();
+    if (!c || !this.extractProps()) return [] as string[];
+    return c.ok ? (c.props ?? []) : (c.withProps?.props ?? []);
+  });
+  extractPropsOffered = computed(() => {
+    const c = this.#check();
+    return !!c && !c.ok && !!c.withProps;
+  });
+  extractPropNames = computed(() => {
+    const c = this.#check();
+    return c && !c.ok && c.withProps ? c.withProps.props.join(", ") : "";
+  });
+  #extractable = computed(() => {
+    const c = this.#check();
+    return !!c && (c.ok || (!!c.withProps && this.extractProps()));
+  });
   extractCopies = computed(() => {
     const c = this.#check();
-    return c && c.ok ? c.copies : 0;
+    if (!c) return 0;
+    return c.ok ? c.copies : this.extractProps() && c.withProps ? c.withProps.copies : 0;
   });
   extractWhy = computed(() => {
     if (!this.state.picked()) return "Select an element on the canvas first.";
@@ -378,11 +404,11 @@ export class Dialogs {
     const refused = this.edit.refused();
     if (refused) return refused;
     const c = this.#check();
-    if (c && !c.ok) return c.why;
+    if (c && !c.ok && !(c.withProps && this.extractProps())) return c.why;
     if (this.#extractName() && !this.#validName()) return "Name the component in PascalCase, such as ProductCard.";
     return "";
   });
-  canExtract = computed(() => this.#validName() && !!this.#check()?.ok && !this.extractWhy() && !this.edit.busy());
+  canExtract = computed(() => this.#validName() && this.#extractable() && !this.extractWhy() && !this.edit.busy());
 
   #resetExtract = effect(() => {
     if (!this.extract()) return;
@@ -393,10 +419,12 @@ export class Dialogs {
     if (!this.canExtract()) return;
     const name = this.#extractName();
     const all = this.extractCopies() > 1 && this.extractAll();
-    const r = await this.edit.edit((target) => ({ op: "extract", target, name, all }));
+    const props = this.extractProps() && this.extractPropsOffered();
+    const r = await this.edit.edit((target) => ({ op: "extract", target, name, all, ...(props ? { props } : {}) }));
     if (!r) return;
     if (!r.ok) return void this.extractError.set(r.error);
     this.extractName.set("");
+    this.extractProps.set(false);
     this.close();
   }
 

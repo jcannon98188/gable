@@ -12,6 +12,7 @@ import { CommandPalette } from "./commands.js";
 import { ControlChannel } from "./control-channel.js";
 import { DesignerState } from "./designer-state.js";
 import { Dialogs } from "./dialogs.js";
+import { RefactorDialogs } from "./refactor-dialogs.js";
 import { DrawerBody, DrawerTabs } from "./drawer.js";
 import { EditPanel } from "./edit-panel.js";
 import { EditState } from "./edit-state.js";
@@ -133,7 +134,7 @@ export class TopBar {
 export class Shell {
   static meta = {
     selector: "app-root",
-    imports: [TopBar, DeviceBar, FrameBoard, DrawerBody, DrawerTabs, StructurePanel, InsertPanel, RoutesPanel, Inspector, EditPanel, TailwindPanel, TokensPanel, CommandPalette, Dialogs, UiToaster, UiTabs, UiTab, UiResizablePanelGroup, UiResizablePanel, UiResizableHandle],
+    imports: [TopBar, DeviceBar, FrameBoard, DrawerBody, DrawerTabs, StructurePanel, InsertPanel, RoutesPanel, Inspector, EditPanel, TailwindPanel, TokensPanel, CommandPalette, Dialogs, RefactorDialogs, UiToaster, UiTabs, UiTab, UiResizablePanelGroup, UiResizablePanel, UiResizableHandle],
     template: html`
       <div class="grid h-screen grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden">
         <app-top-bar></app-top-bar>
@@ -179,6 +180,7 @@ export class Shell {
         </ui-resizable-panel-group>
       </div>
       <app-dialogs></app-dialogs>
+      <app-refactor-dialogs></app-refactor-dialogs>
       <app-command-palette></app-command-palette>
       <ui-toaster position="bottom-right" [limit]="3"></ui-toaster>
     `,

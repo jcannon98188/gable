@@ -60,6 +60,55 @@ function dynamicPart(el: El): string | null {
   return items(el.items);
 }
 
+const READ = /^\s*([A-Za-z_$][\w$]*)\(\)\s*$/;
+
+/**
+ * The signal reads of the subtree when every dynamic part is one (`[title]="title()"`, `{{ title() }}`), so each can become an
+ * input of the new component; otherwise why not. Events, references, blocks, models and any other expression are code the
+ * Designer will not write for you.
+ */
+function propReads(el: El, body: string): { props: string[] } | { why: string } {
+  const locals = new Set<string>();
+  for (const m of body.matchAll(/@for\s*\(\s*([\w$]+)\s+of\b/g)) locals.add(m[1]!);
+  for (const m of body.matchAll(/@let\s+([\w$]+)/g)) locals.add(m[1]!);
+  const props: string[] = [];
+  const read = (expr: string, where: string): string | null => {
+    const m = READ.exec(expr);
+    if (!m) return `${where} reads \`${expr.trim()}\`, which is not a plain signal read like title(), so it cannot become an input`;
+    if (locals.has(m[1]!)) return `${where} reads ${m[1]}, which a block of this template declares`;
+    if (!props.includes(m[1]!)) props.push(m[1]!);
+    return null;
+  };
+  const visit = (e: El): string | null => {
+    for (const a of e.attrInfo) {
+      const where = `<${e.name} ${a.name}>`;
+      if (a.name === "i18n" || a.name.startsWith("i18n-")) return `<${e.name}> is translatable (${a.name})`;
+      if (a.name.startsWith("(")) return `<${e.name}> has ${a.name} (an event handler: outputs are code to write)`;
+      if (a.name.startsWith("#")) return `<${e.name}> has ${a.name} (a template reference)`;
+      if (a.name.startsWith("[(")) return `<${e.name}> has a two-way binding ${a.name}`;
+      if (a.name.startsWith("[")) {
+        const bad = read(a.valueStart < 0 ? "" : body.slice(a.valueStart, a.valueEnd), where);
+        if (bad) return bad;
+      } else if (!STATIC_ATTR.test(a.name) || a.text.includes("{{")) return `${where} is not plain markup`;
+    }
+    for (const it of e.items) {
+      if (it.k === "el") {
+        const bad = visit(it);
+        if (bad) return bad;
+      } else if (it.k === "word" && it.text.includes("{{")) {
+        for (const m of it.text.matchAll(/\{\{([^}]*)\}\}/g)) {
+          const bad = read(m[1]!, `<${e.name}>`);
+          if (bad) return bad;
+        }
+      } else if (it.k === "chain") return `<${e.name}> holds a ${it.parts[0]!.head.replace(/\s*\(.*$|\s*\{$/, "")} block`;
+      else if (it.k === "let") return `<${e.name}> declares ${it.text.trim()}`;
+    }
+    return null;
+  };
+  const why = visit(el);
+  return why ? { why } : { props };
+}
+
 const normalized = (body: string, el: El) => body.slice(el.start, el.end).replace(/\n[ \t]*/g, "\n");
 
 /** The elements of the template written exactly like `entry`'s (whitespace at line starts aside), itself included. */
@@ -77,9 +126,13 @@ function copiesOf(body: string, entries: Entry[], entry: Entry): Entry[] {
 /** Whether an element can be extracted, for the Inspector and the dialog (shown before anything is tried). */
 export function extractCheck(body: string, tree: TemplateItem[], entry: Entry): ExtractCheck {
   if (!entry.el.closed && !entry.el.selfClose) return { ok: false, why: `<${entry.el.name}> has no closing tag.` };
+  const copies = copiesOf(body, elementsOf(tree), entry).length;
   const d = dynamicPart(entry.el);
-  if (d) return { ok: false, why: `Only static markup can be extracted: ${d}, which reads this component's state.` };
-  return { ok: true, copies: copiesOf(body, elementsOf(tree), entry).length };
+  if (d) {
+    const p = propReads(entry.el, body);
+    return { ok: false, why: `Only static markup can be extracted: ${d}, which reads this component's state.`, ...("props" in p ? { withProps: { props: p.props, copies } } : {}) };
+  }
+  return { ok: true, copies };
 }
 
 /** `ProductCard` → `product-card`, `HTMLCard` → `html-card`. */
@@ -90,7 +143,7 @@ export const kebab = (name: string) =>
     .toLowerCase();
 
 /** Does `selector` (`app-x`, `li[app-x]`, `[uiButton]`) select this element? Selectors of other shapes never match. */
-function selects(selector: string, el: El): boolean {
+export function selects(selector: string, el: El): boolean {
   const m = /^([a-zA-Z][\w-]*)?((?:\[[\w-]+(?:=[^\]]*)?\])*)$/.exec(selector.trim());
   if (!m || (!m[1] && !m[2])) return false;
   if (m[1] && m[1].toLowerCase() !== el.name.toLowerCase()) return false;
@@ -120,6 +173,24 @@ function componentsUsed(el: El, palette: PaletteEntry[]): ComponentRef[] | EditE
 /** Elements whose parent expects them as direct children (a `<li>` in a `<ul>`): extracting leaves a custom element there instead. */
 const PLACED = new Set(["li", "tr", "td", "th", "thead", "tbody", "tfoot", "caption", "col", "colgroup", "option", "optgroup", "dt", "dd", "summary", "legend", "source", "track"]);
 
+const PLAIN = "(?:string|number|boolean|bigint|null|undefined|unknown)(?:\\[\\])?";
+const PLAIN_TYPE = new RegExp(`^${PLAIN}(?:\\s*\\|\\s*${PLAIN})*$`);
+
+/** The type argument of the field `name = signal<T>(...)` (or input, computed, model) when it is a built-in type the new file needs no import for; else unknown. */
+function inputType(text: string, name: string): string {
+  const m = new RegExp(`(?:^|\\n)[ \\t]*(?:readonly[ \\t]+)?${name.replace(/\$/g, "\\$")}[ \\t]*=[ \\t]*(?:signal|input|input\\.required|computed|model)[ \\t]*<`).exec(text);
+  if (!m) return "unknown";
+  let depth = 1;
+  let i = m.index + m[0].length;
+  const start = i;
+  for (; i < text.length && depth > 0; i++) {
+    if (text[i] === "<") depth++;
+    else if (text[i] === ">" && text[i - 1] !== "=") depth--;
+  }
+  const arg = text.slice(start, i - 1).trim();
+  return PLAIN_TYPE.test(arg) ? arg : "unknown";
+}
+
 export function planExtract(ctx: ExtractCtx, op: ExtractOp): ExtractPlan | EditError {
   const name = op.name.trim();
   if (!/^[A-Z][A-Za-z0-9]*$/.test(name)) return fail("invalid", "Name the component in PascalCase, such as ProductCard.");
@@ -140,7 +211,14 @@ export function planExtract(ctx: ExtractCtx, op: ExtractOp): ExtractPlan | EditE
   const entry = findTarget(entries, op.target);
   if ("ok" in entry) return entry;
   const check = extractCheck(body, tree, entry);
-  if (!check.ok) return fail("readonly", check.why);
+  if (!check.ok && !(op.props && check.withProps)) {
+    if (op.props) {
+      const p = propReads(entry.el, body);
+      return fail("readonly", `Cannot extract with props: ${"why" in p ? p.why : check.why}.`);
+    }
+    return fail("readonly", check.why + (check.withProps ? " Extract with props to carry its signal reads over as inputs." : ""));
+  }
+  const props = op.props ? (check.ok ? (check.props ?? []) : check.withProps!.props) : [];
   const used = componentsUsed(entry.el, palette);
   if ("ok" in used) return used;
 
@@ -151,15 +229,18 @@ export function planExtract(ctx: ExtractCtx, op: ExtractOp): ExtractPlan | EditE
   const spec = htmlImport?.[2] ?? "@gable/core";
   const unit = fo.useTabs ? "\t" : " ".repeat(fo.indentSize);
   const markup = formatTemplate(body.slice(entry.el.start, entry.el.end), { indentSize: fo.indentSize, useTabs: fo.useTabs, printWidth: Infinity });
+  const typed = props.map((p) => ({ name: p, type: inputType(text, p) }));
+  const propsBlock = typed.length ? `\n${typed.map((p) => `${unit}${p.name} = input.required<${p.type}>();\n`).join("")}` : "";
   const importsLine = used.length ? `${unit}${unit}imports: [${used.map((u) => u.name).join(", ")}],\n` : "";
   let created =
-    `import { html } from ${quote}${spec}${quote}${semi}\n\n` +
+    `import { ${props.length ? "html, input" : "html"} } from ${quote}${spec}${quote}${semi}\n\n` +
     `export class ${name} {\n` +
     `${unit}static meta = {\n` +
     `${unit}${unit}selector: ${quote}${tag}${quote},\n` +
     importsLine +
     `${unit}${unit}template: html\`\n${markup}\n\`,\n` +
     `${unit}};\n` +
+    propsBlock +
     `}\n`;
   const span = findHtmlLiterals(created)[0]!;
   created = created.slice(0, span.open) + formatTemplateLiteral(created, span, fo) + created.slice(span.close);
@@ -173,7 +254,7 @@ export function planExtract(ctx: ExtractCtx, op: ExtractOp): ExtractPlan | EditE
 
   // --- the source: the element (and its copies) replaced, the class imported ----------------------------------------
   const replaced = op.all ? copiesOf(body, entries, entry) : [entry];
-  const usage = `<${tag}></${tag}>`;
+  const usage = `<${tag}${props.map((p) => ` [${p}]="${p}()"`).join("")}></${tag}>`;
   const applied = applyPlan(text, lit, entry, { label: "", hunks: replaced.map((e) => ({ start: e.el.start, end: e.el.end, text: usage })), select: { startOffset: entry.el.start } }, fo);
   const hunks: Hunk[] = applied.hunk ? [{ start: lit.open + applied.hunk.start, end: lit.open + applied.hunk.end, text: applied.hunk.text }] : [];
   const metaHunks = ensureMetaImport(text, lit.open, name);
@@ -190,6 +271,9 @@ export function planExtract(ctx: ExtractCtx, op: ExtractOp): ExtractPlan | EditE
   const meta = metaAround(text, lit.open);
   const encapsulation = meta?.props.find((p) => p.key === "encapsulation");
   const scopedStyles = meta?.props.some((p) => p.key === "styles") && !(encapsulation && /^['"]none['"]$/.test(text.slice(encapsulation.valueStart, encapsulation.valueEnd)));
+  const untyped = typed.filter((p) => p.type === "unknown").map((p) => p.name);
+  if (props.length) notes.push(`${props.length === 1 ? "The input" : "The inputs"} ${props.join(", ")} ${props.length === 1 ? "is" : "are"} passed as ${props.map((p) => `[${p}]="${p}()"`).join(" ")}.`);
+  if (untyped.length) notes.push(`${untyped.join(", ")} ${untyped.length === 1 ? "is" : "are"} typed unknown on ${name}: give ${untyped.length === 1 ? "it its type" : "them their types"}.`);
   if (scopedStyles) notes.push(`The scoped styles of ${ctx.rel} do not reach ${name}: move the rules its markup needs.`);
   if (PLACED.has(entry.el.name.toLowerCase())) notes.push(`<${entry.el.name}> is now inside <${tag}>, so its parent has a custom element where it expects <${entry.el.name}>.`);
   const label = `Extract ${name}` + (replaced.length > 1 ? ` (${replaced.length} places)` : "");

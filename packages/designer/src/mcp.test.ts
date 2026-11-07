@@ -303,6 +303,47 @@ describe("mcp: tools against the fixture", () => {
     }
   });
 
+  it("finds uses, renames a component across files as one undo step, and extracts a component", async () => {
+    const root = copyFixture();
+    const m = await connect(root);
+    const scenes = join(root, "src/card.scenes.ts");
+    try {
+      const names = (await m.client.listTools()).tools.map((t) => t.name);
+      for (const n of ["find_uses", "rename_component", "extract_component"]) expect(names).toContain(n);
+      expect((await m.client.listTools()).tools.find((t) => t.name === "find_uses")!.annotations?.readOnlyHint).toBe(true);
+
+      const uses = jsonOf<{ count: number; declaration: { file: string; selector: string }; uses: Array<{ kind: string; file: string; line: number }> }>(await m.call("find_uses", { kind: "component", name: "ProfileCard" }));
+      expect(uses.declaration).toMatchObject({ file: CARD, selector: "app-profile-card" });
+      expect(uses.uses.map((u) => u.kind + "@" + u.file)).toEqual(expect.arrayContaining(["declaration@src/card.ts", "import@src/card.scenes.ts", "reference@src/card.scenes.ts"]));
+      const classes = jsonOf<{ uses: Array<{ kind: string }> }>(await m.call("find_uses", { kind: "class", name: "font-bold" }));
+      expect(classes.uses.map((u) => u.kind)).toEqual(["class-attr"]);
+      expect((await m.call("find_uses", { kind: "component", name: "Nope" })).isError).toBe(true);
+
+      const before = { card: readFileSync(join(root, CARD), "utf8"), scenes: readFileSync(scenes, "utf8") };
+      const r = jsonOf<{ ok: boolean; changed: string[]; note: string; label: string }>(await m.call("rename_component", { from: "ProfileCard", to: "ProfileBadge", selector: "app-profile-badge" }));
+      expect(r.changed).toEqual([CARD, "src/card.scenes.ts"]);
+      expect(r.label).toContain("Rename ProfileCard to ProfileBadge");
+      expect(readFileSync(join(root, CARD), "utf8")).toContain("export class ProfileBadge {");
+      expect(readFileSync(join(root, CARD), "utf8")).toContain('selector: "app-profile-badge"');
+      expect(readFileSync(scenes, "utf8")).toContain("component: ProfileBadge,");
+      expect(jsonOf<{ undo: unknown[] }>(await m.call("get_history")).undo).toHaveLength(1);
+      expect((await m.call("rename_component", { from: "ProfileBadge", to: "AboutPage" })).isError).toBe(true);
+      jsonOf(await m.call("undo"));
+      expect(readFileSync(join(root, CARD), "utf8")).toBe(before.card);
+      expect(readFileSync(scenes, "utf8")).toBe(before.scenes);
+
+      // extract: static markup moves; a handler is refused with the reason
+      const ex = jsonOf<{ created: string[]; diff: string }>(await m.call("extract_component", { target: at(root, "<p>Analyst"), name: "Role" }));
+      expect(ex.created).toEqual(["src/role.ts"]);
+      expect(readFileSync(join(root, "src/role.ts"), "utf8")).toContain("<p>Analyst</p>");
+      const refused = await m.call("extract_component", { target: at(root, "<button"), name: "FollowAction", props: true });
+      expect(refused.isError).toBe(true);
+      expect(textOf(refused)).toMatch(/event handler/);
+    } finally {
+      await m.close();
+    }
+  });
+
   it("inserts, wraps, moves and deletes elements", async () => {
     const root = copyFixture();
     const m = await connect(root);

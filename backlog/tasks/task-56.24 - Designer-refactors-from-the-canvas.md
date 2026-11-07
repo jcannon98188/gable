@@ -1,9 +1,11 @@
 ---
 id: TASK-56.24
 title: 'Designer: refactors from the canvas'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-07T18:28:00Z'
+updated_date: '2026-11-07T20:17:00Z'
 labels:
   - needs-triage
 dependencies: []

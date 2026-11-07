@@ -489,6 +489,38 @@ puts the fixture's stylesheet back byte for byte:
 npm run build -w packages/designer && node packages/designer/e2e/tokens-check.mjs [--browser <path>] [--shot <file>]
 ```
 
+## Refactors
+
+Three refactors work from the canvas, each a set of minimal text patches through the edit service that undo as **one step**
+over every file they touch (`HistoryItem.files`; a file a refactor created is removed by its undo):
+
+- **Rename component** (Inspector Structure, or the palette: *Rename component…*). Select any element of the component, type the
+  new class name. The class is renamed where it is declared, imported (an aliased `X as Y` import renames only the specifier),
+  re-exported (barrels are followed), listed in `imports`, and used in code. With *Also rename it* the selector follows: the
+  meta `selector`, every template that uses the tag, and stylesheet rules on the tag. A tag, or a tag with one attribute
+  (`li[app-x]`), keeps its shape. A name already taken in a touched file, or by another component, is refused before anything
+  is written. The op is `{ op: "renameComponent", from, to, file?, selector? }`.
+- **Find uses** (Inspector Structure, or *Find uses…*). A component: its declaration, imports, exports, `imports` lists, other
+  code references and the templates that use it. A CSS class: `class` attributes, `[class.x]` bindings, host bindings and
+  stylesheet rules. A use in a template selects its element on the canvas (the existing `nodeAt` and `selectNode` preview
+  calls: no new protocol method, no new stream). `POST /api/refactor/uses` answers it.
+- **Extract with props** (the Extract dialog's *Pass … as inputs*). Extract moved only static markup. With `props` (op
+  `extract`, option `props: true`) each plain signal read the markup makes (`title()`, in a binding or `{{ }}`) becomes an
+  `input.required` of the new component and is bound at the use (`<app-x [title]="title()">`). Inputs are typed `unknown`
+  unless the field is declared with a built-in type. Events, template refs, blocks, models and other expressions are refused,
+  and the dialog says why.
+
+MCP: `find_uses` (read-only; a template use carries `select.target` for `select_element`), `rename_component`,
+`extract_component` (`props`, `all`). Edit results now also carry `created`, `changed` and `note`.
+
+Limits: a rename keeps the file's name; mentions inside strings and comments are not renamed, and `note` counts them; a
+selector rename covers a tag or tag-with-attribute only. Run it against test-fixtures/refactor-app, which it restores byte for
+byte:
+
+```
+npm run build -w packages/designer && node packages/designer/e2e/refactor-check.mjs [--browser <path>]
+```
+
 ## Agents (MCP)
 
 The backend hosts an [MCP](https://modelcontextprotocol.io) server (`src/server/mcp/`, official TypeScript SDK) so a coding agent
@@ -509,9 +541,9 @@ left out to mean the element selected in the window.
 
 | Group | Tools |
 | --- | --- |
-| Read | `get_status` (call first), `list_components`, `list_scenes`, `list_routes`, `get_problems`, `get_history`, `describe_element`, `get_selection`, `get_styles`, `get_tree`, `get_signals`, `get_hmr_timeline`, `get_http_log`, `get_performance`, `list_tokens`, `get_token_usages`, `get_scene_state` |
+| Read | `get_status` (call first), `list_components`, `list_scenes`, `list_routes`, `get_problems`, `get_history`, `describe_element`, `get_selection`, `get_styles`, `get_tree`, `get_signals`, `get_hmr_timeline`, `get_http_log`, `get_performance`, `list_tokens`, `get_token_usages`, `find_uses`, `get_scene_state` |
 | Window | `set_mode`, `show_page`, `show_component`, `set_scene`, `set_scenario`, `navigate`, `add_frame`, `update_frame`, `remove_frame`, `select_frame`, `select_element` (by position or CSS selector) |
-| Edit | `edit_text`, `set_attribute`, `bind`, `insert_element`, `delete_element`, `move_element`, `wrap_element`, `set_component_meta`, `set_css`, `edit_classes` (Tailwind, at a breakpoint and state), `set_token`, `save_scenario`, `undo`, `redo` |
+| Edit | `edit_text`, `set_attribute`, `bind`, `insert_element`, `delete_element`, `move_element`, `wrap_element`, `set_component_meta`, `set_css`, `edit_classes` (Tailwind, at a breakpoint and state), `set_token`, `rename_component`, `extract_component`, `save_scenario`, `undo`, `redo` |
 | App state | `set_signal`, `pin_signal`: write the running app's signals (not the source); `get_signal_history`, `travel_signal_history` (a step, `start` or `live`), `clear_signal_history`, `record_signal_history`: the State timeline |
 | Network | `get_network`, `set_network_condition`, `record_http`, `get_recording`, `save_recording_as_scenario`, `list_mocks`, `edit_mock`, `remove_mock` (see Network) |
 | Storage | `get_storage`, `set_storage_item`, `remove_storage_item`, `clear_storage`, `set_cookie`, `delete_cookie` (see Storage) |

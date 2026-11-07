@@ -12,6 +12,7 @@ import { applyHunks, applyWithReverse, hash, locate, type Hunk, type PatchHunk }
 import { ensureImport, ensureMetaImport, setMetaString } from "./meta.js";
 import { buildPalette } from "./palette.js";
 import { extractCheck, planExtract } from "./extract.js";
+import { findUses, planRename, type FindUsesQuery, type FindUsesResult } from "./refactor.js";
 import { planScene } from "./scenario.js";
 import { planMocks, type MockOp } from "./mocks.js";
 import { templateOutline, type OutlineRow } from "./outline.js";
@@ -172,6 +173,7 @@ export class EditService {
     if (op.op === "setCss") return this.#css(op);
     if (op.op === "setToken") return this.#token(op);
     if (op.op === "addScene") return this.#scene(op);
+    if (op.op === "renameComponent") return this.#rename(op);
     if (op.op === "addMockScene" || op.op === "setMock" || op.op === "removeMock") return this.#mocks(op);
     const t = this.#template(op.target);
     if ("ok" in t) return t;
@@ -282,6 +284,24 @@ export class EditService {
         // best effort: the write that failed is what gets reported
       }
     }
+  }
+
+  /** Every use of a component or a CSS class in the project's files (refactor.ts). */
+  findUses(query: FindUsesQuery): FindUsesResult {
+    try {
+      return findUses(this.root, query);
+    } catch (e) {
+      return fail("invalid", e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  /** A component renamed in every file that holds it: one history entry, so one undo. */
+  #rename(op: Extract<EditOp, { op: "renameComponent" }>): EditResult {
+    const planned = planRename(this.root, op);
+    if ("ok" in planned) return planned;
+    const files: FileWrite[] = planned.files.map((f) => ({ abs: f.abs, original: f.original, hunks: f.hunks }));
+    if (files.length === 0) return fail("nothing", "Nothing to rename.");
+    return this.#commitFiles(files, planned.label, null, { changed: files.map((f) => this.#rel(f.abs)), ...(planned.note ? { note: planned.note } : {}) });
   }
 
   #scene(op: Extract<EditOp, { op: "addScene" }>): EditResult {
