@@ -2,7 +2,7 @@ import { computed, effect, html, inject, signal } from "@gable/core";
 import { currentScope } from "@gable/core/internal";
 import { Router } from "@gable/core/router";
 import { ApiData } from "./api-data.js";
-import { GUIDES, loadGuide } from "./content.js";
+import { GUIDES, loadGuide, loadPackageGuide } from "./content.js";
 import { DocLink } from "./doc-link.js";
 import type { MarkdownDoc } from "./markdown.js";
 import { buildSearchIndex, search, type SearchEntry } from "./search.js";
@@ -107,8 +107,16 @@ export class DocsSearch {
         if (doc) guides.set(g.slug, doc);
       }),
     );
-    const [packages] = await Promise.all([this.api.loadAll(), loadGuides]);
-    this.index.set(buildSearchIndex(guides, packages));
+    const packages = await this.api.loadAll();
+    const packageGuides = new Map<string, MarkdownDoc>();
+    await Promise.all([
+      loadGuides,
+      ...packages.map(async (p) => {
+        const doc = await loadPackageGuide(p.slug).catch(() => null);
+        if (doc) packageGuides.set(p.slug, doc);
+      }),
+    ]);
+    this.index.set(buildSearchIndex(guides, packages, packageGuides));
   }
 
   onFocus(): void {

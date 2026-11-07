@@ -14,8 +14,10 @@
   },
   "dependencies": {
     "@gable/core": "*",
+    "@gable/editor": "*",
     "@gable/renderer-dom": "*",
     "@gable/store": "*",
+    "@tiptap/core": "^3.33.0",
     "rxjs": "^7.8.2"
   },
   "devDependencies": {

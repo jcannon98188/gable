@@ -39,7 +39,7 @@ export interface TableRow {
 
 export interface Block {
   key: number;
-  kind: "h1" | "h2" | "h3" | "h4" | "p" | "code" | "ul" | "ol" | "table" | "quote" | "hr";
+  kind: "h1" | "h2" | "h3" | "h4" | "p" | "code" | "ul" | "ol" | "table" | "quote" | "hr" | "demo";
   /** Headings: the anchor id. */
   id: string;
   /** Headings: `#id`, for the permalink. */
@@ -47,8 +47,9 @@ export interface Block {
   /** Headings: the plain text. */
   text: string;
   inlines: Inline[];
-  /** Fenced code. */
+  /** Fenced code: the language. A `demo`: the registered demo name. */
   lang: string;
+  /** Fenced code: the text. A `demo`: the optional caption (the fence body). */
   code: string;
   items: ListItem[];
   head: TableCell[];
@@ -195,7 +196,7 @@ export function parseInline(src: string, options: MarkdownOptions = {}, keys: Ke
 
 const plain = (inlines: readonly Inline[]) => inlines.map((i) => i.text).join("");
 
-const FENCE = /^\s{0,3}(`{3,}|~{3,})\s*([\w+#.-]*)[^`]*$/;
+const FENCE = /^\s{0,3}(`{3,}|~{3,})\s*([\w+#.-]*)([^`]*)$/;
 const HEADING = /^(#{1,4})\s+(.*?)\s*#*\s*$/;
 const BULLET = /^(\s*)([-*+])\s+(.*)$/;
 const ORDERED = /^(\s*)(\d+)[.)]\s+(.*)$/;
@@ -257,7 +258,10 @@ export function parseMarkdown(source: string, options: MarkdownOptions = {}): Ma
       i++;
       while (i < lines.length && !closer.test(lines[i]!)) body.push(lines[i++]!);
       i++;
-      push({ kind: "code", lang: fence[2] ?? "", code: body.join("\n") });
+      // A fence whose info string is `demo <name>` mounts a registered live demo; the body is an optional caption.
+      const demo = fence[2] === "demo" ? (fence[3] ?? "").trim().split(/\s+/)[0] : "";
+      if (demo) push({ kind: "demo", lang: demo, code: body.join("\n").trim() });
+      else push({ kind: "code", lang: fence[2] ?? "", code: body.join("\n") });
       continue;
     }
     if (/^\s*<!--.*-->\s*$/.test(line)) {
@@ -345,7 +349,7 @@ export function parseMarkdown(source: string, options: MarkdownOptions = {}): Ma
 export function markdownText(doc: MarkdownDoc): string {
   const parts: string[] = [];
   for (const b of doc.blocks) {
-    if (b.kind === "code" || b.kind === "hr") continue;
+    if (b.kind === "code" || b.kind === "hr" || b.kind === "demo") continue;
     if (b.kind === "ul" || b.kind === "ol") for (const it of b.items) parts.push(plain(it.inlines), ...it.sub.map((s) => plain(s.inlines)));
     else if (b.kind === "table") for (const r of b.rows) parts.push(...r.cells.map((c) => plain(c.inlines)));
     else parts.push(b.text || plain(b.inlines));

@@ -27,30 +27,51 @@ export const GUIDES: readonly Guide[] = [
 
 export const guideBySlug = (slug: string): Guide | undefined => GUIDES.find((g) => g.slug === slug);
 
-/** Guides each package page points at, until the package guides (TASK-95.3) bring their own content. */
+/** Guides each package page links under "Guides", next to its own package guide. */
 export const PACKAGE_GUIDES: Record<string, readonly string[]> = {
   core: ["router", "errors", "i18n", "accessibility", "performance", "devtools"],
   store: ["store"],
   "ui-primitives": ["ui-primitives"],
   ui: ["ui-items", "gable-ui-cli"],
   "gable-ui": ["gable-ui-cli"],
+  "devtools-extension": ["devtools"],
 };
+
+/** An application or tool with a package guide but no generated API reference (the extractor skips applications). */
+export interface AppPackage {
+  slug: string;
+  name: string;
+  description: string;
+}
+
+/** The application packages. They show in the docs menu, without an API link, once their guide (`docs/packages/<slug>.md`) exists. */
+export const APP_PACKAGES: readonly AppPackage[] = [
+  { slug: "designer", name: "designer", description: "The Gable Designer: inspect a running app, edit its source visually and drive it from a coding agent." },
+  { slug: "devtools-extension", name: "devtools-extension", description: "The browser devtools panel for Gable dev builds." },
+  { slug: "vscode", name: "vscode", description: "The VS Code extension: template diagnostics, completions and highlighting." },
+];
 
 type Loader = () => Promise<string>;
 // Lazy: each guide is its own chunk, fetched when its page (or the search index) first needs it.
 const RAW = import.meta.glob("../../../docs/*.md", { query: "?raw", import: "default" }) as Record<string, Loader>;
 const loaders = new Map<string, Loader>(Object.entries(RAW).map(([path, load]) => [path.replace(/^.*\/([^/]+)\.md$/, "$1"), load]));
 
-/** `./router.md#x` to `/docs/guides/router#x`; other relative paths to GitHub; absolute and `#` targets untouched. */
-export function resolveDocLink(href: string): { href: string; internal: boolean } | null {
+/**
+ * `./router.md#x` to `/docs/guides/router#x`; other relative paths to GitHub; absolute and `#` targets untouched.
+ * Relative paths resolve from `from` (default `docs`, where the guides live; package guides pass `docs/packages`, so
+ * `../router.md` is the router guide and `./store.md` is the store package page).
+ */
+export function resolveDocLink(href: string, from = "docs"): { href: string; internal: boolean } | null {
   if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith("#") || href.startsWith("/")) return { href, internal: false };
   const [path = "", frag = ""] = href.split("#");
-  const parts: string[] = ["docs"];
+  const parts: string[] = from.split("/");
   for (const seg of path.split("/")) {
     if (seg === "..") parts.pop();
     else if (seg && seg !== ".") parts.push(seg);
   }
   const m = /^docs\/([a-z0-9-]+)\.md$/.exec(parts.join("/"));
+  const pkg = /^docs\/packages\/([a-z0-9-]+)\.md$/.exec(parts.join("/"));
+  if (pkg) return { href: `/docs/${pkg[1]}${frag ? "#" + frag : ""}`, internal: true };
   if (m && guideBySlug(m[1]!)) return { href: `/docs/guides/${m[1]}${frag ? "#" + frag : ""}`, internal: true };
   return { href: `${REPO}/blob/main/${parts.join("/")}${frag ? "#" + frag : ""}`, internal: false };
 }
@@ -64,6 +85,30 @@ export function loadGuide(slug: string): Promise<MarkdownDoc | null> {
     const load = loaders.get(slug);
     p = load && guideBySlug(slug) ? load().then((src) => parseMarkdown(src, { resolveLink: resolveDocLink })) : Promise.resolve(null);
     cache.set(slug, p);
+  }
+  return p;
+}
+
+const PACKAGE_RAW = import.meta.glob("../../../docs/packages/*.md", { query: "?raw", import: "default" }) as Record<string, Loader>;
+const packageLoaders = new Map<string, Loader>(Object.entries(PACKAGE_RAW).map(([path, load]) => [path.replace(/^.*\/([^/]+)\.md$/, "$1"), load]));
+const packageCache = new Map<string, Promise<MarkdownDoc | null>>();
+
+/** The slugs of the packages that have a guide (`docs/packages/<slug>.md`). */
+export const packageGuideSlugs = (): string[] => [...packageLoaders.keys()];
+
+/** The application packages whose guide exists, as the menu and the package page show them. */
+export const appPackages = (): AppPackage[] => APP_PACKAGES.filter((a) => packageLoaders.has(a.slug));
+
+/**
+ * Loads and parses a package guide, `docs/packages/<slug>.md` (the slug is the API slug: `core`, `ui-primitives`, ...).
+ * Null when the package has no guide, so its page falls back to the generated overview.
+ */
+export function loadPackageGuide(slug: string): Promise<MarkdownDoc | null> {
+  let p = packageCache.get(slug);
+  if (!p) {
+    const load = packageLoaders.get(slug);
+    p = load ? load().then((src) => parseMarkdown(src, { resolveLink: (href) => resolveDocLink(href, "docs/packages") })) : Promise.resolve(null);
+    packageCache.set(slug, p);
   }
   return p;
 }

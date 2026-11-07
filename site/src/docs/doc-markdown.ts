@@ -1,5 +1,6 @@
 import { computed, html, input } from "@gable/core";
 import { DocCode } from "./doc-code.js";
+import { DocDemo } from "./doc-demo.js";
 import { DocInline } from "./doc-inline.js";
 import { resolveDocLink } from "./content.js";
 import { parseMarkdown, type MarkdownDoc } from "./markdown.js";
@@ -8,7 +9,7 @@ import { parseMarkdown, type MarkdownDoc } from "./markdown.js";
 export class DocMarkdown {
   static meta = {
     selector: "doc-markdown",
-    imports: [DocInline, DocCode],
+    imports: [DocInline, DocCode, DocDemo],
     template: html`
 @for (b of parsed().blocks; track b.key) {
 @switch (b.kind) {
@@ -32,6 +33,9 @@ export class DocMarkdown {
 }
 @case ('code') {
 <doc-code [code]="b.code" [language]="b.lang"></doc-code>
+}
+@case ('demo') {
+<doc-demo [name]="b.lang" [caption]="b.code"></doc-demo>
 }
 @case ('ul') {
 <ul>@for (it of b.items; track it.key) {<li><doc-inline [runs]="it.inlines"></doc-inline>@if (it.sub.length) {<ul>@for (s of it.sub; track s.key) {<li><doc-inline [runs]="s.inlines"></doc-inline></li>}</ul>}</li>}</ul>

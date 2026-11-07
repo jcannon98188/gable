@@ -2,7 +2,7 @@ import { computed, inject, signal } from "@gable/core";
 import { Router } from "@gable/core/router";
 import { ApiData } from "./api-data.js";
 import { pathOf } from "./base.js";
-import { GUIDES } from "./content.js";
+import { GUIDES, appPackages } from "./content.js";
 import type { TocItem } from "./markdown.js";
 import { apiUrl, guideUrl, packageUrl } from "./urls.js";
 
@@ -30,6 +30,7 @@ export interface NavPackage {
   slug: string;
   name: string;
   url: string;
+  /** Empty for an application, which has no generated API reference. */
   apiUrl: string;
   current: "page" | null;
   apiCurrent: "page" | null;
@@ -56,14 +57,16 @@ export class DocsNav {
   start = computed(() => GUIDES.filter((g) => g.group === "Getting started").map((g) => this.item(g.title, guideUrl(g.slug))));
   guides = computed(() => GUIDES.filter((g) => g.group === "Guides").map((g) => this.item(g.title, guideUrl(g.slug))));
 
-  packages = computed<NavPackage[]>(() =>
-    (this.api.index()?.packages ?? []).map((p) => {
+  packages = computed<NavPackage[]>(() => [
+    ...(this.api.index()?.packages ?? []).map((p) => {
       const url = packageUrl(p.slug);
       const api = apiUrl(p.slug);
       const path = this.path();
-      return { slug: p.slug, name: short(p.name), url, apiUrl: api, current: path === url ? "page" : null, apiLabel: `${short(p.name)} API reference`, apiCurrent: path === api || path.startsWith(api + "/") ? "page" : null };
+      return { slug: p.slug, name: short(p.name), url, apiUrl: api, current: path === url ? "page" : null, apiLabel: `${short(p.name)} API reference`, apiCurrent: path === api || path.startsWith(api + "/") ? "page" : null } satisfies NavPackage;
     }),
-  );
+    // Applications have a guide but no generated reference, so no API link.
+    ...appPackages().map((a) => ({ slug: a.slug, name: a.name, url: packageUrl(a.slug), apiUrl: "", current: this.path() === packageUrl(a.slug) ? ("page" as const) : null, apiLabel: "", apiCurrent: null })),
+  ]);
 
   /** Every page of the site order, for previous/next. */
   sequence = computed<PageLink[]>(() => [
@@ -72,6 +75,7 @@ export class DocsNav {
       { title: `${short(p.name)} overview`, url: packageUrl(p.slug) },
       { title: `${short(p.name)} API reference`, url: apiUrl(p.slug) },
     ]),
+    ...appPackages().map((a) => ({ title: `${a.name} overview`, url: packageUrl(a.slug) })),
   ]);
 
   private neighbours = computed(() => {

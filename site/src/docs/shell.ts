@@ -44,7 +44,7 @@ export class DocsShell {
 <div class="sb-g"><h2 class="sb-t">Getting started</h2><ul>@for (i of nav.start(); track i.url) {<li><a [docLink]="i.url" [attr.aria-current]="i.current">{{ i.title }}</a></li>}</ul></div>
 <div class="sb-g"><h2 class="sb-t">Guides</h2><ul>@for (i of nav.guides(); track i.url) {<li><a [docLink]="i.url" [attr.aria-current]="i.current">{{ i.title }}</a></li>}</ul></div>
 @if (nav.packages().length) {
-<div class="sb-g"><h2 class="sb-t">Packages</h2><ul>@for (p of nav.packages(); track p.slug) {<li class="sb-pkg"><a [docLink]="p.url" [attr.aria-current]="p.current">{{ p.name }}</a><a class="sb-api" [docLink]="p.apiUrl" [attr.aria-current]="p.apiCurrent" [attr.aria-label]="p.apiLabel">API</a></li>}</ul></div>
+<div class="sb-g"><h2 class="sb-t">Packages</h2><ul>@for (p of nav.packages(); track p.slug) {<li class="sb-pkg"><a [docLink]="p.url" [attr.aria-current]="p.current">{{ p.name }}</a>@if (p.apiUrl) {<a class="sb-api" [docLink]="p.apiUrl" [attr.aria-current]="p.apiCurrent" [attr.aria-label]="p.apiLabel">API</a>}</li>}</ul></div>
 }
 </nav>
 @if (menuOpen()) {

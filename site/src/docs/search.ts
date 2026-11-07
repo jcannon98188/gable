@@ -29,15 +29,12 @@ const entry = (title: string, where: string, kind: SearchEntry["kind"], url: str
 });
 
 /** The headings and text of the guides and every documented symbol, as flat entries. */
-export function buildSearchIndex(guides: ReadonlyMap<string, MarkdownDoc>, packages: readonly ApiPackage[]): SearchEntry[] {
+export function buildSearchIndex(guides: ReadonlyMap<string, MarkdownDoc>, packages: readonly ApiPackage[], packageGuides: ReadonlyMap<string, MarkdownDoc> = new Map()): SearchEntry[] {
   const out: SearchEntry[] = [];
-  for (const g of GUIDES) {
-    const doc = guides.get(g.slug);
-    if (!doc) continue;
-    out.push(entry(g.title, g.group, "Guide", guideUrl(g.slug), g.summary));
-    // One entry per h2/h3 section, with the text that follows it.
+  // One entry per h2/h3 section, with the text that follows it.
+  const pushSections = (doc: MarkdownDoc, where: string, url: (id: string) => string) => {
     let current: { id: string; text: string; body: string[] } | null = null;
-    const flush = () => current && out.push(entry(current.text, g.title, "Section", guideUrl(g.slug, current.id), current.body.join(" ")));
+    const flush = () => current && out.push(entry(current.text, where, "Section", url(current.id), current.body.join(" ")));
     for (const b of doc.blocks) {
       if (b.kind === "h2" || b.kind === "h3") {
         flush();
@@ -45,9 +42,17 @@ export function buildSearchIndex(guides: ReadonlyMap<string, MarkdownDoc>, packa
       } else if (current) current.body.push(markdownText({ blocks: [b], toc: [], title: "" }));
     }
     flush();
+  };
+  for (const g of GUIDES) {
+    const doc = guides.get(g.slug);
+    if (!doc) continue;
+    out.push(entry(g.title, g.group, "Guide", guideUrl(g.slug), g.summary));
+    pushSections(doc, g.title, (id) => guideUrl(g.slug, id));
   }
   for (const p of packages) {
-    out.push(entry(p.name, "Package", "Package", packageUrl(p.slug), p.description));
+    const guide = packageGuides.get(p.slug);
+    out.push(entry(p.name, "Package", "Package", packageUrl(p.slug), guide ? `${p.description} ${markdownText(guide)}` : p.description));
+    if (guide) pushSections(guide, p.name, (id) => `${packageUrl(p.slug)}#${id}`);
     out.push(entry(`${p.name} API reference`, "Package", "Package", apiUrl(p.slug), p.description));
     for (const ep of p.entryPoints) {
       for (const s of ep.symbols) {

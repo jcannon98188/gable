@@ -120,6 +120,17 @@ describe("docs layout", () => {
     expect(links).toContain("/docs/core/api");
   });
 
+  it("lists the application packages without an API link and serves their guide", async () => {
+    const app = await open("/docs");
+    const sidebar = app.queryAll("li.sb-pkg a").map((a) => a.attrs["href"]);
+    expect(sidebar).toContain("/docs/vscode");
+    expect(sidebar).not.toContain("/docs/vscode/api");
+    const page = await open("/docs/vscode");
+    expect(page.text()).toContain("TypeScript server plugin");
+    expect(page.queryAll("a").some((a) => a.attrs["href"] === "/docs/vscode/api")).toBe(false);
+    expect(page.text()).not.toContain("Entry points");
+  });
+
   it("opens the mobile drawer from the menu button", async () => {
     const app = await open("/docs");
     const button = app.query("button.dx-menu")!;

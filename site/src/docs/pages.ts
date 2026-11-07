@@ -4,7 +4,7 @@ import { Router } from "@gable/core/router";
 import { ApiData } from "./api-data.js";
 import type { ApiIndexEntry, ApiPackage, ApiSymbol } from "./api-types.js";
 import { SymbolView, symbolToc } from "./api-view.js";
-import { PACKAGE_GUIDES, GUIDES, guideBySlug, loadGuide } from "./content.js";
+import { APP_PACKAGES, PACKAGE_GUIDES, GUIDES, guideBySlug, loadGuide, loadPackageGuide } from "./content.js";
 import { DocLink } from "./doc-link.js";
 import { DocInline } from "./doc-inline.js";
 import { DocMarkdown } from "./doc-markdown.js";
@@ -93,20 +93,32 @@ export class GuidePage {
   });
 }
 
-/** A package's overview: what it is, its entry points and the guides that cover it. */
+/**
+ * A package's page: its guide (`docs/packages/<slug>.md`) when it has one, otherwise the generated overview, then its
+ * entry points, the API reference link and the guides that cover it.
+ */
 export class PackagePage {
   static meta = {
     selector: "docs-package",
-    imports: [DocLink],
+    imports: [DocLink, DocMarkdown],
     template: html`
 @if (state() === 'ready') {
 <article class="md">
+@if (guide()) {
+@if (!titled()) {
+<h1 class="md-h">{{ name() }}</h1>
+}
+<doc-markdown [doc]="guide()"></doc-markdown>
+} @else {
 <h1 class="md-h">{{ name() }}</h1>
 <p class="lead">{{ description() }}</p>
+}
+@if (!app()) {
 <p><a class="btn btn-a" [docLink]="reference()">API reference</a></p>
 <h2 class="md-h" id="entry-points">Entry points</h2>
 <ul>@for (e of entryPoints(); track e) {<li><code>{{ e }}</code></li>}</ul>
 <p class="mut">{{ counts() }}</p>
+}
 @if (guides().length) {
 <h2 class="md-h" id="guides">Guides</h2>
 <ul>@for (g of guides(); track g.url) {<li><a [docLink]="g.url">{{ g.title }}</a></li>}</ul>
@@ -128,8 +140,14 @@ export class PackagePage {
 
   state = signal<State>("loading");
   private entry = signal<ApiIndexEntry | null>(null);
-  name = computed(() => this.entry()?.name ?? "");
-  description = computed(() => this.entry()?.description ?? "");
+  guide = signal<MarkdownDoc | null>(null);
+  /** True when the guide brings its own h1, so the page adds none. */
+  titled = computed(() => !!this.guide()?.blocks.some((b) => b.kind === "h1"));
+  /** An application (designer, devtools-extension, vscode): a guide and no generated API reference. */
+  app = signal(false);
+  private appInfo = signal<(typeof APP_PACKAGES)[number] | null>(null);
+  name = computed(() => this.entry()?.name ?? this.appInfo()?.name ?? "");
+  description = computed(() => this.entry()?.description ?? this.appInfo()?.description ?? "");
   entryPoints = computed(() => this.entry()?.entryPoints ?? []);
   reference = computed(() => apiUrl(this.pkg()));
   counts = computed(() => {
@@ -147,15 +165,19 @@ export class PackagePage {
     const slug = this.pkg();
     this.state.set("loading");
     this.page.toc.set([]);
-    void this.api.loadIndex().then((index) => {
+    void Promise.all([this.api.loadIndex(), loadPackageGuide(slug).catch(() => null)]).then(([index, guide]) => {
       if (this.pkg() !== slug) return;
       const entry = index?.packages.find((p) => p.slug === slug) ?? null;
+      const app = !entry && guide ? (APP_PACKAGES.find((a) => a.slug === slug) ?? null) : null;
       this.entry.set(entry);
-      this.state.set(entry ? "ready" : "missing");
-      const toc: TocItem[] = entry ? [{ id: "entry-points", text: "Entry points", level: 2 }] : [];
-      if (entry && this.guides().length) toc.push({ id: "guides", text: "Guides", level: 2 });
+      this.appInfo.set(app);
+      this.app.set(!!app);
+      this.guide.set(entry || app ? guide : null);
+      this.state.set(entry || app ? "ready" : "missing");
+      const toc: TocItem[] = entry ? [...(guide?.toc ?? []), { id: "entry-points", text: "Entry points", level: 2 }] : [...(app ? (guide?.toc ?? []) : [])];
+      if ((entry || app) && this.guides().length) toc.push({ id: "guides", text: "Guides", level: 2 });
       this.page.toc.set(toc);
-      this.title?.set(`${entry?.name ?? "Not found"}${SUFFIX}`);
+      this.title?.set(`${entry?.name ?? app?.name ?? "Not found"}${SUFFIX}`);
     });
   });
 }
