@@ -4,10 +4,12 @@ import type { DesignNode } from "@gable/core/designer";
 import { SCENARIO_PARAM, type CanvasDiagnostic, type SceneInfo } from "../../../src/protocol.js";
 import type { ProjectInfo } from "../../../src/server/backend.js";
 import type { ProjectDiagnostic } from "../../../src/server/analyze-worker.js";
+import type { CompileError } from "../../../src/server/compile-check.js";
 import type { SourceRange } from "../../../src/server/source.js";
 import type { Interaction } from "../../../src/protocol.js";
 import { FrameSet, type Frame } from "./frames.js";
 import type { AgentEvent } from "./preview-client.js";
+import { isStale, staleCanvas } from "./stale-canvas.js";
 
 interface Config {
   backend: string;
@@ -62,6 +64,26 @@ export class DesignerState {
   analysis = signal<Analysis | null>(null);
   placement = signal<{ placed: number; unplaced: number }>({ placed: 0, unplaced: 0 });
   flushes = signal(0);
+  /** Templates that do not compile as saved (the backend checks every save; the full analysis follows in seconds). */
+  compileErrors = signal<CompileError[]>([]);
+  /** Why the canvas is not showing the source as saved, for the banner over it; null when it is (stale-canvas.ts). */
+  stale = computed(() => staleCanvas(this.compileErrors(), this.hmr()));
+  /** Whether the file at `path` (module URL or path) does not compile, or the page refused its last hot update. */
+  staleFile(path: string | undefined): boolean {
+    return !!path && isStale(this.compileErrors(), this.hmr(), path);
+  }
+  /**
+   * The Problems list: the analysis, plus compile errors it has not caught up with yet (a save it has not finished reading).
+   * Compile errors are always errors and are never placed on the canvas: the page does not run that template.
+   */
+  problems = computed<ProjectDiagnostic[]>(() => {
+    const analysed = this.analysis()?.diagnostics ?? [];
+    const known = new Set(analysed.map((d) => `${d.file}:${d.line}:${d.column}:${d.message}`));
+    const fresh = this.compileErrors()
+      .filter((e) => !known.has(`${e.file}:${e.line}:${e.column}:${e.message}`))
+      .map((e, i): ProjectDiagnostic => ({ id: `compile${i}`, file: e.file, line: e.line, column: e.column, severity: "error", rule: e.rule, message: e.message }));
+    return [...fresh, ...analysed];
+  });
 
   /** Component tree rows with their depth. */
   rows = computed(() => {
@@ -133,8 +155,10 @@ export class DesignerState {
       void this.frames.load();
       this.sceneFiles.set(await this.api<string[]>("/api/scenes"));
       void this.refreshDiagnostics();
+      void this.api<CompileError[]>("/api/compile").then((c) => this.compileErrors.set(c), () => undefined);
       const events = new EventSource(`${this.config!.backend}/api/events?token=${this.config!.token}`);
       events.addEventListener("files", (e) => this.sceneFiles.set((JSON.parse((e as MessageEvent).data) as { scenes: string[] }).scenes));
+      events.addEventListener("compile", (e) => this.compileErrors.set(JSON.parse((e as MessageEvent).data) as CompileError[]));
       events.addEventListener("diagnostics", (e) => {
         this.analysis.set(JSON.parse((e as MessageEvent).data) as Analysis);
         void this.#placeDiagnostics();

@@ -2,6 +2,7 @@
 // state toolbar), the selected element's classes analysed against that context, and the temporary previews (hover over a palette
 // entry, forced states). Writes go through EditState as the 56.4 `setAttr` class op, so there is one write path.
 import { computed, effect, inject, signal, untracked } from "@gable/core";
+import type { AttrModel } from "../../../src/server/edit/types.js";
 import type { AnalyzeResult, Breakpoint, ControlOption, PlanResult, SearchHit, TailwindInfo } from "../../../src/server/tailwind/types.js";
 import { DesignerState } from "./designer-state.js";
 import { EditState } from "./edit-state.js";
@@ -12,6 +13,37 @@ type Enabled = Extract<TailwindInfo, { enabled: true }>;
 export interface ConditionalClass {
   name: string;
   attr: string;
+}
+
+type Attr = Pick<AttrModel, "name" | "kind" | "value">;
+
+/**
+ * Bindings that set the element's whole class list, overwriting what `class` says: `[attr.class]` (the attribute) and
+ * `[className]` (the property). `[class]` and `[ngClass]` are not Gable (the runtime has no `class` property to bind), but
+ * they are read as the same intent.
+ */
+const WHOLE_LIST = new Set(["[attr.class]", "[className]", "[class]", "[ngClass]"]);
+
+/**
+ * Whether the class list can be edited as text: false when a binding sets the whole list (edits to `class` would be
+ * overwritten). `[class.x]="cond"` only toggles `x`, so the static list next to it stays editable.
+ */
+export function classListWritable(attrs: readonly Attr[]): boolean {
+  if (attrs.some((a) => WHOLE_LIST.has(a.name))) return false;
+  const a = attrs.find((x) => x.name === "class");
+  return !a || (a.kind === "static" && !a.value.includes("{{"));
+}
+
+/** The classes the element gets from bindings, shown read-only: `[class.x]` as `x`, a whole-list binding as its expression. */
+export function conditionalClasses(attrs: readonly Attr[]): ConditionalClass[] {
+  const out: ConditionalClass[] = [];
+  for (const a of attrs) {
+    const m = /^\[class\.(.+)\]$/.exec(a.name);
+    if (m) out.push({ name: m[1]!, attr: a.name });
+    else if (WHOLE_LIST.has(a.name)) out.push({ name: a.value, attr: a.name });
+    else if (a.name === "class" && a.value.includes("{{")) out.push({ name: a.value, attr: a.name });
+  }
+  return out;
 }
 
 export class TailwindState {
@@ -69,21 +101,9 @@ export class TailwindState {
     const a = this.classAttr();
     return a && a.kind === "static" ? a.value : "";
   });
-  /** False when `class="{{ ... }}"` or similar: the class list is dynamic and read-only. */
-  writable = computed(() => {
-    const a = this.classAttr();
-    return !a || (a.kind === "static" && !a.value.includes("{{"));
-  });
-  conditionals = computed<ConditionalClass[]>(() => {
-    const out: ConditionalClass[] = [];
-    for (const a of this.edit.node()?.attrs ?? []) {
-      const m = /^\[class\.(.+)\]$/.exec(a.name);
-      if (m) out.push({ name: m[1]!, attr: a.name });
-      else if (a.name === "[class]" || a.name === "[ngClass]") out.push({ name: a.value, attr: a.name });
-      else if (a.name === "class" && a.value.includes("{{")) out.push({ name: a.value, attr: a.name });
-    }
-    return out;
-  });
+  /** False when a binding sets the whole class list (`[attr.class]="expr"`): the class list is dynamic and read-only. */
+  writable = computed(() => classListWritable(this.edit.node()?.attrs ?? []));
+  conditionals = computed<ConditionalClass[]>(() => conditionalClasses(this.edit.node()?.attrs ?? []));
 
   #options = new Map<string, Promise<ControlOption[]>>();
   #revision = -1;

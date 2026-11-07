@@ -18,6 +18,7 @@ import { sceneIndex } from "../scene-index.js";
 import type { TailwindService } from "../tailwind/api.js";
 import type { ControlCommands, FramePatch, FrameRect, SelectionSnapshot, ShellSnapshot } from "../../control-protocol.js";
 import type { ShellBridge } from "./bridge.js";
+import type { CompileError } from "../compile-check.js";
 import { captureHeadless, captureLive, findBrowser, type Shot } from "./screenshot.js";
 import { fileOfTarget, positionOf, projectFile, targetAt, unifiedDiff, type SourcePos } from "./targets.js";
 
@@ -29,6 +30,8 @@ export interface ControlContext {
   bridge: ShellBridge;
   /** The project's language-service problems (the backend's cached run; `refresh` runs it again). */
   diagnostics(refresh: boolean): Promise<AnalysisOutput & { at: number }>;
+  /** Templates that do not compile right now (checked on every save; the canvas keeps their last good version). */
+  compileErrors?(): CompileError[];
   /** Tells the shell the undo history changed (the backend's `history` SSE event). */
   historyChanged(): void;
   /** The webview's CDP port, when the backend has one. */
@@ -230,7 +233,7 @@ export function createControlServer(ctx: ControlContext): McpServer {
   server.registerTool(
     "get_problems",
     {
-      ...read("Get problems", "Template language-service problems in the project (file, line, column, severity, rule, message). `refresh` re-runs the analysis first (a few seconds)."),
+      ...read("Get problems", "Template language-service problems in the project (file, line, column, severity, rule, message). `refresh` re-runs the analysis first (a few seconds). `notCompiling` lists templates that do not compile as saved now (checked on every save, before the analysis): the canvas shows their last good version."),
       inputSchema: { refresh: z.boolean().default(false).describe("Run the analysis again before answering.") },
     },
     guard(async ({ refresh }) => {
@@ -239,6 +242,7 @@ export function createControlServer(ctx: ControlContext): McpServer {
         at: new Date(d.at).toISOString(),
         configErrors: d.configErrors,
         problems: d.diagnostics.map(({ raw: _r, offset: _o, id: _i, ...p }) => p),
+        notCompiling: (ctx.compileErrors?.() ?? []).map(({ raw: _r, offset: _o, ...p }) => p),
       };
     }),
   );

@@ -10,6 +10,7 @@ import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";
 import { EditState } from "./edit-state.js";
 import { HttpPanel } from "./page-mode.js";
+import { staleNote } from "./stale-canvas.js";
 
 /** The selected element's source on the left; what the last edit did on the right. */
 export class CodeTab {
@@ -162,7 +163,7 @@ export class ProblemsTab {
         label: `${d.fixes![0]!.title} (${this.state.relative(d.file)}:${d.line})`,
       }));
   });
-  all = computed(() => this.state.analysis()?.diagnostics ?? []);
+  all = this.state.problems;
   errors = computed(() => this.all().filter((d) => d.severity === "error").length);
   warnings = computed(() => this.all().length - this.errors());
   filterChips = computed(() =>
@@ -206,6 +207,9 @@ export class HmrTab {
         <span class="spacer"></span>
         <button uiButton variant="outline" size="sm" class="btn sm" data-part="hmr-clear" [disabled]="none()" (click)="clear()">Clear</button>
       </div>
+      @if (state.stale(); as st) {
+        <p class="callout err" data-part="hmr-stale"><span class="mono">{{ st.where }}</span> · {{ st.message }} {{ staleNote() }}</p>
+      }
       @if (hasResetup()) {
         <p class="callout warn">A re-setup rebuilt a component, so that component's signals started over.</p>
       }
@@ -248,6 +252,10 @@ export class HmrTab {
       })),
   );
   none = computed(() => this.entries().length === 0);
+  staleNote = computed(() => {
+    const s = this.state.stale();
+    return s ? staleNote(s) : "";
+  });
   hasResetup = computed(() => this.entries().some((e) => e.changes.some((c) => c.warn)));
   summary = computed(() => {
     const n = this.entries().length;
@@ -376,7 +384,7 @@ export class DrawerTabs {
   toggleText = computed(() => (this.chrome.drawerOpen() ? "Collapse the drawer" : "Open the drawer"));
   toggleIcon = computed(() => (this.chrome.drawerOpen() ? "panel-bottom-close" : "panel-bottom-open"));
   tabs = computed(() => {
-    const diagnostics = this.state.analysis()?.diagnostics ?? [];
+    const diagnostics = this.state.problems();
     const errors = diagnostics.filter((d) => d.severity === "error").length;
     const problems = diagnostics.length;
     const current = this.chrome.drawerOpen() ? this.chrome.drawerTab() : "";

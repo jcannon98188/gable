@@ -11,6 +11,7 @@ import { createServer as createNetServer } from "node:net";
 import { dirname, extname, join, normalize, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AnalysisOutput } from "./analyze-worker.js";
+import { CompileChecks } from "./compile-check.js";
 import { EditService } from "./edit/service.js";
 import type { EditOp, TargetRef } from "./edit/types.js";
 import { CdpEmulator } from "./cdp.js";
@@ -98,6 +99,8 @@ interface Session {
   readonly log: ProjectLog;
   readonly edits: EditService;
   readonly tailwind: TailwindService;
+  /** Templates that do not compile (compile-check.ts), re-checked on every change. */
+  readonly compile: CompileChecks;
   check: ProjectCheck;
   installing: boolean;
   diagnostics: (AnalysisOutput & { at: number; running?: boolean }) | null;
@@ -127,12 +130,21 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
     const server = new DevServer({ root, port: previewPort, configFile: join(here, "project-vite-config.js"), log, onChange: () => announce() });
 
     // --- diagnostics -------------------------------------------------------------
+    // One run at a time. A request while one runs (a save during the analysis) queues one more run, which reads the files as
+    // they are now: the running one may have read them before the change.
     let analyzing: Promise<void> | null = null;
-    const runAnalysis = () =>
-      (analyzing ??= new Promise<void>((done) => {
+    let queued: Promise<void> | null = null;
+    const runAnalysis = (): Promise<void> => {
+      if (!analyzing) return (analyzing = analyzeOnce().finally(() => (analyzing = null)));
+      return (queued ??= analyzing.then(() => {
+        queued = null;
+        return runAnalysis();
+      }));
+    };
+    const analyzeOnce = () =>
+      new Promise<void>((done) => {
         if (!existsSync(join(root, "tsconfig.json"))) {
           s.diagnostics = { diagnostics: [], configErrors: ["The project has no tsconfig.json."], at: Date.now() };
-          analyzing = null;
           return done();
         }
         const child = spawn(process.execPath, [join(here, "analyze-main.js"), root], { stdio: ["ignore", "pipe", "pipe"] });
@@ -146,16 +158,18 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
           } catch {
             s.diagnostics = { diagnostics: [], configErrors: [err.trim().split("\n").pop() || "The analyzer failed."], at: Date.now() };
           }
-          analyzing = null;
           if (current()) broadcast("diagnostics", s.diagnostics);
           done();
         });
-      }));
+      });
 
     // --- file watching ---------------------------------------------------------------
     const edits = new EditService(root);
     const tailwind = new TailwindService(root);
+    const compile = new CompileChecks(root);
     let debounce: NodeJS.Timeout | undefined;
+    /** Script files changed since the last debounced run (one save can touch several). */
+    const changed = new Set<string>();
     const watcher = watch(root, { recursive: true }, (_, file) => {
       if (!file || !/\.(ts|tsx|css|html)$/.test(file)) return;
       if (file.split(/[\\/]/).some((p) => SKIP.has(p))) return;
@@ -164,9 +178,15 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
       clearTimeout(debounce);
       // An edit made outside the Designer: undo history for that file is marked, and the shell is told.
       if (edits.noteFileChanged(resolve(root, file))) broadcast("history", edits.history());
+      if (file.endsWith(".ts")) changed.add(file);
       debounce = setTimeout(() => {
         broadcast("files", { file: file.split(sep).join("/"), scenes: findScenes(root) });
-        if (file.endsWith(".ts")) void runAnalysis();
+        if (changed.size === 0) return;
+        const files = [...changed];
+        changed.clear();
+        // Templates that stopped (or started) compiling: told at once, the full analysis follows in seconds.
+        if (compile.update(files) && current()) broadcast("compile", compile.list());
+        void runAnalysis();
       }, 250);
     });
     watcher.on("error", () => undefined);
@@ -177,6 +197,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
       log,
       edits,
       tailwind,
+      compile,
       check: checkProject(root),
       installing: false,
       diagnostics: null,
@@ -218,6 +239,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
       if (!s.diagnostics || refresh) await s.runAnalysis();
       return s.diagnostics!;
     },
+    compileErrors: () => session.compile.list(),
     historyChanged: () => broadcast("history", session.edits.history()),
   });
 
@@ -297,6 +319,8 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
           else if (url.searchParams.has("refresh")) await s.runAnalysis();
           return json(res, 200, s.diagnostics);
         }
+        case "/api/compile":
+          return json(res, 200, s.compile.list());
         case "/api/diagnostics/fix": {
           // The fix is the one the analysis found, never edits the client sends.
           const { id, fix } = JSON.parse(await readBody(req)) as { id: string; fix?: number };

@@ -162,9 +162,20 @@ node packages/designer/e2e/writers-check.mjs [--browser <path to msedge/chrome>]
 
 ## Canvas and panel polish
 
-- **Read-only hatch.** An element the panels cannot edit (the edit service refuses its template, or Tailwind mode meets a
-  `{{ }}` class list) is drawn on the canvas with an amber dashed outline, a diagonal hatch and a lock chip naming why. The
-  agent draws it (`setReadOnly`); the shell decides when (`CanvasOverlays` in `shell/src/app/canvas-overlays.ts`).
+- **Read-only hatch.** An element the panels cannot edit is drawn on the canvas with an amber dashed outline, a diagonal
+  hatch and a lock chip naming why: `read-only` (the edit service refuses its template), `dynamic` (Tailwind mode meets a
+  class list that a binding sets whole, `[attr.class]="expr"`; `[class.x]="cond"` only toggles one class and leaves the
+  written list editable) or `stale` (its template no longer compiles, see below). The agent draws it (`setReadOnly`); the
+  shell decides when (`CanvasOverlays` in `shell/src/app/canvas-overlays.ts`).
+- **Templates that do not compile.** The runtime compiles a template when it renders it, so a saved template that does not
+  compile (`class="x {{ y() }}"`, an unclosed element, an expression the parser rejects) fails only in the page: its hot
+  update is rolled back and the canvas keeps the last good version. The backend runs the language service's syntax pass
+  (`checkTemplateSyntax`, no type-check) on every changed file and sends the result at once (`GET /api/compile`, SSE
+  `compile`), ahead of the full analysis. A banner over the canvas names the file, line, column and message, and says the
+  canvas shows the last good version once the page has refused the update (`shell/src/app/stale-canvas.ts`). A refused
+  update that the check has nothing against, such as a setup that throws, is shown from the HMR timeline instead. Problems
+  lists the error until the analysis catches up, the HMR timeline repeats it, and MCP `get_problems` returns it as
+  `notCompiling`. All of it clears with the next save that compiles.
 - **Class conflicts.** `/api/tailwind/analyze` also returns `conflicts`: pairs of classes in the list that override each other
   outright at the same variants (`p-2 p-8`, `md:p-4 md:p-8`; not `px-2 p-4`). The design system's class order picks the
   winner. The Style tab shows a callout per pair with **Remove** for the losing class, and while a class is previewed it says
@@ -241,8 +252,9 @@ failed or its API changed) the tab says why ("Tailwind mode is off: ...") and no
 - **Editing.** Only static class tokens are written, through the same `setAttr` class edit as the Content tab (one write path,
   one undo history). A new class replaces an old one when the design system says they set the same CSS properties
   (`px-2` next to `p-4` stays; `p-8` replaces `p-4`; `text-lg` does not replace `leading-6` although both touch `--tw-leading`).
-  Only classes with the same variants are compared (`md:p-8` leaves `p-4`). `{{ }}` and `[class.x]` bindings are read-only
-  and shown as `conditional: <name>`; classes the design system does not know (the project's own CSS) are never touched.
+  Only classes with the same variants are compared (`md:p-8` leaves `p-4`). `[class.x]` bindings and whole-list bindings
+  (`[attr.class]`, `[className]`) are read-only and shown as `conditional: <name>`. A whole-list binding makes the written
+  class list read-only too, since it overwrites it; classes the design system does not know (the project's own CSS) are never touched.
 - **Order.** The repo's formatter decides: when the project's prettier config lists `prettier-plugin-tailwindcss`, an inserted
   class goes where Tailwind's order puts it (classes it does not know stay first); otherwise it is appended. (This repository
   has no class sorter, so edits here append.)

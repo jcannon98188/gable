@@ -1,6 +1,6 @@
 // The MCP control plane (TASK-56.13) against the `mcp-app` fixture: the tools over an in-memory MCP client, with a fake
 // Designer window answering the shell bridge, and the HTTP endpoint's auth on a real backend.
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { request as httpRequest } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -13,6 +13,7 @@ import type { DesignNode } from "@gable/core/designer";
 import { afterAll, describe, expect, it } from "vitest";
 import type { ControlRequest, SelectionSnapshot, ShellSnapshot } from "./control-protocol.js";
 import { startBackend } from "./server/backend.js";
+import { CompileChecks } from "./server/compile-check.js";
 import { EditService } from "./server/edit/service.js";
 import { ShellBridge } from "./server/mcp/bridge.js";
 import { createControlServer } from "./server/mcp/control.js";
@@ -130,6 +131,7 @@ async function connect(root: string) {
   const bridge = new ShellBridge();
   bridge.shellUrl = "http://127.0.0.1:9/";
   const edits = new EditService(root);
+  const compile = new CompileChecks(root);
   let historyEvents = 0;
   const server = createControlServer({
     root,
@@ -139,6 +141,7 @@ async function connect(root: string) {
     bridge,
     diagnostics: async () => ({ at: 0, configErrors: [], diagnostics: [{ id: "d1", file: CARD, line: 3, column: 1, severity: "warn", rule: "demo", message: "a demo problem", raw: "x", offset: 0 }] }),
     historyChanged: () => void historyEvents++,
+    compileErrors: () => compile.list(),
     cdpPort: null,
     shellOrigins: () => [],
     browser: null,
@@ -147,7 +150,7 @@ async function connect(root: string) {
   const client = new Client({ name: "test", version: "1" });
   await Promise.all([server.connect(a), client.connect(b)]);
   const call = (name: string, args: Record<string, unknown> = {}) => client.callTool({ name, arguments: args }) as Promise<CallToolResult>;
-  return { client, call, bridge, edits, historyEvents: () => historyEvents, close: () => client.close() };
+  return { client, call, bridge, edits, compile, historyEvents: () => historyEvents, close: () => client.close() };
 }
 
 // --- positions and diffs ----------------------------------------------------------------------------------------------
@@ -223,8 +226,16 @@ describe("mcp: tools against the fixture", () => {
       expect(routes.config.file).toBe("src/routes.ts");
       expect(routes.config.routes.map((r) => r.path)).toEqual(["", "about"]);
       expect(routes.runtime).toEqual([]);
-      const problems = jsonOf<{ problems: Array<Record<string, unknown>> }>(await m.call("get_problems"));
+      const problems = jsonOf<{ problems: Array<Record<string, unknown>>; notCompiling: unknown[] }>(await m.call("get_problems"));
       expect(problems.problems).toEqual([{ file: CARD, line: 3, column: 1, severity: "warn", rule: "demo", message: "a demo problem" }]);
+      expect(problems.notCompiling).toEqual([]);
+
+      // a template that does not compile is listed at once, ahead of the full analysis
+      const root = m.edits.root;
+      writeFileSync(join(root, CARD), readFileSync(join(root, CARD), "utf8").replace("<p>Analyst</p>", '<p class="x {{ followed() }}">Analyst</p>'));
+      expect(m.compile.update([CARD])).toBe(true);
+      const broken = jsonOf<{ notCompiling: unknown[] }>(await m.call("get_problems"));
+      expect(broken.notCompiling).toEqual([{ file: CARD, line: lineOf(root, "Analyst"), column: 19, rule: "template-syntax", message: 'Interpolation in attribute "class" is not supported; use [attr.class] or [class.name].' }]);
 
       // UI reads need the window; the error says how to get one
       const tree = await m.call("get_tree");

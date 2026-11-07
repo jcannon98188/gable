@@ -468,7 +468,7 @@ export function addAttribute(el: ElementNode, name: string, value: string, fromS
   } else if (name.startsWith("*")) {
     throw new Error(`Structural directives ("${name}") do not exist; use @if or @for blocks.`);
   } else {
-    if (value.includes("{{")) throw new Error(`Interpolation in attribute "${name}" is not supported; use [attr.${name}] or [${name}].`);
+    if (value.includes("{{")) throw new Error(`Interpolation in attribute "${name}" is not supported; use ${name === "class" ? "[attr.class] or [class.name]" : `[attr.${name}] or [${name}]`}.`);
     el.attrs.push({ name, value: fromSource ? decodeEntities(value) : value });
   }
 }
