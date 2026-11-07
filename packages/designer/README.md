@@ -93,7 +93,7 @@ node packages/designer/e2e/device-check.mjs --port <cdp port> --shell 127.0.0.1:
 
 The shell's chrome follows the Claude Design boards: a top bar (mode, Select or Interact, connection, undo and redo, theme, palette),
 Structure, Insert and Routes on the left, the canvas with its device bar, a bottom drawer (Code, Problems, HMR timeline,
-Accessibility, Performance, HTTP) and Style, Content and Inspector on the right. Tokens live outside the gable-ui marker block in
+State timeline, Accessibility, Performance, HTTP) and Style, Content and Inspector on the right. Tokens live outside the gable-ui marker block in
 `shell/src/shell.css`, mapped onto gable-ui's variables, so components need no `dark:` variant here.
 
 Ctrl K opens the command palette, generated from the current state in `shell/src/app/commands.ts`. Panel sizes, the drawer and
@@ -185,6 +185,33 @@ or a `component` id from `get_tree`; `force` as Set anyway), `get_scene_state` a
 
 ```
 node packages/designer/e2e/state-check.mjs     # spawns the backend on test-fixtures/state-app and a headless Edge, stops only those
+```
+
+## State timeline (signal time travel)
+
+The drawer's **State timeline** tab, next to the HMR timeline, lists the selected frame's recorded state history, newest first:
+each step is one task's writes to the app's state (signals that are fields of a component or a service; a click handler
+and the effects that answer it make one step), with every signal's value before and after. The framework's own signals (a
+`@for` row's item) and anonymous locals are not recorded. A step commits on the next task, so two tasks that run back to back
+before it (timers due at once) share one. The slider scrubs through the states (its left end is the state before the first step), a
+row travels to that step, **Replay** steps forward from where the frame is (or from the start) every half second, **Live**
+goes back to the newest state, **Pause**/**Record** stops and resumes recording, and **Clear** forgets the steps. Writes from
+the Inspector's Set and Pin are recorded too, marked **Designer**.
+
+Recording lives in the devtools layer of `@gable/core` (`src/signal-history.ts`, dev-only like the rest of the hook: `signal()`
+and state sources tell the hook before a write only when `DEV` and recording are on). The Preview agent turns it on when a
+frame connects. It keeps values by reference and a short preview of each, in a ring buffer of the last 300 steps and 2000
+writes (at most 500 per step; a bigger step is marked incomplete); older steps are dropped and counted. A travel sets each
+recorded signal to its value just after the chosen step (or, for a signal first written later, its value before that), models
+through their setter so a parent's binding follows, and does not record what the app derives in answer. Signals of
+components destroyed since are left out and counted as gone; a write after a travel is recorded as a new step from there.
+
+The devtools hook gained `history`, `recordHistory`, `travel` and `clearHistory`, and a `history` event when a step is
+recorded; the control channel a `history` command. All additive, so `PROTOCOL_VERSION` is unchanged. MCP:
+`get_signal_history`, `travel_signal_history`, `clear_signal_history` and `record_signal_history`.
+
+```
+node packages/designer/e2e/timeline-check.mjs  # spawns the backend on test-fixtures/state-app and a headless Edge, stops only those
 ```
 
 ## Projects and the dev server
@@ -368,7 +395,7 @@ left out to mean the element selected in the window.
 | Read | `get_status` (call first), `list_components`, `list_scenes`, `list_routes`, `get_problems`, `get_history`, `describe_element`, `get_selection`, `get_styles`, `get_tree`, `get_signals`, `get_hmr_timeline`, `get_http_log`, `get_performance`, `get_scene_state` |
 | Window | `set_mode`, `show_page`, `show_component`, `set_scene`, `set_scenario`, `navigate`, `add_frame`, `update_frame`, `remove_frame`, `select_frame`, `select_element` (by position or CSS selector) |
 | Edit | `edit_text`, `set_attribute`, `bind`, `insert_element`, `delete_element`, `move_element`, `wrap_element`, `set_component_meta`, `set_css`, `edit_classes` (Tailwind, at a breakpoint and state), `save_scenario`, `undo`, `redo` |
-| App state | `set_signal`, `pin_signal`: write the running app's signals (not the source) |
+| App state | `set_signal`, `pin_signal`: write the running app's signals (not the source); `get_signal_history`, `travel_signal_history` (a step, `start` or `live`), `clear_signal_history`, `record_signal_history`: the State timeline |
 | See | `screenshot`: a PNG of a frame as MCP image content |
 
 **Screenshots.** In the desktop app (WebView2 with a CDP port) the live frame is captured over CDP: the frame's own target

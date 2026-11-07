@@ -600,6 +600,12 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
   const connect = (hook: GableDevtoolsHook) => {
     devtools = hook;
     hook.connect(forward);
+    // The State timeline (TASK-56.18): record the app's state writes from the start. A core without it says no; nothing to record then.
+    try {
+      void Promise.resolve(hook.call("recordHistory", { on: true })).catch(() => undefined);
+    } catch {
+      // an older devtools hook
+    }
     void signalState.sync();
     announce();
   };

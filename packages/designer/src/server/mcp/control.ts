@@ -19,6 +19,7 @@ import type { TailwindService } from "../tailwind/api.js";
 import type { ControlCommands, FramePatch, FrameRect, SelectionSnapshot, ShellSnapshot } from "../../control-protocol.js";
 import type { ShellBridge } from "./bridge.js";
 import { registerSignalTools } from "./signal-tools.js";
+import { registerHistoryTools } from "./history-tools.js";
 import type { CompileError } from "../compile-check.js";
 import { captureHeadless, captureLive, findBrowser, type Shot } from "./screenshot.js";
 import { fileOfTarget, positionOf, projectFile, targetAt, unifiedDiff, type SourcePos } from "./targets.js";
@@ -687,6 +688,7 @@ export function createControlServer(ctx: ControlContext): McpServer {
   );
 
   registerSignalTools(server, { shell, commit, live, guard, read, write, fail: (message) => { throw new ToolError(message); } });
+  registerHistoryTools(server, { shell, guard, read, write, fail: (message) => { throw new ToolError(message); } });
 
   return server;
 }

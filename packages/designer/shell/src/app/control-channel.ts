@@ -3,11 +3,13 @@
 // so the human sees every change and this window stays the one source of UI state. The backend sends commands on
 // `/api/shell/channel` (SSE); each is answered with a POST to `/api/shell/reply`.
 import { inject } from "@gable/core";
+import type { TravelResult } from "@gable/core/devtools";
 import type { ControlCommands, ControlName, ControlRequest, FrameRect, SelectionSnapshot, ShellSnapshot } from "../../../src/control-protocol.js";
 import { DesignerState } from "./designer-state.js";
 import { PageState } from "./page-state.js";
 import { DEV_NOTE, PerfState } from "./perf-state.js";
 import { SignalEdits } from "./signal-edits.js";
+import { SignalTimeline } from "./signal-timeline-state.js";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -19,6 +21,7 @@ export class ControlChannel {
   page = inject(PageState);
   perf = inject(PerfState);
   signals = inject(SignalEdits);
+  timeline = inject(SignalTimeline);
 
   booted = this.#boot();
 
@@ -240,6 +243,23 @@ export class ControlChannel {
       const write = a.action === "set" ? await this.signals.set(a.id, a.text, a.force) : a.action === "pin" ? await this.signals.pin(a.id, a.text, a.force) : undefined;
       if (!write) await this.signals.refresh();
       return { ...(write ? { write } : {}), pins: this.signals.pins(), scene: this.signals.scene() };
+    },
+
+    history: async (a) => {
+      this.#ready();
+      const t = this.timeline;
+      t.stopReplay();
+      let travel: TravelResult | undefined;
+      if (a.action === "clear") await t.clear();
+      else if (a.action === "record") await t.record(a.on);
+      else if (a.action === "travel") {
+        const steps = (await t.refresh())?.steps ?? [];
+        const to = a.to === "live" ? steps.at(-1)?.seq : a.to === "start" ? (steps[0] ? steps[0].seq - 1 : undefined) : a.to;
+        travel = to === undefined ? { ok: false, error: "No state history is recorded." } : await t.travel(to);
+      }
+      const info = await t.refresh();
+      if (!info) throw new Error("The selected frame has no state history: its app is not running with the Gable devtools hook.");
+      return { info, ...(travel ? { travel } : {}) };
     },
 
     frameRect: ({ frame: id }): FrameRect => {

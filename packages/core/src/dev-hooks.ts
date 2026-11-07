@@ -145,6 +145,10 @@ export interface DevtoolsSink {
   hmr(result: { status: string; errors: unknown[]; modules: string[]; changes?: HmrChange[] }): void;
   /** A module (by URL) exports `Class` (from the Vite plugin's accept line). */
   source(Class: Function, url: string): void;
+  /** True while state history is recorded: only then does a write call `write`. Optional: an older sink has neither. */
+  readonly recording?: boolean;
+  /** A state node is about to be written (its value is still the old one). Only while `recording`. */
+  write?(node: object): void;
 }
 
 export const devtools: { current: DevtoolsSink | null } = { current: null };
