@@ -1,4 +1,5 @@
 import type { Editor } from "@tiptap/core";
+import { ITEM_ICONS } from "./icons.js";
 import type { ToolbarItem } from "./plugin.js";
 
 /** A toolbar item with its current state, ready for any UI to render. */
@@ -6,6 +7,7 @@ export interface ToolbarItemState {
   item: ToolbarItem;
   id: string;
   label: string;
+  icon: string;
   group: string;
   active: boolean;
   enabled: boolean;
@@ -17,6 +19,7 @@ export function readToolbar(editor: Editor, items: readonly ToolbarItem[]): Tool
     item,
     id: item.id,
     label: item.label,
+    icon: item.icon ?? ITEM_ICONS[item.id] ?? "",
     group: item.group ?? "",
     active: editable && (item.isActive?.(editor) ?? false),
     enabled: editable && (item.isEnabled?.(editor) ?? true),

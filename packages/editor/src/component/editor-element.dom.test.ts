@@ -35,6 +35,18 @@ describe("<gable-editor>", () => {
     await expectNoA11yViolations(document.body);
   });
 
+  it("draws a lucide glyph on every toolbar button, keeping the accessible name", async () => {
+    await boot(App);
+    const buttons = $$("[data-toolbar-item]");
+    expect(buttons.length).toBeGreaterThan(10);
+    for (const b of buttons) {
+      expect(b.querySelector("svg path, svg line, svg rect, svg circle, svg polyline"), b.getAttribute("data-toolbar-item")!).not.toBeNull();
+      expect(b.querySelector("svg")!.getAttribute("aria-hidden")).toBe("true");
+      expect(b.getAttribute("aria-label")).toBeTruthy();
+      expect(b.getAttribute("title")).toBe(b.getAttribute("aria-label"));
+    }
+  });
+
   it("toolbar buttons format the content and write value back", async () => {
     const app = await boot(App);
     const bold = btn("bold");

@@ -8,6 +8,8 @@ export interface ToolbarItem {
   /** Items sharing a group render together, groups sort by `order`. */
   group?: string;
   order?: number;
+  /** Name of a glyph in gable-ui's `ICONS` registry. Built-in items get lucide glyphs by id; without one the label is shown. */
+  icon?: string;
   run(editor: Editor): boolean;
   isActive?(editor: Editor): boolean;
   isEnabled?(editor: Editor): boolean;

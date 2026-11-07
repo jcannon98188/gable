@@ -1,6 +1,6 @@
 import { computed, effect, html, input, model, signal, untracked, viewChild } from "@gable/core";
 import { currentScope } from "@gable/core/internal";
-import { UiToggle } from "@gable/ui";
+import { UiIcon, UiToggle } from "@gable/ui";
 import type { Editor } from "@tiptap/core";
 import type * as Y from "yjs";
 import { GableEditor } from "../editor.js";
@@ -15,12 +15,6 @@ import { watchToolbar, type ToolbarItemState } from "../toolbar-model.js";
 
 export const defaultPlugins: readonly EditorPlugin[] = [corePlugin, ...formattingPlugins, historyPlugin];
 
-const GLYPHS: Record<string, string> = {
-  undo: "↶", redo: "↷", bold: "B", italic: "I", underline: "U", strike: "S", code: "</>", link: "🔗",
-  heading1: "H1", heading2: "H2", heading3: "H3", blockquote: "❝", codeBlock: "{ }", horizontalRule: "―",
-  bulletList: "•", orderedList: "1.", taskList: "☑",
-};
-
 /**
  * `<gable-editor [(value)]="html" [plugins]="plugins" [ydoc]="ydoc" [readonly]="false"></gable-editor>`
  *
@@ -31,7 +25,7 @@ const GLYPHS: Record<string, string> = {
 export class GableEditorElement {
   static meta = {
     selector: "gable-editor",
-    imports: [UiToggle, GablePresence],
+    imports: [UiToggle, UiIcon, GablePresence],
     template: html`
       <div class="flex flex-col rounded-md border bg-background text-foreground">
         <div
@@ -56,7 +50,11 @@ export class GableEditorElement {
               (mousedown)="$event.preventDefault()"
               (click)="activate(s)"
             >
-              {{ s.glyph }}
+              @if (s.icon) {
+                <svg [uiIcon]="s.icon" class="size-4"></svg>
+              } @else {
+                {{ s.label }}
+              }
             </button>
           }
           <gable-presence class="ml-auto" [awareness]="awareness()"></gable-presence>
@@ -72,7 +70,11 @@ export class GableEditorElement {
           >
             @for (s of bubbleRows(); track s.id) {
               <button type="button" uiToggle size="compact" [pressed]="s.active" [disabled]="!s.enabled" [attr.aria-label]="s.label" (click)="activate(s)">
-                {{ s.glyph }}
+                @if (s.icon) {
+                  <svg [uiIcon]="s.icon" class="size-4"></svg>
+                } @else {
+                  {{ s.label }}
+                }
               </button>
             }
           </div>
@@ -106,7 +108,7 @@ export class GableEditorElement {
   toolbar = signal<ToolbarItemState[]>([]);
   focusId = signal<string>("");
   bubble = signal<{ style: string } | null>(null);
-  rows = computed(() => this.toolbar().map((s) => ({ ...s, glyph: GLYPHS[s.id] ?? s.label.slice(0, 2), tab: s.id === this.focusId() ? 0 : -1 })));
+  rows = computed(() => this.toolbar().map((s) => ({ ...s, tab: s.id === this.focusId() ? 0 : -1 })));
   bubbleRows = computed(() => this.rows().filter((s) => ["styles", "insert"].includes(s.group)));
   contentClasses = computed(() => `prose-editor min-h-24 p-3 outline-none [&_.ProseMirror]:min-h-20 [&_.ProseMirror]:outline-none ${this.class()}`);
 

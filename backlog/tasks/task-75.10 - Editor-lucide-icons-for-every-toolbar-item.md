@@ -1,9 +1,10 @@
 ---
 id: TASK-75.10
 title: 'Editor: lucide icons for every toolbar item'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-07T15:21:00Z'
+updated_date: '2026-11-07T15:32:00Z'
 labels:
   - editor
 dependencies: []
@@ -19,7 +20,19 @@ Toolbar buttons use text glyphs; table items show truncated two-letter labels ("
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every built-in toolbar item (styles, headings, lists, table ops, image, comment, suggestion mode, undo/redo) shows a lucide icon with aria-label and tooltip
-- [ ] #2 Icons come from lucide via the same UiIcon mechanism; a plugin can supply its own icon name; items without one fall back to a text label
-- [ ] #3 No axe violations; icon-only buttons keep an accessible name
+- [x] #1 Every built-in toolbar item (styles, headings, lists, table ops, image, comment, suggestion mode, undo/redo) shows a lucide icon with aria-label and tooltip
+- [x] #2 Icons come from lucide via the same UiIcon mechanism; a plugin can supply its own icon name; items without one fall back to a text label
+- [x] #3 No axe violations; icon-only buttons keep an accessible name
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Lucide covers every glyph; no extra icon package needed. ToolbarItem.icon (optional) + ITEM_ICONS default map by id, registered into @gable/ui ICONS as ed-*. Label text remains as aria-label/title; label shown only when no icon.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All toolbar items (formatting, table, image, comment, suggestion mode, undo/redo) render lucide glyphs via svg[uiIcon]; tests assert coverage and accessible names.
+<!-- SECTION:FINAL_SUMMARY:END -->

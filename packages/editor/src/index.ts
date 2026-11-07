@@ -16,3 +16,4 @@ export * from "./plugins/comments.js";
 export * from "./component/comments-panel.js";
 export * from "./plugins/suggestions.js";
 export * from "./component/suggestions-panel.js";
+export { ITEM_ICONS } from "./icons.js";
