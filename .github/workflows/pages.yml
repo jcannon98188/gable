@@ -28,6 +28,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - run: npm run api:strict -w site
       - run: npm test -w site
       - run: npm run check -w site
       - run: npm run build -w site

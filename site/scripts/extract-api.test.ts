@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 // @ts-expect-error plain .mjs script without declarations
-import { buildIndex, extractPackage, resolveEntryPoints, run } from "./extract-api.mjs";
+import { SKIP, buildIndex, extractPackage, resolveEntryPoints, run } from "./extract-api.mjs";
 import type { ApiEntryPoint, ApiPackage, ApiSymbol } from "../src/generated/api-schema";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -43,6 +43,24 @@ describe("entry points", () => {
     fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ name: "x", version: "1.0.0" }));
     expect(extractPackage(dir).skipped).toBeTruthy();
     fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("skips application packages on purpose, with the reason in the summary", () => {
+    const packages = fs.mkdtempSync(path.join(os.tmpdir(), "api-apps-"));
+    const out = fs.mkdtempSync(path.join(os.tmpdir(), "api-apps-out-"));
+    for (const name of Object.keys(SKIP)) {
+      const dir = path.join(packages, name.replace(/[^a-z]/g, "-"));
+      fs.mkdirSync(dir);
+      // An exports map that points at missing declarations would throw if the package were not skipped first.
+      fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ name, version: "1.0.0", exports: { ".": { types: "./dist/none.d.ts" } } }));
+      expect(extractPackage(dir).skipped).toBe(SKIP[name as keyof typeof SKIP]);
+    }
+    const lines: string[] = [];
+    run({ packagesDir: packages, outDir: out, log: (l: string) => lines.push(l) });
+    expect(lines.join("\n")).toContain("skipped gable-vscode: application, not a library");
+    expect(Object.keys(SKIP).sort()).toEqual(["@gable/designer", "@gable/devtools-extension", "gable-vscode"]);
+    fs.rmSync(packages, { recursive: true, force: true });
+    fs.rmSync(out, { recursive: true, force: true });
   });
 
   it("fails with a build hint when declarations are missing", () => {

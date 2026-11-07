@@ -453,6 +453,13 @@ function describeSymbol(checker, name, symbol, entryOf, options = {}) {
   if (decls.some((d) => readDocs(d).internal)) return undefined;
 
   const sfOf = (d) => d.getSourceFile();
+  // A type re-exported from a third-party package cannot carry our TSDoc: say where it comes from instead of listing it as a gap.
+  if (!docs.summary) {
+    const posix = (d) => sfOf(d).fileName.replace(/\\/g, "/");
+    const external = decls.length > 0 && decls.every((d) => posix(d).includes("/node_modules/"));
+    const origin = external ? /\/node_modules\/((?:@[^/]+\/)?[^/]+)/.exec(posix(decls[0]))?.[1] : undefined;
+    if (origin) docs.summary = `Re-exported from \`${origin}\`.`;
+  }
   let signature;
   switch (kind) {
     case "function":
@@ -576,11 +583,24 @@ function resolveSee(entryPoints) {
 // ---------------------------------------------------------------------------------------------
 
 /**
+ * Packages that are applications, not libraries: nothing imports them, so there is no API to document. Skipped on
+ * purpose, with the reason shown in the summary. A package that merely forgot its `exports` map is not listed
+ * here; it is reported as skipped with the generic "no exports/types" reason so the omission stays visible.
+ */
+export const SKIP = {
+  "@gable/designer":
+    "application, not a library: a private CLI (gable-designer), Tauri shell and dev-only preview agent with no entry module and no importers",
+  "@gable/devtools-extension": "application, not a library: a Manifest V3 browser extension bundle",
+  "gable-vscode": "application, not a library: a VS Code extension (TypeScript server plugin and grammar)",
+};
+
+/**
  * Extract one package. Returns { skipped } or { api }.
  * @param {string} pkgDir absolute package directory
  */
 export function extractPackage(pkgDir) {
   const pkg = JSON.parse(fs.readFileSync(path.join(pkgDir, "package.json"), "utf8"));
+  if (Object.hasOwn(SKIP, pkg.name)) return { name: pkg.name, skipped: SKIP[pkg.name] };
   const { entries, skipped } = resolveEntryPoints(pkgDir, pkg);
   if (skipped) return { name: pkg.name, skipped };
 

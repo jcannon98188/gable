@@ -4,21 +4,25 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "api": "node scripts/extract-api.mjs",
+    "dev": "npm run api && vite",
+    "build": "npm run api && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "check": "tsc --noEmit && gable-check"
+    "check": "npm run api && tsc --noEmit && gable-check",
+    "api:strict": "node scripts/extract-api.mjs --strict"
   },
   "dependencies": {
     "@gable/core": "*",
     "@gable/renderer-dom": "*",
+    "@gable/store": "*",
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "@gable/language-service": "*",
     "@gable/testing": "*",
     "@gable/vite": "*",
+    "@typescript/typescript6": "^6.0.2",
     "typescript": "^7.0.2",
     "vite": "^8.3.6",
     "vitest": "^5.1.0"
