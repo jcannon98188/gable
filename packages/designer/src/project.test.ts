@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { startBackend } from "./server/backend.js";
+import { readSession } from "./server/mcp/session-file.js";
 import { DevServer, ProjectLog, findPackage, stripAnsi, type DevServerState } from "./server/dev-server.js";
 import { checkProject, detectPackageManager, listFolders, projectProblem, recentProjects, rememberProject } from "./server/projects.js";
 
@@ -234,7 +235,7 @@ describe("switching projects in the backend", () => {
     const first = fakeProject();
     const second = fakeProject();
     manifest(second, { name: "second-app", dependencies: { "@gable/core": "*" }, devDependencies: { vite: "*" } });
-    const backend = await startBackend({ root: first, dataDir: data });
+    const backend = await startBackend({ root: first, dataDir: data, mcpSessionDir: data });
     const api = async (path: string, body?: unknown) => {
       const res = await fetch(backend.url + path, {
         method: body === undefined ? "GET" : "POST",
@@ -247,6 +248,7 @@ describe("switching projects in the backend", () => {
       await until(async () => (await api("/api/project")).body.ready, "the first project is running");
       const before = (await api("/api/project")).body;
       expect(before).toMatchObject({ root: first, server: "running", installing: false, check: { install: null } });
+      expect(readSession(first, data)).toMatchObject({ root: first });
 
       expect((await api("/api/project/open", { root: join(first, "missing") })).status).toBe(400);
       expect((await api("/api/project/open", { root: "relative" })).body.error).toMatch(/full path/);
@@ -256,6 +258,9 @@ describe("switching projects in the backend", () => {
       expect(opened.body).toMatchObject({ root: second, name: "second-app", previewUrl: before.previewUrl });
       await until(async () => (await api("/api/project")).body.ready, "the second project is running");
       expect((await api("/api/project/recent")).body.map((p) => p.root)).toEqual([second]);
+      // The MCP session file follows the open project, so `gable-designer mcp <second>` finds this Designer.
+      expect(readSession(second, data)).toMatchObject({ root: second, url: `${backend.url}/mcp` });
+      expect(readSession(first, data)).toBeNull();
 
       const log = await api("/api/server/log");
       expect(log.body.text).toContain(`root=${second}`);

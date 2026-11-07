@@ -7,11 +7,18 @@
 // it resolves the workspace's packages from there). Phase 1 runs the backend with --cdp-port (live
 // capture of the frame); phase 2 without (the headless-render fallback); phase 3 is the stdio proxy finding the running
 // Designer through its session file. Only processes this script starts are stopped.
+//
+//   node packages/designer/e2e/mcp-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port> --data <its data dir>
+//
+// drives a Designer window that is already running (the Tauri/WebView2 window started with GABLE_CDP_PORT and
+// GABLE_DESIGNER_DATA): it opens the fixture in that window through the project switcher, finds the MCP endpoint through
+// the session file in <data dir>, runs phases 1 and 3 against it and opens the window's previous project again. Phase 2
+// (no CDP) needs a backend of its own and is skipped.
 import { spawn } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
@@ -21,6 +28,8 @@ const designer = join(here, "..");
 const cli = join(designer, "dist", "server", "cli.js");
 const arg = (name, fallback) => (process.argv.includes(name) ? process.argv[process.argv.indexOf(name) + 1] : fallback);
 const keep = process.argv.includes("--keep");
+const attach = process.argv.includes("--port") ? { port: Number(arg("--port")), shell: arg("--shell", "127.0.0.1:5190"), data: arg("--data", "") } : null;
+if (attach && !attach.data) throw new Error("--port needs --data <the window's GABLE_DESIGNER_DATA>");
 const shotDir = arg("--shot", "");
 const browserPath =
   arg("--browser", "") ||
@@ -55,7 +64,7 @@ writeFileSync(
   join(root, "src", "main.ts"),
   `import { bootstrap, html } from "@gable/core";\nimport { provideRouter, RouterOutlet } from "@gable/core/router";\nimport { dom } from "@gable/renderer-dom";\nimport { ProfileCard } from "./card.js";\nimport { routes } from "./routes.js";\n\nexport class App {\n  static meta = { selector: "app-root", imports: [ProfileCard, RouterOutlet], template: html\`<main><app-profile-card></app-profile-card><router-outlet></router-outlet></main>\` };\n}\n\nbootstrap(App, { renderer: dom(), providers: provideRouter(routes), target: "#app" });\n`,
 );
-const dataDir = mkdtempSync(join(cache, "data-"));
+const dataDir = attach ? attach.data : mkdtempSync(join(cache, "data-"));
 const env = { ...process.env, GABLE_DESIGNER_DATA: dataDir };
 const card = join(root, "src", "card.ts");
 const cardOriginal = readFileSync(card, "utf8");
@@ -153,19 +162,38 @@ const pngSize = (b64) => {
   return b.subarray(0, 8).toString("hex") === "89504e470d0a1a0a" ? { width: b.readUInt32BE(16), height: b.readUInt32BE(20) } : null;
 };
 
+/** Opens the fixture in the running window (the project switcher's endpoint) and reads its MCP session file. */
+let reopen = null;
+async function attachDesigner() {
+  const { connect } = await import("./cdp.mjs");
+  const { readSession } = await import(pathToFileURL(join(designer, "dist", "server", "mcp", "session-file.js")).href);
+  const page = await connect(attach.port, attach.shell);
+  const shellToken = await page.ev("__GABLE_DESIGNER__.token");
+  page.close();
+  const api = async (path, body) => (await fetch(`http://${attach.shell}${path}`, { method: body ? "POST" : "GET", headers: { authorization: `Bearer ${shellToken}`, "content-type": "application/json" }, body: body && JSON.stringify(body) })).json();
+  const previous = (await api("/api/project")).root;
+  reopen = () => api("/api/project/open", { root: previous });
+  const opened = await api("/api/project/open", { root });
+  if (opened.root !== root) throw new Error(`the window did not open the fixture: ${JSON.stringify(opened)}`);
+  const session = await until(() => readSession(root, dataDir), "the session file names the fixture", 10000);
+  check(session.shell === `http://${attach.shell}/`, "after a project switch the session file names the open project and this window", session.shell);
+  return { ready: { url: session.shell.replace(/\/$/, ""), mcp: { url: session.url, token: session.token } } };
+}
+
 try {
   // ---- phase 1: live window over CDP ------------------------------------------------------------------------------------
-  const cdpPort = await freePort();
-  const d1 = await startDesigner(cdpPort);
+  const cdpPort = attach ? attach.port : await freePort();
+  const d1 = attach ? await attachDesigner() : await startDesigner(cdpPort);
   check(d1.ready.mcp?.url === `${d1.ready.url}/mcp` && !!d1.ready.mcp.token, "the READY line names the MCP endpoint and its token", d1.ready.mcp?.url);
   const unauth = await fetch(d1.ready.mcp.url, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
   check(unauth.status === 401, "an unauthenticated MCP request is refused", String(unauth.status));
 
   const m = await mcpOver(d1.ready);
-  const before = (await m.call("get_status")).json;
-  check(before.window.connected === false && before.window.open === `${d1.ready.url}/`, "without a window, get_status says where to open one", before.window.open);
-
-  await startBrowser(`${d1.ready.url}/`, cdpPort);
+  if (!attach) {
+    const before = (await m.call("get_status")).json;
+    check(before.window.connected === false && before.window.open === `${d1.ready.url}/`, "without a window, get_status says where to open one", before.window.open);
+    await startBrowser(`${d1.ready.url}/`, cdpPort);
+  }
   const status = await until(async () => {
     const s = (await m.call("get_status")).json;
     return s.window.connected && s.window.connection === "ready" && s.project.ready ? s : null;
@@ -217,6 +245,11 @@ try {
   const size = img && pngSize(img.data);
   check(!!size && size.width > 100, "screenshot returns a PNG image (CDP)", `${size?.width}x${size?.height}; ${shot.text}`);
   if (img) savePng("cdp.png", img.data);
+  if (/clipped/.test(shot.text)) {
+    // Scaled back to the frame's own CSS size, whatever the display's scaling (a 150% monitor must not enlarge it).
+    const shown = (await m.call("get_status")).json.window.frames.find((f) => f.id === status.window.selectedFrame) ?? status.window.frames[0];
+    check(Math.abs(size.width - shown.width) <= 2 && Math.abs(size.height - shown.height) <= 2, "a clipped screenshot has the frame's own size", `${size.width}x${size.height} for ${shown.width}x${shown.height}`);
+  }
 
   const framesBefore = (await m.call("get_status")).json.window.frames.length;
   const added = (await m.call("add_frame", { preset: "iphone-15" })).json;
@@ -253,29 +286,32 @@ try {
   await stdio.close();
 
   await stopAll();
-
-  // ---- phase 2: no CDP port, the fallback renders the frame's URL headless ------------------------------------------------
-  const d2 = await startDesigner(null);
-  const browserPort = await freePort();
-  await startBrowser(`${d2.ready.url}/`, browserPort);
-  const m2 = await mcpOver(d2.ready);
-  await until(async () => {
-    const s = (await m2.call("get_status")).json;
-    return s.window.connected && s.window.connection === "ready";
-  }, "the window connects (phase 2)", 60000);
-  const s2 = (await m2.call("get_status")).json;
-  check(s2.screenshot.startsWith("fresh render"), "get_status names the fallback", s2.screenshot);
-  const shot2 = await m2.call("screenshot");
-  const img2 = shot2.r.content.find((c) => c.type === "image");
-  const size2 = img2 && pngSize(img2.data);
-  check(!!size2 && size2.width > 100, "screenshot falls back to a headless render", `${size2?.width}x${size2?.height}; ${shot2.text}`);
-  if (img2) savePng("headless.png", img2.data);
-  await m2.client.close();
+  if (attach) console.log("(phase 2, without CDP, needs a backend of its own: skipped when attached)");
+  else {
+    // ---- phase 2: no CDP port, the fallback renders the frame's URL headless ------------------------------------------------
+    const d2 = await startDesigner(null);
+    const browserPort = await freePort();
+    await startBrowser(`${d2.ready.url}/`, browserPort);
+    const m2 = await mcpOver(d2.ready);
+    await until(async () => {
+      const s = (await m2.call("get_status")).json;
+      return s.window.connected && s.window.connection === "ready";
+    }, "the window connects (phase 2)", 60000);
+    const s2 = (await m2.call("get_status")).json;
+    check(s2.screenshot.startsWith("fresh render"), "get_status names the fallback", s2.screenshot);
+    const shot2 = await m2.call("screenshot");
+    const img2 = shot2.r.content.find((c) => c.type === "image");
+    const size2 = img2 && pngSize(img2.data);
+    check(!!size2 && size2.width > 100, "screenshot falls back to a headless render", `${size2?.width}x${size2?.height}; ${shot2.text}`);
+    if (img2) savePng("headless.png", img2.data);
+    await m2.client.close();
+  }
 } catch (e) {
   failed++;
   console.log(`FAIL  ${e.stack ?? e}`);
 } finally {
   await stopAll();
+  if (reopen) await reopen().catch((e) => console.log(`could not reopen the window's project: ${e}`));
   writeFileSync(card, cardOriginal);
   if (!keep) rmSync(cache, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
 }

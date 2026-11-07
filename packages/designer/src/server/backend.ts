@@ -250,6 +250,7 @@ export async function startBackend(options: BackendOptions): Promise<Backend> {
     await previous.close();
     session.server.start();
     rememberProject(root, data);
+    control.projectChanged();
     broadcast("project", { root });
     return session.info();
   }

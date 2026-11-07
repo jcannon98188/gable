@@ -90,6 +90,13 @@ fn main() {
             if let tauri::RunEvent::Exit = event {
                 if let Some(b) = tauri::Manager::try_state::<Backend>(app) {
                     if let Some(mut c) = b.0.lock().unwrap().take() {
+                        // Closing stdin is the backend's signal to stop (--watch-stdin): it closes the project's Vite and
+                        // removes its MCP session file. Killing it at once would skip both; kill only if it does not exit.
+                        drop(c.stdin.take());
+                        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+                        while matches!(c.try_wait(), Ok(None)) && std::time::Instant::now() < deadline {
+                            std::thread::sleep(std::time::Duration::from_millis(50));
+                        }
                         let _ = c.kill();
                     }
                 }

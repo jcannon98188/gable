@@ -150,6 +150,8 @@ checkout, so the install works offline), starts the backend and a headless Edge,
 
 ```
 node packages/designer/e2e/project-check.mjs [--edge <msedge.exe>] [--shot dir] [--keep]
+# or against a running window (started on examples/ui-gallery with a fresh GABLE_DESIGNER_DATA):
+node packages/designer/e2e/project-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port>
 ```
 
 New Scenario and Extract component have their own self-contained check: it starts the built Designer on `examples/todomvc` and a
@@ -158,6 +160,8 @@ headless Edge/Chromium, drives both dialogs, undoes both edits, puts the project
 
 ```
 node packages/designer/e2e/writers-check.mjs [--browser <path to msedge/chrome>]
+# or against a running window on examples/todomvc:
+node packages/designer/e2e/writers-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port>
 ```
 
 ## Canvas and panel polish
@@ -355,4 +359,6 @@ window. The driven check runs a real backend, the shell in headless Edge, and cl
 
 ```
 npm run build -w packages/designer && node packages/designer/e2e/mcp-check.mjs [--browser <path>] [--shot dir]
+# or against a running window (it switches the window to the fixture and back; the no-CDP phase is skipped):
+node packages/designer/e2e/mcp-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port> --data <the window's GABLE_DESIGNER_DATA>
 ```

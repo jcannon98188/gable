@@ -4,6 +4,11 @@
 // directory, starts a headless Edge, and drives the shell. It stops only the processes it started.
 //
 //   npm run build -w packages/designer && node packages/designer/e2e/project-check.mjs [--edge <msedge.exe>] [--shot <dir>] [--keep]
+//   node packages/designer/e2e/project-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port> [--shot <dir>]
+//
+// The second form drives a Designer window that is already running (the Tauri/WebView2 window started with GABLE_CDP_PORT)
+// and starts no backend or browser. Start it on examples/ui-gallery with a fresh GABLE_DESIGNER_DATA: the check expects
+// ui-gallery to be the only recent project. The window ends on ui-gallery again.
 import { spawn } from "node:child_process";
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
@@ -19,6 +24,7 @@ const repo = resolve(pkg, "../..");
 const edgePath = arg("--edge", "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe");
 const shotDir = arg("--shot", null);
 const keep = process.argv.includes("--keep");
+const attach = process.argv.includes("--port") ? { port: Number(arg("--port")), shell: arg("--shell", "127.0.0.1:5190") } : null;
 const slash = (p) => p.replaceAll("\\", "/");
 
 let failed = 0;
@@ -119,23 +125,33 @@ async function cleanup() {
 
 // --- the backend on examples/ui-gallery, then Edge ----------------------------------------------------------------------
 const gallery = join(repo, "examples", "ui-gallery");
-const shellPort = await freePort();
-const cdpPort = await freePort();
-const env = { ...process.env, GABLE_DESIGNER_DATA: data };
-const backend = startProcess(process.execPath, [join(pkg, "dist/server/cli.js"), gallery, "--port", String(shellPort), "--watch-stdin"], { env, stdio: ["pipe", "pipe", "pipe"] });
+const shellPort = attach ? Number(attach.shell.split(":").pop()) : await freePort();
+const cdpPort = attach ? attach.port : await freePort();
+let backend = null;
+let edge = null;
 let backendErr = "";
-backend.stderr.on("data", (d) => (backendErr = (backendErr + d).slice(-20000)));
-const ready = await new Promise((ok, fail) => {
-  let out = "";
-  backend.stdout.on("data", (d) => {
-    out += d;
-    const line = out.split("\n").find((l) => l.startsWith("GABLE_DESIGNER_READY "));
-    if (line) ok(JSON.parse(line.slice("GABLE_DESIGNER_READY ".length)));
+let ready;
+if (attach) {
+  // The window's own backend: its URL is the page's, its token the one it hands the shell.
+  const page = await connect(cdpPort, attach.shell);
+  ready = { url: `http://${attach.shell}`, token: await page.ev("__GABLE_DESIGNER__.token") };
+  page.close();
+} else {
+  const env = { ...process.env, GABLE_DESIGNER_DATA: data };
+  backend = startProcess(process.execPath, [join(pkg, "dist/server/cli.js"), gallery, "--port", String(shellPort), "--watch-stdin"], { env, stdio: ["pipe", "pipe", "pipe"] });
+  backend.stderr.on("data", (d) => (backendErr = (backendErr + d).slice(-20000)));
+  ready = await new Promise((ok, fail) => {
+    let out = "";
+    backend.stdout.on("data", (d) => {
+      out += d;
+      const line = out.split("\n").find((l) => l.startsWith("GABLE_DESIGNER_READY "));
+      if (line) ok(JSON.parse(line.slice("GABLE_DESIGNER_READY ".length)));
+    });
+    backend.once("exit", (code) => fail(new Error(`backend exited ${code}: ${backendErr}`)));
   });
-  backend.once("exit", (code) => fail(new Error(`backend exited ${code}: ${backendErr}`)));
-});
-const profile = join(work, "edge-profile");
-const edge = startProcess(edgePath, ["--headless=new", `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${profile}`, "--no-first-run", "--window-size=1440,900", ready.url + "/"], { stdio: "ignore" });
+  const profile = join(work, "edge-profile");
+  edge = startProcess(edgePath, ["--headless=new", `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${profile}`, "--no-first-run", "--window-size=1440,900", ready.url + "/"], { stdio: "ignore" });
+}
 let browserClose = async () => undefined;
 
 let page;

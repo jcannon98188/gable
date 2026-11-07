@@ -21,6 +21,8 @@ export interface ControlPlane {
   /** `/api/shell/*`, after the backend's token check. */
   handleShell(req: IncomingMessage, res: ServerResponse, url: URL, readBody: (req: IncomingMessage) => Promise<string>, json: (res: ServerResponse, status: number, body: unknown) => void): Promise<boolean>;
   listening(origin: string): void;
+  /** The backend opened another project: the session file moves to it (the stdio proxy looks a Designer up by project). */
+  projectChanged(): void;
   close(): Promise<void>;
 }
 
@@ -32,6 +34,11 @@ export function createControlPlane(options: ControlPlaneOptions): ControlPlane {
   const ctx = new Proxy(options, { get: (t, k) => (k in extra ? (extra as Record<string | symbol, unknown>)[k] : (t as unknown as Record<string | symbol, unknown>)[k]) }) as unknown as ControlContext;
   const mcp = createMcpHttp(ctx);
   let written: { root: string; token: string } | null = null;
+  const writeSessionFile = () => {
+    if (options.sessionDir === false) return;
+    written = { root: options.root, token: mcp.token };
+    writeSession({ root: options.root, url: plane.url, token: mcp.token, shell: origin + "/", pid: process.pid }, options.sessionDir);
+  };
   const plane: ControlPlane = {
     bridge,
     mcp,
@@ -42,10 +49,12 @@ export function createControlPlane(options: ControlPlaneOptions): ControlPlane {
       origin = o;
       plane.url = o + MCP_PATH;
       bridge.shellUrl = o + "/";
-      if (options.sessionDir !== false) {
-        written = { root: options.root, token: mcp.token };
-        writeSession({ root: options.root, url: plane.url, token: mcp.token, shell: o + "/", pid: process.pid }, options.sessionDir);
-      }
+      writeSessionFile();
+    },
+    projectChanged() {
+      if (!origin) return;
+      if (options.sessionDir !== false && written) removeSession(written.root, written.token, options.sessionDir);
+      writeSessionFile();
     },
     async close() {
       if (options.sessionDir !== false && written) removeSession(written.root, written.token, options.sessionDir);

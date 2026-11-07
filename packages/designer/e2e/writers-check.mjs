@@ -4,6 +4,10 @@
 // first and put back afterwards whatever happens.
 //
 //   npm run build -w packages/designer && node packages/designer/e2e/writers-check.mjs [--browser <path to msedge/chrome>]
+//   node packages/designer/e2e/writers-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port>
+//
+// The second form drives a Designer that is already running on examples/todomvc (the Tauri/WebView2 window started with
+// GABLE_CDP_PORT, say) and starts nothing.
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
@@ -25,6 +29,8 @@ const browserPath =
     "/usr/bin/chromium",
     "/usr/bin/google-chrome",
   ].find((p) => existsSync(p));
+
+const attach = process.argv.includes("--port") ? { port: Number(arg("--port")), shell: arg("--shell", "127.0.0.1:5190") } : null;
 
 let failed = 0;
 const check = (ok, what, detail = "") => {
@@ -73,35 +79,40 @@ let page = null;
 let browser = null;
 const profile = mkdtempSync(join(tmpdir(), "gable-writers-edge-"));
 try {
-  if (!browserPath) throw new Error("No Edge or Chromium found: pass --browser <path>.");
-  const designerPort = await freePort();
-  const designer = spawn(process.execPath, [join(here, "..", "dist", "server", "cli.js"), project, "--port", String(designerPort)], { stdio: ["ignore", "pipe", "pipe"] });
-  started.push(designer);
-  let log = "";
-  designer.stderr.on("data", (d) => (log += d));
-  const ready = await new Promise((ok, fail) => {
-    let out = "";
-    designer.stdout.on("data", (d) => {
-      out += d;
-      const m = /GABLE_DESIGNER_READY (\{.*\})/.exec(out);
-      if (m) ok(JSON.parse(m[1]));
+  if (attach) {
+    page = await connect(attach.port, attach.shell);
+    browser = await connectBrowser(attach.port);
+  } else {
+    if (!browserPath) throw new Error("No Edge or Chromium found: pass --browser <path>.");
+    const designerPort = await freePort();
+    const designer = spawn(process.execPath, [join(here, "..", "dist", "server", "cli.js"), project, "--port", String(designerPort)], { stdio: ["ignore", "pipe", "pipe"] });
+    started.push(designer);
+    let log = "";
+    designer.stderr.on("data", (d) => (log += d));
+    const ready = await new Promise((ok, fail) => {
+      let out = "";
+      designer.stdout.on("data", (d) => {
+        out += d;
+        const m = /GABLE_DESIGNER_READY (\{.*\})/.exec(out);
+        if (m) ok(JSON.parse(m[1]));
+      });
+      designer.once("exit", (code) => fail(new Error(`the Designer exited (${code}): ${log.slice(-800)}`)));
     });
-    designer.once("exit", (code) => fail(new Error(`the Designer exited (${code}): ${log.slice(-800)}`)));
-  });
-  const cdpPort = await freePort();
-  const edge = spawn(browserPath, ["--headless=new", `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${profile}`, "--no-first-run", "--window-size=1600,1000", ready.url + "/"], { stdio: "ignore" });
-  started.push(edge);
-  for (let i = 0; i < 100; i++) {
-    try {
-      if ((await fetch(`http://127.0.0.1:${cdpPort}/json/version`)).ok) break;
-    } catch {
-      // not up yet
+    const cdpPort = await freePort();
+    const edge = spawn(browserPath, ["--headless=new", `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${profile}`, "--no-first-run", "--window-size=1600,1000", ready.url + "/"], { stdio: "ignore" });
+    started.push(edge);
+    for (let i = 0; i < 100; i++) {
+      try {
+        if ((await fetch(`http://127.0.0.1:${cdpPort}/json/version`)).ok) break;
+      } catch {
+        // not up yet
+      }
+      await sleep(150);
     }
-    await sleep(150);
+    await sleep(500);
+    page = await connect(cdpPort, `127.0.0.1:${designerPort}`);
+    browser = await connectBrowser(cdpPort);
   }
-  await sleep(500);
-  page = await connect(cdpPort, `127.0.0.1:${designerPort}`);
-  browser = await connectBrowser(cdpPort);
   const { ev, until, cdp } = page;
   const key = async (k, code, vk, modifiers = 0) => {
     await cdp("Input.dispatchKeyEvent", { type: "keyDown", key: k, code, windowsVirtualKeyCode: vk, modifiers });
@@ -131,7 +142,8 @@ try {
   const pick = async (selector) => {
     const frame = await until(async () => (await browser.frames()).find((f) => f.url.includes("localhost")), "the preview frame");
     await until(() => frame.ev(`!!document.querySelector(${JSON.stringify(selector)})`), `${selector} in the frame`);
-    const inner = await frame.ev(`(() => { const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return { x: r.x + Math.min(r.width / 2, 20), y: r.y + r.height / 2 }; })()`);
+    // A point the element itself is hit at: with todos listed, todomvc's toggle-all label covers the input's left end.
+    const inner = await frame.ev(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); const r = el.getBoundingClientRect(); const y = r.y + r.height / 2; return [r.x + Math.min(r.width / 2, 20), r.x + r.width / 2].map((x) => ({ x, y })).find((p) => el.contains(document.elementFromPoint(p.x, p.y))) ?? { x: r.x + r.width / 2, y }; })()`);
     const outer = await ev(`(() => { const f = document.querySelector("app-frame-view iframe"); const r = f.getBoundingClientRect(); return { x: r.x, y: r.y, scale: r.width / f.offsetWidth }; })()`);
     const x = outer.x + inner.x * outer.scale;
     const y = outer.y + inner.y * outer.scale;
