@@ -1,0 +1,53 @@
+/* The live HMR demo (site/src/hmr-demo). Loaded with the demo's lazy chunk, uses the page's theme variables. */
+.dm-body{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:0}
+.dm-col{padding:20px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.dm-col+.dm-col{border-left:1px solid var(--line)}
+.dm-cap{font:500 11px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.dm-stage{min-height:208px;padding:18px;border:1px solid var(--line);border-radius:10px;background:var(--card2);display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.dm-stage demo-counter{display:contents}
+.dm-stage .dc-n{font:700 30px 'Space Grotesk',Inter,sans-serif;letter-spacing:-.02em}
+.dm-stage .dc-d,.dm-stage .dc-h{color:var(--mut);font-size:14px}
+.dm-stage .btn{min-height:40px;padding:0 18px}
+.dm-stage .dc-l{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mut);align-self:stretch}
+.dm-stage .dc-in{height:36px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--tx);font:inherit;font-size:14px}
+.dm-out{display:flex;flex-direction:column;gap:10px;font-size:13px}
+.dm-status{padding:10px 12px;border-radius:8px;background:var(--card2);border:1px solid var(--line);line-height:1.5}
+.dm-status.ok{background:var(--okbg);border-color:var(--ok);color:var(--okfg)}
+.dm-status.bad{background:var(--badbg);border-color:var(--badline)}
+.dm-badge{display:inline-block;margin-right:6px;padding:1px 8px;border-radius:10px;font:600 11px 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.04em;background:var(--card);border:1px solid currentColor}
+.dm-err{margin:0;padding:10px 12px;border-radius:8px;background:var(--card2);border:1px solid var(--badline);font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.dm-fields{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.dm-fields li{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+.dm-fields code{font-size:12px;color:var(--tx)}
+.dm-tag{display:inline-block;min-width:84px;padding:1px 8px;border-radius:10px;font:600 11px 'JetBrains Mono',monospace;text-align:center}
+.dm-tag.keep{background:var(--okbg);color:var(--okfg)}
+.dm-tag.calc{background:var(--icobg);color:var(--acc)}
+.dm-tag.new{background:var(--hl);color:var(--acc)}
+.dm-tag.gone{background:var(--badbg);color:var(--tx)}
+.dm-empty{color:var(--mut);font-size:13px}
+.dm-chips{display:flex;flex-wrap:wrap;gap:8px}
+.dm-chip{min-height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--line);background:var(--card);color:var(--tx);font:500 13px Inter,system-ui,sans-serif;cursor:pointer}
+.dm-chip:hover{background:var(--card2);border-color:var(--acc)}
+.dm-chip.warn{border-style:dashed;border-color:var(--badline)}
+.dm-hint{font-size:13px;color:var(--mut);min-height:40px}
+.dm-src{width:100%;resize:vertical;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:12.5px;line-height:1.6;tab-size:2;white-space:pre;overflow:auto}
+.dm-diff{margin:0;padding:8px 0;border-radius:8px;border:1px solid var(--line);font-size:12px;line-height:1.6;overflow:auto}
+.dm-diff .dl{display:block;padding:0 12px;white-space:pre}
+.dm-diff .add{background:var(--okbg);color:var(--okfg)}
+.dm-diff .del{background:var(--badbg);color:var(--tx)}
+.dm-diff .same{color:var(--mut)}
+.dm-actions .btn{min-height:40px;padding:0 16px;font:600 14px Inter,system-ui,sans-serif;cursor:pointer}
+.dm-actions .btn:disabled{opacity:.5;cursor:default}
+.dm-key{font-size:11px;color:var(--mut)}
+.dm-ph{min-height:560px}
+.dm-ph-body{padding:28px;color:var(--mut);font-size:14px}
+@media (prefers-reduced-motion:no-preference){
+  .dm-diff .add,.dm-diff .del{animation:dm-flash 1.4s ease-out}
+  .dm-status{animation:dm-flash 1.2s ease-out}
+}
+@keyframes dm-flash{from{outline:2px solid var(--acc);outline-offset:-2px}to{outline:2px solid transparent;outline-offset:-2px}}
+@media (max-width:900px){
+  .dm-body{grid-template-columns:minmax(0,1fr)}
+  .dm-col+.dm-col{border-left:0;border-top:1px solid var(--line)}
+  .dm-col{padding:16px}
+}

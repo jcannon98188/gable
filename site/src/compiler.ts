@@ -1,14 +1,16 @@
 import { html } from "@gable/core";
+import { Playground } from "./demos/playground/playground.js";
 
 export class Compiler {
   static meta = {
     selector: "site-compiler",
+    imports: [Playground],
     template: html`
 <section class="sec s2" id="compiler">
 <div class="in">
 <div class="eyebrow">No compiler</div>
 <h2 class="h2">The fastest build step is the one that doesn't exist.</h2>
-<p class="lead mut">A framework compiler is a tool that must transform your templates before anything runs. Gable has none as a baseline. Your bundler and dev server stay general-purpose, and they never need to know what a Gable template is.</p>
+<p class="lead mut">A framework compiler is a tool that must transform your templates before anything runs. Gable has none as a baseline. Your bundler and dev server stay general-purpose, and they never need to know what a Gable template is. Don't take our word for it: the editor below parses and renders whatever you type, in this page, with the same runtime your app ships.</p>
 <div style="display: flex; flex-direction: column; gap: 28px; margin-top: 56px">
 <div>
 <div class="mono mut" style="font-size: 12px; margin-bottom: 10px; letter-spacing: .06em">A FRAMEWORK WITH A TEMPLATE COMPILER</div>
@@ -19,6 +21,7 @@ export class Compiler {
 <div class="lane"><div class="step">Your source<small>html tagged template literals</small></div><span class="arr">→</span><div class="step good">TypeScript transpile<small>types stripped. Any tool will do</small></div><span class="arr">→</span><div class="step good">Browser<small>templates parsed at runtime</small></div></div>
 </div>
 </div>
+<site-playground></site-playground>
 <div class="grid3">
 <div class="card"><h3>What you read is what runs</h3><p class="mut">The code in your editor and the code in the debugger are the same code. There is no generated layer between them.</p></div>
 <div class="card"><h3>Type-checking is tooling</h3><p class="mut">The template language service checks templates against your component classes in the editor and in CI. It never ships and never runs your app.</p></div>
