@@ -1,5 +1,6 @@
 // The write-back API: what the shell sends and gets back. Types only (the shell imports them without pulling in server code).
 import type { UnifiedDiff } from "./diff.js";
+import type { MockReplyPatch, MockSpec } from "../../network.js";
 
 export type { DiffLine, UnifiedDiff } from "./diff.js";
 
@@ -65,6 +66,11 @@ export type EditOp =
    * (plain data by field name) are set on the new scene over what it copied: what "Save as Scenario" writes.
    */
   | { op: "addScene"; file: string; name: string; description?: string; from?: string; inputs?: Record<string, unknown>; state?: Record<string, unknown> }
+  /** Adds a page-mode Scenario whose HTTP mocks answer as recorded (see `mocksFromRecording` in network.ts); `url` is the route it opens. */
+  | { op: "addMockScene"; file: string; name: string; description?: string; url?: string; mocks: MockSpec[] }
+  /** Changes one mock's reply (its literal fields only); `expectUrl` refuses a mock that is no longer the one shown. */
+  | { op: "setMock"; file: string; scene: string; index: number; reply: MockReplyPatch; expectUrl?: string }
+  | { op: "removeMock"; file: string; scene: string; index: number; expectUrl?: string }
   /**
    * Moves an element (static markup only) into a new component `name` in a file beside the template's, and uses it in its place.
    * `all` also replaces the identical copies of the element in the same template.

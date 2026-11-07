@@ -7,6 +7,8 @@ import type { ComponentDetail, HistoryInfo, HmrEntry, RouterInfo, TravelResult, 
 import type { DesignNode } from "@gable/core/designer";
 import type { ColorScheme } from "./devices.js";
 import type { HttpLogEntry, PageScenarioInfo, PerfReport, SceneInfo, SceneStateReport, SignalPin, SignalWriteResult } from "./protocol.js";
+import type { NetworkCommand, NetworkCommandResult } from "./network.js";
+import type { StorageCommand, StorageCommandResult } from "./storage.js";
 import type { SourceRange } from "./server/source.js";
 
 export interface FrameSnapshot {
@@ -89,6 +91,10 @@ export interface ControlCommands {
   signals: { params: SignalAction; result: SignalsResult };
   /** The selected frame's state history (the drawer's State timeline), and travel through it, through the tab's service. */
   history: { params: HistoryAction; result: HistoryResult };
+  /** The Network panel: a frame's requests, its network condition, recording real responses. */
+  network: { params: NetworkCommand; result: NetworkCommandResult };
+  /** The Storage panel: a frame's localStorage, sessionStorage and cookies, read and edited. */
+  storage: { params: StorageCommand; result: StorageCommandResult };
 }
 
 /** What the `history` command does: report, travel (to a step; `start`: before the first; `live`: the newest), clear, record. */

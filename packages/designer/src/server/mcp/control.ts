@@ -24,6 +24,8 @@ import type { CompileError } from "../compile-check.js";
 import { captureHeadless, captureLive, findBrowser, type Shot } from "./screenshot.js";
 import { registerTokenTools } from "./token-tools.js";
 import { fileOfTarget, positionOf, projectFile, targetAt, unifiedDiff, type SourcePos } from "./targets.js";
+import { registerNetworkTools } from "./network-tools.js";
+import { registerStorageTools } from "./storage-tools.js";
 
 export interface ControlContext {
   root: string;
@@ -693,6 +695,9 @@ export function createControlServer(ctx: ControlContext): McpServer {
 
   registerSignalTools(server, { shell, commit, live, guard, read, write, fail: (message) => { throw new ToolError(message); } });
   registerHistoryTools(server, { shell, guard, read, write, fail: (message) => { throw new ToolError(message); } });
+  const kit = { server, shell, commit, live, read, write, guard, fail: (message: string): never => { throw new ToolError(message); } };
+  registerNetworkTools(kit);
+  registerStorageTools(kit);
 
   return server;
 }

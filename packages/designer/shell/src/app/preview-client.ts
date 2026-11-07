@@ -2,7 +2,7 @@
 // message that comes back (source window, origin, nonce, protocol version).
 import { CHANNEL, PROTOCOL_VERSION, withSession, isOurs, type AgentMessage, type AgentMethods, type Ready, type ShellMessage } from "../../../src/protocol.js";
 
-export type AgentEvent = Extract<AgentMessage, { type: "event" | "pick" | "badge" | "action" | "scenes" | "incompatible" | "ready" | "interaction" }>;
+export type AgentEvent = Extract<AgentMessage, { type: "event" | "pick" | "badge" | "action" | "scenes" | "incompatible" | "ready" | "interaction" | "activity" }>;
 
 export class PreviewClient {
   readonly nonce = crypto.randomUUID();

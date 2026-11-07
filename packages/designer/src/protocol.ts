@@ -4,6 +4,8 @@
 // drive the shell, and the agent never answers anyone but the window that opened it.
 import type { ComponentDetail, DevtoolsEvent, DevtoolsMethods, HmrEntry } from "@gable/core/devtools";
 import type { DesignNode } from "@gable/core/designer";
+import type { NetworkMethods } from "./network.js";
+import type { StorageMethods } from "./storage.js";
 
 /** Bumped on any incompatible change. The agent refuses a shell that speaks another version, and says so. */
 export const PROTOCOL_VERSION = 1;
@@ -75,7 +77,7 @@ interface Envelope {
 // --- shell to agent --------------------------------------------------------
 
 /** Everything the shell can ask of the agent: the devtools methods plus the design ones. */
-export interface AgentMethods extends DevtoolsMethods {
+export interface AgentMethods extends DevtoolsMethods, NetworkMethods, StorageMethods {
   /** `select`: clicks pick elements and the app does not see them. `interact`: the app behaves normally. */
   setMode: { params: { mode: "select" | "interact" }; result: true };
   /** Selects a template node (as clicking its element would), or clears with `null`. */
@@ -405,7 +407,9 @@ export type AgentMessage =
   /** A real (trusted) click, input or scroll in interact mode, for syncing the other frames. */
   | (Envelope & { type: "interaction"; interaction: Interaction })
   /** The shell speaks a protocol the agent does not. */
-  | (Envelope & { type: "incompatible"; agent: number; shell: number });
+  | (Envelope & { type: "incompatible"; agent: number; shell: number })
+  /** The page made requests or changed its storage: the Network and Storage panels refresh (throttled). Added after version 1; additive. */
+  | (Envelope & { type: "activity"; what: "network" | "storage" });
 
 export function envelope(nonce: string): Envelope {
   return { channel: CHANNEL, v: PROTOCOL_VERSION, nonce };

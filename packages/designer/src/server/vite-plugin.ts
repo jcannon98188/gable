@@ -16,9 +16,14 @@ const VIRTUAL = "\0gable-designer-host:";
 const SCENARIO = "/__gable-designer/scenario.js";
 const SCENARIO_VIRTUAL = "\0gable-designer-scenario:";
 
-/** Every mocked HTTP request lands here, for the Designer's HTTP panel (the agent reads it). */
+/**
+ * Every mocked HTTP request lands here, for the Designer's HTTP panel (the agent reads it). In a Designer session the agent's
+ * network hook (agent/network.ts) also logs each one and puts the frame's network condition (slow, error, offline) on the reply.
+ */
 const MOCK_LOG = `const log = (globalThis.__GABLE_DESIGNER_HTTP__ ??= []);
-const mocks = (scene) => (scene.http ? mockHttp(scene.http, { onRequest: (e) => { log.push({ ...e, at: Date.now() }); if (log.length > 200) log.shift(); } }) : []);`;
+const net = () => globalThis.__GABLE_DESIGNER_NET__;
+const conditioned = (list) => list.map((m, i) => ({ ...m, reply: (req) => { const r = typeof m.reply === "function" ? m.reply(req) : m.reply; return net() ? net().reply(req, r, i) : r; } }));
+const mocks = (scene) => (scene.http ? mockHttp(conditioned(scene.http), { onRequest: (e) => { log.push({ ...e, at: Date.now() }); if (log.length > 200) log.shift(); if (e.mock < 0) net()?.unmatched(e); } }) : []);`;
 
 /**
  * The generated module that applies a Scenario to the REAL app (page mode). The plugin injects it ahead of the page's own

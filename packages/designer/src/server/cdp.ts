@@ -6,6 +6,7 @@
 // work on top-level targets, so size is CSS (the shell sizes the iframe) and touch events are synthesised by the agent.
 import { NETWORK_PROFILES, type Emulation, type Throttle } from "../devices.js";
 import { SESSION_NAME_PREFIX } from "../protocol.js";
+import type { CookieDelete, CookieWrite, FullCookie } from "../storage.js";
 
 interface Pending {
   ok: (result: unknown) => void;
@@ -126,8 +127,33 @@ export class CdpEmulator {
     if (!sessionId) throw new Error("No preview frame with that session was found over CDP.");
     await this.#send("Emulation.setCPUThrottlingRate", { rate: throttle.cpu }, sessionId);
     await this.#send("Network.enable", {}, sessionId);
-    const p = throttle.network === "none" ? null : NETWORK_PROFILES[throttle.network];
-    await this.#send("Network.emulateNetworkConditions", { offline: false, latency: p?.latency ?? 0, downloadThroughput: p?.download ?? -1, uploadThroughput: p?.upload ?? -1 }, sessionId);
+    this.#profiles.set(nonce, throttle.network);
+    await this.#emulateNetwork(nonce, sessionId);
+  }
+
+  /** Per frame (by nonce): its network throttling profile, and the session it was taken offline in (see `setOffline`). */
+  #profiles = new Map<string, Throttle["network"]>();
+  #offline = new Map<string, string>();
+
+  /** One `Network.emulateNetworkConditions` for both: the throttling profile and whether the frame is offline. */
+  async #emulateNetwork(nonce: string, sessionId: string): Promise<void> {
+    const network = this.#profiles.get(nonce) ?? "none";
+    const p = network === "none" ? null : NETWORK_PROFILES[network];
+    await this.#send("Network.emulateNetworkConditions", { offline: this.#offline.has(nonce), latency: p?.latency ?? 0, downloadThroughput: p?.download ?? -1, uploadThroughput: p?.upload ?? -1 }, sessionId);
+  }
+
+  /**
+   * Takes the whole frame bound to `nonce` offline (documents, assets, sockets; `navigator.onLine` turns false), or back
+   * online. A frame reloaded while offline shows the browser's error page, which has no session name: the session it was
+   * taken offline in still brings it back.
+   */
+  async setOffline(nonce: string, offline: boolean): Promise<void> {
+    const sessionId = (await this.#sessionFor(nonce).catch(() => null)) ?? this.#offline.get(nonce) ?? null;
+    if (!sessionId) throw new Error("No preview frame with that session was found over CDP.");
+    if (offline) this.#offline.set(nonce, sessionId);
+    else this.#offline.delete(nonce);
+    await this.#send("Network.enable", {}, sessionId);
+    await this.#emulateNetwork(nonce, sessionId);
   }
 
   /** Per frame session, the DOM nodes pseudo-states were forced on (to be released before the next force). */
@@ -163,6 +189,45 @@ export class CdpEmulator {
     }
     if (forced.length) this.#forced.set(sessionId, forced);
     return { marked };
+  }
+
+  /** The session and current URL of the frame bound to `nonce` (cookies belong to a URL). */
+  async #frameUrl(nonce: string): Promise<{ sessionId: string; url: string }> {
+    const sessionId = await this.#sessionFor(nonce);
+    if (!sessionId) throw new Error("No preview frame with that session was found over CDP.");
+    const r = await this.#send<{ result?: { value?: string } }>("Runtime.evaluate", { expression: "location.href", returnByValue: true }, sessionId);
+    const url = r.result?.value;
+    if (typeof url !== "string" || !/^https?:/.test(url)) throw new Error("The frame has no http(s) URL to read cookies for.");
+    return { sessionId, url };
+  }
+
+  /** Every cookie the frame bound to `nonce` sends (HttpOnly ones and attributes included): `Network.getCookies`. */
+  async cookies(nonce: string): Promise<{ url: string; cookies: FullCookie[] }> {
+    const { sessionId, url } = await this.#frameUrl(nonce);
+    await this.#send("Network.enable", {}, sessionId);
+    const r = await this.#send<{ cookies: FullCookie[] }>("Network.getCookies", { urls: [url] }, sessionId);
+    return { url, cookies: r.cookies.map((c) => ({ name: c.name, value: c.value, domain: c.domain, path: c.path, expires: c.expires, size: c.size, httpOnly: c.httpOnly, secure: c.secure, session: c.session, ...(c.sameSite ? { sameSite: c.sameSite } : {}) })) };
+  }
+
+  /** Writes a cookie for the frame's URL (`Network.setCookie`); HttpOnly is allowed here. */
+  async setCookie(nonce: string, c: CookieWrite): Promise<void> {
+    const { sessionId, url } = await this.#frameUrl(nonce);
+    await this.#send("Network.enable", {}, sessionId);
+    const expires = typeof c.maxAge === "number" ? Date.now() / 1000 + c.maxAge : undefined;
+    const r = await this.#send<{ success?: boolean }>(
+      "Network.setCookie",
+      { name: c.name, value: c.value, url, path: c.path ?? "/", ...(c.domain ? { domain: c.domain } : {}), ...(expires !== undefined ? { expires } : {}), ...(c.sameSite ? { sameSite: c.sameSite } : {}), secure: c.secure === true, httpOnly: c.httpOnly === true },
+      sessionId,
+    );
+    // Older engines answer `success`; newer ones throw on a refused cookie.
+    if (r.success === false) throw new Error(`The browser refused the cookie "${c.name}" (a Secure or SameSite=None cookie needs https, and the domain must be the frame's own).`);
+  }
+
+  /** Deletes the cookies named `c.name` of the frame's URL (on `c.path`/`c.domain` when given): `Network.deleteCookies`. */
+  async deleteCookie(nonce: string, c: CookieDelete): Promise<void> {
+    const { sessionId, url } = await this.#frameUrl(nonce);
+    await this.#send("Network.enable", {}, sessionId);
+    await this.#send("Network.deleteCookies", { name: c.name, url, ...(c.domain ? { domain: c.domain } : {}), ...(c.path ? { path: c.path } : {}) }, sessionId);
   }
 
   close(): void {

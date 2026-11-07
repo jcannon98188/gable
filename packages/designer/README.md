@@ -93,7 +93,7 @@ node packages/designer/e2e/device-check.mjs --port <cdp port> --shell 127.0.0.1:
 
 The shell's chrome follows the Claude Design boards: a top bar (mode, Select or Interact, connection, undo and redo, theme, palette),
 Structure, Insert and Routes on the left, the canvas with its device bar, a bottom drawer (Code, Problems, HMR timeline,
-State timeline, Accessibility, Performance, HTTP) and Style, Content and Inspector on the right. Tokens live outside the gable-ui marker block in
+State timeline, Accessibility, Performance, Network, Storage) and Style, Content and Inspector on the right. Tokens live outside the gable-ui marker block in
 `shell/src/shell.css`, mapped onto gable-ui's variables, so components need no `dark:` variant here.
 
 Ctrl K opens the command palette, generated from the current state in `shell/src/app/commands.ts`. Panel sizes, the drawer and
@@ -214,6 +214,82 @@ recorded; the control channel a `history` command. All additive, so `PROTOCOL_VE
 node packages/designer/e2e/timeline-check.mjs  # spawns the backend on test-fixtures/state-app and a headless Edge, stops only those
 ```
 
+## Network: conditions, recording and mocks
+
+The drawer's **Network** tab is the selected frame's network panel (`shell/src/app/network-panel.ts`, `network-state.ts`). The
+Preview agent wraps the page's `fetch` and `XMLHttpRequest` before the app's code runs (`src/agent/network.ts`) and logs each
+API request: method, URL, status, time, size, content type, the app code that made it (the first stack frame outside the
+agent, Vite and dependencies), and what a condition did to it. A request a Scenario's mock answered is logged as `mock`, with
+the mock's index; one no mock matched says so. The Designer's own and Vite's requests are not listed. The log filters by text (URL,
+method or initiator), by kind (fetch, XHR, mocked) and to failed requests only (no response, 4xx/5xx, no mock matched); the count
+then reads *N of M* (`filterEntries` in `src/network.ts`, shared with `get_network`).
+
+**Conditions** (per frame, kept across reloads of that frame in its sessionStorage, in every engine): *Slow* holds each request
+back by a delay, *Server error* answers with a status (4xx/5xx, marked as simulated) without reaching the server, *Offline* fails
+it like a dropped connection and makes `navigator.onLine` false (with an `offline` event); a URL filter narrows any of them.
+They apply to `fetch`, `XMLHttpRequest` and the Scenario's mocks, not to the page's assets and module loads. **Whole frame**
+offline also takes the frame's target offline over CDP (`Network.emulateNetworkConditions` through `/api/network/offline`,
+`src/server/cdp.ts`), so assets, module imports and sockets fail too: that needs CDP (the Windows desktop app, or a browser
+started with a debugging port), and is labelled unavailable elsewhere, never claimed.
+
+**Recording.** *Record* keeps the real responses to the frame's API requests (*Record from reload* starts over and reloads the
+frame, so its first requests are recorded too; recording survives reloads, in the frame's sessionStorage). While recording, a
+`fetch` body is read in full before the app gets it (a copy of the response). *Save as Scenario…* writes them as a new scene of
+a `*.scenes.ts` file through the edit service, like any other source edit (ADR 0001): one mock per method and URL (the URL
+without its query; the last response wins), each with the recorded status and JSON or text body, as one minimal insertion
+with undo (`src/server/edit/mocks.ts`, op `addMockScene`). Binary and over-512 KB bodies are left out and listed. Nothing is
+held by the Designer itself: the recording lives in the page until saved, and the saved mocks only in the file. *Use it*
+applies the new Scenario (page mode: the Scenario picker; component mode: the scene).
+
+**Editing mocks.** The panel lists the active Scenario's mocks as written (`GET /api/mocks?file=`); *Edit* changes a reply's
+status, delay, error or JSON body and *Remove* drops a mock, each a minimal patch with undo (ops `setMock`, `removeMock`), and
+refused when the mock at that index is no longer for that URL. A computed reply or list is shown read-only.
+
+Limits: a Scenario's mocks answer requests made through `@gable/core/http`'s `Http` client only (`mockHttp` replaces its
+backend). A recorded raw `fetch` or `XMLHttpRequest` still becomes a mock, but the raw call keeps going to the network.
+Conditions on raw calls do apply. The protocol gained `network`, `setNetworkCondition`, `record`, `recording` and the
+`activity` message; all additive, so `PROTOCOL_VERSION` is unchanged.
+
+MCP: `get_network` (with `filter`, `kind`, `failed`), `set_network_condition` (with `wholeFrame`), `record_http` (`start`/`stop`/`clear`, `reload`),
+`get_recording`, `save_recording_as_scenario` (answers with the diff), `list_mocks`, `edit_mock`, `remove_mock`.
+
+```
+node packages/designer/e2e/network-check.mjs            # spawns the backend (with CDP) on test-fixtures/net-app and a headless Edge, stops only those
+node packages/designer/e2e/network-check.mjs --no-cdp   # the same without CDP: whole-frame offline labelled unavailable
+```
+
+## Storage
+
+The drawer's **Storage** tab shows the selected frame's localStorage, sessionStorage and cookies (`shell/src/app/storage-panel.ts`,
+`storage-state.ts`). Each frame has its own origin, so its own storage; the panel names it. Everything is read from the page by
+the Preview agent (`src/agent/storage.ts`), never kept by the Designer, and the panel follows the page live: the agent wraps the
+Storage API's writes and the `document.cookie` setter, and listens for `storage` and `cookieStore` changes; a response's
+Set-Cookie shows on the request's activity. (A direct property write, `localStorage.x = 1`, shows on the next read or *Refresh*.)
+Items are added, edited (a new key renames: the new key is written, then the old one removed), deleted and filtered by name or
+value; *Clear* asks first. The Designer's own keys (`__gable_designer*`, `gable-designer*`: its session, network condition and
+recording) are left out, counted, refused for writes and kept by *Clear*. Values are cut in the row, whole in the editor.
+
+**Cookies.** With CDP (the Windows desktop app, or a browser started with a debugging port) the backend lists every cookie of
+the frame's URL with domain, path, expiry, size and flags, HttpOnly ones included, and sets and deletes them as a server would
+(`Network.getCookies`/`setCookie`/`deleteCookies` on the frame's target, `POST /api/storage/cookies`). Without CDP the panel
+shows the cookies the page can see, by name and value, writes them through `document.cookie`, and labels HttpOnly and the
+attributes unavailable rather than guessing. A write the browser did not keep, or a delete that left the cookie, is reported.
+
+**Third-party frame.** In a browser the Designer's window (127.0.0.1) and the frames (localhost) are different sites, so the frame
+is a third-party iframe: the browser keeps and sends only its `SameSite=None; Secure` cookies (none if it blocks third-party
+cookies), and an app whose session cookie is Lax is signed out here though it works on its own. The panel says so, and its
+cookie dialog then starts at `SameSite=None; Secure`. The desktop app's window (tauri.localhost) is the same site as the frames.
+
+The protocol gained `storage`, `setStorageItem`, `removeStorageItem`, `clearStorage`, `setCookie` and `deleteCookie`, and the
+`activity` message `what: "storage"`; all additive, so `PROTOCOL_VERSION` is unchanged. MCP: `get_storage` (an area or all,
+`filter`, `maxValue`; cookies with attributes over CDP, and `cookiesVia`), `set_storage_item`, `remove_storage_item`,
+`clear_storage`, `set_cookie`, `delete_cookie`, on the selected frame or any frame by id.
+
+```
+node packages/designer/e2e/storage-check.mjs            # spawns the backend (with CDP) on test-fixtures/net-app and a headless Edge, stops only those
+node packages/designer/e2e/storage-check.mjs --no-cdp   # the same without CDP: the page's cookies only, HttpOnly labelled unavailable
+```
+
 ## Projects and the dev server
 
 The project name in the top bar opens **Open a project**: a folder field, the recent projects and a folder lister (folders
@@ -321,7 +397,7 @@ export default {
 `http` goes through `mockHttp` (`@gable/core/http`), which replaces the `HttpBackend`; unmatched requests answer 404 and warn.
 In page mode the Scenario picker in the Routes tab reloads the page with `?__gable_scenario=<file>|<scene>`. The Designer's Vite
 plugin injects a module that sets `__GABLE_DESIGNER_HOOK__.rootProviders` (the mocks plus the scene's `providers`), which
-`bootstrap` appends after the app's own providers in development. The drawer's **HTTP** tab shows the mocks and the request log.
+`bootstrap` appends after the app's own providers in development. The drawer's **Network** tab shows the mocks and the request log (see Network).
 Limits: `inputs` and `state` are ignored in page mode, and a scene that needs the router belongs in page mode (component mode mounts
 the component alone).
 
@@ -437,6 +513,8 @@ left out to mean the element selected in the window.
 | Window | `set_mode`, `show_page`, `show_component`, `set_scene`, `set_scenario`, `navigate`, `add_frame`, `update_frame`, `remove_frame`, `select_frame`, `select_element` (by position or CSS selector) |
 | Edit | `edit_text`, `set_attribute`, `bind`, `insert_element`, `delete_element`, `move_element`, `wrap_element`, `set_component_meta`, `set_css`, `edit_classes` (Tailwind, at a breakpoint and state), `set_token`, `save_scenario`, `undo`, `redo` |
 | App state | `set_signal`, `pin_signal`: write the running app's signals (not the source); `get_signal_history`, `travel_signal_history` (a step, `start` or `live`), `clear_signal_history`, `record_signal_history`: the State timeline |
+| Network | `get_network`, `set_network_condition`, `record_http`, `get_recording`, `save_recording_as_scenario`, `list_mocks`, `edit_mock`, `remove_mock` (see Network) |
+| Storage | `get_storage`, `set_storage_item`, `remove_storage_item`, `clear_storage`, `set_cookie`, `delete_cookie` (see Storage) |
 | See | `screenshot`: a PNG of a frame as MCP image content |
 
 **Screenshots.** In the desktop app (WebView2 with a CDP port) the live frame is captured over CDP: the frame's own target
