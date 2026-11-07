@@ -132,6 +132,25 @@ describe("tailwind: conflicts are judged by the CSS properties classes set", () 
   });
 });
 
+describe("tailwind: conflicts already in a class list", () => {
+  const found = (classes: string, breakpoint: string | null = null) => model.analyze(classes, breakpoint, []).conflicts;
+
+  it("finds two classes that set the same property at the same variants, the stylesheet's later one winning", () => {
+    expect(found("flex gap-4 gap-3")).toEqual([{ winner: "gap-4", loser: "gap-3", properties: expect.arrayContaining(["row-gap", "column-gap"]) }]);
+    expect(found("p-2 p-8")).toMatchObject([{ loser: "p-2", winner: "p-8" }]);
+    // the order in the attribute does not decide which applies
+    expect(found("text-blue-500 text-red-500").map((c) => c.loser)).toEqual(found("text-red-500 text-blue-500").map((c) => c.loser));
+  });
+
+  it("leaves narrower-next-to-broader, different variants, shared-variable readers and unknown classes alone", () => {
+    expect(found("p-4 px-2")).toEqual([]);
+    expect(found("p-4 md:p-8 hover:p-2")).toEqual([]);
+    expect(found("text-sm leading-6 shadow-md ring-2")).toEqual([]);
+    expect(found("box box2 p-4")).toEqual([]);
+    expect(found("md:p-4 md:p-8")).toMatchObject([{ loser: "md:p-4", winner: "md:p-8" }]);
+  });
+});
+
 describe("tailwind: where a new class goes", () => {
   it("appends when the repo's formatter does not sort classes", () => {
     const r = model.plan({ classes: "text-sm flex", utility: "p-4", breakpoint: null, states: [] });

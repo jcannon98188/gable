@@ -2,12 +2,13 @@
 // pixels and scaled as a whole (fit-to-screen, or a fixed zoom), so a 1920px desktop and a 390px phone can be seen together.
 import { computed, effect, html, inject, input, signal, untracked, viewChild } from "@gable/core";
 import { currentScope } from "@gable/core/internal";
-import { unsupported } from "../../../src/devices.js";
+import { TEXT_SCALES, clampTextScale, unsupported } from "../../../src/devices.js";
 import { UiButton } from "../components/ui/button.js";
 import { UiIcon } from "../lib/ui/icon.js";
 import { UiSelect } from "../components/ui/select.js";
 import { UiToggleGroup, type ToggleGroupItem } from "../components/ui/toggle-group.js";
 import { UiTooltip } from "../components/ui/tooltip.js";
+import { CanvasOverlays } from "./canvas-overlays.js";
 import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";
 import { frameUrl, type Frame } from "./frames.js";
@@ -29,7 +30,7 @@ export class FrameView {
         <button uiButton variant="ghost" size="icon" class="btn sm icon" uiTooltip="Duplicate this frame" [attr.aria-label]="duplicateLabel()" [disabled]="full()" (click)="duplicate()"><svg uiIcon="copy" class="ico-sm"></svg></button>
         <button uiButton variant="ghost" size="icon" class="btn sm icon" uiTooltip="Close this frame" [attr.aria-label]="closeLabel()" [disabled]="single()" (click)="close()"><svg uiIcon="x" class="ico-sm"></svg></button>
       </div>
-      <div class="frame" [class.sel]="selected()" [style.width]="boxWidth()" [style.height]="boxHeight()">
+      <div class="frame" [class.sel]="selected()" [attr.data-frame-id]="frameId()" [style.width]="boxWidth()" [style.height]="boxHeight()">
         <iframe
           #frame
           [attr.title]="title()"
@@ -52,6 +53,7 @@ export class FrameView {
     if (el && url) untracked(() => this.state.attachFrame(this.frame(), el, frameUrl(url, this.frame().slot)));
   });
 
+  frameId = computed(() => this.frame().id);
   size = computed(() => this.frame().size());
   scale = computed(() => this.state.frames.scale());
   width = computed(() => `${this.size().width}px`);
@@ -106,6 +108,8 @@ export class DeviceBar {
     template: html`
       <div class="ctool">
         @if (isPage()) {
+          <button uiButton variant="ghost" size="icon" class="btn icon" [uiTooltip]="page.backTitle()" aria-label="Back" data-part="page-back" [disabled]="!page.canBack()" (click)="page.back()"><svg uiIcon="arrow-left" class="ico"></svg></button>
+          <button uiButton variant="ghost" size="icon" class="btn icon" [uiTooltip]="page.forwardTitle()" aria-label="Forward" data-part="page-forward" [disabled]="!page.canForward()" (click)="page.forward()"><svg uiIcon="arrow-right" class="ico"></svg></button>
           <button uiButton variant="ghost" size="icon" class="btn icon" uiTooltip="Reload the page" aria-label="Reload the page" data-part="page-reload" [disabled]="!page.hasRouter()" (click)="page.go()"><svg uiIcon="refresh" class="ico"></svg></button>
           <label class="fld ghost" style="flex: 1 1 200px">
             <svg uiIcon="lock" class="ico-sm dim"></svg>
@@ -138,6 +142,9 @@ export class DeviceBar {
           <input class="sr-only" type="checkbox" [checked]="sync()" (change)="onSync($event.currentTarget.checked)" />
           Sync
         </label>
+        @if (overlays.syncText()) {
+          <span class="chip on mono" data-part="sync-selection" uiTooltip="The selected element, shown in every frame that renders it">{{ overlays.syncText() }}</span>
+        }
         <span class="spacer"></span>
         <select class="fld fld-zoom" aria-label="Zoom" [value]="zoomValue()" (change)="onZoom($event.currentTarget.value)">
           <option value="fit">Fit</option>
@@ -190,7 +197,14 @@ export class DeviceBar {
             <span class="dim" [uiTooltip]="touchNote()">{{ touchLabel() }}</span>
           }
         </label>
-        <span class="chip off" uiTooltip="Text scaling is not emulated yet: it needs a text-size override in the agent" tabindex="0">Aa 100%</span>
+        <label class="flex items-center gap-1" uiTooltip="Text size: the page's root font size times this, so rem-based type follows (px does not)">
+          Aa
+          <select class="fld fld-text mono" aria-label="Text size" data-part="text-scale" (change)="onTextScale($event.currentTarget.value)">
+            @for (t of textScales(); track t.value) {
+              <option [value]="t.value" [selected]="t.selected">{{ t.label }}</option>
+            }
+          </select>
+        </label>
         <span class="chip" [class.off]="uaNote()" [uiTooltip]="uaTitle()" tabindex="0">
           User agent: {{ uaLabel() }}
           @if (uaNote()) {
@@ -212,6 +226,7 @@ export class DeviceBar {
   state = inject(DesignerState);
   page = inject(PageState);
   chrome = inject(ChromeState);
+  overlays = inject(CanvasOverlays);
   frames = this.state.frames;
   presetName = signal("");
   sizes: ToggleGroupItem[] = SIZES.map((s) => ({ value: s.value, label: s.label }));
@@ -293,6 +308,11 @@ export class DeviceBar {
     const ua = this.config().emulation.userAgent;
     return ua ? (/iPhone|iPad|Android/.exec(ua)?.[0] ?? "custom") : "default";
   });
+  textScales = computed(() => {
+    const now = this.config().emulation.textScale ?? 1;
+    const all = (TEXT_SCALES as readonly number[]).includes(now) ? [...TEXT_SCALES] : [...TEXT_SCALES, now].sort((a, b) => a - b);
+    return all.map((v) => ({ value: String(v), label: `${Math.round(v * 100)}%`, selected: v === now }));
+  });
   uaTitle = computed(() => this.uaNote() || this.config().emulation.userAgent || "The webview's own user agent");
 
   typed(text: string): void {
@@ -334,6 +354,9 @@ export class DeviceBar {
   }
   onScheme(value: string): void {
     this.frames.update(this.config().id, { emulation: { ...this.config().emulation, colorScheme: value === "light" || value === "dark" ? value : "auto" } });
+  }
+  onTextScale(value: string): void {
+    this.frames.update(this.config().id, { emulation: { ...this.config().emulation, textScale: clampTextScale(value) } });
   }
   onMotion(on: boolean): void {
     this.frames.update(this.config().id, { emulation: { ...this.config().emulation, reducedMotion: on } });

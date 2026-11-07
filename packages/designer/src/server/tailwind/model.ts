@@ -3,7 +3,7 @@
 // CSS properties; a scale is the theme's own class list; breakpoints are the theme's `--breakpoint-*`.
 import { CONTROLS, publicControls, type ControlSpec } from "./controls.js";
 import type { AstNode, Ds } from "./design-system.js";
-import type { AnalyzeResult, Breakpoint, ControlOption, PlanResult, ResolvedValue, SearchHit, TailwindInfo, TokenInfo } from "./types.js";
+import type { AnalyzeResult, Breakpoint, ClassConflict, ControlOption, PlanResult, ResolvedValue, SearchHit, TailwindInfo, TokenInfo } from "./types.js";
 
 /** The state variants the toolbar offers, when the design system has them (a project may rename or add to these). */
 const TOOLBAR_STATES = ["hover", "focus", "focus-visible", "active", "disabled", "group-hover", "group-focus", "dark"];
@@ -255,7 +255,37 @@ export class TailwindModel {
       const v = this.#valueOf(found.utility, control.property, control.kind, root);
       values[control.id] = { utility: found.utility, token: found.token, ...v, at: found.breakpoint ?? "base", inherited: this.#rank(found.breakpoint) < ctxRank, fromBaseState };
     }
-    return { tokens, values };
+    return { tokens, values, conflicts: this.conflictsIn(tokens) };
+  }
+
+  /**
+   * The pairs of classes that set the same properties at the same variants, both ways (`gap-3 gap-4`; not `p-4 px-2`, where
+   * the narrower one is meant to win). The winner is the one the stylesheet puts later, which is Tailwind's class order.
+   */
+  conflictsIn(tokens: TokenInfo[]): ClassConflict[] {
+    const key = (t: TokenInfo) => [...t.variants].sort().join(",");
+    const known = tokens.filter((t) => t.known && t.claims.length);
+    if (known.length < 2) return [];
+    const order = new Map(this.ds.getClassOrder(known.map((t) => t.token)).map(([name, o]) => [name, o]));
+    const out: ClassConflict[] = [];
+    const lost = new Set<string>();
+    for (let i = 0; i < known.length; i++) {
+      for (let j = i + 1; j < known.length; j++) {
+        const a = known[i]!;
+        const b = known[j]!;
+        if (a.token === b.token || key(a) !== key(b) || !conflicts(a.claims, b.claims) || !conflicts(b.claims, a.claims)) continue;
+        const oa = order.get(a.token);
+        const ob = order.get(b.token);
+        // the later rule wins; with no order to go by, the later class in the attribute is the guess
+        const bWins = oa == null || ob == null ? true : ob >= oa;
+        const [winner, loser] = bWins ? [b, a] : [a, b];
+        if (lost.has(loser.token + ">" + winner.token)) continue;
+        lost.add(loser.token + ">" + winner.token);
+        const theirs = new Set(winner.claims.flatMap(expandProperty));
+        out.push({ winner: winner.token, loser: loser.token, properties: [...new Set(loser.claims.flatMap(expandProperty))].filter((p) => theirs.has(p)) });
+      }
+    }
+    return out;
   }
 
   /** The utilities a control offers, from the design system's own class list; those the system says claim its property. */

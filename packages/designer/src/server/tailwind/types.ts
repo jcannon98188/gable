@@ -84,10 +84,25 @@ export interface Conditional {
   attr: string;
 }
 
+/**
+ * Two classes of the list that set the same properties at the same variants: only one of them applies. The stylesheet
+ * decides which (Tailwind orders its rules; the later one wins), not the order in the attribute.
+ */
+export interface ClassConflict {
+  /** The class that applies. */
+  winner: string;
+  /** The class that is written but has no effect: the suggestion is to remove it. */
+  loser: string;
+  /** The properties both set. */
+  properties: string[];
+}
+
 export interface AnalyzeResult {
   tokens: TokenInfo[];
   /** Per control id, its value at the editing context, or null when nothing sets it. */
   values: Record<string, ResolvedValue | null>;
+  /** Pairs of classes that override each other outright (a narrower class next to a broader one is not one). */
+  conflicts: ClassConflict[];
 }
 
 export type PlanResult = { ok: true; classes: string; token: string; added: boolean; removed: string[] } | { ok: false; error: string };

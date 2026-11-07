@@ -78,6 +78,15 @@ export class TailwindPanel {
             <p class="mt-1">The class list of this element is dynamic, so Tailwind mode shows it but does not edit it.</p>
           </div>
         }
+        @for (c of conflictRows(); track c.key) {
+          <div class="callout warn" data-part="class-conflict" [attr.data-loser]="c.loser" role="status">
+            <p><code class="mono">{{ c.loser }}</code> and <code class="mono">{{ c.winner }}</code> conflict at the same state. {{ c.why }}</p>
+            <button uiButton variant="outline" size="sm" class="btn sm mt-2" data-part="conflict-fix" [attr.aria-label]="c.fixLabel" (click)="tw.remove(c.loser)">Remove {{ c.loser }}</button>
+          </div>
+        }
+        @if (replacesText()) {
+          <p class="callout info" data-part="replaces" role="status">{{ replacesText() }}</p>
+        }
 
         @for (s of sections(); track s.id) {
           <div class="sec" [attr.aria-label]="s.title" [attr.data-section]="s.id">
@@ -181,6 +190,19 @@ export class TailwindPanel {
   tagLabel = computed(() => `<${this.edit.node()?.tag ?? ""}>`);
   loading = computed(() => !this.tw.enabled());
   readOnly = computed(() => !this.tw.writable());
+  conflictRows = computed(() =>
+    this.tw.conflicts().map((c) => ({
+      key: c.loser + ">" + c.winner,
+      loser: c.loser,
+      winner: c.winner,
+      why: `Only ${c.winner} applies (the stylesheet puts it later)${c.properties.length ? `: both set ${c.properties.slice(0, 3).join(", ")}${c.properties.length > 3 ? "…" : ""}` : ""}.`,
+      fixLabel: `Remove ${c.loser}, which has no effect`,
+    })),
+  );
+  replacesText = computed(() => {
+    const r = this.tw.replaces();
+    return r ? `Applying ${r.token} replaces ${r.removed.join(", ")}.` : "";
+  });
   noClasses = computed(() => this.tokens().length === 0 && this.tw.conditionals().length === 0);
   breakpointText = computed(() => {
     const bp = this.tw.breakpoint();

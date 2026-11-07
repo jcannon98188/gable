@@ -267,7 +267,7 @@ export class FrameSet {
     const { emulation, dpr } = frame.config();
     let touchEvents = true;
     try {
-      touchEvents = (await frame.client.call("setEmulation", { touch: emulation.touch, dpr })).touchEvents;
+      touchEvents = (await frame.client.call("setEmulation", { touch: emulation.touch, dpr, textScale: emulation.textScale ?? 1 })).touchEvents;
     } catch {
       // an older agent: nothing the page can do
     }

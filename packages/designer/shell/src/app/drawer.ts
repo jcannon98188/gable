@@ -105,6 +105,19 @@ export class ProblemsTab {
       @for (e of configErrors(); track e) {
         <p class="callout err">{{ e }}</p>
       }
+      @if (fixable().length) {
+        <!-- TODO(gable-ui): UiVirtualTable cells cannot hold buttons, so the quick fixes get their own strip above the table. -->
+        <div class="fixes" aria-label="Quick fixes" data-part="quick-fixes">
+          @for (f of fixable(); track f.key) {
+            <div class="tbl-row fix-row">
+              <span class="chip" [class.err]="f.error" [class.warn]="!f.error">{{ f.rule }}</span>
+              <span class="truncate" [attr.title]="f.message">{{ f.message }}</span>
+              <span class="mono dim truncate">{{ f.where }}</span>
+              <button uiButton variant="outline" size="sm" class="btn sm" data-part="problem-fix" [attr.data-problem]="f.id" [attr.aria-label]="f.label" [disabled]="edit.busy()" (click)="edit.fix(f.id, 0)">Fix: {{ f.title }}</button>
+            </div>
+          }
+        </div>
+      }
       @if (none()) {
         <div class="empty"><strong>{{ noneTitle() }}</strong>{{ noneText() }}</div>
       } @else {
@@ -113,8 +126,26 @@ export class ProblemsTab {
     `,
   };
   state = inject(DesignerState);
+  edit = inject(EditState);
   columns = PROBLEM_COLUMNS;
   filter = signal("all");
+  /** The shown problems the language service has a quick fix for (applied as one undoable edit). */
+  fixable = computed(() => {
+    const f = this.filter();
+    return this.all()
+      .filter((d) => d.fixes?.length && (f === "all" || (f === "error" ? d.severity === "error" : d.severity !== "error")))
+      .slice(0, 30)
+      .map((d) => ({
+        key: d.id + ":" + d.line + ":" + d.column,
+        id: d.id,
+        error: d.severity === "error",
+        rule: d.rule,
+        message: d.message,
+        where: `${this.state.relative(d.file)}:${d.line}`,
+        title: d.fixes![0]!.title,
+        label: `${d.fixes![0]!.title} (${this.state.relative(d.file)}:${d.line})`,
+      }));
+  });
   all = computed(() => this.state.analysis()?.diagnostics ?? []);
   errors = computed(() => this.all().filter((d) => d.severity === "error").length);
   warnings = computed(() => this.all().length - this.errors());

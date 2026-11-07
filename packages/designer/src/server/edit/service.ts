@@ -9,6 +9,7 @@ import { setCssDeclaration } from "./css.js";
 import { applyHunks, applyWithReverse, hash, locate, type Hunk, type PatchHunk } from "./hunks.js";
 import { ensureImport, ensureMetaImport, setMetaString } from "./meta.js";
 import { buildPalette } from "./palette.js";
+import { templateOutline, type OutlineRow } from "./outline.js";
 import { DEFAULT_FORMAT, applyPlan, describeElement, elementsOf, fail, findTarget, locateLiteral, plan, type FormatOptions } from "./template.js";
 import type { DescribeResult, EditError, EditOp, EditResult, HistoryInfo, HistoryItem, PaletteEntry, TargetRef } from "./types.js";
 
@@ -124,6 +125,14 @@ export class EditService {
     return describeElement(t.body, tree, entry, this.#rel(t.abs), line);
   }
 
+  /** The outline of the template that holds `ref` (the Structure tab's Template section). */
+  outline(ref: Pick<TargetRef, "raw" | "modulePath" | "file">): { ok: true; file: string; line: number; rows: OutlineRow[] } | EditError {
+    const t = this.#template({ ...ref, start: -1, tag: "" });
+    if ("ok" in t) return t;
+    const line = t.src.text.slice(0, t.lit.open).split("\n").length;
+    return { ok: true, file: this.#rel(t.abs), line, rows: templateOutline(t.body, parseTemplateTree(t.body)) };
+  }
+
   palette(): PaletteEntry[] {
     return buildPalette(this.root);
   }
@@ -180,6 +189,19 @@ export class EditService {
   }
 
   /** Hunks in LF coordinates to hunks in the file as stored (CRLF kept: new line breaks use the file's own). */
+  /**
+   * Applies a language-service quick fix to `file` (project-relative) as one undoable edit. The edits are offsets into the
+   * file as it was analysed, so the fix is refused when the file has changed since (`expectHash`).
+   */
+  applyFix(file: string, expectHash: string, edits: Array<{ start: number; length: number; newText: string }>, label: string): EditResult {
+    const abs = this.#inside(resolve(join(this.root, file)));
+    if (typeof abs !== "string") return abs;
+    const original = readFileSync(abs, "utf8");
+    if (hash(original) !== expectHash) return fail("stale", `${this.#rel(abs)} changed since it was analysed. Refresh the problems and try again.`);
+    if (edits.some((e) => e.start < 0 || e.length < 0 || e.start + e.length > original.length)) return fail("invalid", "The fix does not fit the file.");
+    return this.#commit(abs, original, edits.map((e) => ({ start: e.start, end: e.start + e.length, text: e.newText })), label, null);
+  }
+
   #toOriginal(src: SourceText, hunks: Hunk[]): Hunk[] {
     const crlf = src.original.includes("\r\n");
     return hunks.map((h) => ({ start: src.toOriginal(h.start), end: src.toOriginal(h.end), text: crlf ? h.text.replaceAll("\n", "\r\n") : h.text }));

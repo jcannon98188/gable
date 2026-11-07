@@ -83,8 +83,23 @@ export interface AgentMethods extends DevtoolsMethods {
   nodeAt: { params: { raw: string; offset: number }; result: DesignNode | null };
   /** The diagnostics to show on the canvas; each is located by the template literal text and an offset into it. */
   setDiagnostics: { params: { items: CanvasDiagnostic[] }; result: { placed: number; unplaced: number } };
-  /** What the page itself emulates for its frame: touch events from the mouse, and the pixel ratio scripts read. */
-  setEmulation: { params: { touch: boolean; dpr: number }; result: { touchEvents: boolean } };
+  /**
+   * What the page itself emulates for its frame: touch events from the mouse, the pixel ratio scripts read, and a text scale
+   * (`textScale`, 1 = the page's own: the root font size is multiplied, so rem-based text and spacing follow, px does not).
+   */
+  setEmulation: { params: { touch: boolean; dpr: number; textScale?: number }; result: { touchEvents: boolean } };
+  /** Marks a node the shell can see but not edit (a dynamic class list, a refused element): amber hatch and a lock chip. `id` null clears. */
+  setReadOnly: { params: { id: string | null; label: string }; result: { elements: number } };
+  /**
+   * Another frame's selection, drawn here without selecting it (no `pick` comes back): the element at `start` of the template
+   * `raw` (ids differ between frames, the template text does not). `null` clears.
+   */
+  mirror: { params: { raw: string; start: number } | null; result: { elements: number } };
+  /**
+   * Drag-insert from the shell: the template element under a point (CSS pixels of this page) and where a drop there inserts,
+   * with an insertion line drawn. `null` clears the line.
+   */
+  dropTarget: { params: { x: number; y: number } | null; result: { node: DesignNode; where: DropWhere } | null };
   /**
    * Tailwind mode's temporary look of one template node (nothing is written to source): `addClasses` are put on its elements,
    * `css` is injected as the last stylesheet (the rule of a class that is not in the project's build yet, or a forced state's
@@ -118,6 +133,18 @@ export interface HttpLogEntry {
   mock: number;
   outcome: string;
   at: number;
+}
+
+export type DropWhere = "before" | "after" | "last";
+
+/**
+ * Where a drop at `y` on an element lands: its top quarter inserts before it, its bottom quarter after it, the middle inside
+ * (as its last child) when it can have children; one that cannot splits at the middle.
+ */
+export function dropWhere(rect: { top: number; height: number }, y: number, canHaveChildren: boolean): DropWhere {
+  const at = rect.height > 0 ? (y - rect.top) / rect.height : 0.5;
+  if (!canHaveChildren) return at < 0.5 ? "before" : "after";
+  return at < 0.25 ? "before" : at > 0.75 ? "after" : "last";
 }
 
 /** A user interaction, located by the child-index path of its element from the document element. */
