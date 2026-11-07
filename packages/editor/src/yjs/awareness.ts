@@ -6,6 +6,7 @@ import type { Awareness } from "y-protocols/awareness";
 import { definePlugin, type EditorPlugin } from "../plugin.js";
 import { getBinding } from "./collab-plugin.js";
 
+/** A collaborator as others see them: the name shown on their presence badge and the colour of their caret and selection. */
 export interface CollabUser {
   name: string;
   /** Any CSS colour: caret, selection tint and presence badge. */
@@ -18,6 +19,7 @@ export interface AwarenessState {
   selection?: { anchor: unknown; head: unknown } | null;
 }
 
+/** One person present in the document, as {@link readPresence} reports it: their name and colour, their awareness client id and whether it is you. */
 export interface PresenceEntry extends CollabUser {
   clientId: number;
   isLocal: boolean;
@@ -43,6 +45,7 @@ export function watchPresence(awareness: Awareness, onChange: (users: PresenceEn
 
 const key = new PluginKey<number>("gable-awareness");
 
+/** Options for `awarenessPlugin`: the awareness instance of your provider and the local user to publish on it. */
 export interface AwarenessOptions {
   awareness: Awareness;
   user: CollabUser;

@@ -10,6 +10,9 @@ import { viewOf } from "./view-context.js";
 import { buildNodes, createSwitcher, type Part } from "./view.js";
 import type { DeferNode, TemplateNode } from "./template.js";
 
+/**
+ * The lifecycle of a `@defer` block: showing its placeholder, loading, finished (`complete`) or failed (`error`).
+ */
 export type DeferState = "placeholder" | "loading" | "complete" | "error";
 
 /** A live `@defer` block, as exposed to the test fixture. */

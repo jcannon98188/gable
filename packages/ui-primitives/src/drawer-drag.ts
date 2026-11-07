@@ -2,6 +2,7 @@ import { effect, input, output, signal, untracked, type ReadonlySignal } from "@
 import { currentScope, injectHost } from "@gable/core/internal";
 import type { Renderer } from "@gable/core/renderer";
 
+/** The screen edge a drawer is attached to. It decides the drag axis and which direction closes the panel. */
 export type DrawerSide = "top" | "right" | "bottom" | "left";
 
 /** One pointer sample: client coordinates and a timestamp in ms. */
@@ -11,6 +12,7 @@ export interface DrawerPoint {
   time: number;
 }
 
+/** Options for `DrawerDragEngine`: the geometry (`side`, `size`, `snapPoints`), the gesture thresholds and the callbacks that report the outcome. */
 export interface DrawerDragEngineOptions {
   side: () => DrawerSide;
   /** The panel's extent along the drag axis, in px (height for top/bottom, width for left/right). */
@@ -176,6 +178,7 @@ export class DrawerDragEngine {
   }
 }
 
+/** Options for `useDrawerDrag` and the `uiDrawerDrag` directive. `side` and `onDismiss` are required; the thresholds mirror `DrawerDragEngineOptions`. */
 export interface DrawerDragOptions {
   side: () => DrawerSide;
   snapPoints?: () => readonly number[];
@@ -194,6 +197,7 @@ export interface DrawerDragOptions {
   onDismiss(): void;
 }
 
+/** What `useDrawerDrag` returns: drag state signals and methods to move the panel to a snap point, animate it out or clear the drag styles. */
 export interface DrawerDragHandle {
   readonly dragging: ReadonlySignal<boolean>;
   /** The snap fraction the panel rests at. */

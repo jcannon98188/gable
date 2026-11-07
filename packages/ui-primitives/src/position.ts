@@ -9,6 +9,7 @@ export type { Placement, Strategy };
 /** The element a floating element is placed against: the element, the id of one in the same document, or nothing yet. */
 export type PositionAnchor = HTMLElement | string | null | undefined;
 
+/** Options for `usePosition`. `anchor` is required; placement, offset, flipping and shifting follow Floating UI's rules. */
 export interface PositionOptions {
   /** The reference element (or its id). Read inside an effect, so a signal that supplies it re-positions. */
   anchor: () => PositionAnchor;
@@ -28,6 +29,7 @@ export interface PositionOptions {
   open?: () => boolean;
 }
 
+/** What `usePosition` returns: the placement actually used (after flipping) and a way to recompute on demand. */
 export interface PositionHandle {
   /** The placement actually used after flipping. */
   readonly placement: ReadonlySignal<Placement>;

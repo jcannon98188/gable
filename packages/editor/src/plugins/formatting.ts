@@ -37,6 +37,7 @@ export const basicStylesPlugin = definePlugin({
   ],
 });
 
+/** Links, with autolinking of typed URLs. Clicking a link in the editor does not follow it; the toolbar item asks for a URL, or removes the link when one is active. */
 export const linkPlugin = definePlugin({
   name: "link",
   requires: ["core"],
@@ -56,6 +57,7 @@ export const linkPlugin = definePlugin({
   ],
 });
 
+/** Heading levels 1 to 4 (toolbar buttons for 1 to 3), with the markdown `#` input rules. */
 export const headingPlugin = definePlugin({
   name: "heading",
   requires: ["core"],
@@ -72,6 +74,7 @@ export const headingPlugin = definePlugin({
   ),
 });
 
+/** Block quote, code block, horizontal rule and hard break. */
 export const blockPlugin = definePlugin({
   name: "blocks",
   requires: ["core"],
@@ -83,6 +86,7 @@ export const blockPlugin = definePlugin({
   ],
 });
 
+/** Bulleted, numbered and to-do (task) lists; task items can be nested. */
 export const listPlugin = definePlugin({
   name: "lists",
   requires: ["core"],

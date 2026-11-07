@@ -58,6 +58,11 @@ export function connect<T>(source: StreamSource<T>, next: (value: T) => void, sc
   };
 }
 
+/**
+ * Options for {@link toSignal}.
+ *
+ * @typeParam T - The source's value type.
+ */
 export interface ToSignalOptions<T> {
   /** The value before the first emission; narrows the result from `T | undefined` to `T`. */
   initialValue?: T;
@@ -67,7 +72,23 @@ export interface ToSignalOptions<T> {
   manual?: boolean;
 }
 
-/** Subscribes to an Observable or Promise and exposes its latest value as a read-only signal. */
+/**
+ * Subscribes to an Observable or Promise and exposes its latest value as a read-only signal.
+ *
+ * @example
+ * ```ts
+ * import { interval } from "rxjs";
+ *
+ * export class Clock {
+ *   static meta = {
+ *     selector: "app-clock",
+ *     template: html`<p>{{ ticks() }}</p>`,
+ *   };
+ *
+ *   ticks = toSignal(interval(1000), { initialValue: 0 });
+ * }
+ * ```
+ */
 export function toSignal<T>(source: StreamSource<T>, options: ToSignalOptions<T> & { initialValue: T }): ReadonlySignal<T>;
 export function toSignal<T>(source: StreamSource<T>, options?: ToSignalOptions<T>): ReadonlySignal<T | undefined>;
 export function toSignal<T>(source: StreamSource<T>, options: ToSignalOptions<T> = {}): ReadonlySignal<T | undefined> {

@@ -3,6 +3,7 @@ import { toObservable } from "@gable/core/rxjs";
 import type { ReadonlySignal } from "@gable/core";
 import { createScope, currentScope, reportError, runInScope, type Scope } from "@gable/core/internal";
 
+/** Options for {@link rxMethod}. */
 export interface RxMethodOptions {
   /** Own the pipeline with this scope instead of the current one. */
   scope?: Scope;
@@ -27,6 +28,21 @@ export interface RxMethod<T> {
  * `options.scope`, and is torn down with it. Errors that reach the end of the pipeline go to the
  * ErrorHandler as `subscription` and end the pipeline; catch inside the inner observable
  * (`switchMap((q) => load(q).pipe(catchError(...)))`) to keep it alive.
+ *
+ * @param operator - Maps the stream of inputs to the effect pipeline.
+ * @param options - `scope` to own the pipeline when not called during setup.
+ * @returns A function that feeds the pipeline; it also has `destroy()`.
+ *
+ * @example
+ * ```ts
+ * class SearchStore extends signalStore(
+ *   withState({ query: "" }),
+ *   withMethods((store) => ({
+ *     log: rxMethod<string>((q$) => q$.pipe(debounceTime(300), tap((q) => patchState(store, { query: q })))),
+ *   })),
+ * ) {}
+ * // store.log("gable"); store.log(someSignal);
+ * ```
  */
 export function rxMethod<T>(operator: (source: Observable<T>) => Observable<unknown>, options: RxMethodOptions = {}): RxMethod<T> {
   const owner = options.scope ?? currentScope();

@@ -21,7 +21,9 @@ import { useDateLocale, type DateLocaleLoader, type LocaleSource } from "../lib/
 import { UiIcon } from "../lib/icon.js";
 import { UiButton } from "./button.js";
 
+/** What a `ui-calendar` selects: one date (`single`) or a start and end date (`range`). */
 export type CalendarMode = "single" | "range";
+/** A day of the week as a number: 0 is Sunday, 6 is Saturday. Used for `weekStartsOn`. */
 export type WeekDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 /** How the month heading is shown: plain text, or with month and/or year dropdowns to jump around. */
 export type CaptionLayout = "label" | "dropdown" | "dropdown-months" | "dropdown-years";

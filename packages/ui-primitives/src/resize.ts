@@ -1,5 +1,6 @@
 import { signal, untracked, type ReadonlySignal } from "@gable/core";
 
+/** Which way a resizable group lays out its panels: side by side (`horizontal`) or stacked (`vertical`). */
 export type ResizeDirection = "horizontal" | "vertical";
 
 /** The constraints of one panel. Sizes are percentages of the group (0 to 100). */
@@ -16,6 +17,7 @@ export interface ResizePanelConfig {
   collapsedSize?: number;
 }
 
+/** Options for `ResizeEngine`: layout direction, keyboard step, right-to-left mirroring and a callback for every layout change. */
 export interface ResizeEngineOptions {
   direction: () => ResizeDirection;
   /** Percentage of the group one arrow key press moves a handle. Default 10. */

@@ -43,6 +43,9 @@ export interface ComponentClass<T extends object = object> {
   meta: ComponentMeta;
 }
 
+/**
+ * A component that has been instantiated and rendered against a renderer: its `instance`, its `host` node and a `destroy` that tears it down.
+ */
 export interface MountedComponent<T extends object, N> {
   readonly instance: T;
   readonly host: N;

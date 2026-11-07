@@ -7,6 +7,15 @@ import { definePlugin } from "../plugin.js";
 /** Turns a picked/pasted/dropped file into a URL the image can load from. Return the final URL. */
 export type ImageUploader = (file: File) => Promise<string>;
 
+/**
+ * Options for `imagePlugin`. With no options, images are added by URL only; pass `upload` to also accept dropped and
+ * pasted image files.
+ *
+ * @example
+ * ```ts
+ * imagePlugin({ upload: async (file) => (await uploadToStorage(file)).url, onUploadError: (error) => console.warn(error) });
+ * ```
+ */
 export interface ImagePluginOptions {
   /** Without an uploader, dropped and pasted image files are ignored (URL embedding still works). */
   upload?: ImageUploader;

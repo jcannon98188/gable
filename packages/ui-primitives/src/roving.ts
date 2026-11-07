@@ -2,8 +2,10 @@ import { effect, input, signal, untracked, type ReadonlySignal } from "@gable/co
 import { currentScope, injectHost } from "@gable/core/internal";
 import type { Renderer } from "@gable/core/renderer";
 
+/** Which arrow keys move focus in a roving group: Left and Right, Up and Down, or all four. */
 export type RovingOrientation = "horizontal" | "vertical" | "both";
 
+/** Options for `useRovingTabindex`. Provide `items` or `selector`; the rest tune direction, wrapping and how disabled items are skipped. */
 export interface RovingOptions<N> {
   /**
    * The items, in order. Called on every key press and focus change, so it may read the live DOM
@@ -26,6 +28,7 @@ export interface RovingOptions<N> {
   initial?: () => N | null | undefined;
 }
 
+/** What `useRovingTabindex` returns: the item holding the tab stop and methods to move it or re-read the items. */
 export interface RovingHandle<N> {
   /** The item that currently holds the tab stop (`tabindex="0"`), or null. */
   readonly active: ReadonlySignal<N | null>;

@@ -13,6 +13,7 @@ export const MAX_HISTORY_WRITES = 2000;
 /** Writes one step keeps; the rest are counted in its `more` (going back across it is then incomplete). */
 export const MAX_STEP_WRITES = 500;
 
+/** One signal write inside a {@link HistoryStep}: which signal and its value before and after. */
 export interface HistoryWrite {
   /** The signal's devtools id. */
   id: string;
@@ -23,6 +24,7 @@ export interface HistoryWrite {
   after: Preview;
 }
 
+/** One recorded batch of signal writes, the unit the time-travel history moves between. */
 export interface HistoryStep {
   seq: number;
   /** `performance.now()` when the step was committed. */
@@ -34,6 +36,7 @@ export interface HistoryStep {
   more: number;
 }
 
+/** A snapshot of the signal history: its steps, where time travel stands and the recording bounds. */
 export interface HistoryInfo {
   recording: boolean;
   steps: HistoryStep[];
@@ -45,6 +48,9 @@ export interface HistoryInfo {
   maxWrites: number;
 }
 
+/**
+ * The outcome of moving the app to a recorded step: `ok` with how many signals were restored (and whether the restore was partial), or an `error` message.
+ */
 export type TravelResult =
   | {
       ok: true;

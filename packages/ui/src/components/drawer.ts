@@ -3,6 +3,7 @@ import { DialogState, UiDialogBackdrop, UiDialogContent, UiDialogDescription, Ui
 import { cn } from "../lib/cn.js";
 import { DialogTrigger } from "./dialog.js";
 
+/** The screen edge a `ui-drawer` slides in from. Dragging toward that edge dismisses it. */
 export type DrawerSide = "top" | "right" | "bottom" | "left";
 
 const BASE =

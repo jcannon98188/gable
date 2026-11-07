@@ -25,6 +25,7 @@ export type MenuEntry =
   | { type: "label"; label: string }
   | { type: "separator" };
 
+/** The Tailwind classes of a menu panel (popover surface, border, enter and exit animation), shared by the dropdown and context menus. Reuse it to style a custom menu panel the same way. */
 export const MENU_CONTENT =
   "z-50 max-h-(--available-height) min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-none " +
   "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95";

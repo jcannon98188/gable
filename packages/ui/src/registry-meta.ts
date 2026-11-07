@@ -7,6 +7,7 @@
 // - `lib`: helper modules from `src/lib` (see `LIB_META`) the component imports.
 // - `exports`: the public names the file exports.
 
+/** Machine-readable description of one component of the `@gable/ui` source registry, read by the `gable-ui` CLI to know which files, npm packages, other components and lib helpers to copy for it. */
 export interface ComponentMeta {
   name: string;
   files: string[];
@@ -16,6 +17,7 @@ export interface ComponentMeta {
   lib: string[];
 }
 
+/** Machine-readable description of one shared helper in `src/lib` (cn, variants, icon, ...): its file and what it depends on. */
 export interface LibMeta {
   name: string;
   /** Path relative to `src/lib`. */
@@ -37,6 +39,7 @@ export const LIB_META: LibMeta[] = [
   { name: "date-locale", file: "date-locale.ts", dependencies: ["@gable/core", "date-fns"], lib: [] },
 ];
 
+/** Every component of the registry, in the shape the `gable-ui` CLI consumes: files, exported names and dependencies (npm packages, other components and lib helpers). A test keeps it in step with the real imports, so update it when you add, rename or remove a component. */
 export const COMPONENT_META: ComponentMeta[] = [
   {
     name: "accordion",

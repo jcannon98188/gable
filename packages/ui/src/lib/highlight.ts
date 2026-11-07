@@ -2,8 +2,10 @@
 // texts of every line concatenate to exactly that line of the source. It is a highlighter, not a parser: it colours what
 // is recognisable (comments, strings, numbers, keywords, tags, ...) and leaves the rest plain.
 
+/** The class of a highlighted token. Style each kind with CSS; `plain` is everything the highlighter does not recognise. */
 export type TokenKind = "keyword" | "string" | "number" | "comment" | "punctuation" | "function" | "type" | "tag" | "attr" | "property" | "plain";
 
+/** A piece of one line of highlighted code: its text and its kind. The texts of a line's tokens concatenate to the line. */
 export interface Token {
   text: string;
   kind: TokenKind;
@@ -12,6 +14,7 @@ export interface Token {
 /** A tokenizer: the source and a language name in, the tokens of each line out (so Shiki and friends can be adapted). */
 export type Highlighter = (code: string, language: string) => Token[][];
 
+/** The languages the built-in highlighter understands. Anything else is treated as `text` (no colouring). */
 export type BuiltinLanguage = "ts" | "tsx" | "js" | "jsx" | "json" | "html" | "css" | "bash" | "text";
 
 const ALIASES: Record<string, BuiltinLanguage> = {

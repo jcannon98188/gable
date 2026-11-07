@@ -14,6 +14,7 @@ export interface PresenceEnv {
   exitDuration(host: unknown): number | null;
 }
 
+/** Injection token that supplies a `PresenceEnv`. Provide it under a non-DOM renderer so `usePresence` can learn how long an exit animation runs; under a DOM renderer it falls back to computed style. */
 export const PRESENCE_ENV = new InjectionToken<PresenceEnv>("PresenceEnv");
 
 const END_EVENTS = ["animationend", "animationcancel", "transitionend", "transitioncancel"] as const;
@@ -29,6 +30,7 @@ export function delayHidden<B extends Record<string, unknown> | null>(bag: B, pr
   return { ...bag, hidden: presence.exited() };
 }
 
+/** What `usePresence` returns: the exit state of the host element, for delaying `hidden` or unmounting until an exit animation ends. */
 export interface Presence {
   /** True once the host may be unmounted or hidden: it is closed and any exit animation has finished. */
   readonly exited: ReadonlySignal<boolean>;

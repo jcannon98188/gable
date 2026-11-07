@@ -49,10 +49,29 @@ export interface EditorPlugin {
   readonly yjs?: (ctx: YjsContext) => void | (() => void);
 }
 
+/**
+ * Identity helper that type-checks a plugin definition and keeps its literal type. It does nothing at runtime, so
+ * a plain object typed as `EditorPlugin` is equivalent.
+ *
+ * @example
+ * ```ts
+ * const quotePlugin = definePlugin({
+ *   name: "quote",
+ *   requires: ["core"],
+ *   extensions: [Blockquote],
+ *   toolbar: [{ id: "quote", label: "Quote", run: (e) => e.chain().focus().toggleBlockquote().run() }],
+ * });
+ * ```
+ */
 export function definePlugin<T extends EditorPlugin>(plugin: T): T {
   return plugin;
 }
 
+/**
+ * Thrown when a set of plugins cannot be assembled: a duplicate plugin name or toolbar item id, a `requires` entry
+ * that is not in the list, or a dependency cycle. It is thrown by the `GableEditor` constructor, so it surfaces at
+ * setup, never while typing.
+ */
 export class PluginError extends Error {
   constructor(message: string) {
     super(message);

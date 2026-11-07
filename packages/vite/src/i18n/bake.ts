@@ -5,6 +5,10 @@ import { decodeEntities, encodeEntities, dateFormatOptions, extractTemplateMessa
 import { assertNoEscapes } from "./extract.js";
 import { DYNAMIC_CALL, cook, lineOf, scanTemplates } from "./scan.js";
 
+/**
+ * Options for {@link bakeSource} and {@link bakeHtml}: where translations come from and what to do when one is
+ * missing. `gableI18n` fills these in from your catalogs; you only build them yourself when baking outside Vite.
+ */
 export interface BakeOptions {
   /** Looks up the translation of a message id. `undefined` means there is none. */
   translate(id: string): string | undefined;

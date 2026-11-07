@@ -4,7 +4,17 @@ import { DEV, devtools, hooks } from "./dev-hooks.js";
 /** A class used as a Token. Abstract classes work too. */
 export type Type<T> = abstract new () => T;
 
-/** A typed key for values that are not classes. */
+/**
+ * A typed key for values that are not classes.
+ *
+ * @example
+ * ```ts
+ * export const API_URL = new InjectionToken<string>("API_URL");
+ *
+ * // Provide it: bootstrap(Root, { renderer, providers: [{ provide: API_URL, useValue: "/api" }] })
+ * // Read it in a field initialiser: apiUrl = inject(API_URL);
+ * ```
+ */
 export class InjectionToken<T> {
   /** Phantom member so `T` is inferable. Never set. */
   declare readonly __type?: T;
@@ -17,8 +27,24 @@ export class InjectionToken<T> {
 /** Resolves to the injector that asked: lets a service learn which layer it was created in. */
 export const INJECTOR = new InjectionToken<Injector>("Injector");
 
+/**
+ * What `inject()` and `Injector.get()` look a value up by: a class or an {@link InjectionToken}.
+ *
+ * @typeParam T - The type of the value the token resolves to.
+ */
 export type Token<T> = Type<T> | InjectionToken<T>;
 
+/**
+ * A recipe that tells an injector how to build a value for a {@link Token}.
+ *
+ * A bare class provides itself. The object forms bind a token to another class (`useClass`), a ready value (`useValue`), a factory (`useFactory`, which may call `inject()`) or an alias for another token (`useExisting`). Pass providers to `bootstrap` or to a component's `meta.providers`.
+ *
+ * @example
+ * ```ts
+ * const API_URL = new InjectionToken<string>("API_URL");
+ * const providers: Provider[] = [Cart, { provide: API_URL, useValue: "/api" }];
+ * ```
+ */
 export type Provider =
   | Type<unknown>
   | { provide: Token<any>; useClass: Type<unknown> }
@@ -26,6 +52,9 @@ export type Provider =
   | { provide: Token<any>; useFactory: () => unknown }
   | { provide: Token<any>; useExisting: Token<any> };
 
+/**
+ * Options for {@link inject} and `Injector.get`: which injectors to search and what to do when nothing provides the token.
+ */
 export interface InjectOptions {
   /** Return `null` instead of throwing when nothing provides the Token. */
   optional?: boolean;
@@ -37,6 +66,11 @@ export interface InjectOptions {
   host?: boolean;
 }
 
+/**
+ * A node in the dependency-injection tree. A lookup that this injector cannot satisfy continues in its `parent`.
+ *
+ * You rarely create one directly: `bootstrap` builds the root injector and each component with `meta.providers` gets a child. Use `inject()` in a field initialiser instead of calling `get` by hand.
+ */
 export interface Injector {
   readonly parent: Injector | null;
   readonly destroyed: boolean;
@@ -206,12 +240,35 @@ class InjectorImpl implements Injector {
   }
 }
 
-/** Creates a root injector, or a child when `parent` is given. */
+/**
+ * Creates a root injector, or a child when `parent` is given.
+ *
+ * @example
+ * ```ts
+ * const injector = createInjector([{ provide: API_URL, useValue: "/api" }]);
+ * const url = injector.run(() => inject(API_URL));
+ * ```
+ */
 export function createInjector(providers: Provider[] = [], parent: Injector | null = null): Injector {
   return parent ? parent.createChild(providers) : new InjectorImpl(providers, null, false);
 }
 
-/** Resolves a Token from the current injection context (field initialisers, factories, `injector.run`). */
+/**
+ * Resolves a Token from the current injection context (field initialisers, factories, `injector.run`).
+ *
+ * @example
+ * ```ts
+ * export class CartBadge {
+ *   static meta = {
+ *     selector: "app-cart-badge",
+ *     template: html`<span>{{ cart.count() }}</span>`,
+ *   };
+ *
+ *   cart = inject(Cart);
+ *   analytics = inject(Analytics, { optional: true });
+ * }
+ * ```
+ */
 export function inject<T>(token: Token<T>, options: InjectOptions & { optional: true }): T | null;
 export function inject<T>(token: Token<T>, options?: InjectOptions): T;
 export function inject<T>(token: Token<T>, options?: InjectOptions): T | null {

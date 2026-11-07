@@ -54,16 +54,34 @@ class ScopeImpl implements Scope {
   }
 }
 
+/**
+ * Creates a scope that is disposed with `parent` (or stands alone when `parent` is `null`). Library authors use scopes to own effects, subscriptions and cleanups; application code gets one per component for free.
+ *
+ * @param parent - The owning scope, or `null` for a root.
+ * @returns A new live scope.
+ */
 export function createScope(parent: Scope | null): Scope {
   return new ScopeImpl(parent as ScopeImpl | null);
 }
 
 let current: Scope | null = null;
 
+/**
+ * The scope that is running right now, or `null` outside any scope. Effects and `toSignal` register themselves with it.
+ *
+ * @returns The active scope, or `null`.
+ */
 export function currentScope(): Scope | null {
   return current;
 }
 
+/**
+ * Runs `fn` with `scope` as the current scope, then restores the previous one, even if `fn` throws.
+ *
+ * @param scope - The scope to make current, or `null` for none.
+ * @param fn - The work to run.
+ * @returns Whatever `fn` returns.
+ */
 export function runInScope<T>(scope: Scope | null, fn: () => T): T {
   const previous = current;
   current = scope;

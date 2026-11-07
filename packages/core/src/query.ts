@@ -123,11 +123,48 @@ function many(kind: keyof QueryHost, what: string) {
   return query;
 }
 
-/** First match in the component's own template, as a signal. By component class or `#ref` name. */
+/**
+ * First match in the component's own template, as a signal. By component class or `#ref` name.
+ *
+ * @example
+ * ```ts
+ * export class Form {
+ *   static meta = {
+ *     selector: "app-form",
+ *     template: html`<input #name /><button (click)="focusName()">Focus</button>`,
+ *   };
+ *
+ *   name = viewChild<HTMLInputElement>("name");
+ *
+ *   focusName() {
+ *     this.name()?.focus();
+ *   }
+ * }
+ * ```
+ */
 export const viewChild = single("view", "viewChild");
 /** Every match in the component's own template, in creation order. */
 export const viewChildren = many("view", "viewChildren");
 /** First match among the content projected into this component. */
 export const contentChild = single("content", "contentChild");
-/** Every match among the content projected into this component. */
+/**
+ * Every match among the content projected into this component.
+ *
+ * @example
+ * ```ts
+ * export class Tab {
+ *   static meta = { selector: "app-tab", template: html`<slot></slot>` };
+ *   title = input("");
+ * }
+ *
+ * export class Tabs {
+ *   static meta = {
+ *     selector: "app-tabs",
+ *     template: html`<p>{{ tabs().length }} tabs</p><slot></slot>`,
+ *   };
+ *
+ *   tabs = contentChildren(Tab);
+ * }
+ * ```
+ */
 export const contentChildren = many("content", "contentChildren");

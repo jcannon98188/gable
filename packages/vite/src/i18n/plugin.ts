@@ -5,8 +5,21 @@ import { catalogPath, readCatalogFile, writeCatalogs } from "./catalogs.js";
 import { extractProject } from "./extract.js";
 import { existsSync } from "node:fs";
 
+/**
+ * What a baked build does for a locale that lacks a translation: `"error"` fails the build listing every missing
+ * message, `"warn"` warns and uses the source text, `"source"` silently uses the source text.
+ */
 export type OnMissing = "error" | "warn" | "source";
 
+/**
+ * Options for {@link gableI18n}. Only `locales` is required; the rest default to a `src/locales/messages.{locale}.json`
+ * layout with extraction on in builds and baking off.
+ *
+ * @example
+ * ```ts
+ * gableI18n({ sourceLocale: "en", locales: ["fr", "de"], bake: { onMissing: "warn" } });
+ * ```
+ */
 export interface GableI18nOptions {
   /** The language the templates are written in. Default `"en"`. */
   sourceLocale?: string;

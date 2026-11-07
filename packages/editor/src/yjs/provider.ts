@@ -43,6 +43,7 @@ export function createLocalProvider(ydoc: Y.Doc = new Y.Doc()): CollabProvider {
   return { ydoc, awareness: new Awareness(ydoc), synced: Promise.resolve(), destroy() {} };
 }
 
+/** The group of in-memory peers {@link linkPeers} returns, with controls to simulate going offline and back. */
 export interface LinkedPeers {
   peers: CollabProvider[];
   /** Cut the link (peers keep working offline); call `reconnect` to exchange everything missed. */

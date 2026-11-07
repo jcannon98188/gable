@@ -89,6 +89,14 @@ export interface TemplateResult {
   readonly values: readonly unknown[];
 }
 
+/**
+ * The tag for a component's static template. Put it in `static meta.template`.
+ *
+ * @remarks
+ * Templates must be static. Gable parses them once per call site, on first render, and throws on `${}` holes, so bind values with template expressions (`{{ count() }}`, `[disabled]="busy()"`) rather than by interpolation.
+ *
+ * @returns The template's strings, kept for the renderer to parse.
+ */
 export function html(strings: TemplateStringsArray, ...values: unknown[]): TemplateResult {
   return { strings, values };
 }
@@ -106,6 +114,9 @@ export function parseTemplate(result: TemplateResult): TemplateNode[] {
   return parsed;
 }
 
+/**
+ * The HTML void element names (`br`, `img`, `input`, ...), which never have a closing tag. Used by tooling that parses templates.
+ */
 export const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);
 const ATTR = /\s*([^\s=>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))?/y;
 
@@ -394,6 +405,9 @@ function i18nInfo(markerValue: string, strings: string[], placeholders: string[]
   return { id: marker.id ?? messageId(message, marker.description), message, description: marker.description, placeholders };
 }
 
+/**
+ * Matches the start of a control-flow block (`@if`, `@for`, `@switch`, `@defer` and their companions). Used by tooling that scans templates.
+ */
 export const BLOCK_START = /^@(?:if|else|for|empty|switch|case|default|let|defer|placeholder|loading|error)\b/;
 
 /** Index of `char` outside quotes and parentheses, or -1. */

@@ -12,6 +12,12 @@ export type InputValues<T> = {
   [K in keyof T as T[K] extends InputSignal<any> | ModelSignal<any> ? K : never]?: T[K] extends InputSignal<infer V> | ModelSignal<infer V> ? V : never;
 };
 
+/**
+ * Options for {@link createComponent}.
+ *
+ * @typeParam T - The component class's instance type.
+ * @typeParam N - The renderer's node type.
+ */
 export interface CreateComponentOptions<T extends object, N> {
   /** Where `inject()` resolves from. Defaults to a fresh root injector. */
   injector?: Injector;
@@ -55,6 +61,11 @@ export function createComponent<T extends object, N = unknown>(Class: ComponentC
   };
 }
 
+/**
+ * Options for {@link bootstrap}.
+ *
+ * @typeParam N - The renderer's node type.
+ */
 export interface BootstrapOptions<N> {
   /** The renderer is always an argument, never a global. */
   renderer: Renderer<N>;
@@ -64,7 +75,18 @@ export interface BootstrapOptions<N> {
   target?: unknown;
 }
 
-/** Starts an app: a root injector with the renderer, then the root component. */
+/**
+ * Starts an app: a root injector with the renderer, then the root component.
+ *
+ * @example
+ * ```ts
+ * import { bootstrap } from "@gable/core";
+ * import { dom } from "@gable/renderer-dom";
+ * import { Root } from "./root.js";
+ *
+ * bootstrap(Root, { renderer: dom(), target: "#app", providers: [] });
+ * ```
+ */
 export function bootstrap<T extends object, N = unknown>(Root: ComponentClass<T>, options: BootstrapOptions<N>): ComponentRef<T, N> {
   const { renderer } = options;
   let host: N | undefined;

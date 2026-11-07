@@ -4,9 +4,9 @@ import { findHtmlLiterals, type TemplateLiteralSpan } from "./scan.js";
 
 export { runCli, type CliIo } from "./cli.js";
 export { findHtmlLiterals, type TemplateLiteralSpan } from "./scan.js";
-/** The lossless, position-carrying parse of a template body (the Designer's position authority). Offsets are into the exact string given. */
 export { parseTemplate as parseTemplateTree, type AttrInfo, type Item as TemplateItem, type Span } from "./parse.js";
 
+/** Options for {@link formatTemplate}. All optional; the defaults match the Prettier plugin. */
 export interface FormatOptions {
   /** Spaces per indent level (and the width of a tab). Default 2. */
   indentSize?: number;
@@ -17,6 +17,7 @@ export interface FormatOptions {
   baseIndent?: string;
 }
 
+/** Options for formatting whole source files: the {@link FormatOptions} (minus `baseIndent`, which is computed from the literal's position) plus the tag to look for. */
 export interface LiteralFormatOptions extends Omit<FormatOptions, "baseIndent"> {
   /** Tag of the template literals to format. Default "html". */
   tag?: string;

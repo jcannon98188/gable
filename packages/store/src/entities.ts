@@ -2,7 +2,9 @@ import { withComputed, withState, type DeepSignal, type StoreFeature } from "./s
 
 // --- types -----------------------------------------------------------------
 
+/** An entity's identity: a string or a number. By default it is read from the entity's `id` field (see {@link SelectEntityId}). */
 export type EntityId = string | number;
+/** The lookup table of a collection: entities keyed by id. Kept in step with the `ids` array, which holds their order. */
 export type EntityMap<E> = Record<EntityId, E>;
 
 /** State added by `withEntities` for the default (unnamed) collection. */
@@ -18,12 +20,15 @@ export type NamedEntityState<E, C extends string> = {
   [K in `${C}EntityMap`]: EntityMap<E>;
 };
 
+/** The computed prop added for the collection `C`: `${C}Entities`, the entities in `ids` order. */
 export type NamedEntityProps<E, C extends string> = {
   [K in `${C}Entities`]: DeepSignal<E[]>;
 };
 
+/** The state `withEntities` adds: {@link NamedEntityState} when the collection is named, {@link EntityState} when it is not. */
 export type EntityStateOf<E, C extends string | undefined> = [C] extends [string] ? NamedEntityState<E, C> : EntityState<E>;
 
+/** Reads an entity's id. Only needed for entities without an `id` field of type string or number; then pass it to every updater. */
 export type SelectEntityId<E> = (entity: E) => EntityId;
 
 /** Options shared by every updater: which collection it targets and how to read an entity's id. */
@@ -44,6 +49,7 @@ type ConfigArgs<E, C extends string | undefined> = HasId<E> extends true
 /** What an updater returns: pass it to `patchState`. */
 export type EntityUpdater<E, C extends string | undefined> = (state: EntityStateOf<E, C>) => Partial<EntityStateOf<E, C>>;
 
+/** How `updateEntity` and its siblings change an entity: a partial entity, or a function from the entity to a partial one. The merge is shallow. */
 export type EntityChanges<E> = Partial<E> | ((entity: E) => Partial<E>);
 
 type Predicate<E> = (entity: E) => boolean;
@@ -62,6 +68,15 @@ type NamedShape<E, C extends string> = { state: NamedEntityState<E, C>; props: N
  * Change it with `patchState(store, addEntity(...))` and the other updaters; pass the same `collection` to each.
  *
  * `withEntities<Todo>()`, or `withEntities({ entity: type<Todo>(), collection: 'todo' })`.
+ *
+ * @example
+ * ```ts
+ * class TodoStore extends signalStore(
+ *   withEntities<Todo>(),
+ *   withMethods((store) => ({ add: (todo: Todo) => patchState(store, addEntity(todo)) })),
+ * ) {}
+ * // store.entities() is the list in order; store.entityMap()[id] looks one up.
+ * ```
  */
 export function withEntities<E>(): StoreFeature<NoShape, DefaultShape<E>>;
 export function withEntities<E>(config: { entity: E }): StoreFeature<NoShape, DefaultShape<E>>;

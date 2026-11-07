@@ -12,6 +12,7 @@ import { projectRules, sourceRules } from "./source-rules.js";
 import { componentMetaRules } from "./meta-rules.js";
 import { scanTemplate, ScanError, type ExprKind, type Src, type TNode } from "./scan.js";
 
+/** One problem the analyzer found in a template, a component or a source file. */
 export interface Diagnostic {
   file: string;
   /** 1-based. */
@@ -27,6 +28,12 @@ export interface Diagnostic {
   fixes?: Fix[];
 }
 
+/**
+ * The outcome of {@link analyzeProject}.
+ *
+ * When `configErrors` is non-empty the project was not analyzed at all, so an empty `diagnostics` list
+ * does not mean the project is clean: check `configErrors` first.
+ */
 export interface AnalysisResult {
   diagnostics: Diagnostic[];
   /** Problems with the invocation or tsconfig; when present nothing was analyzed. */

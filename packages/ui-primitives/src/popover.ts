@@ -16,32 +16,38 @@ import { delayHidden, usePresence } from "./presence.js";
  */
 export class PopoverState extends machineState<popover.Props, popover.Api>("popover", popover.machine, popover.connect) {}
 
+/** `[uiPopoverTrigger]`: the element that toggles the popover. Gets `aria-expanded`, `aria-controls` and `aria-haspopup="dialog"` from the injected `PopoverState`. */
 export class UiPopoverTrigger {
   static meta = { selector: "[uiPopoverTrigger]" };
   state = inject(PopoverState);
   _p = bindProps(() => this.state.api().getTriggerProps());
 }
+/** `[uiPopoverPositioner]`: the wrapper Zag positions next to the trigger (placement, flip and shift come from the machine's `positioning` option). */
 export class UiPopoverPositioner {
   static meta = { selector: "[uiPopoverPositioner]" };
   state = inject(PopoverState);
   _p = bindProps(() => this.state.api().getPositionerProps());
 }
+/** `[uiPopoverContent]`: the popover panel. Stays mounted until its exit animation finishes so `data-state="closed"` can animate out. */
 export class UiPopoverContent {
   static meta = { selector: "[uiPopoverContent]" };
   state = inject(PopoverState);
   presence = usePresence(() => this.state.api().open);
   _p = bindProps(() => delayHidden(this.state.api().getContentProps(), this.presence));
 }
+/** `[uiPopoverTitle]`: the popover's heading, referenced by the content's `aria-labelledby`. */
 export class UiPopoverTitle {
   static meta = { selector: "[uiPopoverTitle]" };
   state = inject(PopoverState);
   _p = bindProps(() => this.state.api().getTitleProps());
 }
+/** `[uiPopoverDescription]`: the popover's description, referenced by the content's `aria-describedby`. */
 export class UiPopoverDescription {
   static meta = { selector: "[uiPopoverDescription]" };
   state = inject(PopoverState);
   _p = bindProps(() => this.state.api().getDescriptionProps());
 }
+/** `[uiPopoverClose]`: a button that closes the popover. */
 export class UiPopoverClose {
   static meta = { selector: "[uiPopoverClose]" };
   state = inject(PopoverState);

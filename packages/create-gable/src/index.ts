@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import { basename, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
+/** The package managers whose commands the generated README can show. */
 export type PackageManager = "npm" | "pnpm" | "yarn" | "bun";
 
 /** The package manager that invoked us, from `npm_config_user_agent` (npm when absent or unknown). */
@@ -22,6 +23,7 @@ const ownVersion = (): string => JSON.parse(readFileSync(join(here, "..", "packa
 /** Dotfiles that npm would drop or rename when packing are stored under another name. */
 const RENAMED: Record<string, string> = { _gitignore: ".gitignore" };
 
+/** Options for {@link scaffold}. */
 export interface ScaffoldOptions {
   /** Project (and package) name. */
   name: string;
@@ -90,6 +92,7 @@ export function scaffold(options: ScaffoldOptions): string[] {
   return written;
 }
 
+/** The terminal seam of {@link main}: pass real stdio in the bin, fakes in tests, so the CLI never touches `process` directly. */
 export interface CliIo {
   stdout(text: string): void;
   stderr(text: string): void;

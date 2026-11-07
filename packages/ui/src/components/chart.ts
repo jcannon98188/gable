@@ -19,6 +19,7 @@ export interface ChartZoom {
   to: number;
 }
 
+/** How a `ui-chart` draws its data: `line`, `area` or `bar` over a category axis, or `pie` and `donut` for parts of a whole. */
 export type ChartType = "line" | "area" | "bar" | "pie" | "donut";
 
 const PALETTE = 5;

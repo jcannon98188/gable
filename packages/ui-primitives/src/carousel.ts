@@ -2,6 +2,7 @@ import { computed, effect, signal, untracked, type ReadonlySignal } from "@gable
 import { currentScope, injectHost } from "@gable/core/internal";
 import type { Renderer } from "@gable/core/renderer";
 
+/** Options for `useCarousel`. `count` is required; every value is a getter so it may read signals. */
 export interface CarouselOptions {
   /** How many slides there are. */
   count: () => number;
@@ -15,6 +16,7 @@ export interface CarouselOptions {
   slideSelector?: string;
 }
 
+/** What `useCarousel` returns: the slide in view, autoplay state, and methods to move between slides. */
 export interface CarouselHandle {
   /** The slide that is in view (0-based). */
   readonly index: ReadonlySignal<number>;

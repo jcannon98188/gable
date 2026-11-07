@@ -2,11 +2,13 @@ import { computed, input } from "@gable/core";
 import { useHostClass } from "../lib/host-class.js";
 import { variants } from "../lib/variants.js";
 
+/** Visual style of `uiBadge`: the brand variants plus four severity variants (`error`, `warning`, `info`, `success`) for status cells. */
 export type BadgeVariant = "default" | "secondary" | "destructive" | "outline" | "error" | "warning" | "info" | "success";
 
 /** The severities of a diagnostics list (a problem row's leading cell). */
 export type BadgeSeverity = "error" | "warning" | "info" | "success";
 
+/** The class generator behind `uiBadge`. Call it with `{ variant, class }` to get the class string, for example to style a link like a badge. */
 export const badgeVariants = variants({
   base: "inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-md border px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] [&>svg]:pointer-events-none [&>svg]:size-3",
   variants: {

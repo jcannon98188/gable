@@ -22,6 +22,15 @@ export interface ErrorReport {
   context: ErrorContext;
 }
 
+/**
+ * Options for {@link mount}. All optional: with none, the component renders into the in-memory test renderer with no
+ * inputs and no extra providers.
+ *
+ * @example
+ * ```ts
+ * mount(Greeting, { inputs: { name: "Ada" }, providers: [{ provide: Clock, useValue: fakeClock }] });
+ * ```
+ */
 export interface MountOptions<T extends object = object> {
   /** Defaults to the in-memory test renderer. */
   renderer?: Renderer<TestNode>;
@@ -193,6 +202,40 @@ const tick = async () => {
 };
 let fixtures = 0;
 
+/**
+ * Mounts a component into the in-memory test renderer and returns a {@link Fixture} to drive and inspect it. No DOM,
+ * browser or jsdom is involved, so it runs in any test runner.
+ *
+ * The fixture never flushes on its own: after changing a signal or firing an event, `await fixture.flush()` (or
+ * `settle()`) before asserting on the output. Errors reported to the ErrorHandler are collected and fail the test when
+ * the fixture is destroyed unless you claim them with `fixture.errors.expect()`. With a global `afterEach` (vitest or
+ * jest globals) fixtures are destroyed automatically; otherwise call `destroy()` or declare the fixture with `using`.
+ *
+ * @param Component - The component class (a plain class with `static meta`).
+ * @param options - Inputs, providers, i18n, component overrides and the timer hook.
+ * @returns The fixture for the mounted component.
+ *
+ * @example
+ * ```ts
+ * class Counter {
+ *   static meta = {
+ *     selector: "app-counter",
+ *     template: html`<button (click)="increment()">Count: {{ count() }}</button>`,
+ *   };
+ *   count = signal(0);
+ *   increment() {
+ *     this.count.set(this.count() + 1);
+ *   }
+ * }
+ *
+ * it("counts clicks", async () => {
+ *   const fixture = mount(Counter);
+ *   fixture.dispatch(fixture.query("button")!, "click");
+ *   await fixture.flush();
+ *   expect(fixture.text()).toBe("Count: 1");
+ * });
+ * ```
+ */
 export function mount<T extends object>(Component: ComponentClass<T>, options: MountOptions<T> = {}): Fixture<T> {
   const renderer = options.renderer ?? createTestRenderer();
   const container = createTestRoot();
@@ -351,6 +394,10 @@ export { httpTesting } from "./injector.js";
 
 // --- mountApp ---------------------------------------------------------------
 
+/**
+ * Options for {@link mountApp}: everything {@link MountOptions} takes (except `renderer`, which must be a test
+ * renderer) plus the routes and the starting URL.
+ */
 export interface MountAppOptions extends Omit<MountOptions, "renderer"> {
   routes: readonly Route[];
   /** The initial URL. Defaults to `/`. */

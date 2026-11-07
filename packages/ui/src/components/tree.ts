@@ -44,6 +44,7 @@ export interface TreeNode {
   actions?: TreeAction[];
 }
 
+/** How a `ui-tree` selects rows: `none` (default), `single` or `multiple` (the tree then reports `aria-multiselectable`). */
 export type TreeSelectionMode = "none" | "single" | "multiple";
 
 /** A visible node: the tree flattened to the rows that are showing, with its ARIA position. */

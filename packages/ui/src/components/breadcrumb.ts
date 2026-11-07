@@ -21,21 +21,25 @@ export class UiBreadcrumb {
   static meta = { selector: "nav[uiBreadcrumb]" };
   private attrs = bindProps(() => ({ "aria-label": "breadcrumb" }));
 }
+/** `ol[uiBreadcrumbList]`: the ordered list that holds the items and separators. Wraps onto several lines on narrow screens. */
 export class UiBreadcrumbList {
   static meta = { selector: "ol[uiBreadcrumbList]" };
   class = input<string>("");
   private apply = useHostClass(() => cn("flex flex-wrap items-center gap-1.5 text-sm break-words text-muted-foreground sm:gap-2.5", this.class()));
 }
+/** `li[uiBreadcrumbItem]`: one entry of the trail: a link, the current page or an ellipsis. */
 export class UiBreadcrumbItem {
   static meta = { selector: "li[uiBreadcrumbItem]" };
   class = input<string>("");
   private apply = useHostClass(() => cn("inline-flex items-center gap-1.5", this.class()));
 }
+/** `a[uiBreadcrumbLink]`: a link to an ancestor page. Put the `href` on it as usual. */
 export class UiBreadcrumbLink {
   static meta = { selector: "a[uiBreadcrumbLink]" };
   class = input<string>("");
   private apply = useHostClass(() => cn("transition-colors hover:text-foreground", this.class()));
 }
+/** `[uiBreadcrumbPage]`: the current page, last in the trail. Not a real link: it gets `aria-current="page"` and `aria-disabled`. */
 export class UiBreadcrumbPage {
   static meta = { selector: "[uiBreadcrumbPage]" };
   class = input<string>("");

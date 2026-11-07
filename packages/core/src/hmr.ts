@@ -10,6 +10,9 @@ import { describe, ownMembers, type Definition } from "./hmr-source.js";
 import { transferState } from "./hmr-transfer.js";
 
 type Cls = Function & Record<string, any>;
+/**
+ * What the hot-update runtime does when a class changes: `reset` rebuilds it with fresh state, `reload` asks for a full page reload and `ignore` keeps the running instance.
+ */
 export type HmrMode = "reset" | "reload" | "ignore";
 
 /** One re-evaluated module: its URL and namespace (export name to value). */
@@ -18,6 +21,7 @@ export interface ModuleUpdate {
   exports: Record<string, unknown>;
 }
 
+/** The outcome of applying a hot update. `errors` lists the failures the update hit. */
 export interface HotResult {
   /**
    * `applied`: the app now runs the new code. `unchanged`: nothing needed to change.

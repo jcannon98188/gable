@@ -3,9 +3,12 @@ import { ToggleState, bindProps } from "@gable/ui-primitives";
 import { useHostClass } from "../lib/host-class.js";
 import { variants } from "../lib/variants.js";
 
+/** Visual style of `uiToggle`: `default` (transparent) or `outline` (bordered). */
 export type ToggleVariant = "default" | "outline";
+/** Size of `uiToggle`: `default`, `sm`, `lg`, or the dense `compact` size (26px tall). */
 export type ToggleSize = "default" | "sm" | "lg" | "compact";
 
+/** The class generator behind `uiToggle`. Call it with `{ variant, size, class }` to get the class string. */
 export const toggleVariants = variants({
   base: [
     "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-[color,box-shadow] outline-none hover:bg-muted hover:text-muted-foreground",

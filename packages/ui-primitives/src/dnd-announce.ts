@@ -1,4 +1,4 @@
-/**
+/*
  * Screen-reader announcements for drag and drop.
  *
  * There is no shared LiveAnnouncer in Gable yet, so drag and drop owns a minimal internal live region: one visually
@@ -8,6 +8,7 @@
  * can replace with `setDndMessages` (translation, wording).
  */
 
+/** The facts a drag message is built from: what is moving, and where it is (position in a list, container or zone name). */
 export interface DndPosition {
   /** What is being moved (the item's `label`). */
   label: string;
@@ -18,6 +19,7 @@ export interface DndPosition {
   zone?: string;
 }
 
+/** The strings and functions used to announce a drag: the keyboard instructions plus one function per event (lift, over, no target, drop, cancel). Replace any of them with `setDndMessages` to translate or reword. */
 export interface DndMessages {
   /** Read by assistive technology when focus lands on a draggable or sortable item (`aria-describedby`). */
   instructions: string;
@@ -46,6 +48,7 @@ let current: DndMessages = defaults;
 export function setDndMessages(messages: Partial<DndMessages>): void {
   current = { ...defaults, ...messages };
 }
+/** The message set currently used for screen-reader announcements (the English defaults unless `setDndMessages` replaced some). */
 export function dndMessages(): DndMessages {
   return current;
 }

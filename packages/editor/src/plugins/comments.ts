@@ -6,6 +6,7 @@ import { definePlugin, type EditorPlugin } from "../plugin.js";
 import { getBinding } from "../yjs/collab-plugin.js";
 import type { CollabUser } from "../yjs/awareness.js";
 
+/** One message in a {@link CommentThread}. */
 export interface CommentMessage {
   id: string;
   author: CollabUser;
@@ -14,6 +15,7 @@ export interface CommentMessage {
   at: number;
 }
 
+/** An anchored comment thread: the range it is attached to, its messages and whether it is resolved. */
 export interface CommentThread {
   id: string;
   /** Current document range, or null when the anchored text no longer exists (an orphaned thread). */
@@ -26,6 +28,14 @@ export interface CommentThread {
   messages: CommentMessage[];
 }
 
+/**
+ * Options for `commentsPlugin`. The `ydoc` must be the same one `collabPlugin` is bound to, since threads live in it.
+ *
+ * @example
+ * ```ts
+ * commentsPlugin({ ydoc, user: { name: "Ada", color: "#d97706" } });
+ * ```
+ */
 export interface CommentsOptions {
   ydoc: Y.Doc;
   /** The local author. */

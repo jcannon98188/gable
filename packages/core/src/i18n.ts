@@ -22,6 +22,7 @@ export interface MissingTranslation {
   description: string;
 }
 
+/** Configuration for the root `I18n` service, passed to {@link provideI18n}. */
 export interface I18nOptions {
   /** The language the templates and `i18n` tags are written in. Messages are never "missing" in it. Default `"en"`. */
   sourceLocale?: string;
@@ -35,9 +36,22 @@ export interface I18nOptions {
   onMissing?: (missing: MissingTranslation) => void;
 }
 
+/**
+ * The injection token that carries the {@link I18nOptions}. Set it with {@link provideI18n} rather than directly.
+ */
 export const I18N_OPTIONS = new InjectionToken<I18nOptions>("I18nOptions");
 
-/** Providers that configure the root `I18n` service. The service works without them (locale `"en"`, no catalogs). */
+/**
+ * Providers that configure the root `I18n` service. The service works without them (locale `"en"`, no catalogs).
+ *
+ * @example
+ * ```ts
+ * bootstrap(Root, {
+ *   renderer: dom(),
+ *   providers: provideI18n({ sourceLocale: "en", locale: "fr", catalogs: { fr: { greeting: "Bonjour" } } }),
+ * });
+ * ```
+ */
 export function provideI18n(options: I18nOptions = {}): Provider[] {
   return [{ provide: I18N_OPTIONS, useValue: options }];
 }

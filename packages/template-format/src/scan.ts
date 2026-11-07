@@ -15,6 +15,17 @@ export interface TemplateLiteralSpan {
 
 const REGEX_AFTER_WORD = new Set("return typeof case in of delete void throw new else do yield await instanceof".split(" "));
 
+/**
+ * Finds the tagged template literals in a TypeScript or JavaScript source, without the TypeScript compiler.
+ * Use it with {@link formatTemplateLiteral} to rewrite one literal, or to locate templates in tooling.
+ *
+ * The scanner understands comments, strings, regex literals and nested `${}` holes, but it is not a full
+ * JavaScript lexer; an exotic construct can in principle be misread.
+ *
+ * @param src - The source text of a module.
+ * @param tag - The tag to look for. Default `"html"`.
+ * @returns One span per literal, in source order.
+ */
 export function findHtmlLiterals(src: string, tag = "html"): TemplateLiteralSpan[] {
   const found: TemplateLiteralSpan[] = [];
   let i = 0;

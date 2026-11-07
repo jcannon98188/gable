@@ -75,8 +75,18 @@ export type ServerErrors = Record<string, ErrorObject[]>;
 /** `ok`: the action ran and succeeded. `invalid`: not run (errors or pending). `busy`: a submit is already running. `serverErrors`: the action returned errors, now attached. `failed`: the action threw (reported to the ErrorHandler). */
 export type SubmitResult = "ok" | "invalid" | "busy" | "serverErrors" | "failed";
 
+/**
+ * The function passed to `form.submit`. It receives the form's value and may return (directly, as a promise or as an observable) server-side errors keyed by field path, which are then attached to the fields. Returning nothing means success.
+ *
+ * @typeParam T - The form's model type.
+ */
 export type SubmitAction<T> = (value: T) => PromiseLike<ServerErrors | void | undefined> | Observable<ServerErrors | void | undefined> | ServerErrors | void;
 
+/**
+ * The members only the root of a form has: `submit`, `submit$` and `reset`.
+ *
+ * @typeParam T - The form's model type.
+ */
 export interface FormField<T> {
   /** Touches every field, then runs `action` with the model only if the form is valid and nothing is pending. */
   submit(action: SubmitAction<T>): Promise<SubmitResult>;
@@ -86,8 +96,14 @@ export interface FormField<T> {
   reset(value?: T): void;
 }
 
+/**
+ * The root of a form: a {@link Field} for the whole model plus {@link FormField} for submitting and resetting. Created by {@link form}.
+ *
+ * @typeParam T - The form's model type.
+ */
 export type Form<T> = Field<T> & FormField<T>;
 
+/** Options for {@link form}. */
 export interface FormOptions {
   /** Own the form with this scope instead of the current one. */
   scope?: Scope;
@@ -99,10 +115,19 @@ declare const PATH_TYPE: unique symbol;
 interface PathMarker<T> {
   readonly [PATH_TYPE]?: T;
 }
+/**
+ * A function that declares the rules for a model by calling rule functions (`required`, `validate`, ...) on the paths it is given. It runs once.
+ *
+ * @typeParam T - The type of the model slice the schema covers.
+ */
 export type Schema<T> = (path: Path<T>) => void;
 
+/** What a validator returns: nothing or `null` for valid, or one error object or an array of them. */
 export type ValidationResult = ErrorObject | readonly ErrorObject[] | null | undefined | void;
 
+/**
+ * Gives a validator or condition access to the field it runs on and to the rest of the form, for rules that depend on other fields.
+ */
 export interface ValidationContext {
   /** The field being validated. */
   readonly field: Field<any>;
@@ -159,7 +184,16 @@ function add(name: string, path: unknown, rule: (at: Segments, conds: Cond[]) =>
   c.rules.push(rule(segmentsOf(path), [...c.conds]));
 }
 
-/** Declares a sync rule: a pure function returning nothing, an error object, or an array of them. Runs reactively. */
+/**
+ * Declares a sync rule: a pure function returning nothing, an error object, or an array of them. Runs reactively.
+ *
+ * @example
+ * ```ts
+ * form(model, (p) => {
+ *   validate(p.confirm, (value, ctx) => (value === ctx.root.password() ? null : { kind: "mismatch" }));
+ * });
+ * ```
+ */
 export function validate<T>(path: Path<T>, fn: (value: T, ctx: ValidationContext) => ValidationResult): void {
   add("validate", path, (at, conds) => ({ kind: "sync", at, conds, fn }));
 }
@@ -204,35 +238,54 @@ export function disabled<T>(path: Path<T>, condition: (ctx: ValidationContext) =
   add("disabled", path, (at, conds) => ({ kind: "disabled", at, conds, fn: condition }));
 }
 
+/**
+ * The field is read-only while `condition` is true (default: always). It is reported through `state.readonly` and applied to the control by the `[field]` directive; the value stays in the model.
+ */
 export function readonly<T>(path: Path<T>, condition: (ctx: ValidationContext) => boolean = () => true): void {
   add("readonly", path, (at, conds) => ({ kind: "readonly", at, conds, fn: condition }));
 }
 
+/** Options shared by the built-in rules. */
 export interface RuleOptions {
   message?: string;
 }
 const withMessage = (error: ErrorObject, options?: RuleOptions): ErrorObject => (options?.message === undefined ? error : { ...error, message: options.message });
 const isEmpty = (v: unknown) => v === null || v === undefined || v === "" || (Array.isArray(v) && v.length === 0);
 
-/** Null, undefined, '' and [] fail. */
+/**
+ * Null, undefined, '' and [] fail.
+ *
+ * @example
+ * ```ts
+ * form(model, (p) => {
+ *   required(p.name, { message: "Name is required" });
+ * });
+ * ```
+ */
 export function required<T>(path: Path<T>, options?: RuleOptions): void {
   validate(path, (v) => (isEmpty(v) ? withMessage({ kind: "required" }, options) : null));
 }
+/** The value must be exactly `true`; use it for a "I accept the terms" checkbox. */
 export function requiredTrue(path: Path<boolean>, options?: RuleOptions): void {
   validate(path, (v) => (v === true ? null : withMessage({ kind: "requiredTrue" }, options)));
 }
+/** A non-empty string or array must have at least `min` items; empty values pass (combine with `required`). */
 export function minLength(path: Path<string | unknown[] | null | undefined>, min: number, options?: RuleOptions): void {
   validate(path, (v) => (!isEmpty(v) && (v as string).length < min ? withMessage({ kind: "minLength", min, actual: (v as string).length }, options) : null));
 }
+/** A string or array must have at most `max` items. */
 export function maxLength(path: Path<string | unknown[] | null | undefined>, max: number, options?: RuleOptions): void {
   validate(path, (v) => (!isEmpty(v) && (v as string).length > max ? withMessage({ kind: "maxLength", max, actual: (v as string).length }, options) : null));
 }
+/** A number must be at least `min`. `null` and `undefined` pass (combine with `required`). */
 export function min(path: Path<number | null | undefined>, min: number, options?: RuleOptions): void {
   validate(path, (v) => (v != null && v < min ? withMessage({ kind: "min", min, actual: v }, options) : null));
 }
+/** A number must be at most `max`. `null` and `undefined` pass. */
 export function max(path: Path<number | null | undefined>, max: number, options?: RuleOptions): void {
   validate(path, (v) => (v != null && v > max ? withMessage({ kind: "max", max, actual: v }, options) : null));
 }
+/** A non-empty string must match `regex`. Empty values pass (combine with `required`). */
 export function pattern(path: Path<string | null | undefined>, regex: RegExp, options?: RuleOptions): void {
   validate(path, (v) => {
     if (isEmpty(v)) return null;
@@ -241,6 +294,9 @@ export function pattern(path: Path<string | null | undefined>, regex: RegExp, op
   });
 }
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/**
+ * A non-empty string must look like an email address (`name@host.tld`). This is a basic shape check, not a deliverability check.
+ */
 export function email(path: Path<string | null | undefined>, options?: RuleOptions): void {
   validate(path, (v) => (isEmpty(v) || EMAIL.test(v as string) ? null : withMessage({ kind: "email" }, options)));
 }
@@ -721,6 +777,36 @@ const toArray = (r: ValidationResult): ErrorObject[] => (r ? ([] as ErrorObject[
  * (`form()` is the whole value, `form.email()` one field); the model is canonical. Call it during setup: the
  * form's async subscriptions and effects are owned by the current scope (or `options.scope`). The schema
  * runs once, in the caller's injection context.
+ *
+ * @example
+ * ```ts
+ * export class SignupForm {
+ *   static meta = {
+ *     selector: "app-signup-form",
+ *     template: html`
+ *       <input type="email" [field]="signup.email" />
+ *       @if (signup.email.state.touched() && signup.email.state.errors().length !== 0) {
+ *         <p>Enter a valid email address.</p>
+ *       }
+ *       <button (click)="submit()">Sign up</button>
+ *     `,
+ *   };
+ *
+ *   model = signal({ email: "" });
+ *   signup = form(this.model, (p) => {
+ *     required(p.email);
+ *     email(p.email);
+ *   });
+ *
+ *   submit() {
+ *     return this.signup.submit((value) => this.save(value));
+ *   }
+ *
+ *   save(value: { email: string }) {
+ *     console.log(value.email);
+ *   }
+ * }
+ * ```
  */
 export function form<T>(model: WritableSignal<T>, schema?: Schema<T>, options: FormOptions = {}): Form<T> {
   const owner = options.scope ?? currentScope();

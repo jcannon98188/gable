@@ -114,6 +114,11 @@ export function yToFragment(parent: YParent, schema: Schema, cache?: DocCache): 
   return Fragment.fromArray(nodes);
 }
 
+/**
+ * Builds a ProseMirror document from a Y.XmlFragment. The low-level half of the Yjs binding: use it to read a
+ * collaborative document without an editor (for example on a server). `schema` must contain every node and mark the
+ * fragment uses; the optional `cache` reuses nodes that did not change between calls.
+ */
 export function yToDoc(fragment: Y.XmlFragment, schema: Schema, cache?: DocCache): PMNode {
   return schema.topNodeType.create(null, yToFragment(fragment, schema, cache));
 }
@@ -278,6 +283,11 @@ export function updateChildren(y: YParent, specs: Spec[]): void {
   if (sEnd > ss) y.insert(ys, specs.slice(ss, sEnd).map((spec) => createYChild(spec)));
 }
 
+/**
+ * Writes a ProseMirror document into a Y.XmlFragment as a minimal set of Yjs inserts, deletes and format changes, so
+ * concurrent edits by other peers merge instead of being overwritten. Run it inside a Y transaction; it does not
+ * create one.
+ */
 export function updateYFragment(fragment: Y.XmlFragment, doc: PMNode): void {
   updateChildren(fragment, childSpecs(doc));
 }

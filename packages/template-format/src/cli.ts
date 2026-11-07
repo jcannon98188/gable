@@ -1,5 +1,6 @@
 import { formatTemplateLiterals, type LiteralFormatOptions } from "./index.js";
 
+/** The I/O seam of {@link runCli}: the real `fs` and `process` streams in the `gable-format` bin, fakes in tests. */
 export interface CliIo {
   readFile(path: string): string;
   writeFile(path: string, content: string): void;

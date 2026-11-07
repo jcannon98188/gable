@@ -7,6 +7,17 @@ import { YProseMirrorBinding } from "./binding.js";
 
 const bindings = new WeakMap<EditorView, YProseMirrorBinding>();
 
+/**
+ * Options for {@link collabPlugin}. Give `whenSynced` (for example the provider's `synced` promise) whenever the
+ * document comes from a network provider; without it each peer may seed its own initial content and the document
+ * ends up with duplicates.
+ *
+ * @example
+ * ```ts
+ * const provider = createLocalProvider();
+ * collabPlugin({ ydoc: provider.ydoc, whenSynced: provider.synced });
+ * ```
+ */
 export interface CollabOptions {
   ydoc: Y.Doc;
   /** Y.XmlFragment name. Default "content". */

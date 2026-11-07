@@ -24,6 +24,10 @@ export interface Preview {
   more?: number;
 }
 
+/**
+ * What a reactive node is. `state` is a writable `signal`, `computed` a derived one, `input` and `model` are component bindings (a `model` is two-way),
+ * `effect` is a side effect (including each template binding) and `internal` stands for a node the devtools cannot name.
+ */
 export type SignalKind = "state" | "computed" | "input" | "model" | "effect" | "internal";
 
 /** A dependency edge: the other end of a signal's source or sink relation. */
@@ -33,11 +37,15 @@ export interface Edge {
   kind: SignalKind;
 }
 
+/** A signal, input, model or computed as the panel shows it: its current value and its place in the dependency graph. */
 export interface SignalInfo {
+  /** The devtools id (`s` and a number); pass it to `signal`, `setSignal`, `signalJson` and `why`. */
   id: string;
   name: string;
   kind: SignalKind;
+  /** A preview of the current value; reading it never subscribes anything. */
   value: Preview;
+  /** `true` for a state signal (which `setSignal` can write), `false` for a computed. */
   writable: boolean;
   /** What this reads. */
   sources: Edge[];
@@ -47,19 +55,30 @@ export interface SignalInfo {
   owner: { id: string; name: string } | null;
 }
 
+/** An effect owned by a component, with its run statistics. Template bindings are effects too. */
 export interface EffectInfo {
   id: string;
+  /** A display name: `effect #` and a creation sequence number. */
   label: string;
+  /** How many times it has run. Timings are only measured while a client is connected. */
   runs: number;
+  /** Total time spent running, in milliseconds. */
   totalMs: number;
+  /** Duration of the most recent run, in milliseconds. */
   lastMs: number;
+  /** The signals it read on its last run. */
   sources: Edge[];
 }
 
+/** One component instance in the component tree. `tree` returns these flattened, parents before their children. */
 export interface TreeNode {
+  /** The devtools id (`c` and a number); pass it to `component`, `highlight`, `openInEditor`, `why` and `element`. */
   id: string;
+  /** The id of the parent component; `null` for a root. */
   parent: string | null;
+  /** The component class name. */
   name: string;
+  /** The component's `meta.selector`; empty when it has none. */
   selector: string;
   /** The host's tag name (or node kind under a non-DOM renderer). */
   host: string;
@@ -69,6 +88,7 @@ export interface TreeNode {
   label: string;
 }
 
+/** Where a component class was defined. The Gable Vite plugin registers it in dev. */
 export interface SourceInfo {
   /** The module path as served (for example `/src/app.ts`). */
   path: string;
@@ -76,19 +96,29 @@ export interface SourceInfo {
   file: string | null;
 }
 
+/** A component with its inputs, outputs, signals and effects: what the panel shows when a tree node is selected. */
 export interface ComponentDetail extends TreeNode {
+  /** Where the class is defined; `null` when no source was registered. */
   source: SourceInfo | null;
+  /** Its `input` and `model` fields. */
   inputs: SignalInfo[];
+  /** The names of its output fields. */
   outputs: string[];
+  /** The other signals and computeds held in its fields. */
   signals: SignalInfo[];
+  /** The effects created in its scope, template bindings included. */
   effects: EffectInfo[];
 }
 
+/** One injector in the injector tree. `injectors` returns these; `injector` returns the detail. */
 export interface InjectorNode {
+  /** The devtools id (`i` and a number); pass it to `injector`. */
   id: string;
+  /** The id of the parent injector; `null` for the root. */
   parent: string | null;
   /** The component whose own injector this is. */
   component: { id: string; name: string } | null;
+  /** How many Tokens and classes this injector holds, created or not. */
   entryCount: number;
 }
 
@@ -100,28 +130,41 @@ export interface ProviderInfo {
   target: string;
 }
 
+/** One Token or class registered in an injector, whether or not it has been created yet. */
 export interface InjectorEntry {
+  /** The class name, or the Token's description. */
   name: string;
+  /** `class` when the entry is keyed by a class, `token` for any other Token. */
   kind: "class" | "token";
   /** How this Token is provided in this injector; `null` when the entry did not come from a Provider. */
   provider: ProviderInfo | null;
+  /** Whether the value has been created. Entries are created on first inject. */
   resolved: boolean;
+  /** A preview of the value; `(not created yet)` when it is not resolved. */
   value: Preview;
   /** Signals found on a resolved class instance. */
   signals: SignalInfo[];
 }
 
+/** An injector with its entries. */
 export interface InjectorDetail extends InjectorNode {
+  /** Everything registered in this injector. */
   entries: InjectorEntry[];
 }
 
+/** One run of an effect within a flush. */
 export interface EffectRun {
+  /** The effect's devtools id (`e` and a number). */
   id: string;
+  /** The effect's display name. */
   label: string;
+  /** The class name of the owning component; `null` when it has none. */
   component: string | null;
   /** The component's devtools id, when it has one (an additive field). */
   componentId?: string | null;
+  /** How long the run took, in milliseconds. */
   ms: number;
+  /** `true` for the effect's first run, when it was created. */
   first: boolean;
   /** Why it re-ran: the signal writes (see `why`). Absent on a first run; empty when no recorded write explains the run. Additive. */
   causes?: WhyCause[];
@@ -140,12 +183,15 @@ export interface WhyCause {
   by: "app" | "designer";
 }
 
+/** One recorded run of an effect, with what made it run. */
 export interface WhyRun {
   /** `performance.now()` when it ran. */
   at: number;
+  /** How long it took, in milliseconds. */
   ms: number;
   /** The effect's first run (its creation): there is no earlier state to change from. */
   first: boolean;
+  /** The signal writes that made it run; empty on a first run or when no recorded write explains it. */
   causes: WhyCause[];
   /** More causes than are listed. */
   more: number;
@@ -166,14 +212,21 @@ export interface WhyDependency {
   cut?: true;
 }
 
+/** One effect, computed or state signal in a `why` report, with its dependencies, dependents and recent runs. */
 export interface WhyNode {
+  /** The devtools id. */
   id: string;
+  /** Its display name. */
   name: string;
+  /** What kind of node it is. */
   kind: SignalKind;
+  /** The owning component; `null` when none is known. */
   owner: { id: string; name: string } | null;
   /** The template binding this effect updates (`text`, `prop:value`, `class:done`...) and the node it is on; null for any other effect, a computed or a state signal. */
   binding: { what: string; node: string } | null;
+  /** How many times it has run (zero for a signal). */
   runs: number;
+  /** What it reads, as a tree bounded in depth and size. */
   dependencies: WhyDependency[];
   /** What reads it (effects and computeds): who would be told when it changes. */
   dependents: Edge[];
@@ -183,10 +236,15 @@ export interface WhyNode {
   lastWrite: { seq: number; at: number; source: "app" | "designer"; before: Preview; after: Preview } | null;
 }
 
+/** The result of the `why` method: the effects of a component, or one signal or effect, with what each depends on and why it last ran. */
 export interface WhyReport {
+  /** The id that was asked about. */
   id: string;
+  /** The component class name, or the signal or effect's display name. */
   name: string;
+  /** `component` when the id named a component, else the kind of the signal or effect. */
   kind: "component" | SignalKind;
+  /** One node per effect for a component (at most 40); a single node for a signal or effect id. */
   nodes: WhyNode[];
   /** Effects left out of `nodes` (the report holds at most 40). */
   more: number;
@@ -205,44 +263,75 @@ export interface FlushRecord {
   more: number;
 }
 
+/** One hot module replacement update, as `hmrLog` lists it. */
 export interface HmrEntry {
+  /** A sequence number shared with the other recorded events, increasing over time. */
   seq: number;
+  /** `performance.now()` when the update was applied. */
   at: number;
+  /** The outcome the HMR runtime reported. */
   status: string;
+  /** The modules that changed. */
   modules: string[];
   /** What the update did to each changed class: `patch`, `view` or `resetup` (classes whose edit changed nothing are left out). */
   changes: HmrChange[];
+  /** Messages of the errors the update raised; empty on success. */
   errors: string[];
 }
 
+/** One entry of a router's route table, with its children nested. */
 export interface RouteNode {
+  /** The route's path pattern. */
   path: string;
+  /** The component class name, `lazy(name)` for a lazily loaded one, or `null` when the route has none. */
   component: string | null;
+  /** The redirect target, for a redirecting route. */
   redirectTo?: string;
+  /** The route's `title`, when it sets one. */
   title?: string;
+  /** The names of its `canActivate`, `canDeactivate` and `canMatch` guards. */
   guards: string[];
+  /** Its child routes; `"lazy"` when they load on demand and `null` when it has none. */
   children: RouteNode[] | "lazy" | null;
+  /** Whether the route is part of the current match. */
   active: boolean;
 }
 
+/** One router event (a navigation start, end, cancel or error) kept in a router's log. */
 export interface RouterNavigation {
+  /** A sequence number shared with the other recorded events, increasing over time. */
   seq: number;
+  /** `performance.now()` when the event happened. */
   at: number;
+  /** The router event type. */
   type: string;
+  /** The navigation id the event belongs to. */
   id: number;
+  /** The URL being navigated to. */
   url: string;
+  /** A cancellation reason or an error message, when the event has one. */
   detail?: string;
 }
 
+/** A router with its current state, route table and recent navigation events. */
 export interface RouterInfo {
+  /** The devtools id (`r` and a number); pass it to `navigate`. */
   id: string;
+  /** The current URL. */
   url: string;
+  /** Whether a navigation is in progress. */
   navigating: boolean;
+  /** The current route parameters. */
   params: Preview;
+  /** The current query parameters. */
   queryParams: Preview;
+  /** The current URL fragment. */
   fragment: Preview;
+  /** The current route data. */
   data: Preview;
+  /** The configured route table. */
   routes: RouteNode[];
+  /** The most recent events, oldest first (at most 100). */
   events: RouterNavigation[];
 }
 
@@ -253,26 +342,42 @@ export interface InspectorSpec {
   snapshot(): unknown;
 }
 
+/** One action or patch an inspector logged through `InspectorHandle.log`. */
 export interface InspectorLogEntry {
+  /** A sequence number shared with the other recorded events, increasing over time. */
   seq: number;
+  /** `performance.now()` when it was logged. */
   at: number;
+  /** The name the logger gave the entry. */
   type: string;
+  /** A preview of the logged data. */
   data: Preview;
 }
 
+/** A registered inspector as the panel reads it: a fresh snapshot and the log so far. */
 export interface InspectorInfo {
+  /** The id the package registered it under. */
   id: string;
+  /** The label shown in the panel. */
   label: string;
+  /** A preview of `InspectorSpec.snapshot()`, taken when the panel asked; a `thrown` preview when the snapshot threw. */
   snapshot: Preview;
+  /** The logged entries, oldest first (at most 500). */
   log: InspectorLogEntry[];
 }
 
+/** What `registerInspector` returns: the way an inspector adds history and unregisters. */
 export interface InspectorHandle {
   /** Appends to this inspector's history (an action, a patch) and notifies connected clients. */
   log(type: string, data?: unknown): void;
+  /** Unregisters the inspector and notifies connected clients. */
   dispose(): void;
 }
 
+/**
+ * An event pushed to `connect` listeners. `tree` and `injectors` say the component or injector tree changed (re-fetch it); the others
+ * carry the new record, or for `inspector` the id of the inspector that changed.
+ */
 export type DevtoolsEvent =
   | { type: "tree" }
   | { type: "injectors" }
@@ -283,6 +388,7 @@ export type DevtoolsEvent =
   /** A state history step was recorded (`seq`), or the history was cleared (`seq` 0). Added after version 1; additive. */
   | { type: "history"; seq: number };
 
+/** The outcome of an action: `ok`, or `ok: false` with a message the panel can show. */
 export type EditResult = { ok: true } | { ok: false; error: string };
 
 /**
@@ -327,7 +433,12 @@ export interface DevtoolsMethods {
   why: { params: { id: string }; result: WhyReport | null };
 }
 
+/**
+ * The transport-agnostic global `window.__GABLE_DEVTOOLS_HOOK__`. A client (the browser extension, a test, a console snippet)
+ * reads state and runs actions with `call`, and listens for pushed events with `connect`. Every value that crosses it is JSON-safe.
+ */
 export interface GableDevtoolsHook {
+  /** The protocol version. */
   readonly version: 1;
   /** Subscribes to pushed events. Effect timings are only measured while at least one client is connected. */
   connect(listener: (event: DevtoolsEvent) => void): () => void;
@@ -582,8 +693,11 @@ function tokenName(token: unknown): string {
   return text === "[object Object]" ? "token" : text;
 }
 
+/** What `createDevtools` returns: the hook clients talk to and the sink the runtime reports to. */
 export interface DevtoolsInstance {
+  /** The hook, also installed on the target when one was given. */
   hook: GableDevtoolsHook;
+  /** The sink installed in the runtime's `devtools` slot. */
   sink: DevtoolsSink;
   /** Detaches the sink and removes the global (tests). */
   dispose(): void;

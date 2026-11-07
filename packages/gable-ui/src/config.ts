@@ -2,8 +2,10 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, posix } from "node:path";
 import type { GableUiConfig } from "./types.js";
 
+/** The name of the project config file, `gable-ui.json`, created in the project root by `gable-ui init`. */
 export const CONFIG_FILE = "gable-ui.json";
 
+/** The config `init` writes and the value used for any field missing from `gable-ui.json`: components in `src/components/ui`, helpers in `src/lib/ui`, the theme in `src/global.css`, base colour `neutral`. */
 export const DEFAULT_CONFIG: GableUiConfig = {
   componentsDir: "src/components/ui",
   utilsDir: "src/lib/ui",
@@ -55,6 +57,7 @@ export function readConfig(cwd: string): GableUiConfig | undefined {
   return parseConfig(parsed);
 }
 
+/** Writes `config` to `gable-ui.json` in `cwd` (pretty-printed JSON with a trailing newline), replacing any existing file. It does not validate: run values through `parseConfig` first. */
 export function writeConfig(cwd: string, config: GableUiConfig): void {
   writeFileSync(join(cwd, CONFIG_FILE), JSON.stringify(config, null, 2) + "\n");
 }

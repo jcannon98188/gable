@@ -215,6 +215,7 @@ const MATHML_TAGS: Record<keyof MathMLElementTagNameMap, true> = {
   semantics: true,
 };
 
+/** The element namespaces the renderer creates and validates tags for: HTML, SVG (`svg` and its descendants) and MathML (`math` and its descendants). */
 export type Namespace = "html" | "svg" | "mathml";
 
 const TAGS: Record<Namespace, Record<string, true>> = { html: HTML_TAGS, svg: SVG_TAGS, mathml: MATHML_TAGS };

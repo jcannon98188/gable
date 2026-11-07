@@ -31,6 +31,9 @@ export interface DesignNode {
   elements: number;
 }
 
+/**
+ * The surface of the design-tooling layer on `globalThis.__GABLE_DESIGNER_HOOK__`, used by the Designer's preview agent. Dev only; not for application code.
+ */
 export interface DesignerHook {
   readonly version: 1;
   /** While muted, the app does not see user events (click, keys, focus, input...) at the Renderer's `listen`. */
@@ -69,6 +72,7 @@ interface DevtoolsLike {
   componentOfInstance(instance: object): DesignNode["component"];
 }
 
+/** A created design-tooling layer: its `hook`, the `sink` the runtime feeds and a `dispose` for tests. */
 export interface DesignerInstance {
   hook: DesignerHook;
   sink: DesignSink;

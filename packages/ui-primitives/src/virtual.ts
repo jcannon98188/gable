@@ -7,6 +7,7 @@ import { createVirtualizer, type ScrollAlign, type VirtualItem, type Virtualizer
 export type { ScrollAlign, VirtualItem, VirtualRange, Virtualizer, VirtualizerOptions } from "./virtual-core.js";
 export { createVirtualizer } from "./virtual-core.js";
 
+/** Options for `useVirtualizer`: everything `VirtualizerOptions` takes, plus the accessibility semantics of the rendered items and keyboard navigation. */
 export interface UseVirtualizerOptions extends VirtualizerOptions {
   /**
    * Which accessibility semantics the rendered items carry (the container's role is yours to set):
@@ -28,6 +29,7 @@ export interface UseVirtualizerOptions extends VirtualizerOptions {
 /** A rendered item with its attribute bag, ready for `[uiProps]="row.props"`. */
 export type VirtualRow = VirtualItem & { props: PropBag };
 
+/** What `useVirtualizer` returns: the `Virtualizer` signals plus ready-made attribute bags for the container and each row, and `scrollToIndex`. */
 export interface VirtualizerHandle extends Virtualizer {
   /** Scrolls so that `index` is visible. With variable heights the target is re-aimed as rows are measured. */
   scrollToIndex(index: number, options?: { align?: ScrollAlign; behavior?: "auto" | "smooth" }): void;
@@ -55,19 +57,22 @@ interface ScrollNode {
 /**
  * Virtual scrolling for a long list or table: only the rows in view (plus overscan) exist as nodes. The host is the scroll
  * container (give it a height and `overflow: auto`); render `items()` inside a spacer of `totalSize()` height, each row at
- * `itemProps(item)` (it positions itself absolutely, so rows need no wrapper):
- *
- *   list = useVirtualizer({ count: () => rows().length, itemSize: 36, getKey: (i) => rows()[i].id });
- *   visible = computed(() => list.rows().map((row) => ({ ...row, name: rows()[row.index].name })));
- *   // template
- *   <div [style]="list.spacerStyle()">
- *     @for (row of visible(); track row.key) { <div [uiProps]="row.props">{{ row.name }}</div> }
- *   </div>
+ * `itemProps(item)` (it positions itself absolutely, so rows need no wrapper).
  *
  * `itemSize` fixes the height; otherwise rows are measured with a `ResizeObserver` (rows are found by `data-index`, in a
  * `MutationObserver`) and `estimateSize` stands in until they are. Measured heights are stored by `getKey`, so they
  * follow rows when the data reorders. Call it in Setup; listeners and observers go with the scope. Renderer-neutral
  * except for the observers, which exist only on a DOM host: elsewhere drive it with `setScroll` and `measure`.
+ *
+ * @example
+ * // Component class (inside Setup, e.g. a field initialiser)
+ * list = useVirtualizer({ count: () => this.rows().length, itemSize: 36, getKey: (i) => this.rows()[i].id });
+ * visible = computed(() => this.list.rows().map((row) => ({ ...row, name: this.rows()[row.index].name })));
+ *
+ * // Template (static html, no holes): a scroll container with a height and overflow: auto
+ * // <div [style]="list.spacerStyle()">
+ * //   @for (row of visible(); track row.key) { <div [uiProps]="row.props">{{ row.name }}</div> }
+ * // </div>
  */
 export function useVirtualizer(options: UseVirtualizerOptions, target: { renderer: Renderer<unknown>; host: unknown } = injectHost<unknown>()): VirtualizerHandle {
   const { renderer, host } = target;

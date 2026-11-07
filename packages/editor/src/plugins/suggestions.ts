@@ -6,8 +6,10 @@ import { definePlugin, type EditorPlugin } from "../plugin.js";
 import { Y_SYNC_META } from "../yjs/binding.js";
 import type { CollabUser } from "../yjs/awareness.js";
 
+/** What a suggestion would do to the document: add text, remove text or change formatting. */
 export type SuggestionKind = "insert" | "delete" | "format";
 
+/** One pending change recorded in suggestion mode, awaiting accept or reject. */
 export interface Suggestion {
   id: string;
   kind: SuggestionKind;
@@ -21,6 +23,14 @@ export interface Suggestion {
   ranges: Array<{ from: number; to: number }>;
 }
 
+/**
+ * Options for `suggestionsPlugin`.
+ *
+ * @example
+ * ```ts
+ * suggestionsPlugin({ user: { name: "Ada", color: "#d97706" }, mode: true });
+ * ```
+ */
 export interface SuggestionsOptions {
   user: CollabUser;
   /** Start in suggestion mode. Default false. */
@@ -28,6 +38,7 @@ export interface SuggestionsOptions {
   now?: () => number;
 }
 
+/** Everything a UI needs to drive suggestion mode: toggle it, list pending suggestions, accept or reject them, and subscribe to changes. Obtained with `getSuggestions(editor)`. */
 export interface SuggestionsApi {
   mode(): boolean;
   setMode(on: boolean): void;

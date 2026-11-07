@@ -24,31 +24,37 @@ export const selectCollection = (items: SelectItem[]) => select.collection({ ite
  */
 export class SelectState extends machineState<select.Props, select.Api>("select", select.machine, select.connect) {}
 
+/** `[uiSelectLabel]`: the select's label; clicking it focuses the trigger. */
 export class UiSelectLabel {
   static meta = { selector: "[uiSelectLabel]" };
   state = inject(SelectState);
   _p = bindProps(() => this.state.api().getLabelProps());
 }
+/** `[uiSelectControl]`: the wrapper around the trigger and value text that Zag treats as the select's control. */
 export class UiSelectControl {
   static meta = { selector: "[uiSelectControl]" };
   state = inject(SelectState);
   _p = bindProps(() => this.state.api().getControlProps());
 }
+/** `[uiSelectTrigger]`: the button that opens the listbox. Gets `role="combobox"`, `aria-expanded` and keyboard handling (arrows, typeahead) from the injected `SelectState`. */
 export class UiSelectTrigger {
   static meta = { selector: "[uiSelectTrigger]" };
   state = inject(SelectState);
   _p = bindProps(() => this.state.api().getTriggerProps());
 }
+/** `[uiSelectValueText]`: shows the selected item's label (or the placeholder). Render the text yourself from the machine's api: this only sets its attributes. */
 export class UiSelectValueText {
   static meta = { selector: "[uiSelectValueText]" };
   state = inject(SelectState);
   _p = bindProps(() => this.state.api().getValueTextProps());
 }
+/** `[uiSelectPositioner]`: the wrapper Zag positions below or above the trigger. */
 export class UiSelectPositioner {
   static meta = { selector: "[uiSelectPositioner]" };
   state = inject(SelectState);
   _p = bindProps(() => this.state.api().getPositionerProps());
 }
+/** `[uiSelectContent]`: the listbox (`role="listbox"`). Stays mounted until its exit animation finishes. */
 export class UiSelectContent {
   static meta = { selector: "[uiSelectContent]" };
   state = inject(SelectState);

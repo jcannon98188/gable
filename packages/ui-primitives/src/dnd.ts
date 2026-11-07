@@ -11,6 +11,7 @@ const INTERACTIVE = 'input,textarea,select,button,a[href],[contenteditable=""],[
 /** Attribute that marks a drag handle (see `UiDragHandle`). */
 export const DRAG_HANDLE_ATTR = "data-drag-handle";
 
+/** Options for `useDraggable`. Every value that can change is a getter so it may read signals. */
 export interface DraggableOptions {
   /** What the drop target receives. */
   data: () => unknown;
@@ -25,6 +26,7 @@ export interface DraggableOptions {
   onEnd?: (result: DragResult) => void;
 }
 
+/** What `useDraggable` returns: `dragging` is true from the moment the drag starts until it ends. */
 export interface DraggableHandle {
   readonly dragging: ReadonlySignal<boolean>;
 }
@@ -135,12 +137,14 @@ export class UiDragHandle {
   })();
 }
 
+/** What a drop zone receives when something is dropped on it: the dragged `data`. */
 export interface DropEvent<T = unknown> {
   data: T;
   /** The zone the dragged item came from, when it was a sortable item. */
   fromZoneId?: string;
 }
 
+/** Options for `useDropZone`. `onDrop` is required; everything else narrows or observes the zone. */
 export interface DropZoneOptions {
   /** Spoken in announcements. */
   label?: () => string | undefined;
@@ -152,6 +156,7 @@ export interface DropZoneOptions {
   onDrop: (event: DropEvent, source: DragSource, info: DropInfo) => void;
 }
 
+/** What `useDropZone` returns: the zone's id and a signal that is true while an accepted item is over it. */
 export interface DropZoneHandle {
   readonly id: string;
   /** True while an accepted item is over the zone. */

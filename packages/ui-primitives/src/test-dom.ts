@@ -16,6 +16,7 @@ export interface TestDom extends RootNodeLike {
 
 const doms = new WeakMap<TestNode, TestDom>();
 
+/** Creates (or returns the existing) `TestDom` facade for the tree that `anyNode` belongs to. Provide it to machines under the in-memory test renderer through `MACHINE_ENV` so Zag actions can find elements by id and move focus. */
 export function createTestDom(anyNode: TestNode): TestDom {
   let top = anyNode;
   for (let p = parentOf(top); p; p = parentOf(top)) top = p;

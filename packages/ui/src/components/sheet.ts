@@ -4,6 +4,7 @@ import { cn } from "../lib/cn.js";
 import { UiIcon } from "../lib/icon.js";
 import { DialogTrigger } from "./dialog.js";
 
+/** The screen edge a `ui-sheet` slides in from. */
 export type SheetSide = "top" | "right" | "bottom" | "left";
 
 const BASE =

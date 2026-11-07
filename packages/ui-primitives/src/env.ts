@@ -18,4 +18,5 @@ export interface MachineEnv {
   getRootNode?(host: unknown): RootNodeLike;
 }
 
+/** Injection token that supplies a `MachineEnv`. Provide it when running machines under a non-DOM renderer (for example the in-memory test renderer); under a DOM renderer it is not needed. */
 export const MACHINE_ENV = new InjectionToken<MachineEnv>("MachineEnv");

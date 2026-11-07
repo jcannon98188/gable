@@ -18,11 +18,41 @@ export interface WritableSignal<T> extends ReadonlySignal<T> {
   update(fn: (current: T) => T): void;
 }
 
+/** Options shared by {@link signal} and {@link computed}. */
 export interface SignalOptions<T> {
   /** Equality used to skip writes that change nothing. Defaults to `Object.is`. */
   equal?: (a: T, b: T) => boolean;
 }
 
+/**
+ * Creates a writable signal holding `initial`. Read it by calling it; write it with `set` or `update`. Reading inside an
+ * {@link effect} or a {@link computed} subscribes that effect or computed to the signal.
+ *
+ * @remarks
+ * A write whose new value is equal to the current one (by `options.equal`, `Object.is` by default) changes nothing and
+ * notifies nobody. Objects and arrays are compared by identity, so replace them rather than mutating them in place.
+ *
+ * @typeParam T - The type of the held value.
+ * @param initial - The starting value.
+ * @param options - Optional settings, such as a custom `equal`.
+ * @returns A {@link WritableSignal}: call it to read, `set(value)` to replace, `update(fn)` to derive the next value from the current one.
+ *
+ * @example
+ * ```ts
+ * export class Counter {
+ *   static meta = {
+ *     selector: "app-counter",
+ *     template: html`<button (click)="increment()">{{ count() }}</button>`,
+ *   };
+ *
+ *   count = signal(0);
+ *
+ *   increment() {
+ *     this.count.update((n) => n + 1);
+ *   }
+ * }
+ * ```
+ */
 export function signal<T>(initial: T, options?: SignalOptions<T>): WritableSignal<T> {
   const state = new Signal.State<T>(initial, options?.equal ? { equals: options.equal } : undefined);
   const read = (() => state.get()) as WritableSignal<T>;
@@ -56,6 +86,34 @@ export function stateSource<T>(initial: T): { read: ReadonlySignal<T>; write: (v
   return { read: () => state.get(), write: (value) => (firstRuns > 0 && writes++, state.set(value)) };
 }
 
+/**
+ * Creates a read-only signal derived from other signals. `fn` runs lazily, on the first read and again on a read after one
+ * of the signals it read has changed; the result is cached until then.
+ *
+ * @remarks
+ * Dependencies are discovered on each run, so only the signals `fn` actually reads are tracked. When the new result is
+ * equal to the old one (by `options.equal`, `Object.is` by default) the signals and effects that read the computed are not
+ * notified. `fn` should be pure: do not write signals inside it.
+ *
+ * @typeParam T - The type of the derived value.
+ * @param fn - Computes the value from other signals.
+ * @param options - Optional settings, such as a custom `equal`.
+ * @returns A {@link ReadonlySignal}: call it to read the current value.
+ *
+ * @example
+ * ```ts
+ * export class Cart {
+ *   static meta = {
+ *     selector: "app-cart",
+ *     template: html`<p>{{ count() }} items, total {{ total() }}</p>`,
+ *   };
+ *
+ *   prices = signal([5, 10]);
+ *   count = computed(() => this.prices().length);
+ *   total = computed(() => this.prices().reduce((sum, p) => sum + p, 0));
+ * }
+ * ```
+ */
 export function computed<T>(fn: () => T, options?: SignalOptions<T>): ReadonlySignal<T> {
   const c = new Signal.Computed<T>(fn, options?.equal ? { equals: options.equal } : undefined);
   const read = () => c.get();
@@ -63,7 +121,27 @@ export function computed<T>(fn: () => T, options?: SignalOptions<T>): ReadonlySi
   return read;
 }
 
-/** Reads signals without subscribing the running effect or computed to them. */
+/**
+ * Reads signals without subscribing the running effect or computed to them.
+ *
+ * @typeParam T - What `fn` returns.
+ * @param fn - Runs immediately; the signals it reads are not tracked.
+ * @returns Whatever `fn` returns.
+ *
+ * @example
+ * ```ts
+ * export class Tracker {
+ *   static meta = { selector: "app-tracker", template: html`<p>{{ query() }}</p>` };
+ *
+ *   query = signal("");
+ *   clicks = signal(0);
+ *
+ *   // Field initialisers run in the component's scope. Re-runs when `query`
+ *   // changes, but not when `clicks` does.
+ *   log = effect(() => console.log(this.query(), untracked(() => this.clicks())));
+ * }
+ * ```
+ */
 export function untracked<T>(fn: () => T): T {
   return Signal.subtle.untrack(fn);
 }
@@ -229,6 +307,23 @@ export function flushSync(): void {
  * Runs `fn` now and again whenever a signal it read changes. Re-runs are
  * batched into one microtask flush. The effect is owned by the current scope
  * and stops when that scope is disposed.
+ *
+ * @param fn - The side effect. Signals it reads become its dependencies; an error it throws is reported and the effect stays alive.
+ *
+ * @example
+ * ```ts
+ * export class Title {
+ *   static meta = { selector: "app-title", template: html`<h1>{{ name() }}</h1>` };
+ *
+ *   name = signal("Gable");
+ *
+ *   // Field initialisers run in the component's scope, so the effect stops
+ *   // with the component.
+ *   sync = effect(() => {
+ *     document.title = this.name();
+ *   });
+ * }
+ * ```
  */
 export function effect(fn: () => void): void {
   const scope = currentScope() ?? createScope(null);

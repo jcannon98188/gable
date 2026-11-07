@@ -92,6 +92,9 @@ export abstract class Meta {
   abstract clear(): void;
 }
 
+/**
+ * How urgently a screen reader should speak an announcement: `polite` waits for the user to be idle and `assertive` interrupts. Used by `LiveAnnouncer.announce`.
+ */
 export type Politeness = "polite" | "assertive";
 
 /**

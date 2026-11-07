@@ -80,6 +80,24 @@ export class UiFieldControl {
   });
 }
 
+/**
+ * `ui-field`: a label, a control, an optional description and an error message, wired together with the right ids and ARIA attributes (`aria-describedby`, `aria-invalid`, and the error as `role="alert"`).
+ *
+ * Pass the form field's `state` and errors appear once it was touched or the form was submitted; the text comes from the error's own message, `messages` or built-in defaults. Mark the control inside with `uiFieldControl` (a `ui-select` is wired automatically). A field itself is a bare signal in a template, so bind `form.email.state`, not `form.email`.
+ *
+ * @example
+ * // Component class
+ * model = signal({ email: "" });
+ * form = form(this.model, (p) => {
+ *   required(p.email);
+ *   email(p.email);
+ * });
+ *
+ * // Template (static html, no holes)
+ * // <ui-field label="Email" description="We never share it." [state]="form.email.state">
+ * //   <input uiInput uiFieldControl [field]="form.email" type="email" />
+ * // </ui-field>
+ */
 export class UiField {
   static meta = {
     selector: "ui-field",

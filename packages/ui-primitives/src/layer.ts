@@ -9,6 +9,7 @@ import { MACHINE_ENV } from "./env.js";
 /** Why a layer asked to close. */
 export type LayerDismissReason = "escape" | "outside-click" | "focus-outside";
 
+/** Options for `useLayer`. `open` is required; the rest tune dismissal and which modal behaviours (focus trap, scroll lock, hiding the rest of the page from assistive technology) apply. */
 export interface LayerOptions {
   /** Whether the layer is open. Read inside an effect: signals it reads keep the layer in sync. */
   open: () => boolean;
@@ -39,6 +40,7 @@ export interface LayerOptions {
   persistentElements?: Array<() => Element | null>;
 }
 
+/** What `useLayer` returns: whether its DOM behaviours are currently installed. */
 export interface LayerHandle {
   /** True while the layer's DOM behaviours are installed (open, and under a DOM renderer). */
   readonly active: ReadonlySignal<boolean>;

@@ -74,10 +74,28 @@ const printer: Printer = {
 
 const withPrinter = <T extends { astFormat: string }>(p: T): T => ({ ...p, astFormat: "gable-estree" });
 
+/**
+ * Prettier parsers (`typescript`, `babel`, `babel-ts`) that hand the AST to the Gable printer.
+ *
+ * Prettier discovers these by name when the plugin is listed under `plugins` in your Prettier config, so you
+ * normally never import them.
+ *
+ * @example
+ * ```json
+ * { "plugins": ["@gable/prettier-plugin"] }
+ * ```
+ */
 export const parsers: Plugin["parsers"] = {
   typescript: withPrinter(tsParsers["typescript"] as never),
   babel: withPrinter(babelParsers["babel"] as never),
   "babel-ts": withPrinter(babelParsers["babel-ts"] as never),
 };
 
+/**
+ * The `gable-estree` printer: Prettier's own estree printer, except that tagged `html` template literals
+ * are formatted with `@gable/template-format` and Prettier's built-in HTML embedding is switched off for them.
+ *
+ * Only literals tagged exactly `html` are touched; other embedded languages (CSS, GraphQL, markdown) keep
+ * Prettier's default handling. Prettier looks this up by name, so you normally never import it.
+ */
 export const printers: Plugin["printers"] = { "gable-estree": printer };

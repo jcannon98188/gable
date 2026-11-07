@@ -27,6 +27,29 @@ function attach(read: object, handle: Partial<InputHandle>): void {
   Object.defineProperty(read, HANDLE, { value: { name: "", owner: "", set: () => {}, ...handle } });
 }
 
+/**
+ * Declares a component input: a read-only signal that the parent's template feeds. Use it as a field initialiser.
+ *
+ * Call `input.required<T>()` for an input with no default; reading it before the parent has bound it throws a clear error.
+ *
+ * @remarks
+ * Inputs are bound after setup, so do not read one in a field initialiser or in the first run of an effect created during setup. Read it from the template, a `computed` or an event handler instead.
+ *
+ * @param initial - The value before the parent binds anything. Omit it for `undefined`.
+ * @returns A read-only signal holding the current input value.
+ *
+ * @example
+ * ```ts
+ * export class Greeting {
+ *   static meta = {
+ *     selector: "app-greeting",
+ *     template: html`<p>Hello, {{ name() }}!</p>`,
+ *   };
+ *
+ *   name = input("world");
+ * }
+ * ```
+ */
 export function input<T>(initial: T): InputSignal<T>;
 export function input<T>(): InputSignal<T | undefined>;
 export function input<T>(initial?: T): InputSignal<T | undefined> {
@@ -69,6 +92,28 @@ input.required = function required<T>(): InputSignal<T> {
   return read;
 };
 
+/**
+ * Declares a two-way bound input: a writable signal the parent can bind with `[(name)]`. Writing it in the component also emits on `changes`, which is how the parent's signal stays in sync.
+ *
+ * @param initial - The value before the parent binds anything.
+ * @returns A writable signal with a `changes` output.
+ *
+ * @example
+ * ```ts
+ * export class Toggle {
+ *   static meta = {
+ *     selector: "app-toggle",
+ *     template: html`<button (click)="flip()">Toggle ({{ on() }})</button>`,
+ *   };
+ *
+ *   on = model(false);
+ *
+ *   flip(): void {
+ *     this.on.update((v) => !v);
+ *   }
+ * }
+ * ```
+ */
 export function model<T>(initial: T): ModelSignal<T> {
   const state = signal(initial);
   const changes = new OutputEmitter<T>();

@@ -41,7 +41,20 @@ export interface RouterAccessibilityOptions {
 
 export const ROUTER_A11Y = new InjectionToken<RouterAccessibilityOptions>("RouterAccessibility");
 
-/** Provides the Router and the route config: `bootstrap(Root, { providers: provideRouter(routes) })`. */
+/**
+ * Provides the Router and the route config: `bootstrap(Root, { providers: provideRouter(routes) })`.
+ *
+ * @example
+ * ```ts
+ * const routes: Route[] = [
+ *   { path: "", component: Home },
+ *   { path: "users/:id", component: UserPage, title: "User" },
+ *   { path: "**", redirectTo: "/" },
+ * ];
+ *
+ * bootstrap(Root, { renderer: dom(), providers: provideRouter(routes) });
+ * ```
+ */
 export function provideRouter(routes: readonly Route[], options: { a11y?: RouterAccessibilityOptions } = {}): Provider[] {
   return [{ provide: ROUTES, useValue: routes }, { provide: ROUTER_A11Y, useValue: options.a11y ?? {} }, Router];
 }
@@ -73,12 +86,16 @@ export interface Level {
   update(params: Record<string, string>, data: Record<string, unknown>): void;
 }
 
+/**
+ * A navigation lifecycle event, emitted on `Router.events$`: `start`, then `end`, `cancel` (a guard said no or a newer navigation won) or `error`.
+ */
 export type NavigationEvent =
   | { type: "start"; id: number; url: string }
   | { type: "end"; id: number; url: string }
   | { type: "cancel"; id: number; url: string; reason: string }
   | { type: "error"; id: number; url: string; error: unknown };
 
+/** What `Router.navigate` resolves with. It never rejects; check `status`. */
 export interface NavigationOutcome {
   /** `success` committed the URL; `cancelled` left everything as it was (guard, newer navigation, failed lazy load); `error` failed and was reported. */
   status: "success" | "cancelled" | "error";
@@ -88,6 +105,7 @@ export interface NavigationOutcome {
   error?: unknown;
 }
 
+/** Options for `Router.navigate`. */
 export interface NavigateOptions {
   /** Replace the current history entry instead of adding one. */
   replace?: boolean;

@@ -88,7 +88,8 @@ describe("baked builds", () => {
 
       for (const locale of ["en", "fr", "de"]) {
         const code = bundleOf(out(locale));
-        const template = /template: html`([^`]*)`/.exec(code)![1]!;
+        // Doc comments survive in the bundle (core has `template: html` in an @example), so look past them.
+        const template = /template: html`([^`]*)`/.exec(code.replace(/\/\*[\s\S]*?\*\//g, ""))![1]!;
         expect(template, locale).not.toMatch(/i18n/); // no markers left in the app's template
         expect(template, locale).toContain("<h1>");
         expect(code, locale).not.toMatch(/provideI18n|setLocale|selectordinal|formatMessage|parseMessage|class I18n/); // no i18n service or ICU formatter

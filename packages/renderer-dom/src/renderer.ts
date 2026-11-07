@@ -10,11 +10,13 @@ import { DOM_TRIGGERS, observeDomTrigger } from "./triggers.js";
 const SVG_NS = "http://www.w3.org/2000/svg";
 const MATHML_NS = "http://www.w3.org/1998/Math/MathML";
 
+/** The renderer {@link createDomRenderer} returns: a core `Renderer` over DOM `Node`s, plus the defer triggers it can observe. */
 export interface DomRenderer extends Renderer<Node> {
   readonly name: "dom";
   readonly triggers: readonly string[];
 }
 
+/** Options for {@link createDomRenderer}: the routing options of {@link PlatformOptions} plus the document and overlay root. */
 export interface DomRendererOptions extends PlatformOptions {
   /** The document to create nodes in. Defaults to the global `document`, read when first needed. */
   document?: Document;
@@ -53,9 +55,24 @@ function setForeignProperty(el: Element, name: string, value: unknown): void {
 
 const kebab = (name: string) => (name.startsWith("--") ? name : name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`));
 
-/** The renderer over the browser DOM: HTML, SVG and MathML, scoped styles and the `viewport`, `interaction` and `hover` triggers. */
 const UNSAFE_PROPERTIES = new Set(["innerhtml", "outerhtml", "srcdoc"]);
 
+/**
+ * Creates the renderer over the browser DOM: HTML, SVG and MathML, scoped component styles, the
+ * `viewport`, `interaction` and `hover` defer triggers, and the Location, History, Title, Meta,
+ * LiveAnnouncer and FocusManager services.
+ *
+ * Creating it needs no browser globals; the document is read when first used, so it is safe to call
+ * during server-side setup or in tests. `dom` is the same function under a shorter name.
+ *
+ * @param options - Routing mode and base path, an explicit document, and the overlay root.
+ * @returns A renderer to pass to `bootstrap`.
+ *
+ * @example
+ * ```ts
+ * bootstrap(Root, { renderer: createDomRenderer({ mode: "hash" }), target: "#app" });
+ * ```
+ */
 export function createDomRenderer(options: DomRendererOptions = {}): DomRenderer {
   const doc = () => {
     const d = options.document ?? document;

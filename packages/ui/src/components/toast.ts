@@ -5,15 +5,19 @@ import { UiDrawerDrag, UiPortal, UiPresence } from "@gable/ui-primitives";
 import { cn } from "../lib/cn.js";
 import { UiIcon } from "../lib/icon.js";
 
+/** The kind of a toast: it picks the icon, and errors are announced to screen readers assertively (the rest politely). `loading` toasts never time out. */
 export type ToastType = "default" | "success" | "error" | "info" | "warning" | "loading";
+/** Where `ui-toaster` stacks its toasts on screen. */
 export type ToastPosition = "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right";
 
+/** A button on a toast (for example Undo or Retry). */
 export interface ToastAction {
   label: string;
   /** Runs when the button is pressed; the toast is dismissed afterwards. */
   onClick?: () => void;
 }
 
+/** Options for the `ToastService` methods (`show`, `success`, `error`, ...). Every field is optional. */
 export interface ToastOptions {
   /** Reuse an id to update a toast in place instead of adding another. */
   id?: string;
@@ -27,6 +31,7 @@ export interface ToastOptions {
   onDismiss?: (id: string) => void;
 }
 
+/** A toast as `ToastService` stores and `ui-toaster` renders it: the options with defaults filled in. Read-only; change a toast by calling the service again with the same `id`. */
 export interface ToastItem {
   readonly id: string;
   readonly type: ToastType;
@@ -38,6 +43,7 @@ export interface ToastItem {
   readonly onDismiss: ((id: string) => void) | null;
 }
 
+/** The messages `ToastService.promise` shows while a promise is pending, when it resolves and when it rejects. `success` and `error` can be functions of the result. */
 export interface ToastPromiseMessages<T> {
   loading: string;
   success: string | ((value: T) => string);

@@ -18,6 +18,7 @@ export function readCatalogFile(path: string): { translations: Messages; obsolet
   return { translations: readCatalog(json).messages, obsolete };
 }
 
+/** What {@link writeCatalogs} found for one locale: the work left for translators. */
 export interface LocaleReport {
   locale: string;
   /** Ids in the source with no translation yet. */

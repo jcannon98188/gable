@@ -9,6 +9,7 @@ export interface BindingHost {
   dispatch(tr: Transaction): void;
 }
 
+/** Options for {@link YProseMirrorBinding}. `host` is the editor side (its state and a way to dispatch), so the binding runs without a DOM view. */
 export interface BindingOptions {
   ydoc: Y.Doc;
   /** Name of the Y.XmlFragment holding the document. Default "content". */

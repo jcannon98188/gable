@@ -10,6 +10,9 @@ import { connect, isStream } from "./bridge.js";
 import { signal, untracked } from "./signals.js";
 import { currentScope, type Scope } from "./scope.js";
 
+/**
+ * A parsed template expression. The grammar is deliberately small: property reads, calls, literals, `!`, `??`, `&&`, `||` and strict comparisons.
+ */
 export type Expr =
   | { type: "literal"; value: string | number | boolean | null | undefined }
   | { type: "name"; name: string }
@@ -222,6 +225,12 @@ class Parser {
   }
 }
 
+/**
+ * Parses a template expression into an {@link Expr} tree. Throws a descriptive error for anything outside the supported grammar.
+ *
+ * @param source - The expression text, e.g. `count() > 0 && !busy()`.
+ * @returns The parsed tree.
+ */
 export function parseExpression(source: string): Expr {
   const p = new Parser(source);
   const result = p.coalesce();

@@ -3,6 +3,7 @@ import { cn } from "../lib/cn.js";
 import { useHostClass } from "../lib/host-class.js";
 import { UiIcon } from "../lib/icon.js";
 
+/** Which characters a `ui-input-otp` accepts: `digits` (0 to 9) or `alphanumeric`. */
 export type OtpPattern = "digits" | "alphanumeric";
 
 const ALLOWED: Record<OtpPattern, RegExp> = { digits: /[0-9]/, alphanumeric: /[A-Za-z0-9]/ };

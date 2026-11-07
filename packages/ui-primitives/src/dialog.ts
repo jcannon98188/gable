@@ -17,6 +17,26 @@ import { delayHidden, usePresence } from "./presence.js";
  *
  * (A wrapper `<ui-dialog>` component cannot provide it: projected content is injected from the component that declares
  * it, not from the slot owner.)
+ *
+ * @example
+ * class ConfirmDialog {
+ *   static meta = {
+ *     selector: "confirm-dialog",
+ *     providers: [DialogState],
+ *     imports: [...DIALOG],
+ *     template: html`
+ *       <button uiDialogTrigger>Delete</button>
+ *       <div uiDialogBackdrop></div>
+ *       <div uiDialogPositioner>
+ *         <div uiDialogContent>
+ *           <h2 uiDialogTitle>Delete this item?</h2>
+ *           <button uiDialogClose>Cancel</button>
+ *         </div>
+ *       </div>`,
+ *   };
+ *   open = signal(false);
+ *   dialog = inject(DialogState).bind(() => ({ open: this.open(), onOpenChange: (d) => this.open.set(d.open) }));
+ * }
  */
 export class DialogState {
   id = uniqueId("dialog");
@@ -30,38 +50,45 @@ export class DialogState {
   }
 }
 
+/** `[uiDialogTrigger]`: the element that opens the dialog. Gets the trigger props (`aria-haspopup="dialog"`, `aria-expanded`, `aria-controls`) from the injected `DialogState`. */
 export class UiDialogTrigger {
   static meta = { selector: "[uiDialogTrigger]" };
   state = inject(DialogState);
   _p = bindProps(() => this.state.api().getTriggerProps());
 }
+/** `[uiDialogBackdrop]`: the dimmed layer behind the dialog. Stays mounted until its exit animation finishes so `data-state="closed"` can animate out. */
 export class UiDialogBackdrop {
   static meta = { selector: "[uiDialogBackdrop]" };
   state = inject(DialogState);
   presence = usePresence(() => this.state.api().open);
   _p = bindProps(() => delayHidden(this.state.api().getBackdropProps(), this.presence));
 }
+/** `[uiDialogPositioner]`: the full-viewport wrapper that positions the dialog content (centering is up to your CSS). */
 export class UiDialogPositioner {
   static meta = { selector: "[uiDialogPositioner]" };
   state = inject(DialogState);
   _p = bindProps(() => this.state.api().getPositionerProps());
 }
+/** `[uiDialogContent]`: the dialog panel. Gets `role="dialog"`, `aria-labelledby`/`aria-describedby` and `aria-modal`; focus is trapped inside while open and returns to the trigger on close. Hidden only after the exit animation finishes. */
 export class UiDialogContent {
   static meta = { selector: "[uiDialogContent]" };
   state = inject(DialogState);
   presence = usePresence(() => this.state.api().open);
   _p = bindProps(() => delayHidden(this.state.api().getContentProps(), this.presence));
 }
+/** `[uiDialogTitle]`: the dialog's heading. Its id is what the content's `aria-labelledby` points at. */
 export class UiDialogTitle {
   static meta = { selector: "[uiDialogTitle]" };
   state = inject(DialogState);
   _p = bindProps(() => this.state.api().getTitleProps());
 }
+/** `[uiDialogDescription]`: the dialog's description text. Its id is what the content's `aria-describedby` points at. */
 export class UiDialogDescription {
   static meta = { selector: "[uiDialogDescription]" };
   state = inject(DialogState);
   _p = bindProps(() => this.state.api().getDescriptionProps());
 }
+/** `[uiDialogClose]`: a button that closes the dialog. */
 export class UiDialogClose {
   static meta = { selector: "[uiDialogClose]" };
   state = inject(DialogState);

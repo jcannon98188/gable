@@ -20,6 +20,7 @@ const here = fileURLToPath(new URL(".", import.meta.url));
 const packageRoot = join(here, "..");
 const ownVersion = (): string => JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")).version;
 
+/** The CLI's side effects, injected so `main` can be driven from tests or other tools: where output goes and how dependencies are installed. */
 export interface CliIo {
   stdout(text: string): void;
   stderr(text: string): void;

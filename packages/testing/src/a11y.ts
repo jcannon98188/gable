@@ -37,6 +37,10 @@ export const JSDOM_UNSUPPORTED_RULES: readonly string[] = [
   "html-lang-valid",
 ];
 
+/**
+ * Options for {@link a11yViolations} and {@link expectNoA11yViolations}. By default the rules jsdom cannot evaluate
+ * (colour contrast, layout) are off, so a passing run is a check of structure and naming, not of rendering.
+ */
 export interface A11yOptions {
   /** Extra rule ids to disable, added to {@link JSDOM_UNSUPPORTED_RULES}. */
   disableRules?: readonly string[];

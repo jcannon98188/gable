@@ -1,8 +1,10 @@
 // Unified-diff parsing and a small line differ (Myers O(ND)) for `ui-code-block`. Pure, total (never throws) and
 // dependency-free.
 
+/** The role of one line of a parsed unified diff: `file` header, `hunk` header (`@@`), `add`, `del`, `context`, a `note` (such as the no-newline marker) or `meta` (anything else, like `index` lines). */
 export type DiffKind = "file" | "hunk" | "add" | "del" | "context" | "note" | "meta";
 
+/** One classified line of a unified diff, with its text, its text without the marker and its old and new line numbers when known. */
 export interface DiffLine {
   kind: DiffKind;
   /** The line as written in the diff, without its `\n` (a `\r` stays). For `add`/`del`/`context` it starts with the marker. */
@@ -143,6 +145,7 @@ const toLines = (s: string): string[] => {
   return parts;
 };
 
+/** Options for `diffLines`. */
 export interface DiffOptions {
   /** Unchanged lines kept around each change (default 3). A negative number keeps everything and writes no `@@` headers. */
   context?: number;
@@ -219,6 +222,7 @@ export function diffLines(oldText: string, newText: string, options: DiffOptions
   return out;
 }
 
+/** One row of a side-by-side diff: either a full-width line (`full`) or a `left` (old) and `right` (new) pair; a missing side is null. */
 export interface SplitRow {
   /** A full-width row (file header, hunk header, note, meta). */
   full: DiffLine | null;

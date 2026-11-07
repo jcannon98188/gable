@@ -1,6 +1,7 @@
 /** What an item is: a component (copied to the components directory), a lib helper (utils directory) or a theme (CSS). */
 export type ItemType = "component" | "lib" | "style";
 
+/** One source file inside a registry item, with its text inlined so the registry is a set of static JSON files. */
 export interface RegistryFile {
   /** Path of the file in the source tree, relative to its `src` directory: `components/button.ts`, `lib/cn.ts`. */
   path: string;
@@ -29,6 +30,7 @@ export interface RegistryItem {
   baseColor?: string;
 }
 
+/** One line of the registry's `index.json`: enough to list and search items without downloading them. */
 export interface RegistryIndexEntry {
   name: string;
   type: ItemType;

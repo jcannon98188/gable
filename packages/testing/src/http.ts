@@ -40,6 +40,10 @@ export class TestRequest {
   }
 }
 
+/**
+ * Selects open requests in `fixture.http`: a URL string (exact match), an object with `method` and/or `url`, or a
+ * predicate over the request. Query strings are part of `url`, so match them too.
+ */
 export type RequestMatch = string | { method?: string; url?: string } | ((request: HttpRequest) => boolean);
 
 function describe(r: HttpRequest): string {

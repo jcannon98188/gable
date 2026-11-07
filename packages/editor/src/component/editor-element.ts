@@ -15,6 +15,16 @@ import { installContentStyles } from "../content-styles.js";
 import { placeBubble } from "../bubble-position.js";
 import { watchToolbar, type ToolbarItemState } from "../toolbar-model.js";
 
+/**
+ * The plugins `gable-editor` uses when none are given: the core schema, the formatting set (styles, link, headings,
+ * blocks, lists) and local undo/redo. Spread it to extend the default instead of replacing it; when you add
+ * `collabPlugin`, drop `historyPlugin`, which cannot be combined with it.
+ *
+ * @example
+ * ```ts
+ * const plugins = [...defaultPlugins, tablePlugin];
+ * ```
+ */
 export const defaultPlugins: readonly EditorPlugin[] = [corePlugin, ...formattingPlugins, historyPlugin];
 
 /**

@@ -1,6 +1,6 @@
 import { computed, signal, untracked, type ReadonlySignal } from "@gable/core";
 
-/**
+/*
  * The renderer-neutral engine of virtual scrolling: which items of a long list are in view, where they sit, and how
  * tall everything is. It owns no DOM; `useVirtualizer` (virtual.ts) feeds it the scroll offset and viewport size.
  *
@@ -10,6 +10,7 @@ import { computed, signal, untracked, type ReadonlySignal } from "@gable/core";
  * dependency in a package gable-ui copies out of. The pieces that matter are small: prefix sums, a binary search,
  * and a measured-size map.
  */
+/** One rendered item of a virtualizer: its index, a stable key, and where it sits (`start`, `size`, `end`, in px from the top of the content). */
 export interface VirtualItem {
   index: number;
   /** Stable identity: `getKey(index)`, or the index. Use it as the `@for` track key. */
@@ -22,6 +23,7 @@ export interface VirtualItem {
   sticky: boolean;
 }
 
+/** The index ranges of a virtualizer: what intersects the viewport (`first` to `last`) and what is actually rendered including overscan (`start` to `end`). */
 export interface VirtualRange {
   /** First and last index that intersect the viewport (-1 when the list is empty). */
   first: number;
@@ -31,8 +33,10 @@ export interface VirtualRange {
   end: number;
 }
 
+/** Where `scrollToIndex` and `offsetForIndex` place the target row: at the `start` or `end` of the viewport, `center`ed, or `auto` (the least scrolling that brings it into view). */
 export type ScrollAlign = "start" | "center" | "end" | "auto";
 
+/** Options for `createVirtualizer` and `useVirtualizer`. `count` is required; give `itemSize` for fixed-height rows, otherwise rows are measured and `estimateSize` stands in until then. Use `getKey` so measured heights follow rows when the data reorders. */
 export interface VirtualizerOptions {
   /** Number of items. Read reactively. */
   count: () => number;
@@ -57,6 +61,7 @@ export interface VirtualizerOptions {
   initialViewport?: number;
 }
 
+/** The virtual scrolling engine's state and methods: a signal of the rendered window (`items`), the content height (`totalSize`), and `setScroll` / `measure` to feed it. It owns no DOM. */
 export interface Virtualizer {
   /** The rendered window, in index order: visible items, overscan, kept indexes and the active sticky header. */
   readonly items: ReadonlySignal<VirtualItem[]>;
@@ -80,7 +85,18 @@ export interface Virtualizer {
   resetMeasurements(): void;
 }
 
-/** Called after measuring moved something, with the index the layout shifted from. */
+/**
+ * Creates the renderer-neutral virtual scrolling engine: which items of a long list are in view, where they sit and how tall everything is. Written in plain signals with no DOM: feed it the scroll offset and viewport height with `setScroll`, and measured row heights with `measure`.
+ *
+ * Prefer `useVirtualizer`, which wires this to a scroll container. Use this directly for non-DOM renderers, tests or custom containers.
+ *
+ * `onLayout` is called after a measurement moved something, with the index the layout shifted from and by how much.
+ *
+ * @example
+ * const list = createVirtualizer({ count: () => 10_000, itemSize: 36, overscan: 4 });
+ * list.setScroll(720, 400);
+ * list.items().map((item) => item.index); // the rows to render, with overscan
+ */
 export function createVirtualizer(options: VirtualizerOptions, onLayout?: (change?: { index: number; delta: number; start: number; oldSize: number }) => void): Virtualizer {
   /** The fixed height right now, if any (a function form lets a component input drive it). */
   const fixedSize = () => (typeof options.itemSize === "function" ? options.itemSize() : options.itemSize);

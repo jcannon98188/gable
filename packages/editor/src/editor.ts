@@ -2,6 +2,15 @@ import { Editor, type EditorOptions } from "@tiptap/core";
 import type * as Y from "yjs";
 import { collectToolbar, resolvePlugins, type EditorPlugin, type ToolbarItem } from "./plugin.js";
 
+/**
+ * Options for {@link GableEditor}: any TipTap `EditorOptions` except `extensions` (those come from the plugins),
+ * plus the plugin list and an optional shared document.
+ *
+ * @example
+ * ```ts
+ * new GableEditor({ plugins: [corePlugin, ...formattingPlugins], content: "<p>Hello</p>" });
+ * ```
+ */
 export interface GableEditorOptions extends Partial<Omit<EditorOptions, "extensions">> {
   plugins: readonly EditorPlugin[];
   /** Shared document; when given, every plugin's `yjs` hook runs against it right after construction. */

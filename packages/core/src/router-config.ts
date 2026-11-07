@@ -19,15 +19,37 @@ export interface Redirect {
   readonly redirect: string;
 }
 
+/**
+ * Returns a guard result that sends the router to `url` instead of cancelling.
+ *
+ * @param url - Where to go instead.
+ * @returns A `Redirect` for a guard to return.
+ *
+ * @example
+ * ```ts
+ * const requireLogin: CanActivateFn = () => (inject(Session).loggedIn() ? true : redirect("/login"));
+ * ```
+ */
 export function redirect(url: string): Redirect {
   return { redirect: url };
 }
 
+/**
+ * What a guard decides: `true` to allow, `false` to cancel the navigation, or a `redirect(url)` to go elsewhere.
+ */
 export type GuardResult = boolean | Redirect;
+/**
+ * What a guard may return: a {@link GuardResult}, or a promise or observable of one (the first value of an observable is used).
+ */
 export type GuardReturn = GuardResult | Promise<GuardResult> | Observable<GuardResult>;
 
 /** Runs in an injection context (`inject()` works). Return `false` to cancel, `redirect(url)` to go elsewhere. */
 export type CanActivateFn = (route: RouteSnapshot) => GuardReturn;
+/**
+ * Runs in an injection context before leaving a route; use it to confirm a navigation away from unsaved work. Receives the route's component instance and the route being left.
+ *
+ * @typeParam T - The component type.
+ */
 export type CanDeactivateFn<T = any> = (component: T, route: RouteSnapshot) => GuardReturn;
 /** Decides whether a route may match at all; `false` lets matching continue with the next route. */
 export type CanMatchFn = (segments: readonly string[]) => GuardReturn;

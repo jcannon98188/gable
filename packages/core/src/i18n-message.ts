@@ -4,6 +4,9 @@
 
 // --- message syntax --------------------------------------------------------
 
+/**
+ * One piece of a parsed message: literal text, a placeholder, a formatted number, date or time, a plural, ordinal or select with its branches, or the `#` count inside a plural. Produced by {@link parseMessage}.
+ */
 export type MessageNode =
   | string
   | { kind: "arg"; name: string }
@@ -15,6 +18,9 @@ export type MessageNode =
   | { kind: "select"; name: string; cases: Record<string, MessageNode[]> }
   | { kind: "pound" };
 
+/**
+ * Thrown by {@link parseMessage} for a malformed message. `source` is the message text and `at` is the offset of the problem.
+ */
 export class MessageSyntaxError extends Error {
   constructor(
     message: string,
@@ -184,6 +190,7 @@ export function messageArguments(source: string): string[] {
 
 // --- formatting ------------------------------------------------------------
 
+/** Values for a message's placeholders: an array for positional `{0}` placeholders or an object for named ones. */
 export type MessageArgs = readonly unknown[] | Readonly<Record<string, unknown>>;
 
 const intlCache = new Map<string, unknown>();
@@ -292,6 +299,12 @@ export interface Marker {
   id?: string;
 }
 
+/**
+ * Parses the text of an `i18n` marker: a free-text description for translators, optionally followed by `@@id` to set the message id explicitly.
+ *
+ * @param value - The marker text, without the surrounding colons.
+ * @returns The description and the explicit id if one was given.
+ */
 export function parseMarker(value: string): Marker {
   const at = value.indexOf("@@");
   if (at === -1) return { description: value.trim() };

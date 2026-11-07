@@ -28,6 +28,7 @@ export interface SortableMove<T = unknown> {
   to: { container: string; index: number };
 }
 
+/** Options for `useSortable`. `items` is required and is the source of truth for order; the list is reordered by you in `onMove`, not by the DOM. */
 export interface SortableOptions {
   /** The items in order. Read on every pointer move, so it may be a signal read. */
   items: () => readonly SortableEntry[];
@@ -48,6 +49,7 @@ export interface SortableOptions {
   onRemove?: (event: SortableMove) => void;
 }
 
+/** What `useSortable` returns: the list's container name and a way to re-apply the roving tab stop. */
 export interface SortableHandle {
   /** The name moves report for this list. */
   readonly id: () => string;

@@ -1,7 +1,7 @@
 import { signal, type ReadonlySignal } from "@gable/core";
 import { announce, dndMessages, type DndPosition } from "./dnd-announce.js";
 
-/**
+/*
  * The drag and drop session engine shared by `uiDraggable`, `uiDropZone` and `uiSortable`. One manager per document.
  * It is DOM only (pointer events, `getBoundingClientRect`, `getComputedStyle`).
  *
@@ -10,12 +10,18 @@ import { announce, dndMessages, type DndPosition } from "./dnd-announce.js";
  * list, counted without the dragged item). Pointer and keyboard sessions share the same target model.
  */
 
+/**
+ * How a drag session ended, passed to `DragSource.onEnd` and the `dragEnded` output of `uiDraggable`.
+ *
+ * `dropped` is false when the drag was cancelled (Escape, pointer cancel) or released over no accepting zone; `zoneId` and `index` describe where it landed when it was dropped.
+ */
 export interface DragResult {
   dropped: boolean;
   zoneId?: string;
   index?: number;
 }
 
+/** Whatever is being dragged, as the manager sees it. `useDraggable` and `useSortable` build one per drag; you only write one by hand when driving `DndManager.beginPointer` or `beginKeyboard` yourself. */
 export interface DragSource {
   /** Unique among everything draggable in the document (for sortables, the item id). */
   id: string;
@@ -32,18 +38,21 @@ export interface DragSource {
   onEnd?(result: DragResult): void;
 }
 
+/** One item of a sortable zone: its id, its element and the data it carries. */
 export interface SortableItemInfo {
   id: string;
   element: HTMLElement;
   data?: unknown;
 }
 
+/** How a sortable zone describes its list to the manager, so the manager can compute the insertion index under the pointer or the keyboard target. */
 export interface SortableAdapter {
   orientation(): "vertical" | "horizontal";
   /** The items in DOM order, the dragged one included. */
   items(): SortableItemInfo[];
 }
 
+/** Extra detail about a drop, passed to `DndZone.onDrop`: the final index for sortable zones and where the item came from. */
 export interface DropInfo {
   /** Final index in the zone's list (sortable zones only). */
   index?: number;
@@ -54,6 +63,11 @@ export interface DropInfo {
   fromIndex?: number;
 }
 
+/**
+ * A place something can be dropped, registered with `DndManager.registerZone`. `useDropZone` and `useSortable` register one for their host; implement it directly only for custom zones.
+ *
+ * Give a zone a `sortable` adapter to make it an ordered list with an insertion index.
+ */
 export interface DndZone {
   id: string;
   /** Name reported in drop events; default `id`. */
@@ -74,11 +88,13 @@ export interface DndZone {
   onSendOut?(source: DragSource, to: { zoneId: string; name: string; index?: number }): void;
 }
 
+/** Where a drag would land right now: a zone and, for sortable zones, the insertion index. */
 export interface DropTarget {
   zone: DndZone;
   index?: number;
 }
 
+/** A snapshot of the drag in progress, exposed through `DndManager.active`: which source, whether it is driven by pointer or keyboard, and the zone and index currently targeted (null when over nothing). */
 export interface ActiveDrag {
   sourceId: string;
   mode: "pointer" | "keyboard";
@@ -86,6 +102,7 @@ export interface ActiveDrag {
   overIndex: number | null;
 }
 
+/** Options for `DndManager.beginPointer`, also forwarded by `useDraggable` and `useSortable`. */
 export interface PointerDragOptions {
   /** Where the preview goes: the renderer's overlay root (what `<ui-portal>` uses). */
   overlay?: Element;
@@ -121,6 +138,7 @@ export function autoScrollDelta(rect: { left: number; top: number; right: number
 
 const nameOf = (z: DndZone) => z.name?.() ?? z.id;
 const managers = new WeakMap<Document, DndManager>();
+/** Returns the drag and drop manager for `doc`, creating it on first use. There is one manager per document, so every draggable, drop zone and sortable on the page shares one session. Needs a real DOM (jsdom works). */
 export function getDndManager(doc: Document): DndManager {
   let m = managers.get(doc);
   if (!m) managers.set(doc, (m = new DndManager(doc)));
@@ -130,6 +148,26 @@ export function getDndManager(doc: Document): DndManager {
 /** Pixels past the end of a sortable list that still count as dropping at its end. */
 const END_SLACK = 48;
 
+/**
+ * The drag and drop session engine shared by `uiDraggable`, `uiDropZone` and `uiSortable`. One manager per document (get it with `getDndManager`). It is DOM only: pointer events, `getBoundingClientRect` and `getComputedStyle`.
+ *
+ * A source is whatever is being dragged; a zone is where it can land. Plain drop zones just say "dropped here"; sortable zones also have items, so the target is a zone plus an insertion `index` (the item's final position in the list, counted without the dragged item). Pointer and keyboard sessions share the same target model, and every step is announced to screen readers.
+ *
+ * Most code uses the directives or the `useDraggable`, `useDropZone` and `useSortable` hooks and never calls the manager directly.
+ *
+ * @example
+ * const manager = getDndManager(document);
+ * manager.registerZone({
+ *   id: "trash",
+ *   element: trashEl,
+ *   label: () => "Trash",
+ *   group: () => undefined,
+ *   onDrop: (source) => remove(source.data),
+ * });
+ * element.addEventListener("pointerdown", (e) =>
+ *   manager.beginPointer({ id: "note-1", data: note, label: "Note", element }, e),
+ * );
+ */
 export class DndManager {
   private zones = new Map<string, DndZone>();
   private session: Session | null = null;
@@ -142,6 +180,7 @@ export class DndManager {
     this.win = doc.defaultView as Window;
   }
 
+  /** Adds `zone` as a possible drop target and returns a function that unregisters it (call it on teardown). If the zone is the current target when removed, the target clears. */
   registerZone(zone: DndZone): () => void {
     this.zones.set(zone.id, zone);
     return () => {
@@ -150,6 +189,7 @@ export class DndManager {
     };
   }
 
+  /** Whether a drag session (pointer or keyboard) is in progress. */
   isDragging(): boolean {
     return this.session !== null;
   }

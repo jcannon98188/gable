@@ -8,6 +8,9 @@ export type RouteTransitionMode = "css" | "view";
 /** What `Route.transition` and `<router-outlet [transition]>` accept. `true` and `""` mean the router default mode, `false` turns it off. */
 export type RouteTransitionSetting = boolean | "" | RouteTransitionMode;
 
+/**
+ * Options for {@link provideRouteTransitions}: whether outlets animate, which mode they use and hooks for non-DOM environments.
+ */
 export interface RouteTransitionOptions {
   /** Animate every outlet and route by default (true when you call `provideRouteTransitions`). Pass false to only configure the hooks below and keep transitions opt-in per outlet or route. */
   all?: boolean;

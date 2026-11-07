@@ -19,6 +19,10 @@ type EmptyShape = { state: {}; props: {}; methods: {} };
 
 /** The writable source behind a store. Only `patchState` and `getState` use it. */
 export const STATE_SOURCE: unique symbol = Symbol("gable.store.state");
+/**
+ * The store's writable state, as seen by `patchState` and `getState`. Every store has it (it is part of
+ * {@link SignalStoreOf}), so you pass the store itself to those functions; you never construct one.
+ */
 export interface WritableStateSource<S extends object> {
   readonly [STATE_SOURCE]: WritableSignal<S>;
 }
@@ -56,6 +60,10 @@ interface InnerStore<S extends StoreShape> {
  */
 export type StoreFeature<In extends StoreShape, Out extends StoreShape> = (store: InnerStore<In>) => InnerStore<Out>;
 
+/**
+ * What `patchState` accepts: a partial state object, or a function from the current state to a partial state.
+ * The merge is shallow, so a nested object in the patch replaces the old one whole.
+ */
 export type StateUpdater<S> = Partial<S> | ((state: S) => Partial<S>);
 
 // --- runtime ---------------------------------------------------------------
@@ -124,6 +132,16 @@ function hooks(store: object): Hooks {
 /**
  * Adds state. Each key becomes a read-only deep signal; change it with `patchState`.
  * Pass a factory to compute the initial state at construction (it runs in the injection context).
+ *
+ * State keys must be unique across all features of a store, and the initial value is also the type of the key, so
+ * annotate empty arrays and nullable values (`[] as Todo[]`, `null as User | null`).
+ *
+ * @param initial - The initial state object, or a function returning it.
+ *
+ * @example
+ * ```ts
+ * class CartStore extends signalStore(withState({ items: [] as Item[], coupon: null as string | null })) {}
+ * ```
  */
 export function withState<S extends object>(initial: S | (() => S)): StoreFeature<EmptyShape, { state: S; props: {}; methods: {} }> {
   return ((store: object) => {
@@ -142,7 +160,19 @@ export function withState<S extends object>(initial: S | (() => S)): StoreFeatur
   }) as never;
 }
 
-/** Adds computed values. Each function in the returned record becomes a read-only deep signal. */
+/**
+ * Adds computed values. Each function in the returned record becomes a read-only deep signal, recomputed only when
+ * the signals it reads change. The factory receives the store built so far, so it sees the state and computed values
+ * declared before it.
+ *
+ * @example
+ * ```ts
+ * class CartStore extends signalStore(
+ *   withState({ items: [] as Item[] }),
+ *   withComputed((store) => ({ count: () => store.items().length })),
+ * ) {}
+ * ```
+ */
 export function withComputed<In extends StoreShape, Props extends Record<string, () => unknown>>(
   factory: (store: SignalStoreOf<In>) => Props,
 ): StoreFeature<In, { state: {}; props: { [K in keyof Props]: DeepSignal<ReturnType<Props[K]>> }; methods: {} }> {
@@ -171,7 +201,21 @@ function instrument(store: object, name: string, fn: (...args: never[]) => unkno
   return Object.assign(wrapped, fn);
 }
 
-/** Adds methods. The factory runs once, in the injection context, so it can call `inject()`. */
+/**
+ * Adds methods. The factory runs once, in the injection context, so it can call `inject()` and create an
+ * `rxMethod`. Change state from a method with `patchState`; templates call methods only from event handlers,
+ * never from value expressions.
+ *
+ * @example
+ * ```ts
+ * class CartStore extends signalStore(
+ *   withState({ items: [] as Item[] }),
+ *   withMethods((store) => ({
+ *     add: (item: Item) => patchState(store, (s) => ({ items: [...s.items, item] })),
+ *   })),
+ * ) {}
+ * ```
+ */
 export function withMethods<In extends StoreShape, Methods extends Record<string, (...args: never[]) => unknown>>(
   factory: (store: SignalStoreOf<In>) => Methods,
 ): StoreFeature<In, { state: {}; props: {}; methods: Methods }> {
@@ -327,6 +371,15 @@ export interface StorageLike {
   removeItem?(key: string): void;
 }
 
+/**
+ * Options for {@link withStorage}. All optional: by default every state key is saved to `localStorage`, written 100 ms
+ * after the last change, and read back when the store is created.
+ *
+ * @example
+ * ```ts
+ * withStorage("prefs", { keys: ["theme"], version: 2, migrate: (saved) => ({ theme: saved.theme ?? "light" }) });
+ * ```
+ */
 export interface WithStorageOptions<S> {
   /** Which state keys to persist. Default: every key the store has when the feature runs. */
   keys?: ReadonlyArray<keyof S & string>;
@@ -470,7 +523,20 @@ export function withStorage<In extends StoreShape>(key: string, options: WithSto
   }) as never;
 }
 
-/** Merges partial state (objects, or functions of the current state) into the store. Shallow: a nested object is replaced whole. */
+/**
+ * Merges partial state (objects, or functions of the current state) into the store. Shallow: a nested object is
+ * replaced whole. It is the only way to write store state.
+ *
+ * Several updaters are applied in order and committed as one write, so readers re-run once.
+ *
+ * @param store - The store (or any object carrying its state source) to write to.
+ * @param updaters - Partial state objects or `(state) => partial` functions.
+ *
+ * @example
+ * ```ts
+ * patchState(store, { loading: true }, (s) => ({ count: s.count + 1 }));
+ * ```
+ */
 export function patchState<S extends object>(store: WritableStateSource<S>, ...updaters: Array<StateUpdater<NoInfer<S>>>): void {
   const source = store[stateKey as never] as unknown as WritableSignal<S>;
   let next = untracked(source);
@@ -511,6 +577,21 @@ type M<A extends StoreShape, B extends StoreShape> = Merge<A, B>;
 /**
  * Builds a store class from features. Extend it (`static scope = 'root'` for a singleton),
  * or provide it as is in a component's `providers`; get it with `inject(Store)`.
+ *
+ * Features run in order and each sees what the earlier ones added. Member names must be unique across state,
+ * computed values and methods. Takes 1 to 8 features; bundle more with `signalStoreFeature`.
+ *
+ * @example
+ * ```ts
+ * class CounterStore extends signalStore(
+ *   withState({ count: 0 }),
+ *   withComputed((store) => ({ double: () => store.count() * 2 })),
+ *   withMethods((store) => ({ increment: () => patchState(store, (s) => ({ count: s.count + 1 })) })),
+ * ) {
+ *   static scope = "root";
+ * }
+ * // in a component: readonly counter = inject(CounterStore);
+ * ```
  */
 export function signalStore<A extends StoreShape>(a: StoreFeature<E, A>): StoreClass<M<E, A>>;
 export function signalStore<A extends StoreShape, B extends StoreShape>(a: StoreFeature<E, A>, b: StoreFeature<M<E, A>, B>): StoreClass<M<M<E, A>, B>>;

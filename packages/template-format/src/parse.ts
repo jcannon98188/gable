@@ -26,6 +26,11 @@ export interface Span {
   end: number;
 }
 
+/**
+ * One node of a parsed template, discriminated by `k`: `word` (text), `comment`, `let` (an `@let`
+ * declaration), `chain` (a control-flow block such as an `@if`/`@else` chain) or `el` (an element).
+ * Every node carries the `start`/`end` offsets of the source it came from.
+ */
 export type Item = (
   | { k: "word"; text: string; space: boolean; blank: boolean }
   | { k: "comment"; text: string; blank: boolean }
@@ -470,6 +475,16 @@ function splitTop(s: string, sep: string): string[] {
   return out;
 }
 
+/**
+ * Parses a template body into a lossless, position-carrying tree of {@link Item}s. Exported from the package as
+ * `parseTemplateTree`; tools use the offsets to turn edits into minimal text patches (the Designer does).
+ *
+ * It never throws: malformed input degrades to text, and `${}` holes and `{{ }}` interpolations stay opaque.
+ * Offsets are into the exact string passed in, so pass the body untrimmed.
+ *
+ * @param source - The template body, the text between the backticks of an `html` literal.
+ * @returns The top-level items, in source order.
+ */
 export function parseTemplate(source: string): Item[] {
   return new Parser(source).parseItems(false, []).items;
 }

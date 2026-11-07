@@ -1,5 +1,14 @@
 import { FocusManager, History, Location, LiveAnnouncer, Meta, Title, mergeMeta, metaEntries, type MetaEntry, type FocusTarget, type MetaTags, type Politeness } from "@gable/core/renderer";
 
+/**
+ * How the DOM platform maps the browser URL to app routes. Accepted by `dom()` and {@link createDomRenderer}.
+ *
+ * @example
+ * ```ts
+ * dom({ mode: "hash" }); // app URL lives after the #, no server rewrites needed
+ * dom({ base: "/app" }); // path mode under a prefix that is not part of the app URL
+ * ```
+ */
 export interface PlatformOptions {
   /** `path` (default) uses the real path; `hash` keeps the app URL after the `#`. */
   mode?: "path" | "hash";

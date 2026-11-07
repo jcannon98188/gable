@@ -3,8 +3,11 @@
 import { Observable, map, type Subscriber } from "rxjs";
 import { INJECTOR, inject, type Injector, type Provider } from "./di.js";
 
+/** How the response body is read: parsed `json` (the default), `text`, a `blob` or an `arraybuffer`. */
 export type HttpResponseType = "json" | "text" | "blob" | "arraybuffer";
+/** A single query-string value. Numbers and booleans are converted to strings. */
 export type HttpParamValue = string | number | boolean;
+/** Query-string parameters by name. An array value repeats the parameter once per item. */
 export type HttpParams = Record<string, HttpParamValue | readonly HttpParamValue[]>;
 
 /** An immutable request. Interceptors replace it with a modified copy. */
@@ -19,6 +22,11 @@ export interface HttpRequest {
   readonly signal?: AbortSignal;
 }
 
+/**
+ * A full response, as returned when a request is made with `observe: "response"` and as seen by interceptors.
+ *
+ * @typeParam T - The type of the body.
+ */
 export interface HttpResponse<T = unknown> {
   readonly status: number;
   readonly statusText: string;
@@ -27,19 +35,27 @@ export interface HttpResponse<T = unknown> {
   readonly body: T;
 }
 
+/** Per-request options shared by every {@link Http} method. */
 export interface HttpOptions {
   params?: HttpParams;
   headers?: Record<string, string>;
   responseType?: HttpResponseType;
   signal?: AbortSignal;
 }
+/** Options for a request that emits just the response body (the default, or `observe: "body"`). */
 export interface HttpBodyOptions extends HttpOptions {
   observe?: "body";
 }
+/**
+ * Options for a request that emits the whole {@link HttpResponse} (`observe: "response"`), so you can read headers and the status.
+ */
 export interface HttpResponseOptions extends HttpOptions {
   observe: "response";
 }
 
+/**
+ * Why an {@link HttpError} happened: `status` (a non-2xx reply), `network` (no reply), `abort` (the caller's signal fired) or `parse` (the body could not be read as the requested type).
+ */
 export type HttpErrorKind = "status" | "network" | "abort" | "parse";
 
 /** Every failure of a request: a non-2xx status, a network failure, an abort by the caller's signal, or an unparseable body. */
@@ -68,6 +84,9 @@ export class HttpError extends Error {
   }
 }
 
+/**
+ * The next step in the interceptor chain: takes a request and returns the response stream. Interceptors call it to pass the request on.
+ */
 export type HttpHandler = (req: HttpRequest) => Observable<HttpResponse>;
 
 /** A plain function run in the injection context of the injector that provided it. */
@@ -188,6 +207,19 @@ function checkStatus(res: HttpResponse): HttpResponse {
 /**
  * The HTTP client. Resolve it with `inject(Http)`; it layers the interceptors
  * of every injector from the root down to the one it was resolved in.
+ *
+ * @example
+ * ```ts
+ * export class UserList {
+ *   static meta = {
+ *     selector: "app-user-list",
+ *     template: html`<p>{{ users()?.length ?? 0 }} users</p>`,
+ *   };
+ *
+ *   http = inject(Http);
+ *   users = toSignal(this.http.get<User[]>("/api/users"));
+ * }
+ * ```
  */
 export class Http {
   static scope = "root";
@@ -243,6 +275,13 @@ export class Http {
  * Providers adding interceptors at one injector (the app, a Route, a component).
  * They run after the interceptors of the injectors above, outer to inner, and
  * each in its own injector's context. Pass every interceptor of that injector in one array.
+ *
+ * @example
+ * ```ts
+ * const withAuth: HttpInterceptor = (req, next) => next({ ...req, headers: { ...req.headers, Authorization: "Bearer token" } });
+ *
+ * bootstrap(Root, { renderer: dom(), providers: withInterceptors([withAuth]) });
+ * ```
  */
 export function withInterceptors(interceptors: readonly HttpInterceptor[]): Provider[] {
   return [
@@ -293,6 +332,7 @@ export interface HttpMockEntry {
   outcome: string;
 }
 
+/** Options for {@link mockHttp} and `HttpMockBackend`. */
 export interface HttpMockOptions {
   /** Called for every request, as it is received. */
   onRequest?(entry: HttpMockEntry): void;
@@ -342,7 +382,17 @@ export class HttpMockBackend extends HttpBackend {
   }
 }
 
-/** Providers that replace the HTTP backend with `mocks`. The Designer, `@gable/testing`'s `mountScene` and tests share it. */
+/**
+ * Providers that replace the HTTP backend with `mocks`. The Designer, `@gable/testing`'s `mountScene` and tests share it.
+ *
+ * @example
+ * ```ts
+ * const providers = mockHttp([
+ *   { method: "GET", url: "/api/users", reply: { body: [{ id: 1, name: "Ada" }] } },
+ *   { method: "POST", url: "/api/users", reply: { status: 500 } },
+ * ]);
+ * ```
+ */
 export function mockHttp(mocks: readonly HttpMock[], options?: HttpMockOptions): Provider[] {
   return [{ provide: HttpBackend, useValue: new HttpMockBackend(mocks, options) }];
 }

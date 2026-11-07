@@ -19,6 +19,7 @@ export interface TestNode {
 
 const parents = new WeakMap<TestNode, TestNode>();
 
+/** The parent of a test node, or `undefined` for a node that is detached or the root. */
 export function parentOf(node: TestNode): TestNode | undefined {
   return parents.get(node);
 }
@@ -244,12 +245,14 @@ export function queryAll(root: TestNode, selector: string): TestNode[] {
   return out;
 }
 
+/** The first descendant of `root` matching `selector` (same CSS subset as {@link queryAll}), or `null`. */
 export function query(root: TestNode, selector: string): TestNode | null {
   return queryAll(root, selector)[0] ?? null;
 }
 
 // --- serialisation ---------------------------------------------------------
 
+/** The concatenated text of a node's whole subtree, with no whitespace added between nodes. */
 export function textContent(node: TestNode): string {
   if (node.kind === "text") return node.text;
   return node.children.map(textContent).join("");

@@ -13,6 +13,11 @@ export interface ToolbarItemState {
   enabled: boolean;
 }
 
+/**
+ * Reads the current state of toolbar items from an editor, once: which are active, which are enabled, and each item's
+ * icon and group. Everything is disabled and inactive while the editor is read-only. Use {@link watchToolbar} to keep
+ * the result fresh.
+ */
 export function readToolbar(editor: Editor, items: readonly ToolbarItem[]): ToolbarItemState[] {
   const editable = editor.isEditable;
   return items.map((item) => ({

@@ -26,6 +26,17 @@ export function acceptLine(file: string): string {
  * The Gable Vite plugin. Dev server only: appends a self-accept line to modules that export something and import
  * from Gable (no template or metadata parsing). Always: native class fields at ES2022, no decorators, a fail-fast
  * tsconfig check, and one copy of `@gable/core`. Production builds get no Gable transform.
+ *
+ * @returns A Vite plugin; list it in `plugins`.
+ *
+ * @example
+ * ```ts
+ * // vite.config.ts
+ * import { defineConfig } from "vite";
+ * import { gable } from "@gable/vite";
+ *
+ * export default defineConfig({ plugins: [gable()] });
+ * ```
  */
 export function gable(): Plugin {
   let root = "";

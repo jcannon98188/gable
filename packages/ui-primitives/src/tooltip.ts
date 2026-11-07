@@ -15,16 +15,19 @@ import { delayHidden, usePresence } from "./presence.js";
  */
 export class TooltipState extends machineState<tooltip.Props, tooltip.Api>("tooltip", tooltip.machine, tooltip.connect) {}
 
+/** `[uiTooltipTrigger]`: the element the tooltip describes. Opens on hover or keyboard focus and sets `aria-describedby` to the content. */
 export class UiTooltipTrigger {
   static meta = { selector: "[uiTooltipTrigger]" };
   state = inject(TooltipState);
   _p = bindProps(() => this.state.api().getTriggerProps());
 }
+/** `[uiTooltipPositioner]`: the wrapper Zag positions next to the trigger. */
 export class UiTooltipPositioner {
   static meta = { selector: "[uiTooltipPositioner]" };
   state = inject(TooltipState);
   _p = bindProps(() => this.state.api().getPositionerProps());
 }
+/** `[uiTooltipContent]`: the tooltip bubble (`role="tooltip"`). Stays mounted until its exit animation finishes. */
 export class UiTooltipContent {
   static meta = { selector: "[uiTooltipContent]" };
   state = inject(TooltipState);

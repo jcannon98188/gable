@@ -3,11 +3,6 @@ import type { Provider } from "./di.js";
 export { Location, History, Title, Meta, LiveAnnouncer, FocusManager, metaEntries, mergeMeta } from "./platform.js";
 export type { MetaTags, MetaEntry, Politeness, FocusTarget } from "./platform.js";
 
-/**
- * The Renderer contract: a small set of synchronous operations over opaque
- * node handles. The core owns templates, bindings, control flow and
- * scheduling; a renderer owns nodes, and the meaning of tags and properties.
- */
 /** What a form field's control looks like to the core: the renderer maps values by control type and reports user edits. */
 export interface FieldControl {
   /** Shows the field's value in the control (a no-op when it already shows it). */
@@ -18,6 +13,13 @@ export interface FieldControl {
   listen(handlers: { value(value: unknown): void; touched(): void }): () => void;
 }
 
+/**
+ * The Renderer contract: a small set of synchronous operations over opaque
+ * node handles. The core owns templates, bindings, control flow and
+ * scheduling; a renderer owns nodes, and the meaning of tags and properties.
+ *
+ * @typeParam N - The type of the opaque node handles the renderer works with.
+ */
 export interface Renderer<N = unknown> {
   /** Shown in errors, e.g. an unknown `@defer` trigger. */
   readonly name?: string;

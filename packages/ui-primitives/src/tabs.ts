@@ -23,11 +23,13 @@ export class TabsState {
   }
 }
 
+/** `[uiTabsRoot]`: the tabs container. Carries the orientation and `data-*` state from the injected `TabsState`. */
 export class UiTabsRoot {
   static meta = { selector: "[uiTabsRoot]" };
   state = inject(TabsState);
   _p = bindProps(() => this.state.api().getRootProps());
 }
+/** `[uiTabsList]`: the tab strip (`role="tablist"`) with roving focus: arrow keys move between triggers, Home and End jump to the ends. */
 export class UiTabsList {
   static meta = { selector: "[uiTabsList]" };
   state = inject(TabsState);
@@ -41,6 +43,7 @@ export class UiTabTrigger {
   disabled = input<boolean>(false);
   _p = bindProps(() => (this.uiTabTrigger() ? this.state.api().getTriggerProps({ value: this.uiTabTrigger(), disabled: this.disabled() }) : null));
 }
+/** `[uiTabContent="one"]`: the panel for the tab whose value is `one` (`role="tabpanel"`, labelled by its trigger). Inactive panels get `hidden`. Renders nothing until the value is non-empty. */
 export class UiTabContent {
   static meta = { selector: "[uiTabContent]" };
   state = inject(TabsState);
@@ -48,4 +51,5 @@ export class UiTabContent {
   _p = bindProps(() => (this.uiTabContent() ? this.state.api().getContentProps({ value: this.uiTabContent() }) : null));
 }
 
+/** Everything a template imports to build tabs: root, list, trigger and content directives. */
 export const TABS = [UiTabsRoot, UiTabsList, UiTabTrigger, UiTabContent] as const;

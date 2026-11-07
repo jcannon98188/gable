@@ -2,9 +2,17 @@ import { computed, input } from "@gable/core";
 import { useHostClass } from "../lib/host-class.js";
 import { variants } from "../lib/variants.js";
 
+/** Visual style of `uiButton`: `default` (primary), `destructive`, `outline`, `secondary`, `ghost` or `link`. */
 export type ButtonVariant = "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+/** Size of `uiButton`: `default`, `sm`, `lg`, a square `icon` button, or the dense `compact` and `icon-compact` sizes (26px tall) that go with compact form density. */
 export type ButtonSize = "default" | "sm" | "lg" | "icon" | "compact" | "icon-compact";
 
+/**
+ * The class generator behind `uiButton`. Call it with `{ variant, size, class }` to get the class string, for example to style an anchor like a button or to build another component on the same look.
+ *
+ * @example
+ * classes = computed(() => buttonVariants({ variant: "outline", size: "sm", class: this.class() }));
+ */
 export const buttonVariants = variants({
   base: [
     "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none",

@@ -3,6 +3,7 @@ import { cn, type ClassValue } from "./cn.js";
 type VariantMap = Record<string, Record<string, ClassValue>>;
 type Selection<V extends VariantMap> = { [K in keyof V]?: keyof V[K] & string };
 
+/** The description `variants()` takes: base classes, one class value per option of each variant, defaults, and compound variants. */
 export interface VariantsConfig<V extends VariantMap> {
   /** Classes every result has. */
   base?: ClassValue;

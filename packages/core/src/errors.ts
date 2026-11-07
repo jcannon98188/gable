@@ -1,6 +1,9 @@
 import { ownerOf, type Scope } from "./scope.js";
 import type { Injector } from "./di.js";
 
+/**
+ * Where a reported failure came from: component setup, an effect, an event handler, a template binding, a stream subscription, a lazy load, the router or a hot update. It appears on the `ErrorContext` an error handler or boundary receives.
+ */
 export type ErrorSource = "setup" | "effect" | "event" | "binding" | "subscription" | "lazy" | "router" | "hmr";
 
 /** Plain data describing where a failure came from. The error itself is never wrapped. */
