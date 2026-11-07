@@ -9,9 +9,11 @@ import {
   envelope,
   isOurs,
   takeSession,
+  windowNameStorage,
   type AgentMessage,
   type AgentMethods,
   type CanvasDiagnostic,
+  type Interaction,
   type Request,
   type SceneInfo,
 } from "../protocol.js";
@@ -30,7 +32,7 @@ declare global {
 }
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
-const session = typeof window !== "undefined" && parent !== window ? takeSession(location, history, sessionStorage) : null;
+const session = typeof window !== "undefined" && parent !== window ? takeSession(location, history, windowNameStorage(window)) : null;
 if (session) start(session);
 
 function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): void {
@@ -155,6 +157,112 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
   addEventListener("scroll", redraw, true);
   addEventListener("resize", redraw);
 
+  // --- frame emulation and sync (see devices.ts) ------------------------------------
+
+  // Where the browser cannot emulate touch itself, mouse presses become touch events (when the engine has Touch and
+  // TouchEvent: Chromium and WebKitGTK do, desktop Safari does not). Media features cannot be faked from here.
+  const nativeDpr = Object.getOwnPropertyDescriptor(window, "devicePixelRatio");
+  let touching = false;
+  let touchId = 0;
+  const canTouch = typeof Touch === "function" && typeof TouchEvent === "function";
+  const touchOf = (type: "touchstart" | "touchmove" | "touchend", e: MouseEvent): boolean => {
+    const touch = new Touch({ identifier: touchId, target: e.target as EventTarget, clientX: e.clientX, clientY: e.clientY, screenX: e.screenX, screenY: e.screenY, pageX: e.pageX, pageY: e.pageY });
+    const list = type === "touchend" ? [] : [touch];
+    const event = new TouchEvent(type, { bubbles: true, cancelable: true, composed: true, touches: list, targetTouches: list, changedTouches: [touch] });
+    (e.target as EventTarget).dispatchEvent(event);
+    return event.defaultPrevented;
+  };
+  for (const [mouse, touch] of [["mousedown", "touchstart"], ["mousemove", "touchmove"], ["mouseup", "touchend"]] as const) {
+    document.addEventListener(
+      mouse,
+      (e) => {
+        if (!touching || !e.isTrusted || mode !== "interact" || (e as MouseEvent).button !== 0) return;
+        if (mouse === "mousedown") (touchId++, (pressed = true));
+        else if (!pressed) return;
+        if (touchOf(touch, e as MouseEvent) && mouse !== "mouseup") e.preventDefault();
+        if (mouse === "mouseup") pressed = false;
+      },
+      true,
+    );
+  }
+  let pressed = false;
+
+  function emulate(touch: boolean, dpr: number): boolean {
+    touching = touch && canTouch;
+    if (touch && canTouch) (window as { ontouchstart?: unknown }).ontouchstart ??= null;
+    else delete (window as { ontouchstart?: unknown }).ontouchstart;
+    if (dpr === 1 && !nativeDpr) delete (window as { devicePixelRatio?: unknown }).devicePixelRatio;
+    else if (dpr !== (nativeDpr?.get?.call(window) ?? 1)) Object.defineProperty(window, "devicePixelRatio", { configurable: true, get: () => dpr });
+    else if (nativeDpr) Object.defineProperty(window, "devicePixelRatio", nativeDpr);
+    return !touch || canTouch;
+  }
+
+  const pathOf = (el: Node): number[] => {
+    const path: number[] = [];
+    for (let n: Node | null = el; n && n !== document.documentElement; n = n.parentNode) {
+      const parent: Node | null = n.parentNode;
+      if (!parent) return [];
+      path.unshift(Array.prototype.indexOf.call(parent.childNodes, n));
+    }
+    return path;
+  };
+  const resolvePath = (path: number[]): Node | null => path.reduce<Node | null>((n, i) => n?.childNodes[i] ?? null, document.documentElement);
+  const reportable = (e: Event): e is Event & { target: Element } => mode === "interact" && e.isTrusted && e.target instanceof Element && !layer.contains(e.target);
+  document.addEventListener("click", (e) => reportable(e) && send({ type: "interaction", interaction: { kind: "click", path: pathOf(e.target) } }), true);
+  document.addEventListener(
+    "input",
+    (e) => {
+      if (!reportable(e)) return;
+      const t = e.target as HTMLInputElement;
+      send({ type: "interaction", interaction: { kind: "input", path: pathOf(t), value: t.value, checked: t.checked } });
+    },
+    true,
+  );
+  document.addEventListener("keydown", (e) => reportable(e) && (e.key === "Enter" || e.key === "Escape") && send({ type: "interaction", interaction: { kind: "key", path: pathOf(e.target), key: e.key } }), true);
+  let scrollQueued = false;
+  document.addEventListener(
+    "scroll",
+    (e) => {
+      if (mode !== "interact" || scrollQueued || ignoreScroll) return;
+      const el = e.target === document ? document.scrollingElement : (e.target as Element);
+      if (!el || (e.target !== document && layer.contains(el))) return;
+      scrollQueued = true;
+      requestAnimationFrame(() => {
+        scrollQueued = false;
+        const x = el.scrollWidth > el.clientWidth ? el.scrollLeft / (el.scrollWidth - el.clientWidth) : 0;
+        const y = el.scrollHeight > el.clientHeight ? el.scrollTop / (el.scrollHeight - el.clientHeight) : 0;
+        send({ type: "interaction", interaction: { kind: "scroll", path: el === document.scrollingElement ? [] : pathOf(el), x, y } });
+      });
+    },
+    true,
+  );
+  let ignoreScroll = false;
+
+  function replay(i: Interaction): boolean {
+    if (i.kind === "scroll") {
+      const el = (i.path.length === 0 ? document.scrollingElement : resolvePath(i.path)) as Element | null;
+      if (!el) return false;
+      // Setting the offset fires a scroll event of our own: it must not bounce back to the frame that started it.
+      ignoreScroll = true;
+      el.scrollTo((i.x ?? 0) * (el.scrollWidth - el.clientWidth), (i.y ?? 0) * (el.scrollHeight - el.clientHeight));
+      setTimeout(() => (ignoreScroll = false), 120);
+      return true;
+    }
+    const el = resolvePath(i.path);
+    if (!(el instanceof HTMLElement)) return false;
+    if (i.kind === "click") return (el.click(), true);
+    if (i.kind === "key") {
+      for (const type of ["keydown", "keyup"]) el.dispatchEvent(new KeyboardEvent(type, { key: i.key, bubbles: true, cancelable: true }));
+      return true;
+    }
+    const input = el as HTMLInputElement;
+    if (i.checked !== undefined && (input.type === "checkbox" || input.type === "radio")) input.checked = i.checked;
+    else Object.getOwnPropertyDescriptor(Object.getPrototypeOf(input), "value")?.set?.call(input, i.value ?? "");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    return true;
+  }
+
   // --- the shell's requests -----------------------------------------------
 
   const handlers: { [M in keyof AgentMethods]?: (p: AgentMethods[M]["params"]) => AgentMethods[M]["result"] | Promise<AgentMethods[M]["result"]> } = {
@@ -169,6 +277,8 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     hoverNode: ({ id }) => ((hovered = id), redraw(), true),
     nodeAt: ({ raw, offset }) => designer.nodeAt(raw, offset),
     setDiagnostics: ({ items }) => ((diagnostics = items), redraw(), place()),
+    setEmulation: ({ touch, dpr }) => ({ touchEvents: emulate(touch, dpr) }),
+    replay: (interaction) => replay(interaction),
     scenes: () => sceneInfo(),
     mountScene: ({ name }) => {
       if (!globalThis.__GABLE_SCENES__) throw new Error("This page is not a component-mode host.");

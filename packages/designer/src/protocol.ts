@@ -13,12 +13,23 @@ export const CHANNEL = "gable-designer";
 
 /**
  * The shell loads the preview with `?__gable_designer=<nonce>|<shellOrigin>`: the agent reads it before any app code runs,
- * keeps it in sessionStorage (so a reload of the frame stays bound), strips it from the URL, and only then talks, to exactly
+ * keeps it in the frame's own `window.name` (so a reload of the frame stays bound; sessionStorage would be shared by every frame
+ * of the same origin, and several frames of one app are exactly what the multi-frame canvas shows), strips it from the URL, and only then talks, to exactly
  * that origin. A page opened outside the Designer has no such parameter, so its agent stays dormant. (The iframe's
  * `window.name` was the first idea; browsers clear it on a cross-site navigation, which the preview always is.)
  */
 export const SESSION_PARAM = "__gable_designer";
 const STORE_KEY = "gable-designer-session";
+/**
+ * Where a frame keeps its session: `window.name` belongs to one browsing context (so two frames of one app do not
+ * overwrite each other) and survives reloads of that frame (it is only cleared on a cross-site navigation, and the preview
+ * stays on its own site). The backend reads it over CDP to tell frames apart (see `SESSION_NAME_PREFIX`).
+ */
+export const SESSION_NAME_PREFIX = "gable-designer-session:";
+export const windowNameStorage = (win: { name: string }): Pick<Storage, "getItem" | "setItem"> => ({
+  getItem: () => (win.name.startsWith(SESSION_NAME_PREFIX) ? win.name.slice(SESSION_NAME_PREFIX.length) : null),
+  setItem: (_key, value) => void (win.name = SESSION_NAME_PREFIX + value),
+});
 export const withSession = (url: string, nonce: string, shellOrigin: string): string => {
   const u = new URL(url);
   u.searchParams.set(SESSION_PARAM, `${nonce}|${shellOrigin}`);
@@ -28,8 +39,8 @@ export function parseSession(value: string | null): { nonce: string; shellOrigin
   const bar = value ? value.indexOf("|") : -1;
   return value && bar > 0 ? { nonce: value.slice(0, bar), shellOrigin: value.slice(bar + 1) } : null;
 }
-/** The agent's side: the session from the URL (removing it there) or, after a reload, from sessionStorage. */
-export function takeSession(loc: Location, history: History, storage: Storage | null): { nonce: string; shellOrigin: string } | null {
+/** The agent's side: the session from the URL (removing it there) or, after a reload, from the storage given (the frame's window.name). */
+export function takeSession(loc: Location, history: History, storage: Pick<Storage, "getItem" | "setItem"> | null): { nonce: string; shellOrigin: string } | null {
   const url = new URL(loc.href);
   const fromUrl = url.searchParams.get(SESSION_PARAM);
   if (fromUrl !== null) {
@@ -69,9 +80,27 @@ export interface AgentMethods extends DevtoolsMethods {
   nodeAt: { params: { raw: string; offset: number }; result: DesignNode | null };
   /** The diagnostics to show on the canvas; each is located by the template literal text and an offset into it. */
   setDiagnostics: { params: { items: CanvasDiagnostic[] }; result: { placed: number; unplaced: number } };
+  /** What the page itself emulates for its frame: touch events from the mouse, and the pixel ratio scripts read. */
+  setEmulation: { params: { touch: boolean; dpr: number }; result: { touchEvents: boolean } };
+  /** Repeats a user interaction another frame reported (sync between frames); `false` if its element is not on this page. */
+  replay: { params: Interaction; result: boolean };
   /** Component mode: what the page mounts. */
   scenes: { params: void; result: SceneInfo | null };
   mountScene: { params: { name: string }; result: true };
+}
+
+/** A user interaction, located by the child-index path of its element from the document element. */
+export interface Interaction {
+  kind: "click" | "input" | "scroll" | "key";
+  path: number[];
+  /** `key`: the key (only Enter and Escape are synced). `input`: the new value (and `checked` for checkboxes and radios). */
+  key?: string;
+  /** `input`: the new value (and `checked` for checkboxes and radios). */
+  value?: string;
+  checked?: boolean;
+  /** `scroll`: the offset as a fraction of the scrollable range, so frames of different sizes line up. */
+  x?: number;
+  y?: number;
 }
 
 export interface CanvasDiagnostic {
@@ -127,6 +156,8 @@ export type AgentMessage =
   /** A diagnostic badge on the canvas was clicked. */
   | (Envelope & { type: "badge"; id: string })
   | (Envelope & { type: "scenes"; scenes: SceneInfo | null })
+  /** A real (trusted) click, input or scroll in interact mode, for syncing the other frames. */
+  | (Envelope & { type: "interaction"; interaction: Interaction })
   /** The shell speaks a protocol the agent does not. */
   | (Envelope & { type: "incompatible"; agent: number; shell: number });
 

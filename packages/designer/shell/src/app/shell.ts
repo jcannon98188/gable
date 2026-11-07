@@ -4,41 +4,14 @@ import { UiTab, UiTabs } from "../components/ui/tabs.js";
 import { UiToggleGroup, type ToggleGroupItem } from "../components/ui/toggle-group.js";
 import { UiTooltip } from "../components/ui/tooltip.js";
 import { DesignerState } from "./designer-state.js";
+import { FrameBoard } from "./frame-board.js";
 import { ComponentTree, HmrTimeline, InjectorTree, Inspector, Problems, ScenesPanel } from "./panels.js";
-
-/** The preview iframe. The state loads the project's page (or the component-mode host) into it and speaks the protocol with it. */
-export class Canvas {
-  static meta = {
-    selector: "app-canvas",
-    host: { class: "relative block h-full" },
-    template: html`
-      <iframe #frame title="Preview" class="size-full border-0 bg-white"></iframe>
-      @if (message()) {
-        <div class="absolute inset-0 flex items-center justify-center bg-background/80 p-6 text-center text-sm text-muted-foreground">{{ message() }}</div>
-      }
-    `,
-  };
-  state = inject(DesignerState);
-  frame = viewChild<HTMLIFrameElement>("frame");
-  load = effect(() => {
-    const frame = this.frame();
-    const url = this.state.frameUrl();
-    if (frame && url) untracked(() => this.state.attachFrame(frame, url));
-  });
-  message = computed(() => {
-    const s = this.state;
-    if (s.error()) return s.error();
-    if (s.incompatible()) return s.incompatible();
-    if (!s.project()?.ready) return "Starting the project's dev server…";
-    return null;
-  });
-}
 
 /** The Designer window: a toolbar, the panels on the left and right, and the canvas in the middle. */
 export class Shell {
   static meta = {
     selector: "app-root",
-    imports: [Canvas, ComponentTree, InjectorTree, ScenesPanel, Inspector, Problems, HmrTimeline, UiTabs, UiTab, UiToggleGroup, UiBadge, UiTooltip],
+    imports: [FrameBoard, ComponentTree, InjectorTree, ScenesPanel, Inspector, Problems, HmrTimeline, UiTabs, UiTab, UiToggleGroup, UiBadge, UiTooltip],
     // TODO(gable-ui): ResizablePanelGroup (TASK-53). The three columns are fixed widths until it exists.
     template: html`
       <div class="grid h-screen grid-rows-[auto_1fr] bg-background text-foreground">
@@ -57,7 +30,7 @@ export class Shell {
               <ui-tab value="scenes" label="Scenes"><app-scenes-panel></app-scenes-panel></ui-tab>
             </ui-tabs>
           </aside>
-          <main class="min-h-0 min-w-0"><app-canvas></app-canvas></main>
+          <main class="min-h-0 min-w-0"><app-frame-board></app-frame-board></main>
           <aside class="min-h-0 overflow-auto border-l p-2">
             <ui-tabs [(value)]="right">
               <ui-tab value="inspector" label="Inspector"><app-inspector></app-inspector></ui-tab>

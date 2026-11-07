@@ -20,3 +20,37 @@ Parts:
 
 Scenarios are `*.scenes.ts` files beside a component (see `examples/todomvc/src/components/todo-item.scenes.ts`); the same
 files run under `@gable/testing` with `mountScene`.
+
+## Device emulation and frames
+
+The canvas shows up to six **Frames**: iframes sized in CSS pixels (preset, custom, or rotated), scaled down to fit the board
+(Fit, or 50/75/100%). Each Frame is its own app instance with its own session nonce and its own origin (`localhost` for the
+first, `f1.localhost`, `f2.localhost`... for the rest, all loopback), so frames do not share storage and Chromium gives each
+its own renderer process. That last part matters for emulation: over CDP, touch, pointer/hover and media features are
+process-wide, so two frames on one site could not be emulated differently.
+
+The device bar edits the selected frame (`FrameSet.selected`, `selectedWidth` and `selectedBreakpoint` in
+`shell/src/app/frames.ts`; Tailwind mode reads these). Presets (built in, plus ones you save) and the frame layout are kept
+per project in the user data directory (`GABLE_DESIGNER_DATA`, else `%APPDATA%` / `~/Library/Application Support` /
+`$XDG_DATA_HOME`), not in the project and not in browser storage (the desktop window's origin changes on every launch).
+**Sync** repeats clicks, typing, scrolling and Enter/Escape from the frame you use in the others. **Open in browser** opens
+the same page of the same dev server in the system browser.
+
+| Emulation | Windows desktop app (CDP) | Elsewhere |
+| --- | --- | --- |
+| Width, height, rotation | CSS on the iframe | same |
+| Device pixel ratio | reported to scripts (`devicePixelRatio`); resolution media queries and image density follow the screen | same, labelled |
+| Touch | CDP touch emulation (coarse pointer, no hover, touch points) plus synthetic touch events | synthetic `touchstart/move/end` from mouse events only, labelled |
+| Color scheme, reduced motion, user agent | CDP | unsupported, labelled |
+
+CDP is a Windows-only path: the Rust host passes `--remote-debugging-port=<free port>` to WebView2 (`additional_browser_args`;
+the environment variable is ignored) and `--cdp-port` to the backend, which is the CDP client (`src/server/cdp.ts`). Set
+`GABLE_CDP_PORT=<n>` to choose the port or `GABLE_CDP_PORT=0` to turn it off. The port listens on loopback and gives full control
+of the webview to any local process, so it is only enabled in the desktop app. A frame is found as its own `iframe` CDP target
+by reading the nonce the agent keeps in the frame's `window.name`.
+
+The driven check (needs a built Designer and Edge/Chromium with a debugging port, or the Tauri window):
+
+```
+node packages/designer/e2e/device-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port> [--no-cdp] [--shot dir]
+```

@@ -5,7 +5,9 @@ import type { CanvasDiagnostic, SceneInfo } from "../../../src/protocol.js";
 import type { ProjectInfo } from "../../../src/server/backend.js";
 import type { ProjectDiagnostic } from "../../../src/server/analyze-worker.js";
 import type { SourceRange } from "../../../src/server/source.js";
-import { PreviewClient, type AgentEvent } from "./preview-client.js";
+import type { Interaction } from "../../../src/protocol.js";
+import { FrameSet, type Frame } from "./frames.js";
+import type { AgentEvent } from "./preview-client.js";
 
 interface Config {
   backend: string;
@@ -17,7 +19,8 @@ declare global {
 }
 
 export type Target = { kind: "page" } | { kind: "component"; scenes: string };
-export type Connection = "connecting" | "ready" | "incompatible" | "failed";
+export type { Connection } from "./frames.js";
+import type { Connection } from "./frames.js";
 export interface Analysis {
   diagnostics: ProjectDiagnostic[];
   configErrors: string[];
@@ -82,7 +85,13 @@ export class DesignerState {
     return `${project.previewUrl}__gable-designer/component?${q}`;
   });
 
-  preview = new PreviewClient((m) => this.#onAgent(m));
+  /** The frames on the canvas, each its own app instance and PreviewClient (see frames.ts). */
+  frames = new FrameSet({ api: (path, body) => this.api(path, body), onEvent: (frame, m) => this.#onFrameEvent(frame, m) });
+
+  /** The selected frame's client: what the panels and the inspector talk to. */
+  get preview() {
+    return this.frames.selected().client;
+  }
 
   /** Starts talking to the backend as soon as the service exists (setup is field initialisers only). */
   booted = this.#boot();
@@ -111,6 +120,7 @@ export class DesignerState {
       }
       this.project.set(project);
       if (project.error) this.error.set(project.error);
+      void this.frames.load();
       this.sceneFiles.set(await this.api<string[]>("/api/scenes"));
       void this.refreshDiagnostics();
       const events = new EventSource(`${this.config!.backend}/api/events?token=${this.config!.token}`);
@@ -150,21 +160,65 @@ export class DesignerState {
 
   async setMode(mode: "select" | "interact"): Promise<void> {
     this.mode.set(mode);
-    await this.preview.call("setMode", { mode }).catch(() => undefined);
+    await Promise.all(this.frames.frames().map((f) => f.client.call("setMode", { mode }).catch(() => undefined)));
   }
 
-  /** The canvas reports its iframe here so the client can load the frame URL into it. */
-  attachFrame(frame: HTMLIFrameElement, url: string): void {
+  /** A frame's canvas reports its iframe here so its client can load the frame URL into it. */
+  attachFrame(frame: Frame, iframe: HTMLIFrameElement, url: string): void {
+    frame.connection.set("connecting");
+    if (frame === this.frames.selected()) this.#resetInspection();
+    frame.client.load(iframe, url);
+  }
+
+  #resetInspection(): void {
     this.connection.set("connecting");
     this.incompatible.set(null);
     this.tree.set([]);
     this.picked.set(null);
     this.component.set(null);
     this.sceneInfo.set(null);
-    this.preview.load(frame, url);
   }
 
-  // --- from the agent --------------------------------------------------------
+  /** Makes a frame the one the panels inspect (and Tailwind mode edits for). */
+  selectFrame(id: string): void {
+    if (id === this.frames.selectedId()) return;
+    this.frames.select(id);
+    this.#resetInspection();
+    const frame = this.frames.selected();
+    this.connection.set(frame.connection());
+    if (frame.connection() !== "ready") return;
+    this.connection.set("ready");
+    void frame.client.call("scenes", undefined).then((scenes) => {
+      this.sceneInfo.set(scenes);
+      if (scenes) this.scene.set(scenes.current);
+    }).catch(() => undefined);
+    void this.refreshAll().catch(() => undefined);
+  }
+
+  // --- from the agents (one per frame) ----------------------------------------
+
+  #onFrameEvent(frame: Frame, m: AgentEvent): void {
+    const selected = frame === this.frames.selected();
+    if (m.type === "interaction") return this.#sync(frame, m.interaction);
+    if (m.type === "ready") {
+      frame.connection.set("ready");
+      void this.frames.applyEmulation(frame);
+      void frame.client.call("setMode", { mode: this.mode() }).catch(() => undefined);
+    } else if (m.type === "incompatible") frame.connection.set("incompatible");
+    // Picking in another frame selects that frame first, so the inspector follows the click.
+    if (!selected && m.type === "pick") this.selectFrame(frame.id);
+    else if (!selected) return void (m.type === "ready" && this.#placeDiagnostics());
+    this.#onAgent(m);
+  }
+
+  /** Repeats a real interaction in the other frames when sync is on (and the frames let the app run: interact mode). */
+  #sync(from: Frame, interaction: Interaction): void {
+    if (interaction.kind === "click") this.selectFrame(from.id);
+    if (!this.frames.sync() || this.mode() !== "interact") return;
+    for (const other of this.frames.frames()) {
+      if (other !== from && other.connection() === "ready") void other.client.call("replay", interaction).catch(() => undefined);
+    }
+  }
 
   #onAgent(m: AgentEvent): void {
     switch (m.type) {
@@ -261,10 +315,15 @@ export class DesignerState {
 
   async #placeDiagnostics(): Promise<void> {
     const a = this.analysis();
-    if (!a || this.connection() !== "ready") return;
+    if (!a) return;
     const items: CanvasDiagnostic[] = a.diagnostics
       .filter((d): d is ProjectDiagnostic & { raw: string; offset: number } => d.raw !== undefined && d.offset !== undefined)
       .map((d) => ({ id: d.id, severity: d.severity, rule: d.rule, message: d.message, raw: d.raw, offset: d.offset }));
-    this.placement.set(await this.preview.call("setDiagnostics", { items }).catch(() => ({ placed: 0, unplaced: items.length })));
+    const selected = this.frames.selected();
+    for (const frame of this.frames.frames()) {
+      if (frame.connection() !== "ready") continue;
+      const placement = await frame.client.call("setDiagnostics", { items }).catch(() => ({ placed: 0, unplaced: items.length }));
+      if (frame === selected) this.placement.set(placement);
+    }
   }
 }
