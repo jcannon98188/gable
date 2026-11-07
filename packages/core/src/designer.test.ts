@@ -59,6 +59,17 @@ describe("design layer", () => {
     expect(host.component?.name).toBe("Counter");
   });
 
+  it("names the instance that rendered an element after the first instance of its component is destroyed", () => {
+    const first = mount(Counter);
+    const firstId = designer.hook.nodeOf(first.query("p")!)!.component!.id;
+    first.destroy();
+    const second = mount(Counter);
+    const p = designer.hook.nodeOf(second.query("p")!)!;
+    expect(p.component?.name).toBe("Counter");
+    expect(p.component?.id).not.toBe(firstId);
+    expect(designer.hook.nodeAt(p.raw, p.start)?.component?.id).toBe(p.component?.id);
+  });
+
   it("keeps a registry from a template node to every element it rendered: many under @for, none under a false @if", () => {
     const f = mount(Counter);
     const row = designer.hook.nodeOf(f.query("li")!)!;

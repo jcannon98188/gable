@@ -134,6 +134,56 @@ export interface AgentMethods extends DevtoolsMethods {
    * keeps the mounted scene. Added after version 1 shipped; additive.
    */
   reload: { params: void; result: true };
+  /**
+   * Writes JSON text to a writable signal after checking it has the shape of the value the signal holds now (see
+   * `signal-value.ts`); `force` skips the check. Added after version 1 shipped; additive.
+   */
+  setSignalValue: { params: { id: string; text: string; force?: boolean }; result: SignalWriteResult };
+  /**
+   * Pins a signal to a value: written now (checked like `setSignalValue`) and again whenever the app changes it, until
+   * unpinned (`text: null`) or until the app fights it (then suspended, with the reason). Pins live as long as the page.
+   * Added after version 1 shipped; additive.
+   */
+  pinSignal: { params: { id: string; text: string | null; force?: boolean }; result: SignalWriteResult };
+  pins: { params: void; result: SignalPin[] };
+  /** Component mode: the mounted Component's inputs and writable signals as a Scene could hold them. Added after version 1 shipped; additive. */
+  sceneState: { params: void; result: SceneStateReport | null };
+}
+
+export type SignalWriteResult = { ok: true } | { ok: false; error: string; /** Where the value does not fit the current one. */ problems?: string[] };
+
+export interface SignalPin {
+  id: string;
+  name: string;
+  owner: string | null;
+  /** The pinned value, as JSON text. */
+  text: string;
+  /** `suspended`: the app kept overwriting it, see `reason`; `gone`: the signal no longer exists (remounted or hot-updated). */
+  status: "active" | "suspended" | "gone";
+  reason?: string;
+}
+
+/** One field of the mounted Component that a Scene can set: an input (`inputs`) or a writable signal (`state`). */
+export interface SceneStateField {
+  field: string;
+  kind: "input" | "state";
+  id: string;
+  /** Its value as JSON text, or null when it is not plain data (`error` says why). */
+  text: string | null;
+  error?: string;
+  /** Written from the Designer since the scene mounted. */
+  poked: boolean;
+  /** Differs from its value when the scene mounted. */
+  changed: boolean;
+}
+
+export interface SceneStateReport {
+  module: string;
+  component: string;
+  scene: string;
+  fields: SceneStateField[];
+  /** Signals written from the Designer that a Scene of this Component cannot hold (a child's or a service's). */
+  skipped: Array<{ name: string; owner: string | null; reason: string }>;
 }
 
 /** web-vitals' rating names. */

@@ -6,7 +6,7 @@
 import type { ComponentDetail, HmrEntry, RouterInfo, TreeNode } from "@gable/core/devtools";
 import type { DesignNode } from "@gable/core/designer";
 import type { ColorScheme } from "./devices.js";
-import type { HttpLogEntry, PageScenarioInfo, PerfReport, SceneInfo } from "./protocol.js";
+import type { HttpLogEntry, PageScenarioInfo, PerfReport, SceneInfo, SceneStateReport, SignalPin, SignalWriteResult } from "./protocol.js";
 import type { SourceRange } from "./server/source.js";
 
 export interface FrameSnapshot {
@@ -85,6 +85,22 @@ export interface ControlCommands {
   reselect: { params: { raw: string; offset: number }; result: boolean };
   /** The selected frame's performance, as the Performance tab shows it; `reload` re-runs it on a fresh load first. */
   performance: { params: { reload?: boolean }; result: PerfResult };
+  /** Signal state editing in the selected frame, through the Inspector's service so the window shows it. */
+  signals: { params: SignalAction; result: SignalsResult };
+}
+
+/** What the `signals` command does: a checked write, a pin (`text: null` unpins), or just a report. */
+export type SignalAction =
+  | { action: "set"; id: string; text: string; force?: boolean }
+  | { action: "pin"; id: string; text: string | null; force?: boolean }
+  | { action: "report" };
+
+export interface SignalsResult {
+  /** The write's outcome (`set` and `pin`). */
+  write?: SignalWriteResult;
+  pins: SignalPin[];
+  /** Component mode: the mounted Component's inputs and writable signals, as "Save as Scenario" would write them. */
+  scene: SceneStateReport | null;
 }
 
 export interface PerfResult {

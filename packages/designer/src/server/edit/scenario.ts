@@ -4,6 +4,7 @@
 import ts from "@typescript/typescript6";
 import type { Hunk } from "./hunks.js";
 import { fail } from "./template.js";
+import { jsLiteral } from "../../signal-value.js";
 import type { EditError, EditOp } from "./types.js";
 
 type AddScene = Extract<EditOp, { op: "addScene" }>;
@@ -75,6 +76,15 @@ export function planScene(text: string, op: AddScene): { hunks: Hunk[]; label: s
     if (!source || !ts.isPropertyAssignment(source)) return fail("stale", `There is no Scenario "${op.from}" to start from any more.`);
     value = copyScene(text, sf, source.initializer, desc);
   } else value = desc ? `{ ${desc} }` : "{}";
+  for (const prop of ["inputs", "state"] as const) {
+    const values = op[prop];
+    if (!values || !Object.keys(values).length) continue;
+    const bad = Object.keys(values).find((k) => !IDENT.test(k));
+    if (bad !== undefined) return fail("invalid", `"${bad}" is not a field name.`);
+    const next = withValues(value, prop, values, quote);
+    if (typeof next !== "string") return next;
+    value = next;
+  }
 
   const label = `Add Scenario "${name}"`;
   const entry = `${key}: ${value}`;
@@ -123,4 +133,68 @@ function copyScene(text: string, sf: ts.SourceFile, init: ts.Expression, desc: s
   const firstAt = rel(first.getStart(sf));
   if (written.slice(open, firstAt).includes("\n")) return written.slice(0, firstAt) + `${desc},\n${indentOf(written, firstAt)}` + written.slice(firstAt);
   return written.slice(0, firstAt) + `${desc}, ` + written.slice(firstAt);
+}
+
+/** An object literal (`text`, as written) with the entries appended before its closing brace, in its own layout. */
+function appendEntries(text: string, sf: ts.SourceFile, obj: ts.ObjectLiteralExpression, entries: string[]): Array<{ start: number; end: number; text: string }> {
+  const props = obj.properties;
+  if (props.length === 0) return [{ start: obj.getStart(sf), end: obj.end, text: `{ ${entries.join(", ")} }` }];
+  const last = props[props.length - 1]!;
+  const trailing = props.hasTrailingComma;
+  const at = trailing ? text.indexOf(",", last.end) + 1 : last.end;
+  if (text.slice(obj.getStart(sf), props[0]!.getStart(sf)).includes("\n")) {
+    const indent = indentOf(text, last.getStart(sf));
+    return [{ start: at, end: at, text: `${trailing ? "" : ","}${entries.map((e) => `\n${indent}${e}`).join(",")}${trailing ? "," : ""}` }];
+  }
+  return [{ start: at, end: at, text: `${trailing ? " " : ", "}${entries.join(", ")}${trailing ? "," : ""}` }];
+}
+
+const splice = (text: string, edits: Array<{ start: number; end: number; text: string }>): string =>
+  [...edits].sort((a, b) => b.start - a.start).reduce((t, e) => t.slice(0, e.start) + e.text + t.slice(e.end), text);
+
+/**
+ * A scene definition (`value`, as written) with `prop` (its `inputs` or `state`) given `values` over what it had: an entry
+ * written as a literal is replaced in place, a missing one appended, and an object that is not a literal is spread first.
+ */
+function withValues(value: string, prop: "inputs" | "state", values: Record<string, unknown>, quote: "'" | '"'): string | EditError {
+  const prefix = "const scene = ";
+  const text = prefix + value + ";\n";
+  const sf = ts.createSourceFile("scene.ts", text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const init = (sf.statements[0] as ts.VariableStatement).declarationList.declarations[0]!.initializer!;
+  const scene = unwrap(init);
+  const entries = (vals: Record<string, unknown>) => Object.entries(vals).map(([k, v]) => `${k}: ${jsLiteral(v, quote)}`);
+  const fresh = `${prop}: ${jsLiteral(values, quote)}`;
+  const result = (edits: Array<{ start: number; end: number; text: string }>) => splice(text, edits).slice(prefix.length, -2);
+  if (!ts.isObjectLiteralExpression(scene)) {
+    if (!ts.isIdentifier(scene) && !ts.isPropertyAccessExpression(scene))
+      return fail("readonly", "The scene to start from is computed (not an object literal or a name), so its values cannot be added to.");
+    const name = scene.getText(sf);
+    return `{ ...${value}, ${prop}: { ...${name}.${prop}, ${entries(values).join(", ")} } }`;
+  }
+  const own = scene.properties.find((p) => (ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p)) && keyOf(p.name) === prop);
+  if (!own) {
+    // A scene that spreads a shared one (`{ ...base }`) keeps that one's values under the new ones.
+    const spread = [...scene.properties].reverse().find(ts.isSpreadAssignment)?.expression;
+    const from = spread && (ts.isIdentifier(spread) || ts.isPropertyAccessExpression(spread)) ? spread.getText(sf) : null;
+    return result(appendEntries(text, sf, scene, [from ? `${prop}: { ...${from}.${prop}, ${entries(values).join(", ")} }` : fresh]));
+  }
+  if (ts.isShorthandPropertyAssignment(own)) return result([{ start: own.getStart(sf), end: own.end, text: `${prop}: { ...${prop}, ${entries(values).join(", ")} }` }]);
+  const target = unwrap((own as ts.PropertyAssignment).initializer);
+  if (!ts.isObjectLiteralExpression(target)) {
+    const written = (own as ts.PropertyAssignment).initializer;
+    return result([{ start: written.getStart(sf), end: written.end, text: `{ ...${written.getText(sf)}, ${entries(values).join(", ")} }` }]);
+  }
+  // Entries after the object's last spread can be replaced in place; anything else is appended so it wins over the spread.
+  const lastSpread = target.properties.reduce((at, p, i) => (ts.isSpreadAssignment(p) ? i : at), -1);
+  const edits: Array<{ start: number; end: number; text: string }> = [];
+  const appended: Record<string, unknown> = {};
+  for (const [key, v] of Object.entries(values)) {
+    const i = target.properties.findIndex((p, j) => j > lastSpread && (ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p)) && keyOf(p.name) === key);
+    const p = target.properties[i];
+    if (!p) appended[key] = v;
+    else if (ts.isPropertyAssignment(p)) edits.push({ start: p.initializer.getStart(sf), end: p.initializer.end, text: jsLiteral(v, quote) });
+    else edits.push({ start: p.getStart(sf), end: p.end, text: `${key}: ${jsLiteral(v, quote)}` });
+  }
+  if (Object.keys(appended).length) edits.push(...appendEntries(text, sf, target, entries(appended)));
+  return result(edits);
 }

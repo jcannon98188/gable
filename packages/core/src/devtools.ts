@@ -211,6 +211,12 @@ export type DevtoolsEvent =
 
 export type EditResult = { ok: true } | { ok: false; error: string };
 
+/**
+ * A signal's current value as JSON text, when it is plain data: what an editor can show for editing, and what a Scenario or a
+ * recorded state can hold. `text` is "undefined" for the value undefined, which `setSignal` accepts back.
+ */
+export type SignalJson = { ok: true; text: string; writable: boolean; kind: SignalKind } | { ok: false; error: string; writable: boolean; kind: SignalKind | null };
+
 /** Every method of `hook.call`, with its params and result. */
 export interface DevtoolsMethods {
   hello: { params: void; result: { version: 1; root: string | null; location: string } };
@@ -219,6 +225,8 @@ export interface DevtoolsMethods {
   signal: { params: { id: string }; result: SignalInfo | null };
   /** Writes JSON text (or `undefined`) to a signal. */
   setSignal: { params: { id: string; text: string }; result: EditResult };
+  /** The signal's value as JSON text when it is plain data (no Map, Date, class instance, function or cycle). Added after version 1; additive. */
+  signalJson: { params: { id: string }; result: SignalJson };
   /** Outlines the component's host in the page; `id: null` clears it. */
   highlight: { params: { id: string | null }; result: boolean };
   openInEditor: { params: { id: string }; result: EditResult };
@@ -348,6 +356,53 @@ export function parseEdit(text: string): { ok: true; value: unknown } | { ok: fa
   } catch (error) {
     return { ok: false, error: `Not valid JSON: ${error instanceof Error ? error.message : String(error)}` };
   }
+}
+
+const MAX_JSON = 256 * 1024;
+
+/** JSON text of a value that is plain data (so it parses back to an equal value), or why it is not. */
+export function jsonOf(value: unknown): { ok: true; text: string } | { ok: false; error: string } {
+  if (value === undefined) return { ok: true, text: "undefined" };
+  const why = plainProblem(value, "the value", new Set());
+  if (why) return { ok: false, error: why };
+  const text = JSON.stringify(value);
+  return text.length > MAX_JSON ? { ok: false, error: `The value is too large to edit as text (${Math.round(text.length / 1024)} KB).` } : { ok: true, text };
+}
+
+function plainProblem(value: unknown, path: string, seen: Set<unknown>): string | null {
+  switch (typeof value) {
+    case "string":
+    case "boolean":
+      return null;
+    case "number":
+      return Number.isFinite(value) ? null : `${path} is ${value}, which JSON cannot hold.`;
+    case "undefined":
+      return `${path} is undefined, which JSON leaves out.`;
+    case "object":
+      break;
+    default:
+      return `${path} is a ${typeof value}, not plain data.`;
+  }
+  if (value === null) return null;
+  if (seen.has(value)) return `${path} refers back to itself.`;
+  if (Array.isArray(value)) {
+    seen.add(value);
+    for (let i = 0; i < value.length; i++) {
+      const why = i in value ? plainProblem(value[i], `${path}[${i}]`, seen) : `${path}[${i}] is a hole.`;
+      if (why) return why;
+    }
+    seen.delete(value);
+    return null;
+  }
+  const proto = Object.getPrototypeOf(value);
+  if (proto !== Object.prototype && proto !== null) return `${path} is a ${(value as object).constructor?.name || "class instance"}, not plain data.`;
+  seen.add(value);
+  for (const key of Object.keys(value as object)) {
+    const why = plainProblem((value as Record<string, unknown>)[key], `${path}.${key}`, seen);
+    if (why) return why;
+  }
+  seen.delete(value);
+  return null;
 }
 
 // --- the layer --------------------------------------------------------------
@@ -849,6 +904,19 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
       } catch (error) {
         return { ok: false, error: error instanceof Error ? error.message : String(error) };
       }
+    },
+    signalJson: ({ id }) => {
+      const rec = lookup(id);
+      if (!rec || rec.kind === "effect") return { ok: false, error: "No such signal.", writable: false, kind: null };
+      const writable = inspectNode(rec.node).state;
+      let value: unknown;
+      try {
+        value = peekNode(rec.node);
+      } catch (error) {
+        return { ok: false, error: `Reading it threw: ${error instanceof Error ? error.message : String(error)}`, writable, kind: rec.kind };
+      }
+      const json = jsonOf(value);
+      return json.ok ? { ok: true, text: json.text, writable, kind: rec.kind } : { ...json, writable, kind: rec.kind };
     },
     highlight: ({ id }) => highlight(id),
     openInEditor: async ({ id }) => {

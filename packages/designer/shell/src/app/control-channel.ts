@@ -7,6 +7,7 @@ import type { ControlCommands, ControlName, ControlRequest, FrameRect, Selection
 import { DesignerState } from "./designer-state.js";
 import { PageState } from "./page-state.js";
 import { DEV_NOTE, PerfState } from "./perf-state.js";
+import { SignalEdits } from "./signal-edits.js";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -17,6 +18,7 @@ export class ControlChannel {
   state = inject(DesignerState);
   page = inject(PageState);
   perf = inject(PerfState);
+  signals = inject(SignalEdits);
 
   booted = this.#boot();
 
@@ -231,6 +233,13 @@ export class ControlChannel {
         frame: { name: c.frame, width: c.width, height: c.height, dpr: c.dpr, throttling: c.throttling },
         note: DEV_NOTE,
       };
+    },
+
+    signals: async (a) => {
+      this.#ready();
+      const write = a.action === "set" ? await this.signals.set(a.id, a.text, a.force) : a.action === "pin" ? await this.signals.pin(a.id, a.text, a.force) : undefined;
+      if (!write) await this.signals.refresh();
+      return { ...(write ? { write } : {}), pins: this.signals.pins(), scene: this.signals.scene() };
     },
 
     frameRect: ({ frame: id }): FrameRect => {

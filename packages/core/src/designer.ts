@@ -80,6 +80,8 @@ export interface DesignerInstance {
 export function createDesigner(target?: { __GABLE_DESIGNER_HOOK__?: DesignerHook; __GABLE_DEVTOOLS_HOOK__?: DevtoolsLike }): DesignerInstance {
   const byNode = new WeakMap<object, Entry>();
   const byElement = new WeakMap<object, Entry>();
+  /** The component instance that rendered each element: a template node is shared by every instance of its component. */
+  const ownerOf = new WeakMap<object, object>();
   const byId = new Map<string, Entry>();
   const templates = new WeakMap<TemplateStringsArray, number>();
   let templateCount = 0;
@@ -93,9 +95,9 @@ export function createDesigner(target?: { __GABLE_DESIGNER_HOOK__?: DesignerHook
     }
   };
 
-  const info = (entry: Entry): DesignNode => {
+  const info = (entry: Entry, el?: object): DesignNode => {
     const { start, openEnd, end, tpl } = entry.node.pos!;
-    const instance = entry.instance.deref();
+    const instance = (el && ownerOf.get(el)) ?? entry.instance.deref();
     const devtools = (target ?? (globalThis as { __GABLE_DEVTOOLS_HOOK__?: DevtoolsLike })).__GABLE_DEVTOOLS_HOOK__;
     return {
       id: entry.id,
@@ -117,7 +119,7 @@ export function createDesigner(target?: { __GABLE_DESIGNER_HOOK__?: DesignerHook
     nodeOf(element) {
       for (let n = element as any; n && typeof n === "object"; n = n.parentNode ?? n.parent) {
         const entry = byElement.get(n);
-        if (entry) return info(entry);
+        if (entry) return info(entry, n);
       }
       return null;
     },
@@ -150,8 +152,11 @@ export function createDesigner(target?: { __GABLE_DESIGNER_HOOK__?: DesignerHook
         byNode.set(node, entry);
         byId.set(entry.id, entry);
       }
+      // The latest instance to render the node: an earlier one may be destroyed (a remounted scene, a closed route).
+      else if (entry.instance.deref() !== instance) entry.instance = new WeakRef(instance);
       entry.elements.add(new WeakRef(el));
       byElement.set(el, entry);
+      ownerOf.set(el, instance);
       if (++sinceSweep > 2000) sweep();
     },
     listener(_el, name, handler) {

@@ -156,6 +156,37 @@ node packages/designer/e2e/perf-check.mjs            # spawns the backend (with 
 node packages/designer/e2e/perf-check.mjs --no-cdp   # the same without CDP: throttling labelled unavailable
 ```
 
+## Signal state editing
+
+In the Inspector, every writable signal and input of the selected component has **Edit**: the editor starts from the current
+value as JSON, **Set** writes it to the running app (`Ctrl+Enter`) and the frame re-renders on the next flush. Values are plain
+data only (JSON, or `undefined`): the Preview agent reads the signal (`signalJson` on the devtools hook, which says why a value
+is not plain data: a `Date`, a class instance, a function, a cycle) and checks the new value against the current one's shape
+(`src/signal-value.ts`: the same kind of value, the same object keys, array elements like the existing ones), since the
+runtime value is all it knows of the declared type. A mismatch is refused with the reasons; the button turns into **Set
+anyway**, which forces the write. Computeds and read-only sources have no Edit.
+
+**Pin** writes the value now and again whenever the app changes the signal (after each flush, tree change or hot update),
+until **Unpin**. Pins live in the Preview agent for the page's session: a reload drops them. A pin the app overwrites more than
+20 times in a second is suspended, with the reason on its chip, rather than fighting the app.
+
+In component mode, the **Poked state** section lists the mounted component's fields that were set from the Designer or changed
+since the scene mounted, with their values; signals that were set but that a Scene cannot hold (a child component's, a
+service's) are listed with why. **Save as Scenario** writes the chosen fields as a new scene: a copy of the mounted one (without
+its description unless one is typed) with `inputs` for inputs and `state` for signals, as one minimal, undoable edit of the
+scenes file (`addScene` with `inputs`/`state`, `src/server/edit/scenario.ts`), then mounts it. `Scene.state` is new in
+`@gable/core/tooling`: writable signals of the component set after it mounts (in the Designer and by `@gable/testing`'s
+`mountScene`); inputs and models belong in `inputs`, and page mode ignores it.
+
+The protocol gained `signalJson` (through `devtools`), `setSignalValue`, `pinSignal`, `pins` and `sceneState`; all additive,
+so `PROTOCOL_VERSION` is unchanged. MCP: `set_signal` and `pin_signal` (by id, or by field name on the selection's component
+or a `component` id from `get_tree`; `force` as Set anyway), `get_scene_state` and `save_scenario` (answers with the diff;
+`undo` takes it back).
+
+```
+node packages/designer/e2e/state-check.mjs     # spawns the backend on test-fixtures/state-app and a headless Edge, stops only those
+```
+
 ## Projects and the dev server
 
 The project name in the top bar opens **Open a project**: a folder field, the recent projects and a folder lister (folders
@@ -264,7 +295,7 @@ export default {
 In page mode the Scenario picker in the Routes tab reloads the page with `?__gable_scenario=<file>|<scene>`. The Designer's Vite
 plugin injects a module that sets `__GABLE_DESIGNER_HOOK__.rootProviders` (the mocks plus the scene's `providers`), which
 `bootstrap` appends after the app's own providers in development. The drawer's **HTTP** tab shows the mocks and the request log.
-Limits: `inputs` are ignored in page mode, and a scene that needs the router belongs in page mode (component mode mounts
+Limits: `inputs` and `state` are ignored in page mode, and a scene that needs the router belongs in page mode (component mode mounts
 the component alone).
 
 ## Tailwind mode
@@ -334,9 +365,10 @@ left out to mean the element selected in the window.
 
 | Group | Tools |
 | --- | --- |
-| Read | `get_status` (call first), `list_components`, `list_scenes`, `list_routes`, `get_problems`, `get_history`, `describe_element`, `get_selection`, `get_styles`, `get_tree`, `get_signals`, `get_hmr_timeline`, `get_http_log`, `get_performance` |
+| Read | `get_status` (call first), `list_components`, `list_scenes`, `list_routes`, `get_problems`, `get_history`, `describe_element`, `get_selection`, `get_styles`, `get_tree`, `get_signals`, `get_hmr_timeline`, `get_http_log`, `get_performance`, `get_scene_state` |
 | Window | `set_mode`, `show_page`, `show_component`, `set_scene`, `set_scenario`, `navigate`, `add_frame`, `update_frame`, `remove_frame`, `select_frame`, `select_element` (by position or CSS selector) |
-| Edit | `edit_text`, `set_attribute`, `bind`, `insert_element`, `delete_element`, `move_element`, `wrap_element`, `set_component_meta`, `set_css`, `edit_classes` (Tailwind, at a breakpoint and state), `undo`, `redo` |
+| Edit | `edit_text`, `set_attribute`, `bind`, `insert_element`, `delete_element`, `move_element`, `wrap_element`, `set_component_meta`, `set_css`, `edit_classes` (Tailwind, at a breakpoint and state), `save_scenario`, `undo`, `redo` |
+| App state | `set_signal`, `pin_signal`: write the running app's signals (not the source) |
 | See | `screenshot`: a PNG of a frame as MCP image content |
 
 **Screenshots.** In the desktop app (WebView2 with a CDP port) the live frame is captured over CDP: the frame's own target

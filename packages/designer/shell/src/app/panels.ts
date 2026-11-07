@@ -17,6 +17,7 @@ import { InsertDrag } from "./canvas-overlays.js";
 import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";
 import { EditState } from "./edit-state.js";
+import { SceneStatePanel, SignalEdit } from "./signal-editor.js";
 
 /** The devtools Preview (JSON-safe, size-bounded) as a plain value the JSON viewer can walk; left-out children become a "…" entry. */
 export function previewValue(p: Preview): unknown {
@@ -493,7 +494,7 @@ export class Inspector {
   static meta = {
     selector: "app-inspector",
     host: { class: "block" },
-    imports: [InjectorTree, UiJsonViewer],
+    imports: [InjectorTree, UiJsonViewer, SignalEdit, SceneStatePanel],
     template: html`
       @if (comp().show) {
         <div class="sec">
@@ -513,6 +514,7 @@ export class Inspector {
               @if (s.structured) {
                 <ui-json-viewer class="mono" [value]="s.data" [label]="s.name" [rootLabel]="s.name" treeClass="max-h-48"></ui-json-viewer>
               }
+              <app-signal-edit [sid]="s.id" [name]="s.name" [writable]="s.writable"></app-signal-edit>
             </div>
           }
           @if (comp().noSignals) {
@@ -532,6 +534,7 @@ export class Inspector {
               @if (s.structured) {
                 <ui-json-viewer class="mono" [value]="s.data" [label]="s.name" [rootLabel]="s.name" treeClass="max-h-48"></ui-json-viewer>
               }
+              <app-signal-edit [sid]="s.id" [name]="s.name" [writable]="s.writable"></app-signal-edit>
             </div>
           }
           @for (o of comp().outputs; track o) {
@@ -542,6 +545,7 @@ export class Inspector {
           }
         </div>
       }
+      <app-scene-state></app-scene-state>
       @if (node().show) {
         <div class="sec">
           <div class="sec-h">Template node</div>
@@ -580,7 +584,7 @@ export class Inspector {
   comp = computed(() => {
     const c = this.state.component();
     if (!c) return { show: false, name: "", inputs: [], outputs: [] as string[], signals: [], noSignals: false, noPorts: false };
-    const row = (s: (typeof c.signals)[number]) => ({ id: s.id, name: s.name, kind: s.kind, value: s.value.s, structured: isStructured(s.value), data: isStructured(s.value) ? previewValue(s.value) : undefined });
+    const row = (s: (typeof c.signals)[number]) => ({ id: s.id, name: s.name, kind: s.kind, writable: s.writable, value: s.value.s, structured: isStructured(s.value), data: isStructured(s.value) ? previewValue(s.value) : undefined });
     return { show: true, name: c.name, inputs: c.inputs.map(row), outputs: c.outputs, signals: c.signals.map(row), noSignals: c.signals.length === 0, noPorts: c.inputs.length === 0 && c.outputs.length === 0 };
   });
   hint = computed(() => !this.node().show && !this.comp().show);

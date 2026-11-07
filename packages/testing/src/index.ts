@@ -5,7 +5,7 @@ import { createTestInjector, httpTesting } from "./injector.js";
 import { HttpBackend, mockHttp } from "@gable/core/http";
 import { HttpTestingBackend } from "./http.js";
 import type { Renderer } from "@gable/core/renderer";
-import type { ComponentScenes } from "@gable/core/tooling";
+import { applySceneState, type ComponentScenes } from "@gable/core/tooling";
 import { Router, provideRouter, type NavigateOptions, type NavigationOutcome, type Route, type RouterAccessibilityOptions } from "@gable/core/router";
 import type { TestPlatform } from "./platform.js";
 import { createTestRenderer, type TestRenderer, createTestRoot, query, queryAll, serialize, textContent, type TestNode } from "./renderer.js";
@@ -328,13 +328,18 @@ export function mount<T extends object>(Component: ComponentClass<T>, options: M
 }
 /**
  * Mounts one Scene of a `*.scenes.ts` file (its default export): the component with the scene's inputs, and the scene's
- * providers on top of the test injector. A scene's `http` mocks replace the recording HTTP backend (so `fixture.http` is not available for it). Extra `options.providers` go after the scene's, so a test can still override.
+ * providers on top of the test injector. A scene's `state` is set on the created component and flushed, as the Designer shows it. A scene's `http` mocks replace the recording HTTP backend (so `fixture.http` is not available for it). Extra `options.providers` go after the scene's, so a test can still override.
  */
 export function mountScene<T extends object>(scenes: ComponentScenes<T>, name: string, options: Omit<MountOptions<T>, "inputs"> = {}): Fixture<T> {
   const scene = scenes.scenes[name];
   if (!scene) throw new Error(`No scene "${name}" for ${scenes.component.name}. Scenes: ${Object.keys(scenes.scenes).join(", ") || "(none)"}.`);
   const mocks = scene.http ? mockHttp(scene.http) : [];
-  return mount(scenes.component, { ...options, inputs: scene.inputs, providers: [...mocks, ...(scene.providers ?? []), ...(options.providers ?? [])] });
+  const fixture = mount(scenes.component, { ...options, inputs: scene.inputs, providers: [...mocks, ...(scene.providers ?? []), ...(options.providers ?? [])] });
+  if (scene.state) {
+    applySceneState(fixture.instance, scene.state, scenes.component.name);
+    fixture.flushSync();
+  }
+  return fixture;
 }
 
 export type { ComponentScenes, Scene } from "@gable/core/tooling";
