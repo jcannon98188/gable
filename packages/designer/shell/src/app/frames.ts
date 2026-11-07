@@ -94,7 +94,9 @@ export class FrameSet {
   readonly selected = computed(() => this.frames().find((f) => f.id === this.selectedId()) ?? this.frames()[0]!);
   /** The width the selected frame renders at, and the Tailwind breakpoint it reaches (TASK-56.6 drives its variants from these). */
   readonly selectedWidth = computed(() => this.selected().size().width);
-  readonly selectedBreakpoint = computed(() => breakpointOf(this.selectedWidth()));
+  /** The project's own breakpoints (Tailwind mode sets them from its theme); null means Tailwind's defaults. */
+  readonly breakpoints = signal<ReadonlyArray<{ name: string; min: number }> | null>(null);
+  readonly selectedBreakpoint = computed(() => breakpointOf(this.selectedWidth(), this.breakpoints() ?? undefined));
   readonly presets = computed<DevicePreset[]>(() => [...BUILTIN_PRESETS, ...this.saved()]);
   readonly scale = computed(() => {
     const zoom = this.zoom();

@@ -117,6 +117,41 @@ export class CdpEmulator {
     return ["touch", "pointer-media", "color-scheme", "reduced-motion", "user-agent"];
   }
 
+  /** Per frame session, the DOM nodes pseudo-states were forced on (to be released before the next force). */
+  #forced = new Map<string, number[]>();
+
+  /**
+   * Forces pseudo-states (`CSS.forcePseudoState`) on the elements the agent marked in the frame bound to `nonce`:
+   * `data-gd-forced` (the selected element) gets `own`, `data-gd-forced-group` (its nearest `.group` ancestor, for
+   * `group-hover:`) gets `group`. Empty lists release whatever was forced before. Only the pseudo-classes CDP can force
+   * belong here (hover, focus, focus-visible, focus-within, active); see `tailwind/api.ts`. Note that a touch-emulated
+   * frame has `(hover: none)`, so Tailwind's hover utilities (which sit in `@media (hover: hover)`) stay off even when forced.
+   */
+  async forcePseudoStates(nonce: string, own: string[], group: string[]): Promise<{ marked: number }> {
+    const sessionId = await this.#sessionFor(nonce);
+    if (!sessionId) throw new Error("No preview frame with that session was found over CDP.");
+    const send = <T>(method: string, params: object = {}) => this.#send<T>(method, params, sessionId);
+    await send("DOM.enable");
+    await send("CSS.enable");
+    // Release first: DOM.getDocument below drops the node ids handed out before it, so they could no longer be addressed after it.
+    for (const id of this.#forced.get(sessionId) ?? []) await send("CSS.forcePseudoState", { nodeId: id, forcedPseudoClasses: [] }).catch(() => undefined);
+    this.#forced.delete(sessionId);
+    const { root } = await send<{ root: { nodeId: number } }>("DOM.getDocument", { depth: 0 });
+    const forced: number[] = [];
+    let marked = 0;
+    for (const [selector, states] of [["[data-gd-forced]", own], ["[data-gd-forced-group]", group]] as const) {
+      if (states.length === 0) continue;
+      const { nodeIds } = await send<{ nodeIds: number[] }>("DOM.querySelectorAll", { nodeId: root.nodeId, selector });
+      for (const nodeId of nodeIds) {
+        await send("CSS.forcePseudoState", { nodeId, forcedPseudoClasses: states });
+        forced.push(nodeId);
+        marked++;
+      }
+    }
+    if (forced.length) this.#forced.set(sessionId, forced);
+    return { marked };
+  }
+
   close(): void {
     this.#socket?.close();
   }

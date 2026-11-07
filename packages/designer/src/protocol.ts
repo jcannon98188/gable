@@ -82,6 +82,13 @@ export interface AgentMethods extends DevtoolsMethods {
   setDiagnostics: { params: { items: CanvasDiagnostic[] }; result: { placed: number; unplaced: number } };
   /** What the page itself emulates for its frame: touch events from the mouse, and the pixel ratio scripts read. */
   setEmulation: { params: { touch: boolean; dpr: number }; result: { touchEvents: boolean } };
+  /**
+   * Tailwind mode's temporary look of one template node (nothing is written to source): `addClasses` are put on its elements,
+   * `css` is injected as the last stylesheet (the rule of a class that is not in the project's build yet, or a forced state's
+   * rule), `mark` tags the element (and its nearest `.group` ancestor) so CDP can force pseudo-states on it, `dark` puts
+   * `dark` on the root. `id: null` removes it all.
+   */
+  setPreview: { params: { id: string | null; addClasses: string[]; css: string; mark: boolean; dark: boolean }; result: { elements: number } };
   /** Repeats a user interaction another frame reported (sync between frames); `false` if its element is not on this page. */
   replay: { params: Interaction; result: boolean };
   /** Component mode: what the page mounts. */

@@ -75,3 +75,49 @@ The driven check (needs a built Designer and Edge/Chromium with a debugging port
 ```
 node packages/designer/e2e/device-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port> [--no-cdp] [--shot dir]
 ```
+
+## Tailwind mode
+
+The **Tailwind** tab edits the selected element's classes with the project's own Tailwind v4 design system. It is on when a
+stylesheet of the project starts with `@import "tailwindcss"`; the `@theme` block there is the project's design tokens. The
+Designer keeps no class table of its own: scales (spacing, color, type, radius, shadow, layout, size), class names, variants
+and breakpoints all come from the loaded design system. When it cannot be loaded (no Tailwind v4, a v3 project, the loader
+failed or its API changed) the tab says why ("Tailwind mode is off: ...") and nothing else changes; the Edit tab keeps working.
+
+- **Loading.** `src/server/tailwind/design-system.ts` is the only file that touches Tailwind. It calls
+  `__unstable__loadDesignSystem` from `@tailwindcss/node`, resolved from the project first (so custom `@theme`, `@plugin`,
+  `@custom-variant` and `@source` behave as in its build), then through `@tailwindcss/vite`, then the Designer's own copy
+  (`@tailwindcss/node`, pinned to `VERIFIED_TAILWIND` = 4.3.5, the version the API below was verified against). The API is
+  unstable by Tailwind's own statement: the shape of what comes back is checked (`shapeProblem`), and a mismatch or a load
+  error turns the mode off with a message instead of throwing. If Tailwind changes it, only that file and `ds` in it need
+  to follow. A stylesheet change in the project reloads the design system (SSE `tailwind` event).
+- **Editing.** Only static class tokens are written, through the same `setAttr` class edit as the Edit tab (one write path,
+  one undo history). A new class replaces an old one when the design system says they set the same CSS properties
+  (`px-2` next to `p-4` stays; `p-8` replaces `p-4`; `text-lg` does not replace `leading-6` although both touch `--tw-leading`).
+  Only classes with the same variants are compared (`md:p-8` leaves `p-4`). `{{ }}` and `[class.x]` bindings are read-only
+  and shown as `conditional: <name>`; classes the design system does not know (the project's own CSS) are never touched.
+- **Order.** The repo's formatter decides: when the project's prettier config lists `prettier-plugin-tailwindcss`, an inserted
+  class goes where Tailwind's order puts it (classes it does not know stay first); otherwise it is appended. (This repository
+  has no class sorter, so edits here append.)
+- **Breakpoints.** The selected frame's width picks the breakpoint prefix, using the project's `--breakpoint-*` values (not
+  Tailwind's defaults). The panel shows a value set at a smaller breakpoint as inherited (`from md`), mobile-first.
+- **States.** The state toolbar writes `hover`, `focus`, `focus-visible`, `active`, `disabled`, `group-hover`, `group-focus` and
+  `dark` variants (composed with the breakpoint: `dark:xl:hover:bg-red-500`). Forced-state preview: on WebView2 (CDP) hover,
+  focus and active are forced with `CSS.forcePseudoState` on the selected element (`group-*` on its nearest `.group`); everything
+  else (`disabled`, `dark`, and every state without CDP) is a temporary injected rule with `!important`, the pseudo-class
+  removed and the media condition unwrapped. A touch-emulated frame has `(hover: none)`, so hover utilities, which Tailwind
+  wraps in `@media (hover: hover)`, stay off there when forced over CDP.
+- **Palette.** Search the project's classes (variants as typed, or the ones of the current context), hover an entry to see
+  its real CSS applied on the canvas without writing anything, Enter or a click writes it. Arbitrary values (`w-[137px]`)
+  are accepted when the design system can generate them.
+
+Backend endpoints (`src/server/tailwind/api.ts`, all under `/api/tailwind/`, token-checked like the rest): `info`, `options`,
+`analyze`, `plan`, `search`, `css`, `force`. The agent gains `setPreview` (temporary classes, CSS and marks; additive, so
+`PROTOCOL_VERSION` is unchanged).
+
+The driven check runs against a Tailwind project (`examples/ui-gallery`) and a project without Tailwind:
+
+```
+node packages/designer/e2e/tailwind-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port> --source examples/ui-gallery/src/gallery.ts [--no-cdp] [--shot dir]
+node packages/designer/e2e/tailwind-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port> --off
+```

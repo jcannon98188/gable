@@ -6,6 +6,8 @@ import { UiToggleGroup, type ToggleGroupItem } from "../components/ui/toggle-gro
 import { UiTooltip } from "../components/ui/tooltip.js";
 import { DesignerState } from "./designer-state.js";
 import { EditPanel } from "./edit-panel.js";
+import { TailwindPanel } from "./tailwind-panel.js";
+import { TailwindState } from "./tailwind-state.js";
 import { FrameBoard } from "./frame-board.js";
 import { ComponentTree, HmrTimeline, InjectorTree, Inspector, Problems, ScenesPanel } from "./panels.js";
 
@@ -13,7 +15,7 @@ import { ComponentTree, HmrTimeline, InjectorTree, Inspector, Problems, ScenesPa
 export class Shell {
   static meta = {
     selector: "app-root",
-    imports: [FrameBoard, ComponentTree, InjectorTree, ScenesPanel, Inspector, EditPanel, Problems, HmrTimeline, UiTabs, UiTab, UiToggleGroup, UiBadge, UiTooltip, UiResizablePanelGroup, UiResizablePanel, UiResizableHandle],
+    imports: [FrameBoard, ComponentTree, InjectorTree, ScenesPanel, Inspector, EditPanel, TailwindPanel, Problems, HmrTimeline, UiTabs, UiTab, UiToggleGroup, UiBadge, UiTooltip, UiResizablePanelGroup, UiResizablePanel, UiResizableHandle],
     template: html`
       <div class="grid h-screen grid-rows-[auto_1fr] bg-background text-foreground">
         <header class="flex items-center gap-3 border-b px-3 py-2">
@@ -38,6 +40,7 @@ export class Shell {
             <ui-tabs [(value)]="right">
               <ui-tab value="inspector" label="Inspector"><app-inspector></app-inspector></ui-tab>
               <ui-tab value="edit" label="Edit"><app-edit-panel></app-edit-panel></ui-tab>
+              <ui-tab value="tailwind" label="Tailwind"><app-tailwind-panel></app-tailwind-panel></ui-tab>
               <ui-tab value="problems" label="Problems"><app-problems></app-problems></ui-tab>
               <ui-tab value="hmr" label="HMR"><app-hmr-timeline></app-hmr-timeline></ui-tab>
             </ui-tabs>
@@ -47,6 +50,8 @@ export class Shell {
     `,
   };
   state = inject(DesignerState);
+  /** Created here so the project's breakpoints reach the frames even before the Tailwind tab is opened. */
+  tailwind = inject(TailwindState);
   left = signal("components");
   right = signal("inspector");
   modes: ToggleGroupItem[] = [

@@ -197,6 +197,46 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     return !touch || canTouch;
   }
 
+  // --- Tailwind mode's temporary preview (see `setPreview` in protocol.ts) ----------------------------------------------
+
+  let previewStyle: HTMLStyleElement | null = null;
+  const previewed: Array<{ el: Element; added: string[] }> = [];
+  let darkAdded = false;
+  function clearPreview(): void {
+    for (const { el, added } of previewed) {
+      el.classList.remove(...added);
+      el.removeAttribute("data-gd-forced");
+      el.closest(".group")?.removeAttribute("data-gd-forced-group");
+    }
+    previewed.length = 0;
+    previewStyle?.remove();
+    previewStyle = null;
+    if (darkAdded) document.documentElement.classList.remove("dark");
+    darkAdded = false;
+  }
+  function setPreview(p: AgentMethods["setPreview"]["params"]): number {
+    clearPreview();
+    if (!p.id) return 0;
+    const els = (designer.elementsOf(p.id) as Node[]).filter((n): n is Element => n instanceof Element && n.isConnected);
+    if (p.css) {
+      previewStyle = document.createElement("style");
+      previewStyle.setAttribute("data-gable-designer-preview", "");
+      previewStyle.textContent = p.css;
+      document.head.append(previewStyle);
+    }
+    for (const el of els) {
+      const added = p.addClasses.filter((c) => c && !el.classList.contains(c));
+      el.classList.add(...added);
+      previewed.push({ el, added });
+      if (p.mark) {
+        el.setAttribute("data-gd-forced", "");
+        el.closest(".group")?.setAttribute("data-gd-forced-group", "");
+      }
+    }
+    if (p.dark && !document.documentElement.classList.contains("dark")) (document.documentElement.classList.add("dark"), (darkAdded = true));
+    return els.length;
+  }
+
   const pathOf = (el: Node): number[] => {
     const path: number[] = [];
     for (let n: Node | null = el; n && n !== document.documentElement; n = n.parentNode) {
@@ -278,6 +318,7 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     nodeAt: ({ raw, offset }) => designer.nodeAt(raw, offset),
     setDiagnostics: ({ items }) => ((diagnostics = items), redraw(), place()),
     setEmulation: ({ touch, dpr }) => ({ touchEvents: emulate(touch, dpr) }),
+    setPreview: (p) => ({ elements: setPreview(p) }),
     replay: (interaction) => replay(interaction),
     scenes: () => sceneInfo(),
     mountScene: ({ name }) => {

@@ -154,3 +154,7 @@ _Avoid_: Story, preset, mock
 **Frame**:
 One preview of the app at a chosen device size and environment inside the Designer's canvas. Several Frames can be shown at once, and each runs its own instance of the app.
 _Avoid_: Viewport, device, artboard
+
+**Tailwind mode**:
+The Designer's class editing for projects that use Tailwind v4. Its scales, class names, variants and breakpoints come from the project's own design system (the `@theme` block is the project's design tokens), and it only ever changes static class tokens in source.
+_Avoid_: Style editor, CSS panel
