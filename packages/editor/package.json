@@ -14,7 +14,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json"
+    "build": "tsc -p tsconfig.build.json",
+    "demo": "vite --config demo/vite.config.ts"
   },
   "dependencies": {
     "@gable/core": "0.0.0",
