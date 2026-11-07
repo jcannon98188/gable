@@ -19,6 +19,8 @@ export class Page {
         <b>Inside a block</b>
       }
       <code>npm install</code>
+      <span>&lt; &amp;&amp; &nbsp; &#8594;</span>
+      <p>Tom &amp; Jerry</p>
     `,
   };
   name = signal("Ada");

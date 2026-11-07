@@ -47,6 +47,7 @@ describe("i18n-missing-translation", () => {
       [at("<p i18n>", 3), "de, es"],
       [at('i18n-title="search field"'), "fr, de, es"],
       [at('i18n="@@note"'), "es"],
+      [at("<b i18n>", 3), "es"], // the id is of the decoded message "a < b", which fr and de have
     ] as const;
     expect(rows).toEqual(
       expected.map(([p, locales]) => [
@@ -94,9 +95,11 @@ describe("i18n-unmarked-text", () => {
       at('title="Search"'),
       at('alt="Logo"'),
       at("Inside a block"),
+      at("Tom &amp; Jerry"), // character references decode first: "&lt; &amp;&amp;" has no words, and the position is still the source offset
     ];
     expect(diagnostics.map((d) => [d.rule, d.line, d.column, d.severity])).toEqual(expected.map((p) => ["i18n-unmarked-text", p.line, p.column, "warn"]));
     expect(diagnostics[0]!.message).toMatch(/Text "Unmarked heading" is not marked.*i18n-ignore/);
+    expect(diagnostics.at(-1)!.message).toMatch(/Text "Tom & Jerry" is not marked/);
   });
 });
 

@@ -80,3 +80,63 @@ describe("Tabs", () => {
     expect(f.instance.tab()).toBe("extra");
   });
 });
+
+class BadgeApp {
+  static meta = {
+    selector: "app-root",
+    imports: [UiTabs, UiTab],
+    template: html`<ui-tabs [(value)]="tab" density="compact">
+      <ui-tab value="a" label="Alpha" [badge]="7">A</ui-tab>
+      @if (mid()) {
+        <ui-tab value="b" label="Beta" badge="new">B</ui-tab>
+      }
+      <ui-tab value="c" label="Gamma">C</ui-tab>
+    </ui-tabs>`,
+  };
+  tab = signal("");
+  mid = signal(false);
+}
+
+describe("Tab badge and order", () => {
+  const boot = async () => {
+    const f = mount(BadgeApp, { providers: provideTestDom(), advanceTimers: async (ms) => void (await vi.advanceTimersByTimeAsync(ms)) });
+    await f.settle();
+    return f;
+  };
+  const labels = (f: Awaited<ReturnType<typeof boot>>) => f.queryAll("[role=tab]").map((n) => f.textOf(n).trim().replace(/\s+/g, " "));
+
+  it("shows a badge after the label, inside the trigger, only when set", async () => {
+    const f = await boot();
+    expect(labels(f)).toEqual(["Alpha 7", "Gamma"]);
+    expect(f.queryAll("[data-tab-badge]")).toHaveLength(1);
+    expect(f.query("[role=tab] [data-tab-badge]")).not.toBeNull();
+  });
+
+  it("keeps a conditional tab in markup order in the buttons and the arrow-key order", async () => {
+    const f = await boot();
+    f.instance.mid.set(true);
+    await f.settle();
+    expect(labels(f)).toEqual(["Alpha 7", "Beta new", "Gamma"]);
+    const trigger = (v: string) => f.query(`[role=tab][data-value=${v}]`)!;
+    focusNode(trigger("a"));
+    pressKey(f, f.query("[role=tablist]")!, "ArrowRight", trigger("a"));
+    await f.advance(50);
+    expect(f.instance.tab()).toBe("b");
+    pressKey(f, f.query("[role=tablist]")!, "ArrowRight", trigger("b"));
+    await f.advance(50);
+    expect(f.instance.tab()).toBe("c");
+  });
+
+  it("falls back to the first enabled tab when the selected conditional tab disappears", async () => {
+    const f = await boot();
+    f.instance.mid.set(true);
+    await f.settle();
+    f.instance.tab.set("b");
+    await f.settle();
+    expect(f.query("[role=tab][data-value=b]")!.attrs["aria-selected"]).toBe("true");
+    f.instance.mid.set(false);
+    await f.settle();
+    expect(f.instance.tab()).toBe("a");
+    expect(f.query("[role=tab][data-value=a]")!.attrs["aria-selected"]).toBe("true");
+  });
+});

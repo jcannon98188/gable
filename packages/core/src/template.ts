@@ -1,5 +1,6 @@
 import { DEV } from "./dev-hooks.js";
 import { parseExpression, parseHandler, type Expr, type HandlerExpr } from "./expression.js";
+import { decodeEntities } from "./entities.js";
 import { messageFromParts, messageId, parseMarker } from "./i18n-message.js";
 
 export type BindingKind = "prop" | "attr" | "class" | "style";
@@ -324,11 +325,11 @@ class Parser {
     const placeholders: string[] = [];
     let last = 0;
     for (const m of raw.matchAll(/\{\{([\s\S]*?)\}\}/g)) {
-      strings.push(raw.slice(last, m.index));
+      strings.push(decodeEntities(raw.slice(last, m.index)));
       placeholders.push(m[1]!.trim());
       last = m.index! + m[0].length;
     }
-    strings.push(raw.slice(last));
+    strings.push(decodeEntities(raw.slice(last)));
     text.i18n = i18nInfo(marker, strings, placeholders);
   }
 
@@ -362,7 +363,7 @@ class Parser {
       if (m[1] === "i18n") marker = value;
       else if (m[1] === "i18n-ignore") continue; // tells the unmarked-text lint to leave this element alone; not rendered
       else if (m[1]!.startsWith("i18n-") && m[1]!.length > 5) attrMarkers.push({ attr: m[1]!.slice(5), value });
-      else addAttribute(el, m[1]!, value);
+      else addAttribute(el, m[1]!, value, true);
     }
     for (const { attr, value } of attrMarkers) {
       const at = el.attrs.findIndex((a) => a.name === attr);
@@ -449,7 +450,8 @@ function parseConditionHeader(header: string): [Expr, string | undefined] {
   return [parseExpression(cond!), alias];
 }
 
-export function addAttribute(el: ElementNode, name: string, value: string): void {
+/** `fromSource`: the value is template source text, so a static value has its character references decoded (host metadata values are plain strings). */
+export function addAttribute(el: ElementNode, name: string, value: string, fromSource = false): void {
   if (name.startsWith("[(") && name.endsWith(")]")) {
     el.models.push({ name: name.slice(2, -2), expr: parseExpression(value) });
   } else if (name.startsWith("[") && name.endsWith("]")) {
@@ -467,7 +469,7 @@ export function addAttribute(el: ElementNode, name: string, value: string): void
     throw new Error(`Structural directives ("${name}") do not exist; use @if or @for blocks.`);
   } else {
     if (value.includes("{{")) throw new Error(`Interpolation in attribute "${name}" is not supported; use [attr.${name}] or [${name}].`);
-    el.attrs.push({ name, value });
+    el.attrs.push({ name, value: fromSource ? decodeEntities(value) : value });
   }
 }
 
@@ -479,10 +481,10 @@ function parseInterpolation(raw: string): Array<string | Expr> {
     if (open === -1) break;
     const close = raw.indexOf("}}", open);
     if (close === -1) throw new Error("Unterminated {{ in template");
-    if (open > i) parts.push(raw.slice(i, open));
+    if (open > i) parts.push(decodeEntities(raw.slice(i, open)));
     parts.push(parseExpression(raw.slice(open + 2, close)));
     i = close + 2;
   }
-  if (i < raw.length) parts.push(raw.slice(i));
+  if (i < raw.length) parts.push(decodeEntities(raw.slice(i)));
   return parts;
 }

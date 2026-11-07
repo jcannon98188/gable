@@ -1,7 +1,7 @@
 // Baking: rewrites the marked text of `html` templates and `i18n` tagged templates to one locale's translations,
 // and removes the markers, so the output needs no catalog and no locale switching.
 import MagicString, { type SourceMap } from "magic-string";
-import { dateFormatOptions, extractTemplateMessages, messageFromParts, messageFromStrings, messageId, numberFormatOptions, parseMarker, parseMessage, type MessageNode } from "@gable/core/tooling";
+import { decodeEntities, encodeEntities, dateFormatOptions, extractTemplateMessages, messageFromParts, messageFromStrings, messageId, numberFormatOptions, parseMarker, parseMessage, type MessageNode } from "@gable/core/tooling";
 import { assertNoEscapes } from "./extract.js";
 import { DYNAMIC_CALL, cook, lineOf, scanTemplates } from "./scan.js";
 
@@ -131,10 +131,11 @@ function renderTranslation(
   let out = "";
   for (const node of nodes) {
     if (typeof node === "string") {
-      if (target === "html" && (node.includes("<") || node.includes("{{"))) {
-        throw new Error(`${where}: translation of message ${id} contains "<" or "{{", which cannot be baked into template text`);
+      if (target === "html" && node.includes("{{")) {
+        throw new Error(`${where}: translation of message ${id} contains "{{", which cannot be baked into template text`);
       }
-      out += escapeText(node);
+      // The template parser decodes character references, so "<" and a literal "&lt;" are written as references.
+      out += escapeText(encodeEntities(node));
     } else if (node.kind === "arg" && /^\d+$/.test(node.name)) {
       const expr = exprs[Number(node.name)];
       if (expr === undefined) throw new Error(`${where}: translation of message ${id} uses {${node.name}}, but the message has only ${exprs.length} placeholder(s)`);
@@ -308,7 +309,7 @@ export function bakeHtmlEdits(source: string, where: string, options: BakeOption
     const parts: Array<string | { placeholder: true }> = [];
     inner.split(/\{\{[\s\S]*?\}\}/).forEach((s, i) => {
       if (i > 0) parts.push({ placeholder: true });
-      parts.push(s);
+      parts.push(decodeEntities(s));
     });
     const message = messageFromParts(parts);
     const m = parseMarker(marker.value ?? "");

@@ -56,6 +56,8 @@ export interface EventSite {
   dom: Probe;
   /** The component instance type, when the tag is a known component. */
   component?: Probe;
+  /** The element carries a camelCase attribute (`uiDrawerDrag`, `[uiSortable]`): an attribute directive whose outputs are not known here. */
+  directive?: boolean;
 }
 
 /** An element with `[field]` whose component must expose a `value` model. */
@@ -135,6 +137,11 @@ type __Prop<C, E, N extends string> = N extends keyof C ? (C[N] extends { (): in
 const LITERALS = new Set(["true", "false", "null", "undefined"]);
 const LOOP_VARS = ["$index", "$first", "$last", "$count", "$even", "$odd"];
 const TOKEN = /\s+|[A-Za-z_$][\w$]*|\d+(?:\.\d+)?|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|\?\?|\?\.|[\s\S]/y;
+
+const DIRECTIVE_ATTR = /^[a-z][a-z0-9]*[A-Z]/;
+/** An attribute directive is applied by a camelCase attribute; its outputs cannot be resolved from the tag. */
+const hasDirective = (node: { attrs: Array<{ name: string }>; expressions: Array<{ kind: string; name: string }> }): boolean =>
+  node.attrs.some((a) => DIRECTIVE_ATTR.test(a.name)) || node.expressions.some((x) => x.kind !== "handler" && DIRECTIVE_ATTR.test(x.name));
 
 /**
  * Generates the check blocks. `observed` holds ordinals of path steps that are
@@ -253,7 +260,7 @@ export function emit(
               const dom = probe(`declare const __evd_${n}: __EvMap<__El<${tag}>>;\n`);
               const comp = componentType(node.tag);
               const component = comp ? probe(`declare const __evc_${n}: ${comp};\n`) : undefined;
-              events.push({ name: e.name, nameStart: e.nameStart, tag: node.tag, dom, component });
+              events.push({ name: e.name, nameStart: e.nameStart, tag: node.tag, dom, component, directive: hasDirective(node) });
               push(`{ const $event: __Ev<${instanceType(node.tag)}, __El<${tag}>, ${JSON.stringify(e.name)}> = undefined as any; `);
               expression(e, "handler", inner, "", ";");
               push(" }\n");

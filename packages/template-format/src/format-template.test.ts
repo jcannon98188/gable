@@ -113,3 +113,18 @@ describe("formatTemplate: determinism", () => {
     });
   }
 });
+
+describe("formatTemplate: character references", () => {
+  it("leaves entities as written in text and attributes", () => {
+    const src = '<p title="a &lt; b &quot;c&quot;">1 &lt; 2 &amp;&amp; &#65; a & b</p>';
+    expect(formatTemplate(src)).toBe(src);
+    expect(formatTemplate("<p>\n  a   &lt;   b\n</p>")).toBe("<p>a &lt; b</p>");
+  });
+
+  it("does not split or reflow a reference, and is idempotent", () => {
+    const once = formatTemplate("<p>aaaa &amp;&amp; bbbb &lt;c&gt; dddd</p>", { printWidth: 16 });
+    expect(once).toContain("&amp;&amp;");
+    expect(once).toContain("&lt;c&gt;");
+    expect(formatTemplate(once, { printWidth: 16 })).toBe(once);
+  });
+});

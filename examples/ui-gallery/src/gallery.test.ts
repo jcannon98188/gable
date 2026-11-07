@@ -15,7 +15,7 @@ describe('gable-ui gallery', () => {
     expect(app.queryAll('button').length).toBeGreaterThan(10); // buttons
     expect(app.query('[role=dialog]')).not.toBeNull();
     expect(app.query('[role=combobox]')).not.toBeNull(); // select
-    expect(app.queryAll('[role=tab]').map((t) => app.textOf(t).trim())).toEqual(['Account', 'Password', 'Billing']);
+    expect(app.queryAll('[role=tab]').map((t) => app.textOf(t).trim().replace(/\s+/g, ' '))).toEqual(['Account', 'Password', 'Billing', 'Inbox 12', 'Sent']);
     expect(app.queryAll('[role=tooltip]')).toHaveLength(4);
   });
 

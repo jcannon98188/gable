@@ -99,6 +99,15 @@ export class Gallery {
             <ui-tab value="password" label="Password"><p class="rounded-lg border p-4 text-sm">Change your password here.</p></ui-tab>
             <ui-tab value="billing" label="Billing" [disabled]="true"><p>Billing</p></ui-tab>
           </ui-tabs>
+          <h3 class="text-sm font-medium">Tabs with badges</h3>
+          <ui-tabs [(value)]="inboxTab">
+            <ui-tab value="inbox" label="Inbox" [badge]="12"><p class="text-sm">12 unread messages.</p></ui-tab>
+            @if (showDrafts()) {
+              <ui-tab value="drafts" label="Drafts" badge="3"><p class="text-sm">3 drafts.</p></ui-tab>
+            }
+            <ui-tab value="sent" label="Sent"><p class="text-sm">Nothing sent.</p></ui-tab>
+          </ui-tabs>
+          <ui-switch [(value)]="showDrafts">Show the Drafts tab</ui-switch>
         </section>
         <section class="flex flex-col gap-3">
           <h2 class="text-lg font-medium">Form and Field</h2>
@@ -228,6 +237,8 @@ export class Gallery {
   toppingsText = computed(() => this.toppings().join(', ') || 'nothing');
   chosenLabel = computed(() => this.fruitValue() || 'nothing');
   tab = signal('');
+  inboxTab = signal('');
+  showDrafts = signal(false);
 
   agree = signal(false);
   airplane = signal(false);

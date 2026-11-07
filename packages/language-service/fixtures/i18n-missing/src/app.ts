@@ -9,6 +9,7 @@ export class Page {
       <input title="Search" i18n-title="search field" />
       <span i18n="@@note">Saved</span>
       <p>Plain text is never checked</p>
+      <b i18n>a &lt; b</b>
     `,
   };
   name = signal("Ada");

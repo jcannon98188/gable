@@ -1,7 +1,7 @@
 // i18n marker lint rules for templates. They look at the scanned template tree only (no types, no catalogs).
 // Each rule reports through `report(start, length, rule, message)` like the a11y rules.
 
-import { messageFromParts, messageFromStrings, messageId, parseMarker } from "@gable/core/tooling";
+import { decodeEntities, messageFromParts, messageFromStrings, messageId, parseMarker } from "@gable/core/tooling";
 import ts from "@typescript/typescript6";
 import type { Report } from "./a11y-rules.js";
 import type { AnalyzerConfig, I18nCheckConfig } from "./config.js";
@@ -99,7 +99,7 @@ const INTERPOLATION = /\{\{[\s\S]*?\}\}/g;
 const hasWords = (text: string) => /\p{L}/u.test(text);
 
 function unmarkedText(node: TextNode, report: Report): void {
-  const stripped = node.raw.replace(INTERPOLATION, " ");
+  const stripped = decodeEntities(node.raw.replace(INTERPOLATION, " "));
   if (!hasWords(stripped)) return;
   const lead = node.raw.length - node.raw.trimStart().length;
   report(node.start + lead, node.raw.trim().length, "i18n-unmarked-text", `Text "${shorten(stripped)}" is not marked for translation: add i18n to its element (i18n="description"), or i18n-ignore to leave it as it is`);
@@ -107,7 +107,7 @@ function unmarkedText(node: TextNode, report: Report): void {
 
 function unmarkedAttrs(el: ElementNode, report: Report): void {
   for (const attr of el.attrs) {
-    if (!USER_FACING_ATTRS.includes(attr.name) || !attr.value || !hasWords(attr.value)) continue;
+    if (!USER_FACING_ATTRS.includes(attr.name) || !attr.value || !hasWords(decodeEntities(attr.value))) continue;
     if (el.attrs.some((a) => a.name === `i18n-${attr.name}`)) continue;
     report(attr.nameStart, attr.name.length, "i18n-unmarked-text", `${attr.name}="${shorten(attr.value)}" is not marked for translation: add i18n-${attr.name}, or i18n-ignore on the element to leave it as it is`);
   }
@@ -145,7 +145,7 @@ function missingTranslations(el: ElementNode, catalogs: CatalogState[], report: 
     if (!attr.name.startsWith("i18n-") || attr.name === "i18n-ignore" || attr.name.length === 5) continue;
     const target = el.attrs.find((a) => a.name === attr.name.slice(5));
     if (!target?.value) continue; // i18n-attr-missing reports it
-    check(messageFromParts([target.value]), attr.value, attr.nameStart, attr.name.length);
+    check(messageFromParts([decodeEntities(target.value)]), attr.value, attr.nameStart, attr.name.length);
   }
   const own = el.attrs.find((a) => a.name === "i18n");
   const [text] = el.children;
@@ -153,7 +153,7 @@ function missingTranslations(el: ElementNode, catalogs: CatalogState[], report: 
     const parts: Array<string | { placeholder: true }> = [];
     text!.raw.split(INTERPOLATION).forEach((piece, i) => {
       if (i > 0) parts.push({ placeholder: true });
-      parts.push(piece);
+      parts.push(decodeEntities(piece));
     });
     check(messageFromParts(parts), own.value, own.nameStart, 4);
   }

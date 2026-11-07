@@ -16,6 +16,7 @@ export class Page {
       <x-child [(value)]="text" (picked)="onPick($event)" (closed)="reset()" (click)="onClick($event)"></x-child>
       <input (input)="text.set($event.currentTarget.value)" (keydown)="onEnter($event.key)" />
       <input type="checkbox" (change)="done.set($event.currentTarget.checked)" />
+      <li uiDrawerDrag (dismiss)="reset()"></li>
       <p (click)="count.set(1)">{{ count() }}</p>
     `,
   };

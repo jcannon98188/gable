@@ -122,12 +122,37 @@ describe("baking", () => {
     const key = id("Hello {0}, you have {1} messages", "");
     expect(() => bake(sample, { [key]: "{1, plural, one {# message} other {# messages}}" })).toThrow(/plural.*runtime mode/s);
     expect(() => bake(sample, { [key]: "Bonjour {5}" })).toThrow(/uses \{5\}/);
-    expect(() => bake(sample, { [key]: "a < b" })).toThrow(/cannot be baked/);
+    expect(() => bake(sample, { [key]: "a \\{\\{ b" })).toThrow(/cannot be baked/);
   });
 
   it("escapes what would break the surrounding template literal", () => {
     const { code } = bake("const t = i18n`Price ${p}`;", { [id("Price {0}", "")]: "Prix `x` \\\\ {0}" });
     expect(code).toContain("`Prix \\`x\\` \\\\ ${__gableValue(p)}`");
+  });
+});
+
+describe("character references (TASK-92)", () => {
+  const src = [
+    "export const t = html`",
+    '  <p i18n="d">if a &lt; b &amp;&amp; {{ x }}</p>',
+    '  <i title="1 &lt; 2" i18n-title></i>',
+    "`;",
+  ].join("\n");
+
+  it("extracts the decoded message text", () => {
+    const m = extractFromSource(src, "a.ts");
+    expect(m.map((x) => x.message)).toEqual(["if a < b && {0}", "1 < 2"]);
+    expect(m[0]!.id).toBe(id("if a < b && {0}", "d"));
+  });
+
+  it("bakes the source text back as references, and translations containing < or &lt; round-trip", () => {
+    const none = bake(src, {});
+    expect(none.missing).toEqual([id("if a < b && {0}", "d"), id("1 < 2", "")]);
+    expect(none.code).toContain("<p>if a &lt; b && {{ x }}</p>");
+    expect(none.code).toContain('title="1 &lt; 2"');
+    const fr = bake(src, { [id("if a < b && {0}", "d")]: "si a < b &lt; {0}", [id("1 < 2", "")]: "un < deux" });
+    expect(fr.code).toContain("<p>si a &lt; b &amp;lt; {{ x }}</p>");
+    expect(fr.code).toContain('title="un &lt; deux"');
   });
 });
 

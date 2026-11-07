@@ -59,6 +59,8 @@ export interface Renderer<N = unknown> {
    * renderer returns `document.body` or a container in the same document), because machines look parts up by id.
    */
   overlayRoot?(): N;
+  /** Document order of two attached nodes: negative when `a` comes first, positive when `b` does, 0 when unknown (detached). Lets `contentChildren` list late-created matches in markup order. */
+  compare?(a: N, b: N): number;
   /** Optional DOM-state preservation around a view rebuild (HMR). */
   captureViewState?(rootNodes: N[]): unknown;
   restoreViewState?(newRootNodes: N[], token: unknown): void;

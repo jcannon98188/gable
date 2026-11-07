@@ -207,8 +207,8 @@ function buildElementOf<N>(
     const comps = matches
       .map((Class) => prepare(Class, { renderer, host: el, parentScope: scope, injector: view?.injector ?? null, content }))
       .filter((comp) => !comp.failed);
-    for (const comp of comps) registerEntry(view?.queries, { instance: comp.instance, node: el, refs: node.refs }, scope);
-    if (node.refs.length > 0) registerEntry(view?.queries, { node: el, refs: node.refs }, scope);
+    for (const comp of comps) registerEntry(view?.queries, { instance: comp.instance, node: el, refs: node.refs }, scope, renderer.compare?.bind(renderer) as ((a: unknown, b: unknown) => number) | undefined);
+    if (node.refs.length > 0) registerEntry(view?.queries, { node: el, refs: node.refs }, scope, renderer.compare?.bind(renderer) as ((a: unknown, b: unknown) => number) | undefined);
     const rest: Bindings = { attrs: node.attrs, bindings: [], models: [], events: [] };
     const inputFor = (name: string) => comps.map((c) => inputOf(c.instance, name)).find((h) => h);
     const subscribe = <T,>(source: { subscribe(next: (v: T) => void): { unsubscribe(): void } }, next: (v: T) => void) => {

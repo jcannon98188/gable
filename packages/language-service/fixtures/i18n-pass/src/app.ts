@@ -10,6 +10,8 @@ export class Good {
       <input title="Search" i18n-title="search field" placeholder="Type here" i18n-placeholder="@@ph" />
       <img src="a.png" alt="Logo" i18n-alt />
       <p>Untranslated text is fine</p>
+      <p i18n>if a &lt; b &amp;&amp; c</p>
+      <input title="a &lt; b" i18n-title />
       <input [title]="label()" />
     `,
   };

@@ -428,7 +428,7 @@ function checkEvents(emitted: Emitted, sf: ts.SourceFile, checker: ts.TypeChecke
         const member = checker.getTypeOfSymbol(p);
         if (isObservableLike(checker, member) && !isSignal(checker, member)) names.add(p.name);
       }
-    } else if (!nativeTags.has(site.tag)) continue;
+    } else if (!nativeTags.has(site.tag) || site.directive) continue;
     if (names.has(site.name)) continue;
     const hint = closest(site.name, [...names]);
     report(site, `Unknown event "${site.name}" on <${site.tag}>${hint ? `. Did you mean "${hint}"?` : ""}`);

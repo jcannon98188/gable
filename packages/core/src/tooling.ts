@@ -6,6 +6,7 @@ export type { Expr, HandlerExpr } from "./expression.js";
 export { VOID, BLOCK_START, indexOfTopLevel } from "./template.js";
 // i18n message core and template extraction, shared with the Vite plugin (DOM-free).
 export * from "./i18n-message.js";
+export { decodeEntities, encodeEntities } from "./entities.js";
 export { extractTemplateMessages } from "./i18n-extract.js";
 
 // Scenes (type-only): a Scene places one Component in one situation. Authored as a plain TypeScript file beside the

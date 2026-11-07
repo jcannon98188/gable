@@ -57,13 +57,24 @@ export function keepContentTarget(): <T>(fn: () => T) => T {
 }
 
 /** Offers a freshly built entry to the owner's view queries and to the enclosing content queries. Removes it when `scope` ends. */
-export function registerEntry(owner: QueryHost | undefined, entry: QueryEntry, scope: Scope | null): void {
+export function registerEntry(
+  owner: QueryHost | undefined,
+  entry: QueryEntry,
+  scope: Scope | null,
+  compare?: (a: unknown, b: unknown) => number,
+): void {
   const queries = [...(owner?.view ?? []), ...(contentTarget?.content ?? [])];
   for (const q of queries) {
     if (!q.match(entry)) continue;
-    untracked(() => q.entries.update((list) => [...list, entry]));
+    untracked(() => q.entries.update((list) => insertInOrder(list, entry, compare)));
     scope?.onDispose(() => untracked(() => q.entries.update((list) => list.filter((e) => e !== entry))));
   }
+}
+
+/** Inserts before the first entry that follows `entry` in the document; appends when order is unknown. */
+function insertInOrder(list: QueryEntry[], entry: QueryEntry, compare?: (a: unknown, b: unknown) => number): QueryEntry[] {
+  const at = compare ? list.findIndex((other) => compare(entry.node, other.node) < 0) : -1;
+  return at < 0 ? [...list, entry] : [...list.slice(0, at), entry, ...list.slice(at)];
 }
 
 type Target<T> = Type<T> | string;

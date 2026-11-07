@@ -121,6 +121,7 @@ export function createDomRenderer(options: DomRendererOptions = {}): DomRenderer
       return (typeof root === "function" ? root() : root) ?? doc().body;
     },
 
+    compare: (a, b) => ((a as Node).compareDocumentPosition(b as Node) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : (a as Node).compareDocumentPosition(b as Node) & Node.DOCUMENT_POSITION_PRECEDING ? 1 : 0),
     remove: (node) => (node as ChildNode).remove(),
 
     listen(node, name, handler) {

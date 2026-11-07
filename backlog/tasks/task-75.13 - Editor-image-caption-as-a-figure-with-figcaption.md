@@ -1,9 +1,10 @@
 ---
 id: TASK-75.13
 title: 'Editor: image caption as a figure with figcaption'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-07T15:21:00Z'
+updated_date: '2026-11-07T15:56:00Z'
 labels:
   - editor
 dependencies: []

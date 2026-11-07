@@ -162,3 +162,35 @@ describe("composition: queries", () => {
     expect(f.instance.wrap()!.content()).toEqual([]);
   });
 });
+
+describe("contentChildren order", () => {
+  it("lists a late-created match in document order, not creation order", async () => {
+    class Tabs {
+      static meta = { selector: "app-tabs", template: html`<slot></slot>` };
+      items = contentChildren(Item);
+      ids = computed(() => this.items().map((i) => i.id()));
+    }
+    class Host {
+      static meta = {
+        selector: "app-host",
+        imports: [Tabs, Item],
+        template: html`<app-tabs><app-item [id]="1"></app-item>@if (on()) {<app-item [id]="2"></app-item>}<app-item [id]="3"></app-item>@for (n of list(); track n) {<app-item [id]="n"></app-item>}</app-tabs>`,
+      };
+      on = signal(false);
+      list = signal<number[]>([]);
+      tabs = viewChild(Tabs);
+    }
+    const f = mount(Host);
+    expect(f.instance.tabs()!.ids()).toEqual([1, 3]);
+    f.instance.on.set(true);
+    await f.flush();
+    expect(f.instance.tabs()!.ids()).toEqual([1, 2, 3]);
+    f.instance.list.set([4]);
+    await f.flush();
+    f.instance.on.set(false);
+    await f.flush();
+    f.instance.on.set(true);
+    await f.flush();
+    expect(f.instance.tabs()!.ids()).toEqual([1, 2, 3, 4]);
+  });
+});

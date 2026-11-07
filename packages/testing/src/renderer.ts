@@ -103,6 +103,21 @@ export function createTestRenderer(options: { url?: string } = {}): TestRenderer
       else parent.children.push(node);
       parents.set(node, parent);
     },
+    compare(a, b) {
+      const path = (n: TestNode) => {
+        const out: TestNode[] = [];
+        for (let p: TestNode | undefined = n; p; p = parents.get(p)) out.unshift(p);
+        return out;
+      };
+      const pa = path(a);
+      const pb = path(b);
+      if (pa[0] !== pb[0]) return 0;
+      let i = 0;
+      while (pa[i] && pa[i] === pb[i]) i++;
+      if (!pa[i] || !pb[i]) return pa[i] ? 1 : pb[i] ? -1 : 0;
+      const kids = pa[i - 1]!.children;
+      return kids.indexOf(pa[i]!) < kids.indexOf(pb[i]!) ? -1 : 1;
+    },
     remove: detach,
     listen(node, name, handler) {
       (node.listeners[name] ??= []).push(handler);
