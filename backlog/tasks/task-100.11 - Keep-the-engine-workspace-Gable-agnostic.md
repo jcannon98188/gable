@@ -1,10 +1,11 @@
 ---
 id: TASK-100.11
 title: Keep the engine workspace Gable-agnostic
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-08T23:06:00Z'
-updated_date: '2026-11-08T23:07:00Z'
+updated_date: '2026-11-08T23:11:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -30,3 +31,13 @@ The Gable JS engine (native/engine, TASK-100) is planned to become its own relea
 - [ ] #3 Engine-crate names, docs and public identifiers do not assume Gable (Gable may appear in ADR context and history, not in APIs); a short note in docs/js-engine-spec.md records the boundary rule for M7 to M9
 - [ ] #4 The rule is recorded as an ADR in docs/adr
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Boundary test in the engine workspace (gable-js-test262 tests/boundary.rs, the workspace tooling crate): via cargo metadata, every path package in the resolved graph lives under native/engine and is a workspace member; no dependency on a Gable framework crate (gable-designer, @gable packages). Red first by asserting against the current graph, then a vocabulary scan of crate sources and manifests for Gable framework terms (Host runtime, Renderer, @gable/, gable-ui, Gable Native, designer, template interpreter, gable:// scheme).
+2. Fix what the scan finds: crate docs say 'embedder'/'host' instead of Host runtime and Gable error handler; QuickJS class GableHostObject -> HostObject; <gable-root> -> <root>; conformance kit test:// scheme instead of gable://.
+3. Standalone check: scripts/check-standalone.mjs (Node) copies native/engine (excluding target, test262) to a temp dir and runs cargo build/test --workspace --locked there; run it locally.
+4. CI: native-engine.yml job 'standalone' that copies native/engine to RUNNER_TEMP and builds and tests there.
+5. ADR 0016 recording the boundary rule (the gable- prefix is the engine's working name; the one rename happens with the name decision in TASK-100.12); short note in docs/js-engine-spec.md section 10 for M7-M9.
+<!-- SECTION:PLAN:END -->

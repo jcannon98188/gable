@@ -111,6 +111,8 @@ A Cargo workspace under `native/engine/` (the host runtime lives beside it under
 | `gable-js-test262` | The test262 runner, harness glue and exclusions file handling. |
 | `gable-engine-quickjs` | The interim adapter (may live in the host-runtime effort; its conformance-kit pass is an M0 deliverable). |
 
+**Boundary rule for M7 to M9 (ADR 0016).** The workspace stands alone so it can later move to its own repository (TASK-100.12). No engine crate depends on a Gable crate, package or file outside `native/engine`; `gable-engine-api` is the only surface shared with Gable, and Gable-specific adaptation (Renderer handles, the error handler, HMR policy, host globals) lives on Gable's side of the `Host` trait. Engine docs and public identifiers speak of the host or the embedder, not Gable's framework vocabulary; the `gable` prefix is the engine's working name, renamed once when the standalone name is decided. `crates/gable-js-test262/tests/boundary.rs` and the `standalone` CI job (which builds and tests an export of `native/engine` alone) enforce it.
+
 Crate boundaries may be adjusted when implementation shows a better split; record the change in an ADR. `unsafe` is confined as in section 5. Minor implementation choices (number formatting and parsing algorithms, Date parsing, BigInt arithmetic, hashing, allocator details, the exact bytecode instruction set) belong to the implementing agent: choose, and record each non-obvious choice as a short ADR in `docs/adr/`.
 
 ## 11. Conformance gate and switch-over
