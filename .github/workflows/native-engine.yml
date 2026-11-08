@@ -33,3 +33,73 @@ jobs:
         run: cargo run --release -p gable-js-test262 --bin test262 -- run --engine quickjs
       - name: test262 parse-only pass of gable-js-parser (includes intl402)
         run: cargo run --release -p gable-js-test262 --bin test262 -- run --engine parse --include-intl402
+      - name: test262 against the Gable engine baseline
+        run: cargo run --release -p gable-js-test262 --bin test262 -- run --engine gable
+
+  gc-stress:
+    # Every interpreter safe point collects (GABLE_GC_STRESS=1) in the unit
+    # tests; a test262 slice runs with a collection every 16 safe points.
+    # Finds missing roots, the one class of GC bug the arena design admits
+    # (ADR 0009).
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: native/engine
+    env:
+      GABLE_GC_STRESS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: native/engine
+      - run: cargo test --locked -p gable-js-vm -p gable-js-compiler
+      - name: Cache test262 at the pinned commit
+        uses: actions/cache@v4
+        with:
+          path: native/engine/test262
+          key: test262-${{ hashFiles('native/engine/crates/gable-js-test262/PIN') }}
+      - run: cargo run --release -p gable-js-test262 --bin test262 -- fetch
+      - name: test262 language slice under GC stress
+        run: GABLE_GC_STRESS=16 cargo run --release -p gable-js-test262 --bin test262 -- run --engine gable --filter test/language/statements/class --filter test/language/expressions/assignment --filter test/language/statements/for-of --timeout-ms 60000
+
+  miri:
+    # The VM has no unsafe code; Miri checks the dependencies we lean on
+    # (hashbrown, indexmap) and the arena discipline under its stricter
+    # aliasing and uninitialised-memory rules. Only the collector tests run:
+    # the full engine under Miri is too slow.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: native/engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: miri
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: native/engine
+      - run: cargo miri setup
+      - run: cargo miri test --locked -p gable-js-vm --test gc
+        env:
+          MIRIFLAGS: -Zmiri-disable-isolation
+
+  sanitizers:
+    # AddressSanitizer over the collector tests.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: native/engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: native/engine
+      - run: cargo test --locked -Zbuild-std --target x86_64-unknown-linux-gnu -p gable-js-vm --test gc
+        env:
+          RUSTFLAGS: -Zsanitizer=address
+          RUSTDOCFLAGS: -Zsanitizer=address
