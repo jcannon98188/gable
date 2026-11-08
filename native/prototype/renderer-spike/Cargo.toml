@@ -1,0 +1,10 @@
+# PROTOTYPE (TASK-99.22): throwaway renderer-stack spike. Not production code.
+[workspace]
+resolver = "2"
+members = ["spike", "stylo-probe"]
+
+[profile.release]
+opt-level = 3
+debug = false
+lto = "thin"
+codegen-units = 16
