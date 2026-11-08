@@ -144,7 +144,7 @@ pub fn main_scene(scale: f32) -> Builder {
     let title = tree.new_leaf(Style { flex_grow: 1.0, ..Default::default() }).unwrap();
     let header = tree
         .new_with_children(
-            Style { display: Display::Flex, size: Size { width: percent(1.0), height: length(64.0) }, align_items: Some(AlignItems::Center), gap: Size { width: length(12.0), height: length(0.0) }, padding: Rect { left: length(16.0), right: length(16.0), top: length(0.0), bottom: length(0.0) }, ..Default::default() },
+            Style { display: Display::Flex, size: Size { width: percent(1.0), height: length(64.0) }, align_items: AlignItems::CENTER, gap: Size { width: length(12.0), height: length(0.0) }, padding: Rect { left: length(16.0), right: length(16.0), top: length(0.0), bottom: length(0.0) }, ..Default::default() },
             &[vec![title], chips.clone()].concat(),
         )
         .unwrap();
@@ -181,7 +181,7 @@ pub fn main_scene(scale: f32) -> Builder {
         )
         .unwrap();
     let card3d = tree.new_leaf(Style { size: Size { width: length(300.0), height: length(420.0) }, ..Default::default() }).unwrap();
-    let right = tree.new_with_children(Style { display: Display::Flex, justify_content: Some(JustifyContent::Center), align_items: Some(AlignItems::Center), size: Size { width: length(340.0), height: auto() }, ..Default::default() }, &[card3d]).unwrap();
+    let right = tree.new_with_children(Style { display: Display::Flex, justify_content: JustifyContent::CENTER, align_items: AlignItems::CENTER, size: Size { width: length(340.0), height: auto() }, ..Default::default() }, &[card3d]).unwrap();
     let body = tree.new_with_children(Style { display: Display::Flex, flex_grow: 1.0, gap: Size { width: length(16.0), height: length(0.0) }, ..Default::default() }, &[left, stage, right]).unwrap();
     let root = tree
         .new_with_children(

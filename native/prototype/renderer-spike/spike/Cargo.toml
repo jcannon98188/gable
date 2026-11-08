@@ -5,6 +5,19 @@ edition = "2021"
 publish = false
 description = "PROTOTYPE (TASK-99.22): throwaway renderer-stack spike"
 
+[lib]
+name = "gable_renderer_spike"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "gable-renderer-spike"
+path = "src/main.rs"
+
+[target.'cfg(target_os = "android")'.dependencies]
+winit = { version = "0.31.0-beta.4", features = ["android-game-activity"] }
+android_logger = "0.15"
+log = "0.4"
+
 [dependencies]
 wgpu = "30.0.1"
 winit = "0.31.0-beta.4"

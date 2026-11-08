@@ -4,3 +4,4 @@ version = "0.0.0"
 edition = "2021"
 publish = false
 [dependencies]
+stylo = "0.23.0"

@@ -15,6 +15,7 @@ pub struct Gpu {
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
     pub info: wgpu::AdapterInfo,
+    pub adapter: wgpu::Adapter,
 }
 
 pub async fn init_gpu(compatible: Option<&wgpu::Surface<'_>>, instance: &wgpu::Instance) -> Gpu {
@@ -36,7 +37,7 @@ pub async fn init_gpu(compatible: Option<&wgpu::Surface<'_>>, instance: &wgpu::I
         })
         .await
         .expect("no device");
-    Gpu { device, queue, info }
+    Gpu { device, queue, info, adapter }
 }
 
 pub fn readback_rgba(device: &wgpu::Device, queue: &wgpu::Queue, mut enc: wgpu::CommandEncoder, tex: &wgpu::Texture, w: u32, h: u32) -> Vec<u8> {
@@ -66,9 +67,9 @@ pub fn readback_rgba(device: &wgpu::Device, queue: &wgpu::Queue, mut enc: wgpu::
     out
 }
 
-struct Tex {
-    tex: wgpu::Texture,
-    view: wgpu::TextureView,
+pub struct Tex {
+    pub tex: wgpu::Texture,
+    pub view: wgpu::TextureView,
 }
 struct AtlasEntry {
     x: u32,
