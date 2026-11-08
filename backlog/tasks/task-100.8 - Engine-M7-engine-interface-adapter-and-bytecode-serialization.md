@@ -4,10 +4,12 @@ title: 'Engine M7: engine-interface adapter and bytecode serialization'
 status: To Do
 assignee: []
 created_date: '2026-11-07T22:36:00Z'
+updated_date: '2026-11-08T23:07:00Z'
 labels:
   - ready-for-agent
 dependencies:
   - TASK-100.7
+  - TASK-100.11
 documentation:
   - docs/js-engine-spec.md
 parent_task_id: TASK-100
