@@ -24,7 +24,7 @@ fn write_png(path: &str, w: u32, h: u32, rgba_premul: &[u8]) {
 }
 
 fn gpu_headless() -> Arc<Gpu> {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle().with_env());
     Arc::new(pollster::block_on(init_gpu(None, &instance)))
 }
 
@@ -136,6 +136,41 @@ fn main() {
             };
             println!("aligned(0,0): mean_abs_diff={m0:.3}/255 pct_pixels_gt32={p0:.2}%");
             println!("best offset dx={} dy={}: mean_abs_diff={:.3}/255 pct_pixels_gt32={:.2}%", best.1, best.2, best.0, best.3);
+        }
+        "sbs" => {
+            // sbs <gable.png> <chromium.png> <out.png> [crop_h]: top = Gable, bottom = Chromium, plus abs-diff strip
+            let load = |p: &str| {
+                let d = png::Decoder::new(std::io::BufReader::new(std::fs::File::open(p).unwrap()));
+                let mut r = d.read_info().unwrap();
+                let mut buf = vec![0; r.output_buffer_size()];
+                let info = r.next_frame(&mut buf).unwrap();
+                let ch = info.color_type.samples();
+                let mut rgba = Vec::new();
+                for px in buf[..info.buffer_size()].chunks_exact(ch) {
+                    rgba.extend_from_slice(&[px[0], px[1], px[2], 255]);
+                }
+                (info.width, info.height, rgba)
+            };
+            let (w, h, a) = load(&args[2]);
+            let (_, _, b) = load(&args[3]);
+            let ch: u32 = args.get(5).and_then(|s| s.parse().ok()).unwrap_or(h).min(h);
+            let mut out = vec![200u8; (w * (ch * 3 + 8) * 4) as usize];
+            for y in 0..ch {
+                for x in 0..w {
+                    let i = ((y * w + x) * 4) as usize;
+                    let o0 = ((y * w + x) * 4) as usize;
+                    let o1 = (((y + ch + 4) * w + x) * 4) as usize;
+                    let o2 = (((y + 2 * ch + 8) * w + x) * 4) as usize;
+                    out[o0..o0 + 4].copy_from_slice(&a[i..i + 4]);
+                    out[o1..o1 + 4].copy_from_slice(&b[i..i + 4]);
+                    for c in 0..3 {
+                        let d = (a[i + c] as i32 - b[i + c] as i32).unsigned_abs().min(255) as u8;
+                        out[o2 + c] = 255 - d; // darker = bigger difference
+                    }
+                    out[o2 + 3] = 255;
+                }
+            }
+            write_png(&args[4], w, ch * 3 + 8, &out);
         }
         "hit" => hit_table(),
         "paths" => paths_compare(&args.get(2).cloned().unwrap_or(".".into())),

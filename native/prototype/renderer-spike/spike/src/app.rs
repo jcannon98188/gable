@@ -25,11 +25,11 @@ struct U { rect: vec4<f32> }  // x,y,w,h in NDC-ish: (x0,y0,x1,y1) in clip space
 @group(1) @binding(0) var<uniform> u: U;
 struct VO { @builtin(position) p: vec4<f32>, @location(0) uv: vec2<f32> }
 @vertex fn vs(@builtin(vertex_index) i: u32) -> VO {
-    var c = array<vec2<f32>, 3>(vec2(0.0, 0.0), vec2(2.0, 0.0), vec2(0.0, 2.0));
+    var c = array<vec2<f32>, 6>(vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(0.0, 1.0), vec2(0.0, 1.0), vec2(1.0, 0.0), vec2(1.0, 1.0));
     let q = c[i];
     var o: VO;
     let x = mix(u.rect.x, u.rect.z, q.x);
-    let y = mix(u.rect.w, u.rect.y, q.y);
+    let y = mix(u.rect.y, u.rect.w, q.y);
     o.p = vec4(x, y, 0.0, 1.0);
     o.uv = q;
     return o;
@@ -63,7 +63,9 @@ pub struct App {
 
 impl App {
     fn new(bench_frames: usize, exit_when_done: bool) -> Self {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        #[cfg(target_os = "android")]
+        if let Ok(b) = std::fs::read_to_string("/data/local/tmp/gable_backend") { std::env::set_var("WGPU_BACKEND", b.trim()); }
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle().with_env());
         Self { instance, state: None, bench_frames, exit_when_done }
     }
 }
@@ -180,7 +182,7 @@ impl State {
             p.set_pipeline(&self.blit);
             p.set_bind_group(0, &self.blit_bg, &[]);
             p.set_bind_group(1, &self.blit_ubg, &[]);
-            p.draw(0..3, 0..1);
+            p.draw(0..6, 0..1);
         }
         self.gpu.queue.submit([enc.finish()]);
         self.window.pre_present_notify();

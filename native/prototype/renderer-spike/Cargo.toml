@@ -1,7 +1,7 @@
 # PROTOTYPE (TASK-99.22): throwaway renderer-stack spike. Not production code.
 [workspace]
 resolver = "2"
-members = ["spike", "stylo-probe"]
+members = ["spike", "stylo-probe", "ax-probe"]
 
 [profile.release]
 opt-level = 3

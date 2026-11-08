@@ -1,0 +1,10 @@
+[package]
+name = "ax-probe"
+version = "0.0.0"
+edition = "2021"
+publish = false
+[dependencies]
+winit = "0.31.0-beta.4"
+accesskit = "0.25"
+accesskit_windows = "0.35"
+raw-window-handle = "0.6"
