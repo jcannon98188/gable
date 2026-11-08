@@ -31,3 +31,5 @@ jobs:
       - run: cargo run --release -p gable-js-test262 --bin test262 -- fetch
       - name: test262 against the QuickJS-NG baseline
         run: cargo run --release -p gable-js-test262 --bin test262 -- run --engine quickjs
+      - name: test262 parse-only pass of gable-js-parser (includes intl402)
+        run: cargo run --release -p gable-js-test262 --bin test262 -- run --engine parse --include-intl402

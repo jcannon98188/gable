@@ -1,11 +1,11 @@
 ---
 id: TASK-100.2
 title: 'Engine M1: parser and AST'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-07T22:36:00Z'
-updated_date: '2026-11-07T23:26:00Z'
+updated_date: '2026-11-08T00:07:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -24,10 +24,10 @@ The parser is the first piece of the engine and has no runtime dependencies; tes
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every in-scope parse-positive test262 test parses
-- [ ] #2 Every in-scope parse-negative (early error) test is rejected with a located error
-- [ ] #3 Annex B syntax (except IsHTMLDDA) is covered
-- [ ] #4 The AST carries the source positions the debugger and source maps need
+- [x] #1 Every in-scope parse-positive test262 test parses
+- [x] #2 Every in-scope parse-negative (early error) test is rejected with a located error
+- [x] #3 Annex B syntax (except IsHTMLDDA) is covered
+- [x] #4 The AST carries the source positions the debugger and source maps need
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -41,3 +41,15 @@ The parser is the first piece of the engine and has no runtime dependencies; tes
 6. test262 runner gains a parse-only engine mode (--engine parse): positive tests must parse, negative phase=parse must fail with SyntaxError, harness files must parse; strict double run applies
 7. Unit tests per parser module plus test262 language/ built-ins/ annexB/ parse pass under the parse engine; failures listed with reasons or fixed
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented gable-js-parser (lexer, span/LineTable, ESTree-shaped AST, recursive-descent parser with cover grammars, scope stack and private-name environments for early errors, module export checks) and gable_js_regex::syntax::validate (ES2025 pattern grammar incl. Annex B, v-flag class sets, duplicate named groups, modifiers; property names checked through regress tables). The test262 runner gained --engine parse (parse-only: positive tests must parse in sloppy and strict, negative phase=parse must fail, harness must parse). Result at the pinned commit: 43488/43488 pass including intl402, no exclusions, baselines/parse.json empty. CI runs the parse pass after the QuickJS baseline. Decisions recorded in docs/adr/0007. 12 parser unit tests + 6 regex syntax tests.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Parser and AST milestone complete. gable-js-parser parses every in-scope test262 test (language, built-ins, annexB, intl402 harness-and-tests) and rejects every parse-phase negative test with a located SyntaxError; Annex B syntax covered except IsHTMLDDA (runtime concept); every AST node carries a byte-offset Span with LineTable for line/UTF-16 column. Regex literals validated syntax-only (ADR 0007). Runner mode --engine parse added, with empty baseline and CI step.
+<!-- SECTION:FINAL_SUMMARY:END -->
