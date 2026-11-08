@@ -25,8 +25,8 @@ struct U { rect: vec4<f32> }  // x,y,w,h in NDC-ish: (x0,y0,x1,y1) in clip space
 @group(1) @binding(0) var<uniform> u: U;
 struct VO { @builtin(position) p: vec4<f32>, @location(0) uv: vec2<f32> }
 @vertex fn vs(@builtin(vertex_index) i: u32) -> VO {
-    var c = array<vec2<f32>, 6>(vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(0.0, 1.0), vec2(0.0, 1.0), vec2(1.0, 0.0), vec2(1.0, 1.0));
-    let q = c[i];
+    // No local const array indexed by vertex_index: SwiftShader GLES 3.0 draws nothing for it (TASK-99.24).
+    let q = vec2<f32>(select(0.0, 1.0, i == 1u || i == 4u || i == 5u), select(0.0, 1.0, i == 2u || i == 3u || i == 5u));
     var o: VO;
     let x = mix(u.rect.x, u.rect.z, q.x);
     let y = mix(u.rect.y, u.rect.w, q.y);
