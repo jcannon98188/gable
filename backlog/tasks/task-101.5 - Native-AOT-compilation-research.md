@@ -4,6 +4,7 @@ title: Native AOT compilation research
 status: To Do
 assignee: []
 created_date: '2026-11-09T01:52:00Z'
+updated_date: '2026-11-09T02:32:00Z'
 labels:
   - needs-triage
 dependencies:
@@ -23,3 +24,9 @@ Research track: ahead-of-time compilation of JavaScript to native code at build 
 - [ ] #1 A research note in docs/ compares the options with prior art, estimates cost and payoff, and recommends go, no-go or defer
 - [ ] #2 If go, a prototype scope and follow-up tasks are written
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Model assignment (maintainer, 2026-11-08): Opus.
+<!-- SECTION:NOTES:END -->

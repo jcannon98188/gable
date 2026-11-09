@@ -4,6 +4,7 @@ title: JIT-readiness constraints and ADR
 status: To Do
 assignee: []
 created_date: '2026-11-09T01:51:00Z'
+updated_date: '2026-11-09T02:32:00Z'
 labels:
   - needs-triage
 dependencies:
@@ -23,3 +24,9 @@ Record the constraints that keep a later JIT possible, as an ADR plus a short se
 - [ ] #1 An ADR in docs/adr records the JIT-readiness constraints and the tiering and deoptimization strategy, including the optional-feature decision and the platform story (macOS entitlement, iOS, locked-down Android, WASM)
 - [ ] #2 The spec has a short section listing the constraints; every existing engine design that violates one is listed with a proposed fix, created as backlog tasks where worth doing
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Model assignment (maintainer, 2026-11-08): Opus.
+<!-- SECTION:NOTES:END -->
