@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-07T22:36:00Z'
-updated_date: '2026-11-07T22:41:00Z'
+updated_date: '2026-11-09T00:23:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -25,5 +25,5 @@ Gable Native owns its JavaScript engine in Rust (ADR 0004) so hot update, host o
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Every milestone task M0 to M9 is Done
-- [ ] #2 The switch-over rule in section 11 of docs/js-engine-spec.md is evaluated and reported to the maintainer
+- [ ] #2 The switch-over rule in section 11 of docs/js-engine-spec.md is evaluated and reported; the engine is the default once its conditions 1, 2 and 4 hold
 <!-- AC:END -->
