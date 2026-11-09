@@ -1,7 +1,7 @@
 //! The harness runtime seen from outside: load a module file into a fresh
 //! engine, run the event loop to idle, and read back what it printed. Every
 //! test runs on both engines, because the harness must behave the same on
-//! the interim engine and the Gable engine.
+//! the interim engine and the AgniJS engine.
 
 use gable_engine_harness::{EngineChoice, Options, Runtime};
 use std::path::PathBuf;
@@ -29,9 +29,9 @@ fn both(name: &str, source: &str, expected: &[&str]) {
 }
 
 #[test]
-fn default_engine_is_the_gable_engine_and_quickjs_stays_selectable() {
-    assert_eq!(EngineChoice::default(), EngineChoice::Gable);
-    assert_eq!(EngineChoice::parse("gable"), Some(EngineChoice::Gable));
+fn default_engine_is_the_agnijs_engine_and_quickjs_stays_selectable() {
+    assert_eq!(EngineChoice::default(), EngineChoice::Agnijs);
+    assert_eq!(EngineChoice::parse("agnijs"), Some(EngineChoice::Agnijs));
     assert_eq!(EngineChoice::parse("quickjs"), Some(EngineChoice::QuickJs));
     assert_eq!(EngineChoice::parse("v8"), None);
 }

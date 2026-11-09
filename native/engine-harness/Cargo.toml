@@ -5,19 +5,19 @@ edition = "2021"
 license = "MIT"
 rust-version = "1.85"
 publish = false
-description = "Runs Gable's own test suites and benchmarks inside an embedded JS engine (the Gable engine or the interim QuickJS-NG engine)"
+description = "Runs Gable's own test suites and benchmarks inside an embedded JS engine (the AgniJS engine or the interim QuickJS-NG engine)"
 
-# Gable's side of the engine boundary (ADR 0016): this crate depends on the
-# engine workspace through `gable-engine-api` and the two engine adapters,
-# and nothing under native/engine depends on it. It has its own workspace and
-# lockfile so the engine workspace stays standalone.
+# Gable's side of the engine boundary (ADR 0016, ADR 0018): the engine is the
+# AgniJS repository, a git dependency pinned by revision (and by Cargo.lock).
+# Moving the pin is an explicit commit. This crate has its own workspace and
+# lockfile.
 [workspace]
 
 [dependencies]
-gable-engine-api = { path = "../engine/crates/gable-engine-api" }
-gable-js-vm = { path = "../engine/crates/gable-js-vm" }
-gable-engine-quickjs = { path = "../engine/crates/gable-engine-quickjs" }
-gable-js-bench = { path = "../engine/crates/gable-js-bench" }
+agnijs-engine-api = { git = "https://github.com/agnijs-rs/agnijs", rev = "fa65c0801aadd61475aa62a52a01bb34314e3255" }
+agnijs-js-vm = { git = "https://github.com/agnijs-rs/agnijs", rev = "fa65c0801aadd61475aa62a52a01bb34314e3255" }
+agnijs-engine-quickjs = { git = "https://github.com/agnijs-rs/agnijs", rev = "fa65c0801aadd61475aa62a52a01bb34314e3255" }
+agnijs-js-bench = { git = "https://github.com/agnijs-rs/agnijs", rev = "fa65c0801aadd61475aa62a52a01bb34314e3255" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 clap = { version = "4", features = ["derive"] }

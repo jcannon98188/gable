@@ -1,6 +1,9 @@
 name: Engine suites
 # Gable's own test suites inside the embedded engines (TASK-100.10,
-# js-engine-spec section 11 condition 2). Every in-scope test file is
+# js-engine-spec section 11 condition 2; the spec lives in the agnijs
+# repository). The engine itself is a git dependency of native/engine-harness,
+# pinned by revision in its Cargo.lock; engine CI (test262, GC stress, Miri,
+# sanitizers) runs in the agnijs repository. Every in-scope test file is
 # bundled and run in a fresh engine by native/engine-harness; the list of
 # known failures is native/engine-harness/js/suites-expected.json.
 on:
@@ -35,8 +38,8 @@ jobs:
         working-directory: native/engine-harness
       - name: In-scope suites under Node (checks the vitest shim)
         run: node native/engine-harness/js/run-suites.mjs --engine node
-      - name: In-scope suites under the Gable engine (gates the default engine)
-        run: node native/engine-harness/js/run-suites.mjs --engine gable --json engine-suites-gable.json
+      - name: In-scope suites under the AgniJS engine (gates the default engine)
+        run: node native/engine-harness/js/run-suites.mjs --engine agnijs --json engine-suites-agnijs.json
       - name: In-scope suites under the interim engine (QuickJS-NG, selectable for one release)
         run: node native/engine-harness/js/run-suites.mjs --engine quickjs --json engine-suites-quickjs.json
       - uses: actions/upload-artifact@v4

@@ -1,30 +1,32 @@
-# Gable engine switch-over report
+# AgniJS engine switch-over report
 
-This report is the M9 milestone (TASK-100.10). It checks the Gable engine against the switch-over conditions in [js-engine-spec.md section 11](js-engine-spec.md#11-conformance-gate-and-switch-over). Read it as the baseline the engine starts from after the switch: what passes, what is slow, and what is still open.
+> The engine moved to its own repository, [agnijs-rs/agnijs](https://github.com/agnijs-rs/agnijs), after this report was written (TASK-100.12, ADR 0018). It was called the AgniJS engine then and its crates `gable-*`; they are now `agnijs-*`. The spec, the engine ADRs and the performance findings live there. This report stays here as the evidence for the switch-over decision, and the numbers below are as measured at M9.
+
+This report is the M9 milestone (TASK-100.10). It checks the AgniJS engine against the switch-over conditions in [js-engine-spec.md section 11](https://github.com/agnijs-rs/agnijs/blob/main/docs/js-engine-spec.md#11-conformance-gate-and-switch-over). Read it as the baseline the engine starts from after the switch: what passes, what is slow, and what is still open.
 
 ## Verdict
 
 | # | Condition | Kind | Status |
 | --- | --- | --- | --- |
 | 1 | Every included test262 test passes except documented exclusions | gate | **holds** |
-| 2 | Gable's own test suites pass under the Gable engine | gate | **holds** (two V8 wall-clock budgets are counted as condition 3, see below) |
-| 3 | Gable benchmark set exists, the interim baseline is recorded, the gap is reported | reported | **reported**: on Gable's workloads the Gable engine is 1.6x to 4.2x slower than QuickJS-NG (geomean 2.89x), and its peak memory is 1.4x to 18x higher |
+| 2 | Gable's own test suites pass under the AgniJS engine | gate | **holds** (two V8 wall-clock budgets are counted as condition 3, see below) |
+| 3 | Gable benchmark set exists, the interim baseline is recorded, the gap is reported | reported | **reported**: on Gable's workloads the AgniJS engine is 1.6x to 4.2x slower than QuickJS-NG (geomean 2.89x), and its peak memory is 1.4x to 18x higher |
 | 4 | The debugger covers the first version (section 9) | gate | **holds** (M8, TASK-100.9) |
 | 5 | The interim engine stays selectable for one release | follows the switch | **in place** |
 
-Conditions 1, 2 and 4 hold, so the Gable engine is now the default and no further sign-off is needed. `EngineChoice::Gable` is the default in `native/engine-harness/src/engine_choice.rs`, and `--engine quickjs` still selects the interim QuickJS-NG adapter. Once the release after the switch has shipped, remove the `QuickJs` variant and the `gable-engine-quickjs` dependency.
+Conditions 1, 2 and 4 hold, so the AgniJS engine is now the default and no further sign-off is needed. `EngineChoice::Agnijs` is the default in `native/engine-harness/src/engine_choice.rs`, and `--engine quickjs` still selects the interim QuickJS-NG adapter. Once the release after the switch has shipped, remove the `QuickJs` variant and the `gable-engine-quickjs` dependency.
 
 The harness in `native/engine-harness` is the only Gable-side embedder today, so that is where the default lives. A future Gable Native runtime should get its engine through `EngineChoice` or copy its default.
 
 ## Condition 1: test262
 
-The test262 runner (`gable-js-test262`) runs test262 at the pinned commit `e4fbf577` with the ES2025 feature cut from `crates/gable-js-test262/post-es2025-features.txt`. It runs every test in both strict and sloppy mode where the test's flags allow.
+The test262 runner (`agnijs-js-test262`) runs test262 at the pinned commit `e4fbf577` with the ES2025 feature cut from `crates/agnijs-js-test262/post-es2025-features.txt`. It runs every test in both strict and sloppy mode where the test's flags allow.
 
 | run | tests | passed | failed | skipped (excluded or post-ES2025) |
 | --- | ---: | ---: | ---: | ---: |
-| `--engine gable` (built-ins, language, annexB, harness) | 42225 | 42225 | 0 | 6685 |
-| `--engine gable --precompile` (through bytecode serialization) | 42225 | 42225 | 0 | 6685 |
-| `--engine gable --only-intl402` (reported separately) | 981 | 981 | 0 | 2412 |
+| `--engine agnijs` (built-ins, language, annexB, harness) | 42225 | 42225 | 0 | 6685 |
+| `--engine agnijs --precompile` (through bytecode serialization) | 42225 | 42225 | 0 | 6685 |
+| `--engine agnijs --only-intl402` (reported separately) | 981 | 981 | 0 | 2412 |
 
 The first full run, done while other heavy jobs were running, reported one timeout: `built-ins/decodeURIComponent/S15.1.3.2_A2.5_T1.js`, a long loop. It passed when run on its own, so it is load-sensitive rather than failing.
 
@@ -42,7 +44,7 @@ The spec's target is zero exceptions. The parser follow-ups and the ICU4X gaps a
 
 ### How the suites run in the engine
 
-`native/engine-harness` is a small Gable-side embedder. It is outside `native/engine` so the engine workspace stays Gable-agnostic (ADR 0016). For each in-scope test file:
+`native/engine-harness` is a small Gable-side embedder. It lives in the Gable repository, outside the engine, so the engine stays Gable-agnostic ([ADR 0016](https://github.com/agnijs-rs/agnijs/blob/main/docs/adr/0016-the-engine-workspace-stands-alone.md)). For each in-scope test file:
 
 1. `js/run-suites.mjs` bundles the file with rolldown into one ESM file. The bundle uses the aliases from the root `vitest.config.ts`, `vitest` resolves to a vitest-compatible shim (`js/vitest-shim.js`), and `process.env.NODE_ENV` is defined as `"test"` the way a bundler does for an app build.
 2. `gable-harness` loads the bundle into a fresh engine through `Host::load_module` and runs a jobs-then-timers event loop. It supplies timers, `performance.now` and a clock that skips idle waits.
@@ -83,10 +85,10 @@ CI runs this in `.github/workflows/engine-suites.yml` on Ubuntu and Windows. The
 | Gable engine | 760 | 758 | 2 | both failures are V8 wall-clock budgets |
 | QuickJS-NG (interim) | 760 | 749 to 750 | 10 to 11 | 9 need Intl, which the interim adapter is built without; the same 2 budgets (the yjs one passes on some runs) |
 
-The two failures under the Gable engine are assertions on wall-clock time, calibrated for V8:
+The two failures under the AgniJS engine are assertions on wall-clock time, calibrated for V8:
 
-- `editor/src/yjs/perf.test.ts`, "stays fast per change in a 10000-paragraph document": the budget is 25 ms per change. V8 takes about 3 ms; the Gable engine takes about 34 ms.
-- `ui/src/highlight.test.ts`, "is linear on large and adversarial input": the budget is 2 s per 100k to 400k character input. The Gable engine takes about 3.5 s in the worst case, and the time grows linearly with input size. Before this milestone it took 97 s, because of two quadratic engine bugs (see below).
+- `editor/src/yjs/perf.test.ts`, "stays fast per change in a 10000-paragraph document": the budget is 25 ms per change. V8 takes about 3 ms; the AgniJS engine takes about 34 ms.
+- `ui/src/highlight.test.ts`, "is linear on large and adversarial input": the budget is 2 s per 100k to 400k character input. The AgniJS engine takes about 3.5 s in the worst case, and the time grows linearly with input size. Before this milestone it took 97 s, because of two quadratic engine bugs (see below).
 
 Both measure speed, not behaviour. Section 11 puts speed under condition 3, which is reported rather than gated, so `suites-expected.json` marks these two tests as `timing:` entries that may pass or fail. Every other listed failure is strict: if a listed test starts passing, the run reports it as FIXED and fails until the list is updated. **Decision for the maintainer:** if you would rather treat these budgets as correctness, condition 2 does not hold until the engine is roughly 1.4x (yjs) and 1.75x (highlight) faster on these paths.
 
@@ -144,11 +146,11 @@ Results file: `native/engine-harness/bench/baseline.json`. Machine: Windows 11 P
 | list-diff | 1280.2 | 779.0 | 1.64x | 40.6 | 237.9 | 41.3 |
 | ui-bundle-startup | 145.3 | 69.1 | 2.10x | - | 44.3 | 19.6 |
 
-Geometric mean of Gable / QuickJS-NG over the nine benchmarks: **2.89x** (the Gable engine is slower).
+Geometric mean of Gable / QuickJS-NG over the nine benchmarks: **2.89x** (the AgniJS engine is slower).
 
 ### Reading the gap
 
-- **Time.** The Gable engine is 1.6x to 4.2x slower than the interim engine on Gable's own workloads. The largest gaps are signal propagation and RxJS (3.1x to 4.2x). Both are dominated by small function calls, closures and property reads. That matches the TASK-100.13 micro-benchmarks (`native/engine/crates/gable-js-bench/baselines/README.md`, geomean 2.87x), where the interpreter core is the largest gap: `loop-array-index` 7.06x, `prop-polymorphic` 7.0x, `prop-monomorphic` 6.3x, `calls-recursive` 5.5x and `method-calls` 5.0x. Template work and list diffing are closer (1.6x to 2.7x) because more of their time is spent in built-ins and string work.
+- **Time.** The AgniJS engine is 1.6x to 4.2x slower than the interim engine on Gable's own workloads. The largest gaps are signal propagation and RxJS (3.1x to 4.2x). Both are dominated by small function calls, closures and property reads. That matches the TASK-100.13 micro-benchmarks (`native/engine/crates/gable-js-bench/baselines/README.md`, geomean 2.87x), where the interpreter core is the largest gap: `loop-array-index` 7.06x, `prop-polymorphic` 7.0x, `prop-monomorphic` 6.3x, `calls-recursive` 5.5x and `method-calls` 5.0x. Template work and list diffing are closer (1.6x to 2.7x) because more of their time is spent in built-ins and string work.
 - **Startup.** Loading the `@gable/ui` bundle takes 145 ms against 69 ms (2.1x). This is compile time; precompiled bytecode (M7) is not used in this measurement.
 - **Memory.** Peak memory is 1.4x to 18x higher. The collector is deferred while a native frame is on the stack, and every callback (a computed, an observer, an `Array.prototype` callback) runs as one. So a single long synchronous host call keeps all of its garbage until it returns. `rxjs-higher-order` peaks at 124 MiB against 6.7 MiB, and `list-diff` at 238 MiB against 41 MiB.
 - **Node** is 10x to 100x faster than either interpreter, as expected for a JIT. It is shown only to place the two interpreters, not as a target.
@@ -183,15 +185,15 @@ TASK-100.1 (M0: workspace, test262 runner and CI) and TASK-100.7 (M6: Intl) are 
 From the repository root, after `npm ci` and `cargo build --release` in `native/engine-harness`:
 
 ```sh
-node native/engine-harness/js/run-suites.mjs --engine gable           # condition 2
-node native/engine-harness/js/run-suites.mjs --engine gable --engine quickjs --engine node
+node native/engine-harness/js/run-suites.mjs --engine agnijs           # condition 2
+node native/engine-harness/js/run-suites.mjs --engine agnijs --engine quickjs --engine node
 node native/engine-harness/js/run-bench.mjs --out bench.json          # condition 3
 ```
 
-From `native/engine`:
+From the root of the agnijs repository (after `cargo run --release -p agnijs-js-test262 --bin test262 -- fetch`):
 
 ```sh
-cargo run --release -p gable-js-test262 --bin test262 -- run --engine gable                  # condition 1
-cargo run --release -p gable-js-test262 --bin test262 -- run --engine gable --precompile
-cargo run --release -p gable-js-test262 --bin test262 -- run --engine gable --only-intl402
+cargo run --release -p agnijs-js-test262 --bin test262 -- run --engine agnijs                  # condition 1
+cargo run --release -p agnijs-js-test262 --bin test262 -- run --engine agnijs --precompile
+cargo run --release -p agnijs-js-test262 --bin test262 -- run --engine agnijs --only-intl402
 ```

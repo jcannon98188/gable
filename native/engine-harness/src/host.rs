@@ -1,7 +1,7 @@
 //! The harness's `Host`: modules from disk, a skippable clock, console
 //! routing, rejection tracking and a wall-clock interrupt.
 
-use gable_engine_api::{ConsoleLevel, Engine, Host, ModuleSource, RealmId, RejectionEvent, Value};
+use agnijs_engine_api::{ConsoleLevel, Engine, Host, ModuleSource, RealmId, RejectionEvent, Value};
 use std::cell::{Cell, RefCell};
 use std::path::{Path, PathBuf};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
@@ -68,7 +68,7 @@ impl Host for HarnessHost {
         &self,
         referrer: Option<&str>,
         specifier: &str,
-        _attributes: &[gable_engine_api::ImportAttribute],
+        _attributes: &[agnijs_engine_api::ImportAttribute],
     ) -> Result<String, String> {
         let path = resolve_path(referrer, specifier);
         let path = std::fs::canonicalize(&path).map_err(|e| format!("cannot resolve {specifier}: {e}"))?;

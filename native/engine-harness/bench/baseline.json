@@ -10,12 +10,12 @@
   },
   "warmup": 2,
   "iterations": 10,
-  "geomean_gable_vs_quickjs": 2.89,
+  "geomean_agnijs_vs_quickjs": 2.89,
   "results": [
     {
       "name": "rxjs-operators",
       "engines": {
-        "gable": {
+        "agnijs": {
           "median_ms": 412.673,
           "min_ms": 406.774,
           "heap_mib": 0.89,
@@ -37,13 +37,13 @@
           "checksum": "827503"
         }
       },
-      "gable_vs_quickjs": 4.19,
-      "gable_vs_node": 87.26
+      "agnijs_vs_quickjs": 4.19,
+      "agnijs_vs_node": 87.26
     },
     {
       "name": "rxjs-higher-order",
       "engines": {
-        "gable": {
+        "agnijs": {
           "median_ms": 563.327,
           "min_ms": 557.788,
           "heap_mib": 84.88,
@@ -65,13 +65,13 @@
           "checksum": "999778"
         }
       },
-      "gable_vs_quickjs": 3.11,
-      "gable_vs_node": 94.08
+      "agnijs_vs_quickjs": 3.11,
+      "agnijs_vs_node": 94.08
     },
     {
       "name": "rxjs-subject-fanout",
       "engines": {
-        "gable": {
+        "agnijs": {
           "median_ms": 304.748,
           "min_ms": 301.986,
           "heap_mib": 22.37,
@@ -93,13 +93,13 @@
           "checksum": "899838"
         }
       },
-      "gable_vs_quickjs": 3.87,
-      "gable_vs_node": 85.39
+      "agnijs_vs_quickjs": 3.87,
+      "agnijs_vs_node": 85.39
     },
     {
       "name": "signal-churn",
       "engines": {
-        "gable": {
+        "agnijs": {
           "median_ms": 970.655,
           "min_ms": 956.889,
           "heap_mib": 5.74,
@@ -121,13 +121,13 @@
           "checksum": "165548"
         }
       },
-      "gable_vs_quickjs": 4.17,
-      "gable_vs_node": 34.38
+      "agnijs_vs_quickjs": 4.17,
+      "agnijs_vs_node": 34.38
     },
     {
       "name": "signal-create",
       "engines": {
-        "gable": {
+        "agnijs": {
           "median_ms": 188.809,
           "min_ms": 186.372,
           "heap_mib": 24.55,
@@ -149,13 +149,13 @@
           "checksum": "197422"
         }
       },
-      "gable_vs_quickjs": 2.9,
-      "gable_vs_node": 32.7
+      "agnijs_vs_quickjs": 2.9,
+      "agnijs_vs_node": 32.7
     },
     {
       "name": "template-mount",
       "engines": {
-        "gable": {
+        "agnijs": {
           "median_ms": 124.407,
           "min_ms": 123.178,
           "heap_mib": 10.49,
@@ -177,13 +177,13 @@
           "checksum": "200"
         }
       },
-      "gable_vs_quickjs": 2.42,
-      "gable_vs_node": 14.79
+      "agnijs_vs_quickjs": 2.42,
+      "agnijs_vs_node": 14.79
     },
     {
       "name": "template-update",
       "engines": {
-        "gable": {
+        "agnijs": {
           "median_ms": 77.85,
           "min_ms": 76.27,
           "heap_mib": 5.75,
@@ -205,13 +205,13 @@
           "checksum": "Card 199 (199)"
         }
       },
-      "gable_vs_quickjs": 2.73,
-      "gable_vs_node": 23.18
+      "agnijs_vs_quickjs": 2.73,
+      "agnijs_vs_node": 23.18
     },
     {
       "name": "list-diff",
       "engines": {
-        "gable": {
+        "agnijs": {
           "median_ms": 1280.174,
           "min_ms": 1271.03,
           "heap_mib": 28.37,
@@ -233,13 +233,13 @@
           "checksum": "1000"
         }
       },
-      "gable_vs_quickjs": 1.64,
-      "gable_vs_node": 31.53
+      "agnijs_vs_quickjs": 1.64,
+      "agnijs_vs_node": 31.53
     },
     {
       "name": "ui-bundle-startup",
       "engines": {
-        "gable": {
+        "agnijs": {
           "median_ms": 145.296,
           "min_ms": 143.073,
           "heap_mib": 6.4,
@@ -255,7 +255,7 @@
         }
       },
       "bundle_bytes": 1423523,
-      "gable_vs_quickjs": 2.1
+      "agnijs_vs_quickjs": 2.1
     }
   ]
 }

@@ -3,7 +3,7 @@
 use crate::engine_choice::EngineChoice;
 use crate::host::HarnessHost;
 use anyhow::{anyhow, bail, Result};
-use gable_engine_api::{CallContext, Engine, Error, PromiseState, PropertyKey, RealmId, Value};
+use agnijs_engine_api::{CallContext, Engine, Error, PromiseState, PropertyKey, RealmId, Value};
 use std::cell::RefCell;
 use std::path::Path;
 use std::rc::Rc;
@@ -104,7 +104,7 @@ impl Runtime {
         self.engine.as_mut()
     }
 
-    fn install_globals(&mut self) -> gable_engine_api::Result<()> {
+    fn install_globals(&mut self) -> agnijs_engine_api::Result<()> {
         let realm = self.realm;
         let global = self.engine.global_object(realm)?;
         for (name, repeat) in [("setTimeout", false), ("setInterval", true)] {
@@ -156,7 +156,7 @@ impl Runtime {
     /// The QuickJS-NG adapter reads the system clock for `Date` instead of
     /// `Host::now_ms` (an interim-engine limitation), so skipped idle time
     /// would not show in `Date.now()`. Wrap `Date` onto the host clock there.
-    fn bind_quickjs_date(&mut self, global: &Value) -> gable_engine_api::Result<()> {
+    fn bind_quickjs_date(&mut self, global: &Value) -> agnijs_engine_api::Result<()> {
         let realm = self.realm;
         let host = self.host.clone();
         let now = self.engine.new_function(realm, "now", Rc::new(move |_e: &mut dyn Engine, _ctx: CallContext| Ok(Value::Number(host.clock.epoch_ms()))))?;

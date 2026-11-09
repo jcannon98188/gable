@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // Gable-level benchmarks: the bench/*.bench.ts workloads plus @gable/ui
-// bundle startup, on the Gable engine, the interim engine (QuickJS-NG) and
+// bundle startup, on the AgniJS engine, the interim engine (QuickJS-NG) and
 // Node (for reference). Each (engine, benchmark) pair runs in its own
 // process so peak RSS belongs to that workload alone.
 //
 //   node native/engine-harness/js/run-bench.mjs [--iterations N] [--warmup N]
-//        [--engine gable|quickjs|node]... [--filter <name>]... [--out <file.json>]
+//        [--engine agnijs|quickjs|node]... [--filter <name>]... [--out <file.json>]
 //
 // Performance is reported, never gated (js-engine-spec section 11,
 // condition 3): this script fails only when a benchmark errors or the
@@ -25,7 +25,7 @@ const opt = (name) => {
 };
 const iterations = Number(opt("--iterations")[0] || 10);
 const warmup = Number(opt("--warmup")[0] || 2);
-const engines = opt("--engine").length ? opt("--engine") : ["gable", "quickjs", "node"];
+const engines = opt("--engine").length ? opt("--engine") : ["agnijs", "quickjs", "node"];
 const filters = opt("--filter");
 const harnessDir = path.resolve(here, "..");
 const benchDir = path.join(harnessDir, "bench");
@@ -87,12 +87,12 @@ async function main() {
     }
     const sums = new Set(Object.values(row.engines).map((e) => e.checksum));
     if (sums.size > 1) throw new Error(`${job.name}: engines disagree on the checksum: ${JSON.stringify(row.engines)}`);
-    const g = row.engines.gable, q = row.engines.quickjs, n = row.engines.node;
-    if (g && q) row.gable_vs_quickjs = +(g.median_ms / q.median_ms).toFixed(2);
-    if (g && n) row.gable_vs_node = +(g.median_ms / n.median_ms).toFixed(2);
+    const g = row.engines.agnijs, q = row.engines.quickjs, n = row.engines.node;
+    if (g && q) row.agnijs_vs_quickjs = +(g.median_ms / q.median_ms).toFixed(2);
+    if (g && n) row.agnijs_vs_node = +(g.median_ms / n.median_ms).toFixed(2);
     results.push(row);
   }
-  const ratios = results.map((r) => r.gable_vs_quickjs).filter(Boolean);
+  const ratios = results.map((r) => r.agnijs_vs_quickjs).filter(Boolean);
   let commit = "";
   try {
     commit = execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: repoRoot, encoding: "utf8" }).trim();
@@ -103,17 +103,17 @@ async function main() {
     machine: { os: `${os.type()} ${os.release()} ${os.arch()}`, cpu: os.cpus()[0]?.model, cores: os.cpus().length, memory_gib: +(os.totalmem() / 2 ** 30).toFixed(1), node: process.version },
     warmup,
     iterations,
-    geomean_gable_vs_quickjs: ratios.length ? +geomean(ratios).toFixed(2) : null,
+    geomean_agnijs_vs_quickjs: ratios.length ? +geomean(ratios).toFixed(2) : null,
     results,
   };
   if (outFile) fs.writeFileSync(outFile, JSON.stringify(report, null, 2) + "\n");
-  console.log(`| benchmark | gable ms | quickjs ms | node ms | gable/quickjs | gable peak RSS MiB | quickjs peak RSS MiB |`);
+  console.log(`| benchmark | agnijs ms | quickjs ms | node ms | agnijs/quickjs | agnijs peak RSS MiB | quickjs peak RSS MiB |`);
   console.log(`|---|---:|---:|---:|---:|---:|---:|`);
   for (const r of results) {
     const e = (k, f) => (r.engines[k] ? r.engines[k][f] : "-");
-    console.log(`| ${r.name} | ${e("gable", "median_ms")} | ${e("quickjs", "median_ms")} | ${e("node", "median_ms")} | ${r.gable_vs_quickjs ?? "-"} | ${e("gable", "peak_rss_mib")} | ${e("quickjs", "peak_rss_mib")} |`);
+    console.log(`| ${r.name} | ${e("agnijs", "median_ms")} | ${e("quickjs", "median_ms")} | ${e("node", "median_ms")} | ${r.agnijs_vs_quickjs ?? "-"} | ${e("agnijs", "peak_rss_mib")} | ${e("quickjs", "peak_rss_mib")} |`);
   }
-  console.log(`\ngeomean gable/quickjs: ${report.geomean_gable_vs_quickjs}`);
+  console.log(`\ngeomean agnijs/quickjs: ${report.geomean_agnijs_vs_quickjs}`);
 }
 
 main().catch((e) => {

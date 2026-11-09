@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Runs Gable's own test suites inside an embedded engine.
 //
-//   node native/engine-harness/js/run-suites.mjs [--engine gable|quickjs|node]...
+//   node native/engine-harness/js/run-suites.mjs [--engine agnijs|quickjs|node]...
 //        [--filter <substring>]... [--jobs N] [--json <file>] [--list]
 //
 // Every packages/*/src/**/*.test.ts file is classified:
@@ -31,7 +31,7 @@ const opt = (name) => {
   return out;
 };
 const flag = (name) => args.includes(name);
-const engines = opt("--engine").length ? opt("--engine") : ["gable"];
+const engines = opt("--engine").length ? opt("--engine") : ["agnijs"];
 const filters = opt("--filter");
 const jobs = Number(opt("--jobs")[0] || Math.max(1, Math.min(8, os.cpus().length - 1)));
 const jsonOut = opt("--json")[0];

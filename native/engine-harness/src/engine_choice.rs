@@ -1,31 +1,31 @@
 //! Which engine Gable runs.
 //!
-//! The Gable engine is the default (switch-over, TASK-100.10: spec section 11
+//! The AgniJS engine is the default (switch-over, TASK-100.10: spec section 11
 //! conditions 1, 2 and 4 hold). The interim QuickJS-NG engine stays
 //! selectable for one release after the switch (condition 5), then this
 //! choice and the adapter dependency go away.
 
-use gable_engine_api::{Engine, Host};
+use agnijs_engine_api::{Engine, Host};
 use std::rc::Rc;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum EngineChoice {
-    /// The Gable engine (`gable-js-vm`).
+    /// The AgniJS engine (`agnijs-js-vm`).
     #[default]
-    Gable,
+    Agnijs,
     /// The interim engine (the QuickJS-NG adapter). Selectable for one
     /// release after the switch-over.
     QuickJs,
 }
 
 impl EngineChoice {
-    pub const ALL: [EngineChoice; 2] = [EngineChoice::Gable, EngineChoice::QuickJs];
+    pub const ALL: [EngineChoice; 2] = [EngineChoice::Agnijs, EngineChoice::QuickJs];
 
     /// The name used on command lines and in result files, matching the
     /// test262 runner's and the micro-benchmark harness's `--engine`.
     pub fn name(self) -> &'static str {
         match self {
-            EngineChoice::Gable => "gable",
+            EngineChoice::Agnijs => "agnijs",
             EngineChoice::QuickJs => "quickjs",
         }
     }
@@ -41,8 +41,8 @@ impl EngineChoice {
 
     pub fn make(self, host: Rc<dyn Host>) -> Box<dyn Engine> {
         match self {
-            EngineChoice::Gable => gable_js_vm::make_engine(host),
-            EngineChoice::QuickJs => gable_engine_quickjs::make_engine(host),
+            EngineChoice::Agnijs => agnijs_js_vm::make_engine(host),
+            EngineChoice::QuickJs => agnijs_engine_quickjs::make_engine(host),
         }
     }
 }

@@ -19,7 +19,7 @@ struct Cli {
 enum Command {
     /// Run each module in its own fresh engine and print what it logs.
     Run {
-        /// `gable` (default) or `quickjs` (the interim engine).
+        /// `agnijs` (default) or `quickjs` (the interim engine).
         #[arg(long)]
         engine: Option<String>,
         /// Wall-clock limit per module, in seconds.
@@ -63,17 +63,17 @@ fn engine(name: Option<String>) -> Result<EngineChoice> {
         None => EngineChoice::default(),
         Some(n) => match EngineChoice::parse(&n) {
             Some(c) => c,
-            None => bail!("unknown engine {n:?} (expected gable or quickjs)"),
+            None => bail!("unknown engine {n:?} (expected agnijs or quickjs)"),
         },
     };
     if choice.is_interim() {
-        eprintln!("note: the interim engine (quickjs) stays selectable for one release after the switch-over; the default is gable");
+        eprintln!("note: the interim engine (quickjs) stays selectable for one release after the switch-over; the default is agnijs");
     }
     Ok(choice)
 }
 
 fn peak_rss() -> Option<u64> {
-    gable_js_bench::memory::peak_rss_bytes()
+    agnijs_js_bench::memory::peak_rss_bytes()
 }
 
 fn main() -> Result<()> {

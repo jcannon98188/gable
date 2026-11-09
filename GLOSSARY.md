@@ -166,9 +166,9 @@ The prebuilt, per-platform program that runs a native Gable app: it owns the win
 _Avoid_: Shell, VM, player
 
 **Engine interface**:
-The Gable-owned boundary between the Host runtime and a JavaScript engine, satisfied by both the Gable engine and any adopted interim engine.
+The boundary between the Host runtime and a JavaScript engine (the `agnijs-engine-api` crate), satisfied by both the AgniJS engine and any adopted interim engine.
 _Avoid_: Engine adapter, binding layer
 
-**Gable engine**:
-The JavaScript engine Gable owns, written in Rust, which replaces the adopted interim engine once it passes its conformance gate.
+**AgniJS engine**:
+The JavaScript engine Gable adopts, written in Rust and kept in its own repository (agnijs-rs/agnijs, ADR 0018), which replaces the adopted interim engine now that it has passed its conformance gate. Called the Gable engine until TASK-100.12.
 _Avoid_: Custom VM, runtime

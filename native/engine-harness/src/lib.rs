@@ -1,5 +1,5 @@
 //! A minimal Gable-side embedder for running Gable's own JavaScript test
-//! suites and benchmarks inside an engine behind `gable-engine-api`.
+//! suites and benchmarks inside an engine behind `agnijs-engine-api`.
 //!
 //! The Host runtime does not exist yet; until it does, this crate is where
 //! Gable chooses an engine ([`EngineChoice`]), and it supplies the host

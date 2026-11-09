@@ -1,6 +1,6 @@
 {
   "$comment": "Known failures per engine for js/run-suites.mjs. Every other in-scope test must pass. A reason starting with 'timing:' marks a wall-clock budget written for V8: performance is reported, not gated (js-engine-spec section 11), so it may pass or fail.",
-  "gable": {
+  "agnijs": {
     "packages/editor/src/yjs/perf.test.ts > large documents > stays fast per change in a 10000-paragraph document": "timing: per-change wall-clock budget calibrated for V8 (reference ~3 ms local at 10k paragraphs)",
     "packages/ui/src/highlight.test.ts > robustness > is linear on large and adversarial input": "timing: 2 s wall-clock budget per 100k-400k character input, calibrated for V8"
   },
