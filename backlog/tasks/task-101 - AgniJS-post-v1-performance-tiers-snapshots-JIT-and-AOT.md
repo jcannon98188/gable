@@ -4,6 +4,7 @@ title: 'AgniJS post-v1 performance tiers: snapshots, JIT and AOT'
 status: To Do
 assignee: []
 created_date: '2026-11-09T01:51:00Z'
+updated_date: '2026-11-09T02:04:00Z'
 labels:
   - needs-triage
 dependencies:
@@ -25,3 +26,9 @@ Post-v1 performance roadmap for AgniJS (the Gable JS engine after TASK-100.12 ex
 - [ ] #1 Subtasks 101.1 to 101.5 are done or consciously dropped, each with the evidence its own acceptance criteria ask for
 - [ ] #2 The engine still passes test262 at the checked-in baselines with every tier enabled, and the interpreter remains the default and fallback
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Model assignment (maintainer, 2026-11-08): Fable agents do the performance fixes from TASK-100.14 and the JIT and AOT work in this task; other engine work goes to Opus.
+<!-- SECTION:NOTES:END -->
