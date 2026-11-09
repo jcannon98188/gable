@@ -23,12 +23,37 @@ jobs:
           workspaces: native/engine
       - run: cargo build --workspace --locked
       - run: cargo test --workspace --locked
+      - name: Regex crate and VM RegExp tests with the linear matcher compiled out
+        run: |
+          cargo test --locked -p gable-js-regex --no-default-features
+          cargo test --locked -p gable-js-vm --no-default-features --test regexp
+      - name: Differential regex fuzzing, bounded (linear vs backtracking, ADR 0013 addendum)
+        if: matrix.os == 'ubuntu-latest'
+        timeout-minutes: 10
+        env:
+          GABLE_REGEX_FUZZ_CASES: "200000"
+        run: cargo test --release --locked -p gable-js-regex --test differential
       - name: Cache test262 at the pinned commit
         uses: actions/cache@v4
         with:
           path: native/engine/test262
           key: test262-${{ hashFiles('native/engine/crates/gable-js-test262/PIN') }}
       - run: cargo run --release -p gable-js-test262 --bin test262 -- fetch
+      - name: test262 RegExp suites under each regex matcher policy (same baseline)
+        # Forcing the linear matcher everywhere is slow on the property-escape
+        # tests (about 5 min), so that policy runs on one OS only.
+        run: |
+          modes="backtracking-only"
+          if [ "$RUNNER_OS" = "Linux" ]; then modes="$modes linear-when-eligible"; fi
+          for m in $modes; do
+            cargo run --release -p gable-js-test262 --bin test262 -- run --engine gable --regex-matcher $m \
+              --filter test/built-ins/RegExp --filter test/built-ins/String/prototype/match \
+              --filter test/built-ins/String/prototype/matchAll --filter test/built-ins/String/prototype/replace \
+              --filter test/built-ins/String/prototype/replaceAll --filter test/built-ins/String/prototype/search \
+              --filter test/built-ins/String/prototype/split --filter test/language/literals/regexp \
+              --filter test/annexB/built-ins/RegExp
+          done
+        shell: bash
       - name: test262 against the QuickJS-NG baseline
         run: cargo run --release -p gable-js-test262 --bin test262 -- run --engine quickjs
       - name: test262 parse-only pass of gable-js-parser (includes intl402)
