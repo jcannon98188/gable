@@ -35,6 +35,8 @@ jobs:
         run: cargo run --release -p gable-js-test262 --bin test262 -- run --engine parse --include-intl402
       - name: test262 against the Gable engine baseline
         run: cargo run --release -p gable-js-test262 --bin test262 -- run --engine gable
+      - name: test262 against the Gable engine baseline, every script and module run from bytecode
+        run: cargo run --release -p gable-js-test262 --bin test262 -- run --engine gable --precompile
       - name: test262 intl402 against the Gable intl402 baseline (reported separately)
         run: cargo run --release -p gable-js-test262 --bin test262 -- run --engine gable --only-intl402
 
