@@ -4,7 +4,7 @@ title: JIT-readiness constraints and ADR
 status: To Do
 assignee: []
 created_date: '2026-11-09T01:51:00Z'
-updated_date: '2026-11-09T02:32:00Z'
+updated_date: '2026-11-09T03:29:00Z'
 labels:
   - needs-triage
 dependencies:
@@ -29,4 +29,6 @@ Record the constraints that keep a later JIT possible, as an ADR plus a short se
 
 <!-- SECTION:NOTES:BEGIN -->
 Model assignment (maintainer, 2026-11-08): Opus.
+
+Ordering (maintainer, 2026-11-08): this ADR gates TASK-100.17 and TASK-100.18 so the dispatch and bytecode rewrites avoid choices that block a JIT. It is cheap and stays ahead of the engine extraction. The rest of TASK-101 follows the extraction (TASK-100.12).
 <!-- SECTION:NOTES:END -->

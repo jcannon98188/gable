@@ -4,11 +4,12 @@ title: Native AOT compilation research
 status: To Do
 assignee: []
 created_date: '2026-11-09T01:52:00Z'
-updated_date: '2026-11-09T02:32:00Z'
+updated_date: '2026-11-09T03:29:00Z'
 labels:
   - needs-triage
 dependencies:
   - TASK-101.1
+  - TASK-100.12
 parent_task_id: TASK-101
 ordinal: 233000
 ---

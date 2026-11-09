@@ -6,9 +6,11 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-11-09T03:18:00Z'
+updated_date: '2026-11-09T03:29:00Z'
 labels:
   - ready-for-agent
-dependencies: []
+dependencies:
+  - TASK-101.1
 documentation:
   - docs/js-engine-performance-findings.md
 parent_task_id: TASK-100
