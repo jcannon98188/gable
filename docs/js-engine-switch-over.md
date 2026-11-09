@@ -33,7 +33,7 @@ The checked-in baselines `baselines/gable.json` and `baselines/gable-intl402.jso
 - `IsHTMLDDA` (a browser host hook; Gable has no `document.all`).
 - Proper tail calls.
 - Atomics features that need multiple agents or a blocking main thread: `CanBlockIsFalse`, `Atomics.wait` and `Atomics.waitAsync`. The engine is single-agent (spec section 2).
-- Six parser follow-ups for lone surrogates in eval'd source.
+- Six parser follow-ups for lone surrogates in eval'd source (TASK-100.15).
 - intl402 gaps in the ICU4X data: `dayPeriod`, German search collation, the `gv` locale, `hanidec` with U+202F, and one `DurationFormat` flag.
 
 The spec's target is zero exceptions. The parser follow-ups and the ICU4X gaps are the only exclusions that the engine could close itself; the others are deliberate scope decisions.
