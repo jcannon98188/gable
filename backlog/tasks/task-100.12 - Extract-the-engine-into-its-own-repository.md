@@ -4,7 +4,7 @@ title: Extract the engine into its own repository
 status: To Do
 assignee: []
 created_date: '2026-11-08T23:06:00Z'
-updated_date: '2026-11-09T03:29:00Z'
+updated_date: '2026-11-09T03:36:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -36,4 +36,6 @@ The engine is valuable as a release on its own: a pure-Rust, embeddable, test262
 Model assignment (maintainer, 2026-11-08): Sonnet for the mechanical rename to agnijs-* (scripted, verified by the ADR 0016 boundary tests and the standalone-export CI job) and the repository split. Creating the repository and any publishing needs the maintainer.
 
 Ordering (maintainer, 2026-11-08): the extraction happens before the rest of the post-v1 work (TASK-101.2, 101.3, 101.5). Rename to agnijs-* and the agnijs-rs GitHub org apply here.
+
+Plan (maintainer, 2026-11-08): the maintainer creates the repository in the agnijs-rs org and picks the license first. The subtree split, rename and Gable dependency switch run after TASK-102 merges, so its regex-crate changes do not conflict.
 <!-- SECTION:NOTES:END -->
