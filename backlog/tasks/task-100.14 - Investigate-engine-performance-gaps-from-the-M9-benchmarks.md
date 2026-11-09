@@ -4,6 +4,7 @@ title: Investigate engine performance gaps from the M9 benchmarks
 status: To Do
 assignee: []
 created_date: '2026-11-09T00:18:00Z'
+updated_date: '2026-11-09T00:21:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -24,6 +25,12 @@ After M9 records the Gable benchmark set and the interim-engine baseline (TASK-1
 <!-- AC:BEGIN -->
 - [ ] #1 Every benchmark in the M9 set and the TASK-100.13 micro-benchmarks where the owned engine is outside the proposed tolerance, or clearly slower or heavier than the interim engine, is profiled (CPU samples, allocation and GC counts, inline-cache hit rates, bytecode and dispatch statistics as appropriate)
 - [ ] #2 A findings document in docs/ ranks the causes by measured impact, with the evidence for each (profiles, counters, minimal reproductions) and an estimated effort and risk per fix
-- [ ] #3 Each distinct cause is proposed as a separate backlog task ready for a Fable agent, with a reproduction and a benchmark to prove the fix; creation of those tasks is approved by the maintainer
+- [ ] #3 Each distinct cause that is worth fixing is created as its own backlog task ready for a Fable agent, with a reproduction and a benchmark to prove the fix; no maintainer approval is needed to create them, only micro-optimizations that barely move the needle are left out (listed in the findings document as skipped)
 - [ ] #4 No engine behaviour or test262 baseline changes in this task
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Maintainer direction (2026-11-08): adoption of the engine is not in doubt and performance gaps will be fixed over time, so the investigator creates the Fable fix tickets itself using judgement; skip only micro-optimizations that barely move the needle.
+<!-- SECTION:NOTES:END -->
