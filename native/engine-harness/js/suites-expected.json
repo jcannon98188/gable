@@ -1,0 +1,20 @@
+{
+  "$comment": "Known failures per engine for js/run-suites.mjs. Every other in-scope test must pass. A reason starting with 'timing:' marks a wall-clock budget written for V8: performance is reported, not gated (js-engine-spec section 11), so it may pass or fail.",
+  "gable": {
+    "packages/editor/src/yjs/perf.test.ts > large documents > stays fast per change in a 10000-paragraph document": "timing: per-change wall-clock budget calibrated for V8 (reference ~3 ms local at 10k paragraphs)",
+    "packages/ui/src/highlight.test.ts > robustness > is linear on large and adversarial input": "timing: 2 s wall-clock budget per 100k-400k character input, calibrated for V8"
+  },
+  "quickjs": {
+    "packages/core/src/i18n-message.test.ts > number and date > falls back to English for an invalid locale": "the interim QuickJS-NG adapter is built without Intl",
+    "packages/core/src/i18n-message.test.ts > number and date > formats dates and times in the locale": "the interim QuickJS-NG adapter is built without Intl",
+    "packages/core/src/i18n-message.test.ts > number and date > formats with Intl": "the interim QuickJS-NG adapter is built without Intl",
+    "packages/core/src/i18n-message.test.ts > plural > selects by Intl.PluralRules and exact matches, formatting #": "the interim QuickJS-NG adapter is built without Intl",
+    "packages/core/src/i18n-message.test.ts > plural > supports offset and selectordinal": "the interim QuickJS-NG adapter is built without Intl",
+    "packages/core/src/i18n-message.test.ts > plural > uses the locale's categories": "the interim QuickJS-NG adapter is built without Intl",
+    "packages/core/src/i18n-message.test.ts > select > nests inside plural with # and placeholders": "the interim QuickJS-NG adapter is built without Intl",
+    "packages/editor/src/yjs/perf.test.ts > large documents > stays fast per change in a 10000-paragraph document": "timing: per-change wall-clock budget calibrated for V8 (reference ~3 ms local at 10k paragraphs)",
+    "packages/testing/src/i18n.test.ts > i18n tag > is a signal that follows the locale and the signals in its holes": "the interim QuickJS-NG adapter is built without Intl",
+    "packages/testing/src/i18n.test.ts > template markers > resolve against the catalog, reorder placeholders, and keep following signals": "the interim QuickJS-NG adapter is built without Intl",
+    "packages/ui/src/highlight.test.ts > robustness > is linear on large and adversarial input": "timing: 2 s wall-clock budget per 100k-400k character input, calibrated for V8"
+  }
+}

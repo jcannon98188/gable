@@ -131,10 +131,11 @@ function buildUrl(url: string, params: HttpParams | undefined): string {
 
 function encodeBody(body: unknown, headers: Record<string, string>): BodyInit | undefined {
   if (body === undefined || body === null) return undefined;
+  // FormData and Blob are browser globals the native host does not define (js-engine-spec section 8).
   if (
     typeof body === "string" ||
-    body instanceof FormData ||
-    body instanceof Blob ||
+    (typeof FormData === "function" && body instanceof FormData) ||
+    (typeof Blob === "function" && body instanceof Blob) ||
     body instanceof ArrayBuffer ||
     body instanceof URLSearchParams
   ) {

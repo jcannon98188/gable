@@ -206,6 +206,15 @@ describe("default fetch backend", () => {
     expect(new Headers(init.headers).get("content-type")).toBe("application/json");
   });
 
+  it("sends JSON on a host without FormData or Blob (Gable Native's globals)", async () => {
+    const fetchMock = vi.fn(async (_url: string, _init: RequestInit) => new Response('{"ok":true}', { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("FormData", undefined);
+    vi.stubGlobal("Blob", undefined);
+    expect(await firstValueFrom(real().post("/p", { a: 1 }))).toEqual({ ok: true });
+    expect(fetchMock.mock.calls[0]![1].body).toBe('{"a":1}');
+  });
+
   it("maps non-2xx, network and parse failures to HttpError kinds", async () => {
     vi.stubGlobal("fetch", async () => new Response("nope", { status: 503, statusText: "Unavailable" }));
     expect(await caught(real().get("/s", { responseType: "text" }))).toMatchObject({ kind: "status", status: 503, body: "nope" });

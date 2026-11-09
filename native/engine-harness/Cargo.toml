@@ -1,0 +1,31 @@
+[package]
+name = "gable-engine-harness"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+rust-version = "1.85"
+publish = false
+description = "Runs Gable's own test suites and benchmarks inside an embedded JS engine (the Gable engine or the interim QuickJS-NG engine)"
+
+# Gable's side of the engine boundary (ADR 0016): this crate depends on the
+# engine workspace through `gable-engine-api` and the two engine adapters,
+# and nothing under native/engine depends on it. It has its own workspace and
+# lockfile so the engine workspace stays standalone.
+[workspace]
+
+[dependencies]
+gable-engine-api = { path = "../engine/crates/gable-engine-api" }
+gable-js-vm = { path = "../engine/crates/gable-js-vm" }
+gable-engine-quickjs = { path = "../engine/crates/gable-engine-quickjs" }
+gable-js-bench = { path = "../engine/crates/gable-js-bench" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "gable-harness"
+path = "src/main.rs"
