@@ -4,6 +4,7 @@ title: 'Rust embedding ergonomics: derive macros, serde and async'
 status: To Do
 assignee: []
 created_date: '2026-11-09T02:14:00Z'
+updated_date: '2026-11-09T02:35:00Z'
 labels:
   - needs-triage
 dependencies: []
@@ -23,3 +24,9 @@ First-ten-minutes embedding experience in Rust: derive macros for host classes a
 - [ ] #2 A Rust async function can be exposed to JS as a promise-returning function and awaited from the engine, with tests including cancellation and errors
 - [ ] #3 A cookbook in docs shows an embedder going from cargo add to calling into JS in under ten lines
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Model assignment (maintainer, 2026-11-08): Opus for the derive macros, serde and async design; Sonnet for the cookbook and embedding guide once the API exists.
+<!-- SECTION:NOTES:END -->

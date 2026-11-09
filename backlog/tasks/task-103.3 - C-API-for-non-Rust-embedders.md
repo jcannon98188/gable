@@ -4,6 +4,7 @@ title: C API for non-Rust embedders
 status: To Do
 assignee: []
 created_date: '2026-11-09T02:14:00Z'
+updated_date: '2026-11-09T02:35:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -22,4 +23,12 @@ A stable C API next to the Rust one so C, C++, Swift, Go, Python, Zig and other 
 - [ ] #1 A C header and static and dynamic libraries expose realm creation, script and module evaluation, values and handles, host functions and host classes, jobs and timers, limits and fuel, and bytecode load and save
 - [ ] #2 A C test suite and a small non-Rust example (for example Swift or Python via ctypes) run in CI; a leak and sanitizer run is clean
 - [ ] #3 An ABI and versioning policy is documented and enforced by a header-drift check
+- [ ] #4 No panic can escape or abort the host: clippy denies unwrap, expect, panic, indexing and slicing in the C API crate; every extern function is wrapped in catch_unwind and maps a panic to an error result; the crate builds with panic=unwind; a fault-injection test forces panics at each entry point, and malformed input, invalid handles, double frees and use after teardown all return errors, with the process surviving and a poisoned handle failing safely
+- [ ] #5 Before the C API is stable, every reachable panic in the engine core public paths is audited: fuzzing the engine interface with arbitrary scripts, bytecode and handle sequences finds no panic, and any found are fixed in the engine
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Maintainer requirement (2026-11-08): a panic must never cross, or crash the host through, the C API. The y-crdt FFI layer (yffi) panics on Rust errors and takes down the hosting application; that is unacceptable here. Rules: no unwrap, expect, panic, unchecked indexing or slicing, unreachable or todo in the C API crate (denied by clippy lints in CI); every extern fn body runs under catch_unwind and returns an error code or error handle on a panic; the C API crate builds with panic=unwind (never panic=abort, which would abort the host); a caught panic poisons that engine or realm handle, later calls return a clear error, and teardown stays safe; allocation failure and stack exhaustion are reported as errors within the engine's memory and stack limits, and any remaining abort path is documented; callbacks into host C code are treated as untrusted. Model: Opus.
+<!-- SECTION:NOTES:END -->
