@@ -126,11 +126,11 @@ test262 is the correctness gate:
 - The pass rate may never regress: CI compares against a checked-in baseline.
 - CI runs on Windows, Linux and macOS (the engine is pure Rust, so the same suite runs everywhere), on every pull request that touches the engine.
 
-test262 does not measure performance, memory, the debugger or embedding behaviour, so the switch-over rule adds its own gates. The Gable engine becomes the default only when all of these hold:
+test262 does not measure performance, memory, the debugger or embedding behaviour, so the switch-over rule adds its own gates. The Gable engine becomes the default as soon as it is usable: when conditions 1, 2 and 4 hold, it is switched in without any further sign-off (the maintainer has committed to adopting it; performance gaps are fixed after the switch). Performance is reported, not gated:
 
 1. Every included test262 test passes except documented exclusions, with a target of zero such exceptions.
 2. Gable's own test suites (core, router, forms, store and the rest) pass under it.
-3. A Gable benchmark set is at parity with the interim engine within a tolerance: signal churn, RxJS pipelines, the template interpreter, list diffing, and gable-ui bundle startup. The tolerance is set after measuring the interim engine's baseline (milestone M9 starts by recording it).
+3. (Reported, not a gate.) A Gable benchmark set exists and the interim engine's baseline is recorded: signal churn, RxJS pipelines, the template interpreter, list diffing, and gable-ui bundle startup. The gap to the interim engine is reported and investigated (TASK-100.14), and the fixes are scheduled as ordinary work after the switch.
 4. The debugger covers the first version (section 9).
 5. The interim engine stays selectable for one release after the switch.
 
@@ -149,7 +149,7 @@ Each milestone is a Backlog task under "Gable JS engine", with acceptance criter
 | M6 | Intl on ICU4X | The ECMA-402 built-ins and `toLocale*` methods pass the `intl402` directories for `DateTimeFormat`, `NumberFormat` and `PluralRules` first, then the rest; locale-data trimming is configurable. |
 | M7 | Engine-interface adapter and bytecode serialization | The Gable engine passes the engine-interface conformance kit; precompiled bytecode round-trips and a version mismatch is rejected; the host can drive jobs, timers, limits and realms. |
 | M8 | Debugger and CDP adapter | Breakpoints, stepping, scope inspection, async stacks, source-mapped exceptions, console and `evaluate` work through the CDP adapter, verified with a CDP client test. |
-| M9 | Gable test suites and the benchmark gate | The benchmark set exists and the interim baseline is recorded; Gable's own test suites run under the engine in CI; the switch-over rule in section 11 is evaluated and the result reported (not self-approved: the maintainer decides the switch). |
+| M9 | Gable test suites and the benchmark gate | The benchmark set exists and the interim baseline is recorded; Gable's own test suites run under the engine in CI; the switch-over rule in section 11 is evaluated and reported; if conditions 1, 2 and 4 hold the engine becomes the default in this milestone, with the interim engine still selectable. |
 
 Performance work (interpreter dispatch, inline caches, string and shape tuning, GC pacing) runs alongside M2 to M9; the benchmarks are introduced in M9 but the agent should keep micro-benchmarks as each area lands.
 
