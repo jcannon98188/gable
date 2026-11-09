@@ -4,6 +4,7 @@ title: Extract the engine into its own repository
 status: To Do
 assignee: []
 created_date: '2026-11-08T23:06:00Z'
+updated_date: '2026-11-09T02:35:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -28,3 +29,9 @@ The engine is valuable as a release on its own: a pure-Rust, embeddable, test262
 - [ ] #3 The engine repository has a README, a license and the recorded name; ADRs that concern only the engine move with it and Gable's ADR index links to them
 - [ ] #4 A follow-up task for the generic embedding surface exists, written from the adapter as it actually landed in M7 to M9
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Model assignment (maintainer, 2026-11-08): Sonnet for the mechanical rename to agnijs-* (scripted, verified by the ADR 0016 boundary tests and the standalone-export CI job) and the repository split. Creating the repository and any publishing needs the maintainer.
+<!-- SECTION:NOTES:END -->
