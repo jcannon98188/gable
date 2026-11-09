@@ -4,7 +4,7 @@ title: Linear-time regex matcher for ReDoS-safe patterns
 status: To Do
 assignee: []
 created_date: '2026-11-09T02:03:00Z'
-updated_date: '2026-11-09T02:04:00Z'
+updated_date: '2026-11-09T02:07:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -27,6 +27,7 @@ Backtracking regex engines have exponential worst cases (ReDoS): with regress, /
 - [ ] #2 A differential fuzzer compares the new matcher with regress on random eligible patterns and inputs across flags (i, m, s, u, v, y, g, d), including captures, named groups, empty matches and lastIndex behaviour, and runs a documented minimum number of cases in CI with zero mismatches
 - [ ] #3 The existing RegExp test262 suites, the gable-js-regex tests and the gable and --precompile baselines show no regressions; ineligible patterns still use regress and the routing rule is documented and tested, including the conservative fallback
 - [ ] #4 gable-js-bench has regex workloads showing the cost of the linear matcher against regress on ordinary patterns, and a step or size trigger keeps ordinary patterns on the faster matcher where that is safe; the choice is recorded in an ADR addendum to 0013
+- [ ] #5 The linear matcher is ON by default and embedders can opt out: a per-engine or per-realm host option (auto by default, backtracking_only for V8-style behavior, set at creation time, not global) and a cargo feature that compiles the linear matcher out entirely; the mode never changes which strings match, only how, and the RegExp test262 suites and the differential tests are run in both modes in CI
 <!-- AC:END -->
 
 ## Implementation Notes
