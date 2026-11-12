@@ -82,6 +82,9 @@ export class SceneNode {
   /** Text parts of a text node (a `<text>` or `<bitmap-text>`), or the text of a `text` content node. */
   readonly textParts: SceneNode[] = [];
   owner: SceneNode | null = null;
+  /** Every non-shape child in markup order, including text the scene ignores: the place `before` is resolved against (as Pixi cannot hold text nodes). */
+  readonly layout: SceneNode[] = [];
+  layoutParent: SceneNode | null = null;
   destroyed = false;
   readonly attrs: Record<string, string> = {};
   readonly classes: string[] = [];

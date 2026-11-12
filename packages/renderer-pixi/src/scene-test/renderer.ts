@@ -181,6 +181,25 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
     node.values[name] = value;
   }
 
+  const isDisplay = (n: SceneNode) => n.kind === "node" || n.kind === "anchor" || (lenient && n.kind === "text");
+
+  function unlayout(node: SceneNode) {
+    const p = node.layoutParent;
+    if (!p) return;
+    p.layout.splice(p.layout.indexOf(node), 1);
+    node.layoutParent = null;
+  }
+
+  /** Records the node in markup order and returns the display sibling it must go before (null: append). */
+  function layOut(parent: SceneNode, node: SceneNode, before: SceneNode | null | undefined): SceneNode | null {
+    unlayout(node);
+    const at = before ? parent.layout.indexOf(before) : -1;
+    if (at === -1) parent.layout.push(node);
+    else parent.layout.splice(at, 0, node);
+    node.layoutParent = parent;
+    return parent.layout.slice(parent.layout.indexOf(node) + 1).find(isDisplay) ?? null;
+  }
+
   function insertDisplay(parent: SceneNode, node: SceneNode, before: SceneNode | null | undefined) {
     detach(node);
     const at = before ? parent.children.indexOf(before) : -1;
@@ -267,6 +286,7 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
         node.owner = parent;
         return;
       }
+      const next = layOut(parent, node, before);
       if (node.kind === "text" && !lenient) {
         if (!parent.info?.textContent) {
           if (node.text.trim() === "") return;
@@ -279,10 +299,11 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
         writeText(parent);
         return;
       }
-      insertDisplay(parent, node, before);
+      insertDisplay(parent, node, next);
     },
     remove(node) {
       touched = true;
+      unlayout(node);
       if (node.kind === "shape") {
         node.owner?.shapes.splice(node.owner.shapes.indexOf(node), 1);
         node.owner = null;
