@@ -166,6 +166,25 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
   const infos = new WeakMap<Container, TagInfo>();
   const shapeLists = new WeakMap<Graphics, ShapeNode[]>();
   const textParts = new WeakMap<Container, ContentNode[]>();
+  const layouts = new WeakMap<Container, unknown[]>();
+  const layoutParent = new WeakMap<object, Container>();
+  /** Records `node` in `parent`'s order list, before `before` (or last), leaving any earlier place. */
+  const place = (parent: Container, node: unknown, before: unknown): void => {
+    unplace(node);
+    const order = layouts.get(parent) ?? (layouts.set(parent, []), layouts.get(parent)!);
+    const at = before ? order.indexOf(before) : -1;
+    if (at === -1) order.push(node);
+    else order.splice(at, 0, node);
+    layoutParent.set(node as object, parent);
+  };
+  const unplace = (node: unknown): void => {
+    const old = layoutParent.get(node as object);
+    if (!old) return;
+    const order = layouts.get(old);
+    const at = order ? order.indexOf(node) : -1;
+    if (order && at !== -1) order.splice(at, 1);
+    layoutParent.delete(node as object);
+  };
   const dirty = new Set<Graphics>();
   let destroyed = false;
   let app: ApplicationLike | null = null;
@@ -351,6 +370,9 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     },
     insert(parent, node, before) {
       touched = true;
+      // Every inserted node, ignored whitespace text and shapes included, keeps its place in an order list, because the
+      // core may name one of those as `before` and a Pixi container does not hold them.
+      place(parent, node, before);
       if ((node as unknown) instanceof ShapeNode) {
         const shape = node as unknown as ShapeNode;
         if (!(parent instanceof Graphics)) throw new Error(`<${shape.tag}> can only be a child of <graphics>.`);
@@ -379,16 +401,19 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         writeText(parent);
         return;
       }
-      if (before && before.parent === parent) {
-        node.removeFromParent();
-        parent.addChildAt(node, parent.getChildIndex(before));
-      } else {
-        node.removeFromParent();
-        parent.addChild(node);
+      const order = layouts.get(parent)!;
+      let next: Container | undefined;
+      for (let i = order.indexOf(node) + 1; i < order.length && !next; i++) {
+        const candidate = order[i] as Container;
+        if (candidate.parent === parent) next = candidate;
       }
+      node.removeFromParent();
+      if (next) parent.addChildAt(node, parent.getChildIndex(next));
+      else parent.addChild(node);
     },
     remove(node) {
       touched = true;
+      unplace(node);
       if ((node as unknown) instanceof ShapeNode) {
         const shape = node as unknown as ShapeNode;
         const list = shape.owner ? shapeLists.get(shape.owner) : undefined;
