@@ -1,10 +1,11 @@
 ---
 id: TASK-105
 title: Build the Gable canvas binding (@gable/renderer-pixi)
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@jason'
 created_date: '2026-11-12T21:46:00Z'
-updated_date: '2026-11-12T22:36:00Z'
+updated_date: '2026-11-12T22:39:00Z'
 labels: []
 dependencies: []
 references:

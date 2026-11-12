@@ -3,9 +3,11 @@ id: TASK-105.1
 title: >-
   Canvas core changes: renderer boundary, Renderer.destroy, public flush,
   onCleanup, hotData
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@jason'
 created_date: '2026-11-12T21:46:00Z'
+updated_date: '2026-11-12T22:39:00Z'
 labels: []
 dependencies: []
 references:
