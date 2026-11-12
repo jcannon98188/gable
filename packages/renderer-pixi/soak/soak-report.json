@@ -4,7 +4,7 @@
   "samples": [
     {
       "edit": 0,
-      "heapMB": 51.53,
+      "heapMB": 51.97,
       "treeNodes": 62,
       "liveUnparented": 0,
       "applications": 1,
@@ -13,7 +13,7 @@
     },
     {
       "edit": 20,
-      "heapMB": 53.36,
+      "heapMB": 53.77,
       "treeNodes": 62,
       "liveUnparented": 0,
       "applications": 1,
@@ -22,7 +22,7 @@
     },
     {
       "edit": 40,
-      "heapMB": 53.69,
+      "heapMB": 54.1,
       "treeNodes": 62,
       "liveUnparented": 0,
       "applications": 1,
@@ -31,7 +31,7 @@
     },
     {
       "edit": 60,
-      "heapMB": 54.21,
+      "heapMB": 54.64,
       "treeNodes": 62,
       "liveUnparented": 0,
       "applications": 1,
@@ -40,7 +40,7 @@
     },
     {
       "edit": 80,
-      "heapMB": 54.78,
+      "heapMB": 55.21,
       "treeNodes": 62,
       "liveUnparented": 0,
       "applications": 1,
@@ -49,7 +49,7 @@
     },
     {
       "edit": 100,
-      "heapMB": 54.97,
+      "heapMB": 55.4,
       "treeNodes": 62,
       "liveUnparented": 0,
       "applications": 1,
@@ -58,7 +58,7 @@
     },
     {
       "edit": 120,
-      "heapMB": 55.29,
+      "heapMB": 55.72,
       "treeNodes": 62,
       "liveUnparented": 0,
       "applications": 1,
@@ -67,7 +67,7 @@
     },
     {
       "edit": 140,
-      "heapMB": 55.75,
+      "heapMB": 56.17,
       "treeNodes": 62,
       "liveUnparented": 0,
       "applications": 1,
@@ -76,7 +76,7 @@
     },
     {
       "edit": 160,
-      "heapMB": 55.88,
+      "heapMB": 56.31,
       "treeNodes": 62,
       "liveUnparented": 0,
       "applications": 1,
@@ -85,7 +85,7 @@
     },
     {
       "edit": 180,
-      "heapMB": 56.18,
+      "heapMB": 56.61,
       "treeNodes": 62,
       "liveUnparented": 0,
       "applications": 1,
@@ -94,7 +94,7 @@
     },
     {
       "edit": 200,
-      "heapMB": 56.63,
+      "heapMB": 57.06,
       "treeNodes": 62,
       "liveUnparented": 0,
       "applications": 1,
@@ -103,7 +103,7 @@
     },
     {
       "edit": 220,
-      "heapMB": 56.75,
+      "heapMB": 57.22,
       "treeNodes": 62,
       "liveUnparented": 0,
       "applications": 1,
@@ -112,7 +112,7 @@
     },
     {
       "edit": 240,
-      "heapMB": 57.05,
+      "heapMB": 57.48,
       "treeNodes": 62,
       "liveUnparented": 0,
       "applications": 1,
@@ -121,7 +121,7 @@
     }
   ],
   "growth": {
-    "heapMB": 3.69,
+    "heapMB": 3.71,
     "treeNodes": 0,
     "liveUnparented": 0,
     "heapKBPerEdit": 17
