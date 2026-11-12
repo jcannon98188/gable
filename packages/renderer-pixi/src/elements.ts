@@ -164,6 +164,8 @@ const CONTAINER_PROPS = {
   tint: color,
   zIndex: num,
   label: str,
+  // Gable-level: the opt-in accessibility mirror (TASK-104.11). The type text names no Pixi class: tooling qualifies every capitalised word as a Pixi export.
+  a11y: obj("{ role: string; label: string; description?: string; focusable?: boolean; order?: number }"),
   width: num,
   height: num,
   sortableChildren: bool,
