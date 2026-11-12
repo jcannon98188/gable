@@ -4,7 +4,7 @@ title: Gable Canvas design map
 status: To Do
 assignee: []
 created_date: '2026-11-12T05:41:00Z'
-updated_date: '2026-11-12T06:09:00Z'
+updated_date: '2026-11-12T06:37:00Z'
 labels:
   - wayfinder:map
 dependencies: []
@@ -31,6 +31,7 @@ A spec and a set of locked decisions, ready to turn into build tickets, for a de
 
 <!-- the index: one line per closed ticket -->
 
+- [What should a declarative game look like to author? (TASK-104.3)](backlog/tasks/task-104.3%20-%20What-should-a-declarative-game-look-like-to-author.md): entities are components (a `<game-ship>`, `<game-rock>` per entity, composed in the scene template, coordinating through injected services); direct node writes through template refs are a sanctioned fast path for high-count entities; the per-frame hook is an injected `Frame` service (`inject(Frame).onFrame(dt => ...)` as a field initialiser); scene tags and properties mirror Pixi names 1:1. Runnable prototype on branch `prototype/canvas-authoring`.
 - [Which library do we bind to? (TASK-104.4)](backlog/tasks/task-104.4%20-%20Which-library-do-we-bind-to.md): PixiJS 8 (child order is draw order, plain property writes, built-in events, text, graphics, masks, filters); 3D dropped from the effort, Three.js was the runner-up; engines (Phaser, Excalibur, melonJS, KAPLAY) were excluded. Spike on branch `research/canvas-library-spike`.
 - [Which 2D/3D rendering libraries are viable, and how do they compare? (TASK-104.1)](backlog/tasks/task-104.1%20-%20Which-2D-3D-rendering-libraries-are-viable-and-how-do-they-compare.md): facts gathered for PixiJS 8.23, Three r187, Babylon 9.35, Phaser 4.2.1, Excalibur 1.0.0, Konva 10.9.1, Two.js, Canvas2D, plus melonJS, PlayCanvas and KAPLAY; open gaps (Pixi headless testing, Three WebGPU production status, Excalibur/Konva insert-at-index, Firefox WebGPU sources disagree) are marked unverified. Findings on branch `research/canvas-libraries`.
 - [What does Gable core assume about the DOM, and what does a second renderer under a DOM app need? (TASK-104.2)](backlog/tasks/task-104.2%20-%20What-does-Gable-core-assume-about-the-DOM-and-what-does-a-second-renderer-under-a-DOM-app-need.md): the renderer is threaded through view building as an argument, not scoped per subtree, so a second renderer can only be mounted from code, and `createComponent` has no parent scope and does not install `renderer.providers`; TASK-99.7's Geometry/FrameScheduler/MediaQuery are not in the code; core has browser globals (idle, transitions) and `#ref` returns raw nodes. Findings on branch `research/renderer-seam-for-canvas`.
