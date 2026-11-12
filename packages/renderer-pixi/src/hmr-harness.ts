@@ -6,12 +6,15 @@ import { createDomRenderer } from "@gable/renderer-dom";
 import type { ApplicationLike, FrameScheduler } from "./index.js";
 
 export function fakeApp() {
+  const stages: Container[] = [];
   const log = { created: 0, inits: 0, renders: 0, destroyed: 0 };
   return {
     log,
+    stages,
     create(): ApplicationLike {
       log.created++;
       const stage = new Container();
+      stages.push(stage);
       const canvas = document.createElement("canvas");
       return {
         async init() {
@@ -57,7 +60,12 @@ export function manualScheduler() {
 }
 
 export const live: Array<{ destroy(): void }> = [];
+// Each boot is its own "module", so classes registered by an earlier test never shadow this one's.
+let moduleUrl = "gable-test://host-0";
+let boots = 0;
+
 export function boot(Host: new () => object) {
+  moduleUrl = `gable-test://host-${++boots}`;
   const target = document.createElement("div");
   document.body.append(target);
   const ref = bootstrap(Host as never, { renderer: createDomRenderer(), target });
@@ -65,5 +73,5 @@ export function boot(Host: new () => object) {
   return { ref, target };
 }
 
-export const update = (_ref: object, Host: Function) => applyUpdate([{ url: "gable-test://host", exports: { [Host.name]: Host } }]);
+export const update = (_ref: object, Host: Function) => applyUpdate([{ url: moduleUrl, exports: { [Host.name]: Host } }]);
 

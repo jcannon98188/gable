@@ -1,6 +1,7 @@
 // The heavy half of <gable-canvas>: a component whose template is built with the Pixi renderer. This module (and
 // renderer.ts, and pixi.js behind it) is reached only through the host's dynamic import (TASK-104.12).
-import { hotData, html, input } from "@gable/core";
+import { hotData, html, input, isHotUpdating } from "@gable/core";
+import type { Container } from "pixi.js";
 import { DEV } from "./dev.js";
 import { createPixiRenderer, type PixiRendererOptions, type PixiSceneRenderer } from "./renderer.js";
 
@@ -16,8 +17,8 @@ interface Held {
 }
 
 // A host edit rebuilds the host's view, and the scene inside its `@defer` block is created a moment after the old scene was
-// retired, outside the hot update that pairs `hotData` stores. So the renderer of a scene that just lost its last instance
-// waits here (dev only) for a replacement to claim it, and is destroyed if none does within the grace period. Claims go
+// retired, outside the build that pairs `hotData` stores. So the renderer of a scene that just lost its last instance
+// waits here (dev only, and only when the release is part of a hot update, never a real unmount) for a replacement to claim it, and is destroyed if none does within the grace period. Claims go
 // first come, first served, which pairs several canvases on a page in rebuild order.
 const ORPHAN_GRACE_MS = 200;
 const orphans = new Map<Held, ReturnType<typeof setTimeout>>();
@@ -59,12 +60,24 @@ export class GableCanvasScene {
       const real = held.renderer;
       const guard = {};
       held.live.add(guard);
+      // The renderer (and its root) outlives one scene instance, so each instance removes the nodes it put at the root when it goes.
+      const top = new Set<Container>();
       const renderer: PixiSceneRenderer = {
         ...real,
+        insert(parent, node, before) {
+          if (parent === real.root) top.add(node);
+          real.insert(parent, node, before);
+        },
+        remove(node) {
+          top.delete(node);
+          real.remove(node);
+        },
         destroy() {
+          for (const node of top) if (!node.destroyed && node.parent === real.root) real.remove(node);
+          top.clear();
           held.live.delete(guard);
           if (held.live.size > 0) return;
-          if (DEV) orphan(held, real);
+          if (DEV && isHotUpdating()) orphan(held, real);
           else real.destroy();
         },
       };

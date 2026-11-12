@@ -8,6 +8,7 @@ import type { Renderer } from "./renderer.js";
 import { signal, untracked, type WritableSignal } from "./signals.js";
 import { describe, ownMembers, type Definition } from "./hmr-source.js";
 import { transferState } from "./hmr-transfer.js";
+import { hotUpdate } from "./hot-data.js";
 
 type Cls = Function & Record<string, any>;
 /**
@@ -569,8 +570,13 @@ function applyUpdateNow(updates: ModuleUpdate[], failures: unknown[], roots?: ob
     building--;
 
     // Everything built: retire the old, then patch styles in place.
-    for (const s of swaps) s.commit();
-    for (const fn of retire) fn();
+    hotUpdate.retiring = true;
+    try {
+      for (const s of swaps) s.commit();
+      for (const fn of retire) fn();
+    } finally {
+      hotUpdate.retiring = false;
+    }
     for (const s of staged) {
       if (!s.entry.canonical.meta) continue;
       for (const r of records) if (r.kind === "component" && r.Class === s.entry.canonical && r.renderer) registerComponentStyles(r.Class as any, r.renderer);
