@@ -4,7 +4,7 @@ title: Gable Canvas design map
 status: To Do
 assignee: []
 created_date: '2026-11-12T05:41:00Z'
-updated_date: '2026-11-12T06:37:00Z'
+updated_date: '2026-11-12T16:52:00Z'
 labels:
   - wayfinder:map
 dependencies: []
@@ -31,6 +31,7 @@ A spec and a set of locked decisions, ready to turn into build tickets, for a de
 
 <!-- the index: one line per closed ticket -->
 
+- [How does a canvas scene mount inside a DOM app? (TASK-104.5)](backlog/tasks/task-104.5%20-%20How-does-a-canvas-scene-mount-inside-a-DOM-app.md): a DOM-hosted `<gable-canvas>` component declares a renderer boundary in `meta`; its template and projected children build with the Pixi renderer, sharing the host's scope and injector (ADR 0019); core gains only the boundary and `Renderer.destroy?()`; DOM and scene talk through DI-shared signals; size is an injected signal service; scene HMR keeps the Application, host edits recreate it.
 - [What should a declarative game look like to author? (TASK-104.3)](backlog/tasks/task-104.3%20-%20What-should-a-declarative-game-look-like-to-author.md): entities are components (a `<game-ship>`, `<game-rock>` per entity, composed in the scene template, coordinating through injected services); direct node writes through template refs are a sanctioned fast path for high-count entities; the per-frame hook is an injected `Frame` service (`inject(Frame).onFrame(dt => ...)` as a field initialiser); scene tags and properties mirror Pixi names 1:1. Runnable prototype on branch `prototype/canvas-authoring`.
 - [Which library do we bind to? (TASK-104.4)](backlog/tasks/task-104.4%20-%20Which-library-do-we-bind-to.md): PixiJS 8 (child order is draw order, plain property writes, built-in events, text, graphics, masks, filters); 3D dropped from the effort, Three.js was the runner-up; engines (Phaser, Excalibur, melonJS, KAPLAY) were excluded. Spike on branch `research/canvas-library-spike`.
 - [Which 2D/3D rendering libraries are viable, and how do they compare? (TASK-104.1)](backlog/tasks/task-104.1%20-%20Which-2D-3D-rendering-libraries-are-viable-and-how-do-they-compare.md): facts gathered for PixiJS 8.23, Three r187, Babylon 9.35, Phaser 4.2.1, Excalibur 1.0.0, Konva 10.9.1, Two.js, Canvas2D, plus melonJS, PlayCanvas and KAPLAY; open gaps (Pixi headless testing, Three WebGPU production status, Excalibur/Konva insert-at-index, Firefox WebGPU sources disagree) are marked unverified. Findings on branch `research/canvas-libraries`.
@@ -38,8 +39,8 @@ A spec and a set of locked decisions, ready to turn into build tickets, for a de
 
 ## Not yet specified
 
-- HMR for game state: keeping scene and game state across edits. Waits on the hosting model.
-- Accessibility and DOM interplay for canvas content. Waits on the hosting model.
+- HMR for game state: scene edits keep the Application (TASK-104.5); what remains is keeping game state (entities, timers, in-flight frames) across edits. Waits on the update model.
+- Accessibility and DOM interplay for canvas content: how canvas content is exposed to assistive tech and how focus moves between the DOM HUD and the canvas. Waits on the input ticket.
 - Package layout, naming and the public API surface. Waits on most of the above.
 - Performance budgets and devtools support. Waits on the update model.
 
@@ -48,5 +49,6 @@ A spec and a set of locked decisions, ready to turn into build tickets, for a de
 - Gable Native / native canvas (TASK-99 owns it).
 - Physics, audio, ECS, networking, tilemap editors (separate efforts on top of this binding).
 - A library-agnostic scene abstraction layer.
+- A whole-app canvas renderer and template-level renderer-switching syntax: the hosting model is a DOM-hosted renderer boundary on a component (TASK-104.5, ADR 0019).
 - 3D (a Three.js sibling binding or anything else): dropped by the human when the library was picked; Pixi has no in-library 3D and the effort is 2D only.
 <!-- SECTION:DESCRIPTION:END -->
