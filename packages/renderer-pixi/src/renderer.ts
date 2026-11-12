@@ -7,8 +7,9 @@
 // lightweight records that mark their graphics dirty; `frame()` redraws each dirty graphics once.
 import "pixi.js/events"; // installs eventMode, cursor, hitArea and interactiveChildren on Container
 import { Application, BitmapText, Container, Graphics, NineSliceSprite, Sprite, Text, Texture, TilingSprite } from "pixi.js";
-import { flushSync, signal, type Provider, type WritableSignal } from "@gable/core";
+import { flushSync, type Provider } from "@gable/core";
 import type { Renderer } from "@gable/core/renderer";
+import { CanvasSize } from "./canvas-size.js";
 import {
   SCENE_TAGS,
   SHAPE_TAGS,
@@ -20,13 +21,6 @@ import {
   type SceneTagName,
   type ShapeTagName,
 } from "./elements.js";
-
-/** What the scene sees of the host's canvas: its CSS size, in CSS pixels, and the device pixel ratio the buffer uses. Signals, so scenes lay themselves out reactively. */
-export class CanvasSize {
-  readonly width: WritableSignal<number> = signal(0);
-  readonly height: WritableSignal<number> = signal(0);
-  readonly pixelRatio: WritableSignal<number> = signal(1);
-}
 
 /** The slice of Pixi's `Application` the renderer uses; tests (and exotic setups) may supply their own. */
 export interface ApplicationLike {
@@ -72,6 +66,8 @@ export interface PixiSceneRenderer extends Renderer<Container> {
   frame(): void;
   /** Creates the Application (a dynamic, async init), puts its canvas into `element`, attaches the scene and starts the render loop. */
   mount(element: HTMLElement): Promise<void>;
+  /** Stops the loop, destroys the scene and the Application. Idempotent. */
+  destroy(): void;
 }
 
 /** A graphics shape child (`<rect>`, `<circle>`, ...): a record that contributes to its parent's drawing, never a display object. */
@@ -123,7 +119,11 @@ function lookup(table: Readonly<Record<string, PropSpec>>, name: string): Resolv
 
 const spec = (r: Resolved): PropSpec => ({ kind: r.kind, ...("type" in r ? { type: r.type } : {}) });
 
-export function createPixiRenderer(options: PixiRendererOptions = {}): PixiSceneRenderer {
+/**
+ * `options` may be a function, read when the Application is created (after the host's inputs are bound, which is not
+ * yet true when a boundary is built). Tags in a function-form options are not registered; use `registerTag`.
+ */
+export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRendererOptions) = {}): PixiSceneRenderer {
   const root = new Container({ label: "gable-scene-root" });
   const size = new CanvasSize();
   const registry = new Map<string, TagRegistration & { info: TagInfo }>();
@@ -141,7 +141,7 @@ export function createPixiRenderer(options: PixiRendererOptions = {}): PixiScene
   function registerTag(tag: string, reg: TagRegistration) {
     registry.set(tag, { ...reg, info: { tag, table: reg.props ? { ...containerProps, ...reg.props } : containerProps, textContent: false } });
   }
-  for (const [tag, reg] of Object.entries(options.tags ?? {})) registerTag(tag, reg);
+  for (const [tag, reg] of Object.entries(typeof given === "function" ? {} : (given.tags ?? {}))) registerTag(tag, reg);
 
   const builtIn = new Map<string, TagInfo>();
   for (const [tag, def] of Object.entries(SCENE_TAGS) as [SceneTagName, (typeof SCENE_TAGS)[SceneTagName]][]) {
@@ -364,6 +364,7 @@ export function createPixiRenderer(options: PixiRendererOptions = {}): PixiScene
     },
     async mount(element) {
       if (destroyed) return;
+      const options = typeof given === "function" ? given() : given;
       const created = (options.createApplication ?? (() => new Application() as unknown as ApplicationLike))();
       app = created;
       const ratio = options.resolution ?? (globalThis as { devicePixelRatio?: number }).devicePixelRatio ?? 1;
@@ -441,10 +442,20 @@ const request = (cb: () => void): number =>
   typeof requestAnimationFrame === "function" ? requestAnimationFrame(cb) : (setTimeout(cb, 16) as unknown as number);
 const cancel = (id: number): void => (typeof cancelAnimationFrame === "function" ? cancelAnimationFrame(id) : clearTimeout(id));
 
-/** The renderer boundary factory for `meta.renderer`: `renderer: pixiRenderer({ background: "#000" })`. */
-export function pixiRenderer(options: PixiRendererOptions = {}): (instance: unknown) => { renderer: PixiSceneRenderer; root: Container } {
-  return () => {
+/**
+ * The renderer boundary factory for `meta.renderer`: `renderer: pixiRenderer({ background: "#000" })`. The scene is built
+ * into a Pixi container right away; the Application is created asynchronously inside the host element and the scene is
+ * attached to its stage. Destroying the host calls the renderer's `destroy()`, which releases the scene and the Application.
+ */
+export function pixiRenderer(
+  options: PixiRendererOptions | (() => PixiRendererOptions) = {},
+): (instance: unknown, parent: { host: unknown }) => { renderer: PixiSceneRenderer; root: Container } {
+  return (_instance, parent) => {
     const renderer = createPixiRenderer(options);
+    const host = parent.host as HTMLElement;
+    Promise.resolve()
+      .then(() => renderer.mount(host))
+      .catch((error) => console.error("[gable] the Pixi canvas failed to start", error));
     return { renderer, root: renderer.root };
   };
 }
