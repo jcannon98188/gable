@@ -72,6 +72,7 @@ export function gable(): Plugin {
   };
 }
 
+export { gableAssetFamilies, describeFamily } from "./asset-families.js";
 export { gableI18n, type GableI18nOptions, type OnMissing } from "./i18n/plugin.js";
 export { extractFromSource, extractProject } from "./i18n/extract.js";
 export { bakeSource, bakeHtml, type BakeOptions } from "./i18n/bake.js";
