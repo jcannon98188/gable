@@ -1,0 +1,17 @@
+{
+  "name": "gable-canvas-benchmark",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Benchmark for the Gable canvas binding (@gable/renderer-pixi): per-phase frame cost for the entity update styles, a Node microbench, and a CI regression gate.",
+  "scripts": {
+    "bench": "node scripts/run.mjs",
+    "bench:gpu": "node scripts/run.mjs --gpu real",
+    "microbench": "vitest run --config vitest.config.ts",
+    "compare": "node scripts/compare.mjs",
+    "test:compare": "node --test scripts/compare.test.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.65.0"
+  }
+}

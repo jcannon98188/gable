@@ -2,3 +2,6 @@ node_modules
 dist
 *.tsbuildinfo
 site/src/generated/api/
+examples/canvas-benchmark/.bench-dist
+examples/canvas-benchmark/results/*.json
+!examples/canvas-benchmark/results/real-gpu.json
