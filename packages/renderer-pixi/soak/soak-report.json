@@ -1,0 +1,131 @@
+{
+  "edits": 240,
+  "rocks": 12,
+  "samples": [
+    {
+      "edit": 0,
+      "heapMB": 51.53,
+      "treeNodes": 62,
+      "liveUnparented": 0,
+      "applications": 1,
+      "intervals": 12,
+      "hooks": 12
+    },
+    {
+      "edit": 20,
+      "heapMB": 53.36,
+      "treeNodes": 62,
+      "liveUnparented": 0,
+      "applications": 1,
+      "intervals": 12,
+      "hooks": 12
+    },
+    {
+      "edit": 40,
+      "heapMB": 53.69,
+      "treeNodes": 62,
+      "liveUnparented": 0,
+      "applications": 1,
+      "intervals": 12,
+      "hooks": 12
+    },
+    {
+      "edit": 60,
+      "heapMB": 54.21,
+      "treeNodes": 62,
+      "liveUnparented": 0,
+      "applications": 1,
+      "intervals": 12,
+      "hooks": 12
+    },
+    {
+      "edit": 80,
+      "heapMB": 54.78,
+      "treeNodes": 62,
+      "liveUnparented": 0,
+      "applications": 1,
+      "intervals": 12,
+      "hooks": 12
+    },
+    {
+      "edit": 100,
+      "heapMB": 54.97,
+      "treeNodes": 62,
+      "liveUnparented": 0,
+      "applications": 1,
+      "intervals": 12,
+      "hooks": 12
+    },
+    {
+      "edit": 120,
+      "heapMB": 55.29,
+      "treeNodes": 62,
+      "liveUnparented": 0,
+      "applications": 1,
+      "intervals": 12,
+      "hooks": 12
+    },
+    {
+      "edit": 140,
+      "heapMB": 55.75,
+      "treeNodes": 62,
+      "liveUnparented": 0,
+      "applications": 1,
+      "intervals": 12,
+      "hooks": 12
+    },
+    {
+      "edit": 160,
+      "heapMB": 55.88,
+      "treeNodes": 62,
+      "liveUnparented": 0,
+      "applications": 1,
+      "intervals": 12,
+      "hooks": 12
+    },
+    {
+      "edit": 180,
+      "heapMB": 56.18,
+      "treeNodes": 62,
+      "liveUnparented": 0,
+      "applications": 1,
+      "intervals": 12,
+      "hooks": 12
+    },
+    {
+      "edit": 200,
+      "heapMB": 56.63,
+      "treeNodes": 62,
+      "liveUnparented": 0,
+      "applications": 1,
+      "intervals": 12,
+      "hooks": 12
+    },
+    {
+      "edit": 220,
+      "heapMB": 56.75,
+      "treeNodes": 62,
+      "liveUnparented": 0,
+      "applications": 1,
+      "intervals": 12,
+      "hooks": 12
+    },
+    {
+      "edit": 240,
+      "heapMB": 57.05,
+      "treeNodes": 62,
+      "liveUnparented": 0,
+      "applications": 1,
+      "intervals": 12,
+      "hooks": 12
+    }
+  ],
+  "growth": {
+    "heapMB": 3.69,
+    "treeNodes": 0,
+    "liveUnparented": 0,
+    "heapKBPerEdit": 17
+  },
+  "applicationsCreated": 1,
+  "applicationsDestroyedAfterUnmount": 1
+}

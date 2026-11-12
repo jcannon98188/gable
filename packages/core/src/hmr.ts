@@ -231,7 +231,7 @@ const impl: DevHooks = {
     const C = canon(Class) as Cls;
     instrument(C);
     let deps = new Set<object>();
-    const old = session?.queues.get(C)?.shift();
+    let old = session?.queues.get(C)?.shift();
     if (session && old && own && old.injector) {
       session.injectorPairs.set(own, old.injector);
       // Services the old component's injector had resolved are re-created now so their state carries over.
@@ -244,6 +244,9 @@ const impl: DevHooks = {
       hot,
       construct: () => construct(C, (d) => (deps = d)),
       done(info) {
+        // The replacement outlives the old instance: letting go of it here keeps each generation from holding the one before.
+        const replaced = old;
+        old = undefined;
         const rec: Rec = {
           kind: "component",
           seq: seq++,
@@ -259,7 +262,7 @@ const impl: DevHooks = {
         records.add(rec);
         byInstance.set(info.instance, rec);
         info.scope.onDispose(() => records.delete(rec));
-        if (old && !session!.noTransfer.has(C)) transferState(old.instance, info.instance, isService);
+        if (replaced && !session!.noTransfer.has(C)) transferState(replaced.instance, info.instance, isService);
       },
     };
   },
