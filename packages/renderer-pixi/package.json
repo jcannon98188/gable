@@ -22,7 +22,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json"
+    "build": "tsc -p tsconfig.build.json",
+    "soak": "vitest run --config soak/vitest.config.ts"
   },
   "peerDependencies": {
     "@gable/core": "~0.0.0",

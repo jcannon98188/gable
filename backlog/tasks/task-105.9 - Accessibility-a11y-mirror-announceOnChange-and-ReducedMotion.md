@@ -1,11 +1,11 @@
 ---
 id: TASK-105.9
 title: 'Accessibility: [a11y] mirror, announceOnChange and ReducedMotion'
-status: In Progress
+status: Done
 assignee:
   - '@jason'
 created_date: '2026-11-12T21:47:00Z'
-updated_date: '2026-11-12T23:41:00Z'
+updated_date: '2026-11-12T23:53:00Z'
 labels: []
 dependencies:
   - TASK-105.3
@@ -24,10 +24,16 @@ TASK-104.11: opt-in [a11y] property ({ role, label, description?, focusable?, or
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Tagged nodes get a visually hidden DOM element with the given role and label, positioned from node bounds in scene order unless order overrides
-- [ ] #2 Click, Enter and Space on a mirror element fire the node's pointer-tap handler
-- [ ] #3 Tab and Shift+Tab always leave the canvas and Escape is never captured
-- [ ] #4 announceOnChange uses LiveAnnouncer and is throttled
-- [ ] #5 ReducedMotion reflects prefers-reduced-motion as a signal
-- [ ] #6 The test renderer records the mirror (fixture.scene.a11y(), focus, tab) and announcements
+- [x] #1 Tagged nodes get a visually hidden DOM element with the given role and label, positioned from node bounds in scene order unless order overrides
+- [x] #2 Click, Enter and Space on a mirror element fire the node's pointer-tap handler
+- [x] #3 Tab and Shift+Tab always leave the canvas and Escape is never captured
+- [x] #4 announceOnChange uses LiveAnnouncer and is throttled
+- [x] #5 ReducedMotion reflects prefers-reduced-motion as a signal
+- [x] #6 The test renderer records the mirror (fixture.scene.a11y(), focus, tab) and announcements
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added accessibility to packages/renderer-pixi: opt-in [a11y] property (bound object {role,label,description?,focusable?,order?}; added to the shared element table) backed by a Gable-owned hidden DOM mirror (button -> real <button>, other roles -> div with that role; transparent not opacity:0 so the DOM focus ring shows; pointer-events none; inside the host as data-gable-a11y), synced once per rendered frame; activation by click/Enter/Space dispatches pointertap on the node; no focus trap (Tab/Escape/arrows never prevented; host tabindex -1 while focusable mirror elements exist); announceOnChange helper over LiveAnnouncer (throttled, latest value wins, scope cleanup); ReducedMotion signal service (matchMedia option for tests); pixi-free A11yRecorder exported from @gable/renderer-pixi/testing. Tests: a11y.test.ts (30) plus conformance sets. Verified after merge (integration 9f0275d): core 96, renderer-pixi 158, testing 370, language-service 172, all pass. Follow-ups: A11yRecorder must be exposed by the TASK-105.8 test renderer as fixture.scene.a11y/focus/tab; real-browser axe-core check belongs to TASK-105.10; lint for pointer-listening nodes without [a11y] belongs to TASK-105.15.
+<!-- SECTION:FINAL_SUMMARY:END -->

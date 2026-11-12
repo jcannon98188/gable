@@ -14,7 +14,7 @@ const sceneTags = Object.keys(SCENE_TAGS) as SceneTagName[];
 const events = Object.keys(SCENE_EVENTS);
 
 // Table properties that are Gable conventions rather than fields of the Pixi object (as in the renderer's own conformance test).
-const GABLE_ONLY = new Set(["fill", "stroke", "strokeWidth", "text", "context"]);
+const GABLE_ONLY = new Set(["fill", "stroke", "strokeWidth", "text", "context", "a11y"]);
 const TEXT_STYLE = new Set(["fontSize", "fontFamily", "fontWeight", "fontStyle", "fill", "align", "wordWrap", "wordWrapWidth", "letterSpacing", "stroke", "lineHeight"]);
 
 describe("the element map is the shared table", () => {

@@ -3,6 +3,17 @@ import { DEV } from "./dev-hooks.js";
 /** What a component's Setup sees while it runs: the dev runtime's store for this instance (undefined without a hot-update runtime). */
 export const setup: { active: boolean; store: Map<string, unknown> | undefined } = { active: false, store: undefined };
 
+/** Set by the hot-update runtime while it retires the old instances of an update. */
+export const hotUpdate = { retiring: false };
+
+/**
+ * Dev only: true while a hot update retires the components it replaced, so a resource owner can tell a rebuild (keep the
+ * resource for the replacement) from a real unmount (release it). Always false in production.
+ */
+export function isHotUpdating(): boolean {
+  return DEV && hotUpdate.retiring;
+}
+
 /**
  * Dev only: a value a component owns that cannot be copied (a GPU context, a socket, a worker) and so must survive a
  * hot edit of the component. Call it in a field initialiser. The first call for this component instance runs `create`;

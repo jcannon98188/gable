@@ -1,0 +1,23 @@
+import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
+import { defineConfig } from "vite";
+
+// Workspace packages resolve from source, as the root vitest.config.ts does, so no build is needed.
+// GABLE_SRC points at another checkout's repo root: the CI gate builds the same page against the base commit's packages
+// to measure a baseline on the same runner.
+const root = process.env.GABLE_SRC ? resolve(process.env.GABLE_SRC) : fileURLToPath(new URL("../..", import.meta.url));
+const pkg = (p: string) => resolve(root, "packages", p);
+
+export const aliases = [
+  { find: /^@gable\/core$/, replacement: pkg("core/src/index.ts") },
+  { find: /^@gable\/core\/renderer$/, replacement: pkg("core/src/renderer.ts") },
+  { find: /^@gable\/core\/internal$/, replacement: pkg("core/src/internal.ts") },
+  { find: /^@gable\/renderer-dom$/, replacement: pkg("renderer-dom/src/index.ts") },
+  { find: /^@gable\/renderer-pixi$/, replacement: pkg("renderer-pixi/src/index.ts") },
+];
+
+export default defineConfig({
+  resolve: { alias: aliases },
+  server: { fs: { strict: false } },
+  build: { outDir: process.env.GABLE_BENCH_OUT ?? "dist", emptyOutDir: true, minify: true, target: "es2022" },
+});

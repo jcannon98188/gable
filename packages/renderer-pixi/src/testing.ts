@@ -8,3 +8,7 @@ export { provideTestAssets } from "./scene-test/assets.js";
 export type { BundleScript, TestAssets, TestAssetsOptions } from "./scene-test/assets.js";
 export { mountWithScene } from "./scene-test/fixture.js";
 export type { MountWithSceneOptions, SceneFixture } from "./scene-test/fixture.js";
+export { A11yRecorder } from "./a11y-testing.js";
+export type { TabOptions } from "./a11y-testing.js";
+export { A11yMirror } from "./a11y.js";
+export type { A11yEntry, A11yNode, A11yProps } from "./a11y.js";

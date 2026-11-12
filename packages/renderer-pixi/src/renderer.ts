@@ -15,6 +15,9 @@ import { Frame } from "./frame.js";
 import { Gamepad, type GetGamepads } from "./gamepad.js";
 import { Keyboard } from "./keyboard.js";
 import { Pointer } from "./pointer.js";
+import { A11yMirror, type A11yProps } from "./a11y.js";
+import { DomA11ySink } from "./a11y-dom.js";
+import { ReducedMotion, type MatchMedia } from "./reduced-motion.js";
 import {
   SCENE_TAGS,
   SHAPE_TAGS,
@@ -67,6 +70,8 @@ export interface PixiRendererOptions {
   keyboard?: "host" | "global";
   /** Source of gamepads, polled once per frame. Default: `navigator.getGamepads` where it exists. */
   getGamepads?: GetGamepads;
+  /** Source of the `prefers-reduced-motion` media query for the ReducedMotion service. Default: `window.matchMedia` where it exists. */
+  matchMedia?: MatchMedia;
   /** Extra tags registered before the scene is built. */
   tags?: Readonly<Record<string, TagRegistration>>;
 }
@@ -90,12 +95,18 @@ export interface PixiSceneRenderer extends Renderer<Container> {
   readonly pointer: Pointer;
   readonly keyboard: Keyboard;
   readonly gamepad: Gamepad;
+  /** The user's reduced-motion preference; provided to scene components. */
+  readonly reducedMotion: ReducedMotion;
+  /** The semantic mirror of `[a11y]` nodes (TASK-104.11). It renders into the DOM once the renderer is mounted. */
+  readonly a11y: A11yMirror<Container>;
   /** Adds a tag. Registering an existing tag replaces it. */
   registerTag(tag: string, registration: TagRegistration): void;
   /** Redraws every graphics whose shapes changed since the last frame, once each. The loop calls this before each render. */
   frame(): void;
   /** Creates the Application (a dynamic, async init), puts its canvas into `element`, attaches the scene and starts the render loop. */
   mount(element: HTMLElement): Promise<void>;
+  /** Dev HMR: moves the canvas and the resize observer to a replacement host element, keeping the Application, GL context and loop. Before the Application is ready it only retargets where `mount()` will put the canvas. */
+  rehost(element: HTMLElement): void;
   /** Stops the loop, destroys the scene and the Application. Idempotent. */
   destroy(): void;
 }
@@ -160,8 +171,14 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
   const pointer = new Pointer();
   const keyboard = new Keyboard();
   const gamepad = new Gamepad();
+  const reducedMotion = new ReducedMotion();
+  const mirror = new A11yMirror<Container>();
+  let hostTabindexManaged = false;
   const detachInput: Array<() => void> = [];
   let touched = true; // the scene changed since the last render; the first frame always draws
+  const detachReducedMotion = reducedMotion.attach(
+    (typeof given === "function" ? undefined : given.matchMedia) ?? (typeof matchMedia === "function" ? (q) => matchMedia(q) : null),
+  );
   const registry = new Map<string, TagRegistration & { info: TagInfo }>();
   const infos = new WeakMap<Container, TagInfo>();
   const shapeLists = new WeakMap<Graphics, ShapeNode[]>();
@@ -190,6 +207,8 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
   let app: ApplicationLike | null = null;
   let appReady = false;
   let stopLoop: (() => void) | null = null;
+  let hostElement: HTMLElement | null = null;
+  let moveHost: ((element: HTMLElement) => void) | null = null;
 
   const containerProps = SCENE_TAGS.container.props;
 
@@ -277,6 +296,10 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     const info = infoOf(node);
     const resolved = lookup(info.table, name);
     if (!resolved) unknownProperty(info.tag, name);
+    if (name === "a11y") {
+      mirror.set(node, value as A11yProps | null | undefined);
+      return;
+    }
     const target = node as unknown as Record<string, any>;
     if (name === "texture" && typeof value === "string") value = textureFromCache(value, info.tag);
     const dot = name.indexOf(".");
@@ -308,13 +331,17 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     pointer,
     keyboard,
     gamepad,
+    reducedMotion,
+    a11y: mirror,
     invalidate() {
       touched = true;
     },
+    warnRawTimers: DEV,
     providers: [{ provide: CanvasSize, useValue: size } as Provider, { provide: Frame, useValue: frameService } as Provider,
       { provide: Pointer, useValue: pointer } as Provider,
       { provide: Keyboard, useValue: keyboard } as Provider,
       { provide: Gamepad, useValue: gamepad } as Provider,
+      { provide: ReducedMotion, useValue: reducedMotion } as Provider,
     ],
     registerTag,
     createElement(tag) {
@@ -435,6 +462,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       }
       // remove() means gone for good here; a moved node goes through insert().
       node.removeFromParent();
+      mirror.remove(node);
       if (node instanceof Graphics) dirty.delete(node);
       node.destroy({ children: true });
     },
@@ -454,6 +482,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     frame() {
       for (const g of dirty) if (!g.destroyed) redraw(g);
       dirty.clear();
+      mirror.sync(root);
     },
     async mount(element) {
       function mountInput(created: ApplicationLike, element: HTMLElement, options: PixiRendererOptions, first: { w: number; h: number }) {
@@ -469,7 +498,10 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         if (options.keyboard === "global") {
           detachInput.push(keyboard.attach(window, "global"));
         } else {
-          if (!element.hasAttribute("tabindex")) element.tabIndex = 0;
+          if (!element.hasAttribute("tabindex")) {
+            element.tabIndex = 0;
+            hostTabindexManaged = true;
+          }
           detachInput.push(keyboard.attach(element, "host"));
           const focusHost = () => element.focus({ preventScroll: true });
           created.canvas.addEventListener("pointerdown", focusHost);
@@ -480,11 +512,12 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       }
 
       if (destroyed) return;
+      hostElement = element;
       const options = typeof given === "function" ? given() : given;
       const created = (options.createApplication ?? (() => new Application() as unknown as ApplicationLike))();
       app = created;
       const ratio = options.resolution ?? (globalThis as { devicePixelRatio?: number }).devicePixelRatio ?? 1;
-      const measure = () => ({ w: element.clientWidth || options.width || 300, h: element.clientHeight || options.height || 150 });
+      const measure = () => ({ w: hostElement!.clientWidth || options.width || 300, h: hostElement!.clientHeight || options.height || 150 });
       const first = measure();
       await created.init({
         width: first.w,
@@ -503,12 +536,19 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       }
       appReady = true;
       created.canvas.style.display = "block";
-      element.appendChild(created.canvas);
+      hostElement!.appendChild(created.canvas);
       created.stage.addChild(root);
       size.pixelRatio.set(ratio);
       size.width.set(first.w);
       size.height.set(first.h);
       mountInput(created, element, options, first);
+      // The mirror elements become the tab stops while there are any; the host is the one stop otherwise.
+      mirror.attach(new DomA11ySink<Container>(element, (node, event) => {
+        if (mirror.activate(node, event)) touched = true;
+      }, (count) => {
+        if (hostTabindexManaged) element.tabIndex = count > 0 ? -1 : 0;
+      }));
+      detachInput.push(() => mirror.detach());
 
       const resize = () => {
         const { w, h } = measure();
@@ -520,7 +560,13 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         size.height.set(h);
       };
       const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(resize);
-      observer?.observe(element);
+      observer?.observe(hostElement!);
+      moveHost = (next) => {
+        observer?.disconnect();
+        next.appendChild(created.canvas);
+        observer?.observe(next);
+        resize();
+      };
 
       // One loop per boundary. Per frame: hooks, then a synchronous effect flush, then one render (ADR 0020).
       const scheduler = options.scheduler ?? defaultScheduler;
@@ -554,11 +600,18 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         while (detachInput.length) detachInput.pop()!();
       };
     },
+    rehost(element) {
+      if (destroyed) return;
+      hostElement = element;
+      moveHost?.(element);
+    },
     destroy() {
       if (destroyed) return;
       destroyed = true;
       stopLoop?.();
       stopLoop = null;
+      detachReducedMotion();
+      mirror.detach();
       dirty.clear();
       if (!root.destroyed) root.destroy({ children: true });
       if (app) {
