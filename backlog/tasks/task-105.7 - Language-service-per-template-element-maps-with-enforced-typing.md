@@ -1,10 +1,11 @@
 ---
 id: TASK-105.7
 title: 'Language service: per-template element maps with enforced typing'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@jason'
 created_date: '2026-11-12T21:47:00Z'
-updated_date: '2026-11-12T21:47:00Z'
+updated_date: '2026-11-12T23:17:00Z'
 labels: []
 dependencies:
   - TASK-105.2

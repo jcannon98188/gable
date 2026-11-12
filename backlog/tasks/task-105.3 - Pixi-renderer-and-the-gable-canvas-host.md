@@ -1,10 +1,11 @@
 ---
 id: TASK-105.3
 title: Pixi renderer and the gable-canvas host
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@jason'
 created_date: '2026-11-12T21:46:00Z'
-updated_date: '2026-11-12T21:47:00Z'
+updated_date: '2026-11-12T23:17:00Z'
 labels: []
 dependencies:
   - TASK-105.1
