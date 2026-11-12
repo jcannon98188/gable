@@ -3,6 +3,13 @@
 // element map. This module must stay free of any pixi.js import (runtime or type), so tooling can
 // load it without pulling Pixi in. Pixi class and event names appear as strings only.
 
+/**
+ * The marker a scene component puts in `static meta` (`elements: pixiElements`) so its template is
+ * type-checked against the Pixi element map. Boundary components (`meta.renderer`) need no marker.
+ */
+export const pixiElements = "pixi" as const;
+export type PixiElements = typeof pixiElements;
+
 /** How a property's value is typed and how a static attribute string is converted. */
 export type PropKind = "number" | "boolean" | "string" | "color" | "point" | "object";
 

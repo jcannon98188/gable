@@ -8,6 +8,7 @@
 import type ts from "@typescript/typescript6";
 import type { RuleId } from "./config.js";
 import type { ElementNode, ExprKind, Src, TNode } from "./scan.js";
+import { childScene, knownSceneTag, sceneDeclarations, scenePropType, walkMode } from "./scene.js";
 
 /** A run of generated text; `src` is the template offset it was copied from, when it was copied. */
 export interface Part {
@@ -52,8 +53,10 @@ export interface EventSite {
   name: string;
   nameStart: number;
   tag: string;
-  /** The DOM event map of the element. */
+  /** The DOM event map of the element (the scene event map on a scene element). */
   dom: Probe;
+  /** A known scene tag: the event names are checked against the scene event map. */
+  scene?: boolean;
   /** The component instance type, when the tag is a known component. */
   component?: Probe;
   /** The element carries a camelCase attribute (`uiDrawerDrag`, `[uiSortable]`): an attribute directive whose outputs are not known here. */
@@ -104,6 +107,8 @@ export interface TemplateModel {
   insertAt: number;
   indent: string;
   tree: TNode[];
+  /** The template is typed against the Pixi element map (a renderer boundary or a marked scene component). */
+  scene: boolean;
   /** `${}` hole expressions, checked as plain TypeScript. */
   holes: Src[];
 }
@@ -140,6 +145,15 @@ const LITERALS = new Set(["true", "false", "null", "undefined"]);
 const LOOP_VARS = ["$index", "$first", "$last", "$count", "$even", "$odd"];
 const TOKEN = /\s+|[A-Za-z_$][\w$]*|\d+(?:\.\d+)?|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|\?\?|\?\.|[\s\S]/y;
 
+/** Whether any element of the template is typed against the scene map. */
+function hasScene(t: TemplateModel, isBoundary: (tag: string) => boolean): boolean {
+  let found = false;
+  walkMode(t.tree, t.scene, isBoundary, (_el, scene) => {
+    if (scene) found = true;
+  });
+  return found;
+}
+
 const DIRECTIVE_ATTR = /^[a-z][a-z0-9]*[A-Z]/;
 /** An attribute directive is applied by a camelCase attribute; its outputs cannot be resolved from the tag. */
 const hasDirective = (node: { attrs: Array<{ name: string }>; expressions: Array<{ kind: string; name: string }> }): boolean =>
@@ -158,8 +172,11 @@ export function emit(
   originalLength: number,
   /** The TypeScript type reference for the component class a tag selects, if the tag is a component. */
   componentType: (tag: string) => string | undefined = () => undefined,
+  /** Whether a tag selects a component that declares a renderer boundary (its children are scene elements). */
+  isBoundary: (tag: string) => boolean = () => false,
 ): Emitted {
   const items: Item[] = [HELPERS];
+  if (templates.some((t) => t.scene) || templates.some((t) => hasScene(t, isBoundary))) items.push(sceneDeclarations());
   const groups: Group[] = [];
   const refs: Ref[] = [];
   const events: EventSite[] = [];
@@ -238,7 +255,7 @@ export function emit(
     groups.push(group);
   }
 
-  function nodes(list: TNode[], outer: ReadonlySet<string>): void {
+  function nodes(list: TNode[], outer: ReadonlySet<string>, scene: boolean): void {
     const locals = new Set(outer);
     for (const node of list) {
       switch (node.type) {
@@ -250,8 +267,11 @@ export function emit(
           locals.add(node.name);
           break;
         case "element": {
+          // A known scene tag is typed by the element map; a component host in a scene is a container with the scene events.
+          const typed = scene && knownSceneTag(node.tag) && !componentType(node.tag);
+          const El = scene ? "__ScEl" : "__El";
           for (const name of node.refs) {
-            push(`const ${name}: __El<${JSON.stringify(node.tag)}> = undefined as any;\n`);
+            push(`const ${name}: ${El}<${JSON.stringify(node.tag)}> = undefined as any;\n`);
             locals.add(name);
           }
           for (const e of node.expressions) {
@@ -259,11 +279,12 @@ export function emit(
             if (e.kind === "handler") {
               const inner = new Set(locals).add("$event");
               const n = events.length;
-              const dom = probe(`declare const __evd_${n}: __EvMap<__El<${tag}>>;\n`);
+              const dom = probe(`declare const __evd_${n}: ${scene ? "__ScEvMap" : `__EvMap<__El<${tag}>>`};\n`);
               const comp = componentType(node.tag);
               const component = comp ? probe(`declare const __evc_${n}: ${comp};\n`) : undefined;
-              events.push({ name: e.name, nameStart: e.nameStart, tag: node.tag, dom, component, directive: hasDirective(node) });
-              push(`{ const $event: __Ev<${instanceType(node.tag)}, __El<${tag}>, ${JSON.stringify(e.name)}> = undefined as any; `);
+              events.push({ name: e.name, nameStart: e.nameStart, tag: node.tag, dom, component, directive: !scene && hasDirective(node), scene: typed });
+              const eventType = scene ? `__SEv<${instanceType(node.tag)}, ${JSON.stringify(e.name)}>` : `__Ev<${instanceType(node.tag)}, __El<${tag}>, ${JSON.stringify(e.name)}>`;
+              push(`{ const $event: ${eventType} = undefined as any; `);
               expression(e, "handler", inner, "", ";");
               push(" }\n");
             } else if (e.kind === "field") {
@@ -271,12 +292,16 @@ export function emit(
               expression(e, "field", locals, `__fld<${controlType(node)}>(`, ");\n", false, "field-value-mismatch");
               const comp = componentType(node.tag);
               if (comp) controls.push({ tag: node.tag, tagStart: node.tagStart, component: probe(`declare const __cc_${controls.length}: ${comp};\n`) });
-            } else if (e.kind === "model") expression(e, "model", locals, `__w<__Prop<${instanceType(node.tag)}, __El<${tag}>, ${JSON.stringify(e.name)}>>(`, ");\n");
+            } else if (e.kind === "model") expression(e, "model", locals, `__w<__Prop<${instanceType(node.tag)}, ${El}<${tag}>, ${JSON.stringify(e.name)}>>(`, ");\n");
             else if (e.name === "routerLink") expression(e, "value", locals, "__link(", ");\n", true, "router-link-type");
-            else expression(e, "value", locals, "void (", ");\n", true, undefined, e.name);
+            else {
+              const type = typed ? scenePropType(node.tag, e.name) : undefined;
+              if (type) expression(e, "value", locals, `__sv<${type}>(`, ");\n", true, undefined, e.name);
+              else expression(e, "value", locals, "void (", ");\n", true, undefined, e.name);
+            }
           }
           push("{\n");
-          nodes(node.children, locals);
+          nodes(node.children, locals, childScene(node, scene, isBoundary));
           push("}\n");
           break;
         }
@@ -291,7 +316,7 @@ export function emit(
                 inner.add(b.alias);
                 push(`if (${b.alias}) {\n`);
               } else expression(b.cond, "value", locals, "if (", ") {\n");
-              nodes(b.children, inner);
+              nodes(b.children, inner, scene);
               push("}");
               if (i + 1 < node.branches.length) {
                 push(" else {\n");
@@ -301,7 +326,7 @@ export function emit(
               if (b.alias) push(" }");
               push("\n");
             } else {
-              nodes(b.children, inner);
+              nodes(b.children, inner, scene);
             }
           };
           branch(0);
@@ -320,12 +345,12 @@ export function emit(
           }
           expression(node.track, "value", inner, "void (", ");\n", false);
           loop = info;
-          nodes(node.children, inner);
+          nodes(node.children, inner, scene);
           loop = outerLoop;
           push("}\n");
           if (node.empty) {
             push("{\n");
-            nodes(node.empty, locals);
+            nodes(node.empty, locals, scene);
             push("}\n");
           }
           break;
@@ -335,7 +360,7 @@ export function emit(
           for (const body of [node.children, node.placeholder, node.loading, node.error]) {
             if (!body) continue;
             push("{\n");
-            nodes(body, locals);
+            nodes(body, locals, scene);
             push("}\n");
           }
           break;
@@ -345,7 +370,7 @@ export function emit(
           for (const c of node.cases) {
             if (c.expr) expression(c.expr, "value", locals, "case ", ": {\n");
             else push("default: {\n");
-            nodes(c.children, locals);
+            nodes(c.children, locals, scene);
             push("break; }\n");
           }
           push("}\n");
@@ -359,7 +384,7 @@ export function emit(
     model = t;
     push(`function __gable_check_${n}(__c: ${t.className}) {\n`);
     for (const hole of t.holes) expression(hole, "hole", new Set(), "void (", ");\n");
-    nodes(t.tree, new Set());
+    nodes(t.tree, new Set(), t.scene);
     push("}\n");
   });
 

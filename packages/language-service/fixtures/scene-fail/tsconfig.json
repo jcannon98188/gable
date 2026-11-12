@@ -1,0 +1,1 @@
+{ "extends": "../tsconfig.fixture.json", "include": ["src"] }

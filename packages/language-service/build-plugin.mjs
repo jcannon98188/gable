@@ -13,7 +13,13 @@ export async function buildPlugin({ outFile, bundleTypescript = false, minify = 
     platform: "node",
     external: bundleTypescript ? [] : ["@typescript/typescript6"],
     // The shared expression grammar is inlined from source, so a build never needs core built first.
-    resolve: { alias: { "@gable/core/tooling": here("../core/src/tooling.ts") } },
+    resolve: {
+      alias: {
+        "@gable/core/tooling": here("../core/src/tooling.ts"),
+        // The scene element table is pixi-free, so it bundles from source too.
+        "@gable/renderer-pixi/elements": here("../renderer-pixi/src/elements.ts"),
+      },
+    },
     output: { file: outFile, format: "cjs", exports: "default", minify },
     logLevel: "warn",
   });

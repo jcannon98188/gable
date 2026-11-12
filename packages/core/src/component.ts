@@ -33,6 +33,12 @@ export interface ComponentMeta {
   host?: Record<string, string>;
   /** CSS for this component. Scoped to it unless `encapsulation` is `'none'`. */
   styles?: string | readonly string[];
+  /**
+   * Type-level marker for tooling: `elements: pixiElements` (from `@gable/renderer-pixi/elements`) says this component's
+   * template uses scene tags, so the language service types it against the Pixi element map. A renderer boundary
+   * (`renderer`) implies it. Not read at runtime.
+   */
+  elements?: unknown;
   /** Defaults to `'scoped'`; the renderer owns the mechanism. */
   encapsulation?: "scoped" | "none";
   /** Stable id for style registration (HMR replaces styles by id). Defaults to the class name. */

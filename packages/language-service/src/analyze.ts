@@ -10,6 +10,7 @@ import { a11yRules } from "./a11y-rules.js";
 import { i18nRules, i18nSourceRules } from "./i18n-rules.js";
 import { projectRules, sourceRules } from "./source-rules.js";
 import { componentMetaRules } from "./meta-rules.js";
+import { metaIsBoundary, metaIsScene, sceneRules } from "./scene.js";
 import { scanTemplate, ScanError, type ExprKind, type Src, type TNode } from "./scan.js";
 
 /** One problem the analyzer found in a template, a component or a source file. */
@@ -104,6 +105,7 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
   projectRules(options, (file, start, length, rule, message) => raw.push({ file, start, length, rule, message }));
   const components = new Map<string, ComponentInfo>();
   const sources = new Map<string, ts.SourceFile>();
+  const pendingScene: Array<{ model: TemplateModel; add: (start: number, length: number, rule: RuleId, message: string) => void }> = [];
   for (const sf of base.getSourceFiles()) {
     if (sf.isDeclarationFile || !rootNames.some((r) => norm(r) === norm(sf.fileName))) continue;
     sources.set(norm(sf.fileName), sf);
@@ -117,11 +119,16 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
     for (const model of models) {
       const add = (start: number, length: number, rule: RuleId, message: string) => raw.push({ file: sf.fileName, start, length, rule, message });
       templateRules(model, base.getTypeChecker(), add);
-      a11yRules(model, add);
+      if (!model.scene) a11yRules(model, add); // the a11y rules are about DOM semantics
       i18nRules(model, add, config);
+      pendingScene.push({ model, add });
     }
     if (models.length) files.set(norm(sf.fileName), { sf, models, observed: new Set(), syntax: new Map() });
   }
+
+  // Scene rules need every component of the project (a tag may select one declared in a later file).
+  const isBoundary = (tag: string) => !!components.get(tag)?.boundary;
+  for (const { model, add } of pendingScene) sceneRules(model, (tag) => components.has(tag), isBoundary, add);
 
   // Expression grammar is owned by @gable/core; a rejected expression gets one diagnostic and no check code.
   const validator = (state: FileState) => (e: Src, kind: ExprKind): boolean => {
@@ -137,7 +144,7 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
     const overlay = new Map<string, string>();
     const emitted = new Map<string, Emitted>();
     for (const [file, state] of files) {
-      const result = emit(state.models, state.observed, validator(state), state.sf.text.length, (tag) => componentType(components.get(tag), state.sf.fileName));
+      const result = emit(state.models, state.observed, validator(state), state.sf.text.length, (tag) => componentType(components.get(tag), state.sf.fileName), isBoundary);
       emitted.set(file, result);
       overlay.set(file, state.sf.text + result.text);
     }
@@ -336,7 +343,7 @@ function findTemplates(sf: ts.SourceFile, tag: string, onError: OnError): Templa
           if (!ts.isTaggedTemplateExpression(value) || !ts.isIdentifier(value.tag) || value.tag.text !== tag) continue;
           const lineStart = sf.getLineStarts()[sf.getLineAndCharacterOfPosition(member.getStart(sf)).line]!;
           const indent = /^[ \t]*/.exec(sf.text.slice(lineStart))![0];
-          const model = scanLiteral(sf, node, { insertAt: node.members[node.members.length - 1]!.end, indent }, value.template, onError);
+          const model = scanLiteral(sf, node, { insertAt: node.members[node.members.length - 1]!.end, indent, scene: metaIsScene(meta) }, value.template, onError);
           if (model) models.push(model);
         }
       }
@@ -348,7 +355,7 @@ function findTemplates(sf: ts.SourceFile, tag: string, onError: OnError): Templa
 }
 
 /** `${}` holes are not part of Gable templates (TASK-30): each one is reported, and the template is not scanned further. */
-function scanLiteral(sf: ts.SourceFile, classNode: ts.ClassDeclaration, placement: { insertAt: number; indent: string }, literal: ts.TemplateLiteral, onError: OnError): TemplateModel | undefined {
+function scanLiteral(sf: ts.SourceFile, classNode: ts.ClassDeclaration, placement: { insertAt: number; indent: string; scene: boolean }, literal: ts.TemplateLiteral, onError: OnError): TemplateModel | undefined {
   const bodyStart = literal.getStart(sf) + 1;
   const holes: Src[] = [];
   let text = sf.text.slice(bodyStart, literal.end - 1);
@@ -448,6 +455,8 @@ interface ComponentInfo {
   className: string;
   fileName: string;
   exported: boolean;
+  /** Declares a renderer boundary (`meta.renderer`): its children are scene elements. */
+  boundary: boolean;
 }
 
 /** Classes whose `static meta` has a literal `selector`. */
@@ -463,7 +472,7 @@ function findComponents(sf: ts.SourceFile): ComponentInfo[] {
         for (const prop of meta.properties) {
           if (!ts.isPropertyAssignment(prop) || !ts.isIdentifier(prop.name) || prop.name.text !== "selector" || !ts.isStringLiteralLike(prop.initializer)) continue;
           const exported = !!node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
-          out.push({ selector: prop.initializer.text, className: node.name.text, fileName: sf.fileName, exported });
+          out.push({ selector: prop.initializer.text, className: node.name.text, fileName: sf.fileName, exported, boundary: metaIsBoundary(meta) });
         }
       }
     }
@@ -503,7 +512,7 @@ function checkEvents(emitted: Emitted, sf: ts.SourceFile, checker: ts.TypeChecke
         const member = checker.getTypeOfSymbol(p);
         if (isObservableLike(checker, member) && !isSignal(checker, member)) names.add(p.name);
       }
-    } else if (!nativeTags.has(site.tag) || site.directive) continue;
+    } else if (!site.scene && (!nativeTags.has(site.tag) || site.directive)) continue;
     if (names.has(site.name)) continue;
     const hint = closest(site.name, [...names]);
     report(site, `Unknown event "${site.name}" on <${site.tag}>${hint ? `. Did you mean "${hint}"?` : ""}`);
