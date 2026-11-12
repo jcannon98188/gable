@@ -1,10 +1,11 @@
 ---
 id: TASK-105.5
 title: 'Input: scene events and the Pointer, Keyboard and Gamepad services'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@jason'
 created_date: '2026-11-12T21:46:00Z'
-updated_date: '2026-11-12T21:47:00Z'
+updated_date: '2026-11-12T23:35:00Z'
 labels: []
 dependencies:
   - TASK-105.3

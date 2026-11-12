@@ -1,10 +1,11 @@
 ---
 id: TASK-105.13
 title: Vite plugin that rewrites sibling asset paths
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@jason'
 created_date: '2026-11-12T21:47:00Z'
-updated_date: '2026-11-12T21:48:00Z'
+updated_date: '2026-11-12T23:35:00Z'
 labels: []
 dependencies:
   - TASK-105.6
