@@ -105,6 +105,8 @@ export interface PixiSceneRenderer extends Renderer<Container> {
   frame(): void;
   /** Creates the Application (a dynamic, async init), puts its canvas into `element`, attaches the scene and starts the render loop. */
   mount(element: HTMLElement): Promise<void>;
+  /** Dev HMR: moves the canvas and the resize observer to a replacement host element, keeping the Application, GL context and loop. Before the Application is ready it only retargets where `mount()` will put the canvas. */
+  rehost(element: HTMLElement): void;
   /** Stops the loop, destroys the scene and the Application. Idempotent. */
   destroy(): void;
 }
@@ -186,6 +188,8 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
   let app: ApplicationLike | null = null;
   let appReady = false;
   let stopLoop: (() => void) | null = null;
+  let hostElement: HTMLElement | null = null;
+  let moveHost: ((element: HTMLElement) => void) | null = null;
 
   const containerProps = SCENE_TAGS.container.props;
 
@@ -313,6 +317,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     invalidate() {
       touched = true;
     },
+    warnRawTimers: DEV,
     providers: [{ provide: CanvasSize, useValue: size } as Provider, { provide: Frame, useValue: frameService } as Provider,
       { provide: Pointer, useValue: pointer } as Provider,
       { provide: Keyboard, useValue: keyboard } as Provider,
@@ -482,11 +487,12 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       }
 
       if (destroyed) return;
+      hostElement = element;
       const options = typeof given === "function" ? given() : given;
       const created = (options.createApplication ?? (() => new Application() as unknown as ApplicationLike))();
       app = created;
       const ratio = options.resolution ?? (globalThis as { devicePixelRatio?: number }).devicePixelRatio ?? 1;
-      const measure = () => ({ w: element.clientWidth || options.width || 300, h: element.clientHeight || options.height || 150 });
+      const measure = () => ({ w: hostElement!.clientWidth || options.width || 300, h: hostElement!.clientHeight || options.height || 150 });
       const first = measure();
       await created.init({
         width: first.w,
@@ -505,7 +511,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       }
       appReady = true;
       created.canvas.style.display = "block";
-      element.appendChild(created.canvas);
+      hostElement!.appendChild(created.canvas);
       created.stage.addChild(root);
       size.pixelRatio.set(ratio);
       size.width.set(first.w);
@@ -529,7 +535,13 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         size.height.set(h);
       };
       const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(resize);
-      observer?.observe(element);
+      observer?.observe(hostElement!);
+      moveHost = (next) => {
+        observer?.disconnect();
+        next.appendChild(created.canvas);
+        observer?.observe(next);
+        resize();
+      };
 
       // One loop per boundary. Per frame: hooks, then a synchronous effect flush, then one render (ADR 0020).
       const scheduler = options.scheduler ?? defaultScheduler;
@@ -562,6 +574,11 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         observer?.disconnect();
         while (detachInput.length) detachInput.pop()!();
       };
+    },
+    rehost(element) {
+      if (destroyed) return;
+      hostElement = element;
+      moveHost?.(element);
     },
     destroy() {
       if (destroyed) return;
