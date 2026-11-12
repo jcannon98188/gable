@@ -1,0 +1,35 @@
+{
+  "name": "@gable/renderer-pixi",
+  "version": "0.0.0",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js"
+    },
+    "./elements": {
+      "types": "./dist/elements.d.ts",
+      "import": "./dist/elements.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "peerDependencies": {
+    "@gable/core": "~0.0.0",
+    "pixi.js": "^8.0.0"
+  },
+  "devDependencies": {
+    "@gable/core": "0.0.0",
+    "pixi.js": "^8.23.0"
+  }
+}
