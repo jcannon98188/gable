@@ -1,0 +1,4 @@
+info face="pixel" size=8
+common lineHeight=8 base=7 scaleW=8 scaleH=8 pages=1
+page id=0 file="pixel_0.png"
+chars count=0
