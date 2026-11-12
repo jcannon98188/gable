@@ -6,9 +6,10 @@
 // Writes are retained-mode: a signal write sets one Pixi property (a dotted path sets one axis). Graphics shapes are
 // lightweight records that mark their graphics dirty; `frame()` redraws each dirty graphics once.
 import "pixi.js/events"; // installs eventMode, cursor, hitArea and interactiveChildren on Container
-import { Application, BitmapText, Container, Graphics, NineSliceSprite, Sprite, Text, Texture, TilingSprite } from "pixi.js";
+import { Application, BitmapText, Cache, Container, Graphics, NineSliceSprite, Sprite, Text, Texture, TilingSprite } from "pixi.js";
 import { flushSync, type Provider } from "@gable/core";
 import type { Renderer } from "@gable/core/renderer";
+import { DEV } from "./dev.js";
 import { CanvasSize } from "./canvas-size.js";
 import {
   SCENE_TAGS,
@@ -198,6 +199,18 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     (parent as Text).text = (textParts.get(parent) ?? []).map((c) => c.text).join("");
   }
 
+  /** A string `[texture]` is looked up synchronously in Pixi's asset cache; it never starts a load (TASK-104.9). */
+  function textureFromCache(alias: string, tag: string): Texture {
+    const found: unknown = Cache.has(alias) ? Cache.get(alias) : undefined;
+    if (found instanceof Texture) return found;
+    if (DEV) {
+      console.warn(found === undefined
+        ? `<${tag} texture="${alias}"> in the "pixi" renderer: "${alias}" is not loaded, so the node shows an empty texture. Load its bundle first (inject(Assets).bundle(...).load()) and guard the node with @if (bundle.ready()).`
+        : `<${tag} texture="${alias}"> in the "pixi" renderer: "${alias}" is cached but is not a texture, so the node shows an empty texture.`);
+    }
+    return Texture.EMPTY;
+  }
+
   function setProperty(node: Container, name: string, value: unknown): void {
     if ((node as unknown) instanceof ShapeNode) {
       const shape = node as unknown as ShapeNode;
@@ -210,6 +223,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     const resolved = lookup(info.table, name);
     if (!resolved) unknownProperty(info.tag, name);
     const target = node as unknown as Record<string, any>;
+    if (name === "texture" && typeof value === "string") value = textureFromCache(value, info.tag);
     const dot = name.indexOf(".");
     if (dot !== -1) {
       target[name.slice(0, dot)][name.slice(dot + 1)] = value;
@@ -269,6 +283,10 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       const tag = (node as unknown) instanceof ShapeNode ? (node as unknown as ShapeNode).tag : infoOf(node).tag;
       const resolved = lookup(table, name);
       if (!resolved) unknownProperty(tag, name);
+      if (name === "texture" && !(node as unknown instanceof ShapeNode)) {
+        setProperty(node, name, value);
+        return;
+      }
       const converted = convertStaticAttribute(spec(resolved), value);
       if (!converted.ok) throw new Error(`Attribute "${name}" on <${tag}>: ${converted.message}`);
       setProperty(node, name, converted.value);
