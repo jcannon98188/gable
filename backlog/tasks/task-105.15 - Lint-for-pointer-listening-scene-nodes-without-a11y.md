@@ -1,10 +1,11 @@
 ---
 id: TASK-105.15
 title: Lint for pointer-listening scene nodes without [a11y]
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@jason'
 created_date: '2026-11-12T21:47:00Z'
-updated_date: '2026-11-12T21:48:00Z'
+updated_date: '2026-11-12T23:53:00Z'
 labels: []
 dependencies:
   - TASK-105.7
