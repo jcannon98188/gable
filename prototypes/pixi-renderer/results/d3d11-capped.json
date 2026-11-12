@@ -1,0 +1,3902 @@
+{
+ "args": {
+  "gpu": "d3d11",
+  "out": "results/d3d11-capped.json"
+ },
+ "results": [
+  {
+   "style": "signals",
+   "n": 500,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 500,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 124.09999999403954,
+    "stageNodes": 1003,
+    "hookCount": 500,
+    "hooksMs": {
+     "p50": 0.5999999940395355,
+     "p95": 0.800000011920929,
+     "p99": 1.2000000178813934,
+     "mean": 0.5843333332737287
+    },
+    "flushMs": {
+     "p50": 1,
+     "p95": 1.2999999821186066,
+     "p99": 2,
+     "mean": 1.0008333332836628
+    },
+    "renderMs": {
+     "p50": 0.19999998807907104,
+     "p95": 0.30000001192092896,
+     "p99": 0.4000000059604645,
+     "mean": 0.16683333377043405
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 1.699999988079071,
+     "p95": 2.199999988079071,
+     "p99": 3.300000011920929,
+     "mean": 1.7520000003278255
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 1000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 1000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 42.69999998807907,
+    "stageNodes": 2003,
+    "hookCount": 1000,
+    "hooksMs": {
+     "p50": 1.0999999940395355,
+     "p95": 1.399999976158142,
+     "p99": 1.800000011920929,
+     "mean": 1.1065000005066394
+    },
+    "flushMs": {
+     "p50": 2,
+     "p95": 2.5,
+     "p99": 3.800000011920929,
+     "mean": 2.0883333328862985
+    },
+    "renderMs": {
+     "p50": 0.29999998211860657,
+     "p95": 0.4000000059604645,
+     "p99": 0.5999999940395355,
+     "mean": 0.2633333337306976
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 3.399999976158142,
+     "p95": 4.200000017881393,
+     "p99": 5.700000017881393,
+     "mean": 3.4581666671236357
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.80000000000109,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 2000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 2000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 56.099999994039536,
+    "stageNodes": 4003,
+    "hookCount": 2000,
+    "hooksMs": {
+     "p50": 2.199999988079071,
+     "p95": 2.4000000059604645,
+     "p99": 2.800000011920929,
+     "mean": 2.189666666040818
+    },
+    "flushMs": {
+     "p50": 4.300000011920929,
+     "p95": 4.800000011920929,
+     "p99": 5.700000017881393,
+     "mean": 4.366833333571752
+    },
+    "renderMs": {
+     "p50": 0.5,
+     "p95": 0.6000000238418579,
+     "p99": 0.800000011920929,
+     "mean": 0.495
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 7,
+     "p95": 7.699999988079071,
+     "p99": 8.799999982118607,
+     "mean": 7.05149999961257
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.80000000000109,
+     "mean": 16.66616666666667
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 3000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 3000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 81.40000000596046,
+    "stageNodes": 6003,
+    "hookCount": 3000,
+    "hooksMs": {
+     "p50": 3.300000011920929,
+     "p95": 3.5999999940395355,
+     "p99": 4.0999999940395355,
+     "mean": 3.3425000000496707
+    },
+    "flushMs": {
+     "p50": 6.800000011920929,
+     "p95": 7.5,
+     "p99": 8.900000005960464,
+     "mean": 6.876999999880791
+    },
+    "renderMs": {
+     "p50": 0.800000011920929,
+     "p95": 1,
+     "p99": 1.300000011920929,
+     "mean": 0.8466666668653489
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 10.900000005960464,
+     "p95": 12,
+     "p99": 13.800000011920929,
+     "mean": 11.06616666679581
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 5000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 5000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 114.40000000596046,
+    "stageNodes": 10003,
+    "hookCount": 5000,
+    "hooksMs": {
+     "p50": 5.9000000059604645,
+     "p95": 6.5,
+     "p99": 7.5,
+     "mean": 5.971000000486772
+    },
+    "flushMs": {
+     "p50": 11.099999994039536,
+     "p95": 12.099999994039536,
+     "p99": 14.199999988079071,
+     "mean": 11.244499999384086
+    },
+    "renderMs": {
+     "p50": 1.300000011920929,
+     "p95": 1.5,
+     "p99": 1.7999999821186066,
+     "mean": 1.3363333338499068
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 18.400000005960464,
+     "p95": 19.899999976158142,
+     "p99": 21.799999982118607,
+     "mean": 18.551833333720765
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 33.30000000000109,
+     "p99": 33.399999999999636,
+     "mean": 18.776999999999997
+    },
+    "dropped": 76,
+    "missed": 76,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 10000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 10000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 238.40000000596046,
+    "stageNodes": 20003,
+    "hookCount": 10000,
+    "hooksMs": {
+     "p50": 12.599999994039536,
+     "p95": 13.5,
+     "p99": 15.699999988079071,
+     "mean": 12.708333332439263
+    },
+    "flushMs": {
+     "p50": 24.599999994039536,
+     "p95": 26.599999994039536,
+     "p99": 28.399999976158142,
+     "mean": 24.814000000953673
+    },
+    "renderMs": {
+     "p50": 3.5999999940395355,
+     "p95": 4,
+     "p99": 4.4000000059604645,
+     "mean": 3.6241666666666665
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 40.80000001192093,
+     "p95": 43.79999998211861,
+     "p99": 46.400000005960464,
+     "mean": 41.1465000000596
+    },
+    "frameMs": {
+     "p50": 33.400000000001455,
+     "p95": 50.099999999998545,
+     "p99": 50.10000000000218,
+     "mean": 41.415
+    },
+    "dropped": 600,
+    "missed": 891,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 500,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 500,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 23.299999982118607,
+    "stageNodes": 1003,
+    "hookCount": 500,
+    "hooksMs": {
+     "p50": 0.30000001192092896,
+     "p95": 0.5,
+     "p99": 0.699999988079071,
+     "mean": 0.31550000061591466
+    },
+    "flushMs": {
+     "p50": 0.3999999761581421,
+     "p95": 0.5,
+     "p99": 0.5999999940395355,
+     "mean": 0.3581666666766008
+    },
+    "renderMs": {
+     "p50": 0.10000002384185791,
+     "p95": 0.20000001788139343,
+     "p99": 0.30000001192092896,
+     "mean": 0.14883333280682565
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 0.800000011920929,
+     "p95": 1,
+     "p99": 1.300000011920929,
+     "mean": 0.8225000000993411
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 1000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 1000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 34.20000001788139,
+    "stageNodes": 2003,
+    "hookCount": 1000,
+    "hooksMs": {
+     "p50": 0.5,
+     "p95": 0.7000000178813934,
+     "p99": 0.800000011920929,
+     "mean": 0.5446666669348875
+    },
+    "flushMs": {
+     "p50": 0.699999988079071,
+     "p95": 0.9000000059604645,
+     "p99": 1.199999988079071,
+     "mean": 0.7268333316842714
+    },
+    "renderMs": {
+     "p50": 0.20000001788139343,
+     "p95": 0.4000000059604645,
+     "p99": 0.5,
+     "mean": 0.2526666683455308
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 1.5,
+     "p95": 1.899999976158142,
+     "p99": 2.300000011920929,
+     "mean": 1.5241666669646898
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 2000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 2000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 47.20000001788139,
+    "stageNodes": 4003,
+    "hookCount": 2000,
+    "hooksMs": {
+     "p50": 1.199999988079071,
+     "p95": 1.4000000059604645,
+     "p99": 1.5999999940395355,
+     "mean": 1.1800000007947287
+    },
+    "flushMs": {
+     "p50": 1.5,
+     "p95": 1.7000000178813934,
+     "p99": 2.199999988079071,
+     "mean": 1.5123333336909612
+    },
+    "renderMs": {
+     "p50": 0.4000000059604645,
+     "p95": 0.5999999940395355,
+     "p99": 0.800000011920929,
+     "mean": 0.428999999165535
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 3.0999999940395355,
+     "p95": 3.5,
+     "p99": 4.0999999940395355,
+     "mean": 3.121333333651225
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 3000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 3000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 63.599999994039536,
+    "stageNodes": 6003,
+    "hookCount": 3000,
+    "hooksMs": {
+     "p50": 1.800000011920929,
+     "p95": 2.0999999940395355,
+     "p99": 2.4000000059604645,
+     "mean": 1.8379999992251397
+    },
+    "flushMs": {
+     "p50": 2.4000000059604645,
+     "p95": 2.800000011920929,
+     "p99": 3.100000023841858,
+     "mean": 2.4596666675806045
+    },
+    "renderMs": {
+     "p50": 0.699999988079071,
+     "p95": 0.800000011920929,
+     "p99": 1,
+     "mean": 0.7028333321710427
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 4.9000000059604645,
+     "p95": 5.5,
+     "p99": 6.4000000059604645,
+     "mean": 5.000499998976787
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.665833333333335
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 5000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 5000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 90.7000000178814,
+    "stageNodes": 10003,
+    "hookCount": 5000,
+    "hooksMs": {
+     "p50": 3,
+     "p95": 3.4000000059604645,
+     "p99": 4,
+     "mean": 3.040499999821186
+    },
+    "flushMs": {
+     "p50": 4.300000011920929,
+     "p95": 4.899999976158142,
+     "p99": 6,
+     "mean": 4.398999999761582
+    },
+    "renderMs": {
+     "p50": 1.199999988079071,
+     "p95": 1.300000011920929,
+     "p99": 1.7000000178813934,
+     "mean": 1.1715000003079574
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 8.5,
+     "p95": 9.5,
+     "p99": 11.400000005960464,
+     "mean": 8.610999999890725
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.800000000000182,
+     "mean": 16.66616666666667
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 10000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 10000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 170.09999999403954,
+    "stageNodes": 20003,
+    "hookCount": 10000,
+    "hooksMs": {
+     "p50": 5.5999999940395355,
+     "p95": 6.100000023841858,
+     "p99": 7.5,
+     "mean": 5.653166667222977
+    },
+    "flushMs": {
+     "p50": 8.400000005960464,
+     "p95": 9.199999988079071,
+     "p99": 11.300000011920929,
+     "mean": 8.540499999721845
+    },
+    "renderMs": {
+     "p50": 2.5,
+     "p95": 2.7000000178813934,
+     "p99": 3.0999999940395355,
+     "mean": 2.5131666669249535
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 16.5,
+     "p95": 17.899999976158142,
+     "p99": 20.200000017881393,
+     "mean": 16.706833333869774
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 33.29999999999927,
+     "mean": 16.91616666666667
+    },
+    "dropped": 9,
+    "missed": 9,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 500,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 500,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 22.30000001192093,
+    "stageNodes": 1003,
+    "hookCount": 500,
+    "hooksMs": {
+     "p50": 0.20000001788139343,
+     "p95": 0.4000000059604645,
+     "p99": 0.4000000059604645,
+     "mean": 0.24116666639844578
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0006666666269302368
+    },
+    "renderMs": {
+     "p50": 0.19999998807907104,
+     "p95": 0.30000001192092896,
+     "p99": 0.4000000059604645,
+     "mean": 0.1689999993642171
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 0.4000000059604645,
+     "p95": 0.5999999940395355,
+     "p99": 0.699999988079071,
+     "mean": 0.41083333238959313
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 1000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 1000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 32.5,
+    "stageNodes": 2003,
+    "hookCount": 1000,
+    "hooksMs": {
+     "p50": 0.4000000059604645,
+     "p95": 0.5999999940395355,
+     "p99": 0.699999988079071,
+     "mean": 0.4228333336611589
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0003333333631356557
+    },
+    "renderMs": {
+     "p50": 0.20000001788139343,
+     "p95": 0.4000000059604645,
+     "p99": 0.4000000059604645,
+     "mean": 0.24049999937415123
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 0.699999988079071,
+     "p95": 0.800000011920929,
+     "p99": 1,
+     "mean": 0.6636666663984457
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 2000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 2000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 46.30000001192093,
+    "stageNodes": 4003,
+    "hookCount": 2000,
+    "hooksMs": {
+     "p50": 0.800000011920929,
+     "p95": 1,
+     "p99": 1.2000000178813934,
+     "mean": 0.8135000002384186
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0006666666269302368
+    },
+    "renderMs": {
+     "p50": 0.5,
+     "p95": 0.699999988079071,
+     "p99": 0.9000000059604645,
+     "mean": 0.5101666661600271
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 1.300000011920929,
+     "p95": 1.5999999940395355,
+     "p99": 2,
+     "mean": 1.324333333025376
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.80000000000109,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 3000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 3000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 59.599999994039536,
+    "stageNodes": 6003,
+    "hookCount": 3000,
+    "hooksMs": {
+     "p50": 1.2000000178813934,
+     "p95": 1.4000000059604645,
+     "p99": 1.600000023841858,
+     "mean": 1.2294999996821085
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0003333333631356557
+    },
+    "renderMs": {
+     "p50": 0.7000000178813934,
+     "p95": 1,
+     "p99": 1.199999988079071,
+     "mean": 0.7574999992549419
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 2,
+     "p95": 2.300000011920929,
+     "p99": 2.5999999940395355,
+     "mean": 1.987333332300186
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 5000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 5000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 84.19999998807907,
+    "stageNodes": 10003,
+    "hookCount": 5000,
+    "hooksMs": {
+     "p50": 2,
+     "p95": 2.2999999821186066,
+     "p99": 2.5,
+     "mean": 2.04050000016888
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0006666666766007741
+    },
+    "renderMs": {
+     "p50": 1.2999999821186066,
+     "p95": 1.5999999940395355,
+     "p99": 1.9000000059604645,
+     "mean": 1.3093333331743877
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 3.300000011920929,
+     "p95": 3.800000011920929,
+     "p99": 4.200000017881393,
+     "mean": 3.3505000000198684
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.66616666666667
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 10000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 10000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 157.7999999821186,
+    "stageNodes": 20003,
+    "hookCount": 10000,
+    "hooksMs": {
+     "p50": 3.5999999940395355,
+     "p95": 3.9000000059604645,
+     "p99": 4.5,
+     "mean": 3.5978333331644534
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0005000000198682149
+    },
+    "renderMs": {
+     "p50": 2.199999988079071,
+     "p95": 2.5999999940395355,
+     "p99": 3,
+     "mean": 2.199833332449198
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 5.700000017881393,
+     "p95": 6.4000000059604645,
+     "p99": 7.300000011920929,
+     "mean": 5.798166665633519
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "particles",
+   "n": 10000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "particles",
+    "n": 10000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 4.399999976158142,
+    "stageNodes": 4,
+    "hookCount": 1,
+    "hooksMs": {
+     "p50": 0.19999998807907104,
+     "p95": 0.30000001192092896,
+     "p99": 0.30000001192092896,
+     "mean": 0.20033333385984103
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.001333333303531011
+    },
+    "renderMs": {
+     "p50": 0.19999998807907104,
+     "p95": 0.30000001192092896,
+     "p99": 0.4000000059604645,
+     "mean": 0.21116666619976363
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 0.4000000059604645,
+     "p95": 0.5999999940395355,
+     "p99": 0.7000000178813934,
+     "mean": 0.41283333336313566
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "particles",
+   "n": 20000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "particles",
+    "n": 20000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 4.399999976158142,
+    "stageNodes": 4,
+    "hookCount": 1,
+    "hooksMs": {
+     "p50": 0.5,
+     "p95": 0.7000000178813934,
+     "p99": 0.800000011920929,
+     "mean": 0.5441666669150194
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.0011666666467984518
+    },
+    "renderMs": {
+     "p50": 0.5,
+     "p95": 0.6000000238418579,
+     "p99": 0.8999999761581421,
+     "mean": 0.5089999994138876
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 1,
+     "p95": 1.300000011920929,
+     "p99": 1.5999999940395355,
+     "mean": 1.0543333329757054
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "particles",
+   "n": 50000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "particles",
+    "n": 50000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 4.4000000059604645,
+    "stageNodes": 4,
+    "hookCount": 1,
+    "hooksMs": {
+     "p50": 1.300000011920929,
+     "p95": 1.5999999940395355,
+     "p99": 1.9000000059604645,
+     "mean": 1.3276666659116745
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0004999999701976776
+    },
+    "renderMs": {
+     "p50": 1,
+     "p95": 1.399999976158142,
+     "p99": 1.699999988079071,
+     "mean": 1.0566666668653488
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 2.300000011920929,
+     "p95": 2.800000011920929,
+     "p99": 3.300000011920929,
+     "mean": 2.384833332747221
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.800000000000182,
+     "mean": 16.665999999999997
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "particles",
+   "n": 100000,
+   "rep": 0,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "particles",
+    "n": 100000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 4.4000000059604645,
+    "stageNodes": 4,
+    "hookCount": 1,
+    "hooksMs": {
+     "p50": 2.0999999940395355,
+     "p95": 2.5,
+     "p99": 3.0999999940395355,
+     "mean": 2.119000000009934
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0006666666766007741
+    },
+    "renderMs": {
+     "p50": 1.7999999821186066,
+     "p95": 2.2000000178813934,
+     "p99": 2.7999999821186066,
+     "mean": 1.816833333671093
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 3.800000011920929,
+     "p95": 4.5999999940395355,
+     "p99": 5.600000023841858,
+     "mean": 3.936500000357628
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.66616666666667
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 500,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 500,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 27.200000017881393,
+    "stageNodes": 1003,
+    "hookCount": 500,
+    "hooksMs": {
+     "p50": 0.5999999940395355,
+     "p95": 0.7000000178813934,
+     "p99": 0.8999999761581421,
+     "mean": 0.5633333331346512
+    },
+    "flushMs": {
+     "p50": 0.9000000059604645,
+     "p95": 1.100000023841858,
+     "p99": 1.4000000059604645,
+     "mean": 0.9576666663587093
+    },
+    "renderMs": {
+     "p50": 0.19999998807907104,
+     "p95": 0.20000001788139343,
+     "p99": 0.30000001192092896,
+     "mean": 0.15666666766007742
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 1.699999988079071,
+     "p95": 2,
+     "p99": 2.2999999821186066,
+     "mean": 1.677666667153438
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666166666666665
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 1000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 1000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 38.79999998211861,
+    "stageNodes": 2003,
+    "hookCount": 1000,
+    "hooksMs": {
+     "p50": 1.0999999940395355,
+     "p95": 1.399999976158142,
+     "p99": 1.5,
+     "mean": 1.1460000003377597
+    },
+    "flushMs": {
+     "p50": 1.9000000059604645,
+     "p95": 2.100000023841858,
+     "p99": 2.5,
+     "mean": 1.9484999997417132
+    },
+    "renderMs": {
+     "p50": 0.20000001788139343,
+     "p95": 0.30000001192092896,
+     "p99": 0.4000000059604645,
+     "mean": 0.23366666739185651
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 3.300000011920929,
+     "p95": 3.7000000178813934,
+     "p99": 4.0999999940395355,
+     "mean": 3.3281666674713293
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 2000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 2000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 55.69999998807907,
+    "stageNodes": 4003,
+    "hookCount": 2000,
+    "hooksMs": {
+     "p50": 2.199999988079071,
+     "p95": 2.4000000059604645,
+     "p99": 2.699999988079071,
+     "mean": 2.1930000003178916
+    },
+    "flushMs": {
+     "p50": 4,
+     "p95": 4.399999976158142,
+     "p99": 4.9000000059604645,
+     "mean": 4.021833332975706
+    },
+    "renderMs": {
+     "p50": 0.5,
+     "p95": 0.5999999940395355,
+     "p99": 0.7999999821186066,
+     "mean": 0.45650000010927516
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 6.5999999940395355,
+     "p95": 7.299999982118607,
+     "p99": 7.799999982118607,
+     "mean": 6.671333333402872
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.80000000000109,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 3000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 3000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 78.69999998807907,
+    "stageNodes": 6003,
+    "hookCount": 3000,
+    "hooksMs": {
+     "p50": 3.399999976158142,
+     "p95": 3.699999988079071,
+     "p99": 4.100000023841858,
+     "mean": 3.373833333303531
+    },
+    "flushMs": {
+     "p50": 6.4000000059604645,
+     "p95": 7,
+     "p99": 8.5,
+     "mean": 6.48616666679581
+    },
+    "renderMs": {
+     "p50": 0.7000000178813934,
+     "p95": 0.9000000059604645,
+     "p99": 1.199999988079071,
+     "mean": 0.7398333327968916
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 10.5,
+     "p95": 11.400000005960464,
+     "p99": 13.400000005960464,
+     "mean": 10.599833332896232
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.80000000000109,
+     "mean": 16.66583333333333
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 5000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 5000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 116.40000000596046,
+    "stageNodes": 10003,
+    "hookCount": 5000,
+    "hooksMs": {
+     "p50": 5.800000011920929,
+     "p95": 6.299999982118607,
+     "p99": 6.800000011920929,
+     "mean": 5.873666666994493
+    },
+    "flushMs": {
+     "p50": 11.200000017881393,
+     "p95": 12.200000017881393,
+     "p99": 14,
+     "mean": 11.351999999334415
+    },
+    "renderMs": {
+     "p50": 1.300000011920929,
+     "p95": 1.5,
+     "p99": 1.7999999821186066,
+     "mean": 1.3386666675905388
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 18.400000005960464,
+     "p95": 19.599999994039536,
+     "p99": 22,
+     "mean": 18.564333333919446
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 33.30000000000109,
+     "p99": 33.40000000000009,
+     "mean": 18.80483333333333
+    },
+    "dropped": 77,
+    "missed": 77,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 10000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 10000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 237.30000001192093,
+    "stageNodes": 20003,
+    "hookCount": 10000,
+    "hooksMs": {
+     "p50": 12.799999982118607,
+     "p95": 13.800000011920929,
+     "p99": 15.300000011920929,
+     "mean": 12.87399999881784
+    },
+    "flushMs": {
+     "p50": 25.200000017881393,
+     "p95": 27,
+     "p99": 29.19999998807907,
+     "mean": 25.444666667729617
+    },
+    "renderMs": {
+     "p50": 3.800000011920929,
+     "p95": 4.199999988079071,
+     "p99": 4.5,
+     "mean": 3.852333332598209
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 41.89999997615814,
+     "p95": 44.400000005960464,
+     "p99": 47.20000001788139,
+     "mean": 42.170999999145664
+    },
+    "frameMs": {
+     "p50": 49.899999999999636,
+     "p95": 50.100000000000364,
+     "p99": 50.10000000000218,
+     "mean": 42.4425
+    },
+    "dropped": 600,
+    "missed": 928,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 500,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 500,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 23.80000001192093,
+    "stageNodes": 1003,
+    "hookCount": 500,
+    "hooksMs": {
+     "p50": 0.30000001192092896,
+     "p95": 0.5,
+     "p99": 0.5,
+     "mean": 0.3143333329757055
+    },
+    "flushMs": {
+     "p50": 0.4000000059604645,
+     "p95": 0.5,
+     "p99": 0.6000000238418579,
+     "mean": 0.3749999998013179
+    },
+    "renderMs": {
+     "p50": 0.19999998807907104,
+     "p95": 0.29999998211860657,
+     "p99": 0.30000001192092896,
+     "mean": 0.16266666715343794
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 0.800000011920929,
+     "p95": 1.0999999940395355,
+     "p99": 1.300000011920929,
+     "mean": 0.8519999999304613
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 1000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 1000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 33,
+    "stageNodes": 2003,
+    "hookCount": 1000,
+    "hooksMs": {
+     "p50": 0.5,
+     "p95": 0.7000000178813934,
+     "p99": 0.9000000059604645,
+     "mean": 0.526833333124717
+    },
+    "flushMs": {
+     "p50": 0.7000000178813934,
+     "p95": 0.9000000059604645,
+     "p99": 1.0999999940395355,
+     "mean": 0.7343333327273528
+    },
+    "renderMs": {
+     "p50": 0.29999998211860657,
+     "p95": 0.4000000059604645,
+     "p99": 0.5,
+     "mean": 0.26700000072518987
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 1.5,
+     "p95": 1.9000000059604645,
+     "p99": 2.2999999821186066,
+     "mean": 1.5281666665772597
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.800000000000182,
+     "p99": 16.80000000000109,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 2000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 2000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 48,
+    "stageNodes": 4003,
+    "hookCount": 2000,
+    "hooksMs": {
+     "p50": 1.0999999940395355,
+     "p95": 1.300000011920929,
+     "p99": 1.5,
+     "mean": 1.1318333336214224
+    },
+    "flushMs": {
+     "p50": 1.5999999940395355,
+     "p95": 1.899999976158142,
+     "p99": 2.2000000178813934,
+     "mean": 1.5785000011324883
+    },
+    "renderMs": {
+     "p50": 0.5,
+     "p95": 0.5999999940395355,
+     "p99": 0.7000000178813934,
+     "mean": 0.4651666661103567
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 3.199999988079071,
+     "p95": 3.5999999940395355,
+     "p99": 4.100000023841858,
+     "mean": 3.1755000008642673
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.80000000000109,
+     "mean": 16.666166666666665
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 3000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 3000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 65,
+    "stageNodes": 6003,
+    "hookCount": 3000,
+    "hooksMs": {
+     "p50": 1.5,
+     "p95": 1.7000000178813934,
+     "p99": 1.9000000059604645,
+     "mean": 1.5434999999900658
+    },
+    "flushMs": {
+     "p50": 2.5,
+     "p95": 2.9000000059604645,
+     "p99": 3.2999999821186066,
+     "mean": 2.508333333681027
+    },
+    "renderMs": {
+     "p50": 0.6000000238418579,
+     "p95": 0.800000011920929,
+     "p99": 1,
+     "mean": 0.6525000003476937
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 4.699999988079071,
+     "p95": 5.200000017881393,
+     "p99": 5.800000011920929,
+     "mean": 4.704333334018787
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.80000000000109,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 5000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 5000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 90.2999999821186,
+    "stageNodes": 10003,
+    "hookCount": 5000,
+    "hooksMs": {
+     "p50": 2.5999999940395355,
+     "p95": 2.9000000059604645,
+     "p99": 3.199999988079071,
+     "mean": 2.6384999991953375
+    },
+    "flushMs": {
+     "p50": 4.0999999940395355,
+     "p95": 4.699999988079071,
+     "p99": 5.299999982118607,
+     "mean": 4.159000000407298
+    },
+    "renderMs": {
+     "p50": 1.2000000178813934,
+     "p95": 1.4000000059604645,
+     "p99": 1.7000000178813934,
+     "mean": 1.2353333331644536
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 7.9000000059604645,
+     "p95": 8.800000011920929,
+     "p99": 9.800000011920929,
+     "mean": 8.032833332767089
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.80000000000109,
+     "mean": 16.665999999999997
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 10000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 10000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 169.2999999821186,
+    "stageNodes": 20003,
+    "hookCount": 10000,
+    "hooksMs": {
+     "p50": 5.5,
+     "p95": 6,
+     "p99": 6.5999999940395355,
+     "mean": 5.565833333233992
+    },
+    "flushMs": {
+     "p50": 8.799999982118607,
+     "p95": 9.700000017881393,
+     "p99": 11.300000011920929,
+     "mean": 8.910666666775942
+    },
+    "renderMs": {
+     "p50": 2.5,
+     "p95": 2.800000011920929,
+     "p99": 3.0999999940395355,
+     "mean": 2.56599999944369
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 16.900000005960464,
+     "p95": 18.30000001192093,
+     "p99": 20,
+     "mean": 17.042499999453625
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.800000000000182,
+     "p99": 33.399999999999636,
+     "mean": 17.249333333333333
+    },
+    "dropped": 21,
+    "missed": 21,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 500,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 500,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 22.400000005960464,
+    "stageNodes": 1003,
+    "hookCount": 500,
+    "hooksMs": {
+     "p50": 0.20000001788139343,
+     "p95": 0.30000001192092896,
+     "p99": 0.4000000059604645,
+     "mean": 0.23666666691501936
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0005000000695387523
+    },
+    "renderMs": {
+     "p50": 0.19999998807907104,
+     "p95": 0.30000001192092896,
+     "p99": 0.30000001192092896,
+     "mean": 0.17100000018874803
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 0.4000000059604645,
+     "p95": 0.5999999940395355,
+     "p99": 0.699999988079071,
+     "mean": 0.40816666717330613
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 1000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 1000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 33,
+    "stageNodes": 2003,
+    "hookCount": 1000,
+    "hooksMs": {
+     "p50": 0.4000000059604645,
+     "p95": 0.5999999940395355,
+     "p99": 0.699999988079071,
+     "mean": 0.4408333329856396
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.0009999999900658924
+    },
+    "renderMs": {
+     "p50": 0.20000001788139343,
+     "p95": 0.30000001192092896,
+     "p99": 0.4000000059604645,
+     "mean": 0.24516666695475578
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 0.699999988079071,
+     "p95": 0.8999999761581421,
+     "p99": 1,
+     "mean": 0.6869999999304612
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.80000000000109,
+     "mean": 16.665999999999997
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 2000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 2000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 45.30000001192093,
+    "stageNodes": 4003,
+    "hookCount": 2000,
+    "hooksMs": {
+     "p50": 0.800000011920929,
+     "p95": 1,
+     "p99": 1.0999999940395355,
+     "mean": 0.813166666328907
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.0015000000099341074
+    },
+    "renderMs": {
+     "p50": 0.5,
+     "p95": 0.5999999940395355,
+     "p99": 0.7000000178813934,
+     "mean": 0.4589999993145466
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 1.2999999821186066,
+     "p95": 1.5,
+     "p99": 1.699999988079071,
+     "mean": 1.2736666656533877
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 3000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 3000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 59.900000005960464,
+    "stageNodes": 6003,
+    "hookCount": 3000,
+    "hooksMs": {
+     "p50": 1.2000000178813934,
+     "p95": 1.5,
+     "p99": 1.699999988079071,
+     "mean": 1.2686666668951512
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.0009999999900658924
+    },
+    "renderMs": {
+     "p50": 0.699999988079071,
+     "p95": 0.800000011920929,
+     "p99": 1,
+     "mean": 0.6946666662891706
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 1.9000000059604645,
+     "p95": 2.2000000178813934,
+     "p99": 2.5,
+     "mean": 1.9643333331743875
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.80000000000109,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 5000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 5000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 84.69999998807907,
+    "stageNodes": 10003,
+    "hookCount": 5000,
+    "hooksMs": {
+     "p50": 1.9000000059604645,
+     "p95": 2.0999999940395355,
+     "p99": 2.5,
+     "mean": 1.9264999995628993
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0004999999701976776
+    },
+    "renderMs": {
+     "p50": 1.199999988079071,
+     "p95": 1.399999976158142,
+     "p99": 1.699999988079071,
+     "mean": 1.1886666671435038
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 3.0999999940395355,
+     "p95": 3.4000000059604645,
+     "p99": 4,
+     "mean": 3.1156666666766006
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.80000000000109,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 10000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 10000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 151,
+    "stageNodes": 20003,
+    "hookCount": 10000,
+    "hooksMs": {
+     "p50": 3.9000000059604645,
+     "p95": 4.300000011920929,
+     "p99": 5,
+     "mean": 3.9668333324293297
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.0009999999900658924
+    },
+    "renderMs": {
+     "p50": 2.2000000178813934,
+     "p95": 2.5,
+     "p99": 3.2000000178813934,
+     "mean": 2.2525000001490114
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 6.100000023841858,
+     "p95": 6.699999988079071,
+     "p99": 8,
+     "mean": 6.220333332568407
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.80000000000109,
+     "mean": 16.66583333333333
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "particles",
+   "n": 10000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "particles",
+    "n": 10000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 4.300000011920929,
+    "stageNodes": 4,
+    "hookCount": 1,
+    "hooksMs": {
+     "p50": 0.19999998807907104,
+     "p95": 0.30000001192092896,
+     "p99": 0.4000000059604645,
+     "mean": 0.2084999991953373
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0005000000198682149
+    },
+    "renderMs": {
+     "p50": 0.20000001788139343,
+     "p95": 0.30000001192092896,
+     "p99": 0.4000000059604645,
+     "mean": 0.2200000007947286
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 0.4000000059604645,
+     "p95": 0.5999999940395355,
+     "p99": 0.699999988079071,
+     "mean": 0.4290000000099341
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.80000000000109,
+     "mean": 16.69383333333333
+    },
+    "dropped": 1,
+    "missed": 1,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "particles",
+   "n": 20000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "particles",
+    "n": 20000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 4.4000000059604645,
+    "stageNodes": 4,
+    "hookCount": 1,
+    "hooksMs": {
+     "p50": 0.5,
+     "p95": 0.699999988079071,
+     "p99": 0.9000000059604645,
+     "mean": 0.536666666517655
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.001166666696468989
+    },
+    "renderMs": {
+     "p50": 0.5,
+     "p95": 0.7000000178813934,
+     "p99": 0.9000000059604645,
+     "mean": 0.5194999998807908
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 1,
+     "p95": 1.300000011920929,
+     "p99": 1.600000023841858,
+     "mean": 1.0573333330949148
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.80000000000109,
+     "mean": 16.666166666666665
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "particles",
+   "n": 50000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "particles",
+    "n": 50000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 4.200000017881393,
+    "stageNodes": 4,
+    "hookCount": 1,
+    "hooksMs": {
+     "p50": 1.399999976158142,
+     "p95": 1.699999988079071,
+     "p99": 2,
+     "mean": 1.371666667064031
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0006666666269302368
+    },
+    "renderMs": {
+     "p50": 1.0999999940395355,
+     "p95": 1.2999999821186066,
+     "p99": 1.5999999940395355,
+     "mean": 1.0723333330452443
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 2.4000000059604645,
+     "p95": 2.9000000059604645,
+     "p99": 3.2999999821186066,
+     "mean": 2.4446666667362056
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "particles",
+   "n": 100000,
+   "rep": 1,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "particles",
+    "n": 100000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 4.300000011920929,
+    "stageNodes": 4,
+    "hookCount": 1,
+    "hooksMs": {
+     "p50": 2.199999988079071,
+     "p95": 2.7000000178813934,
+     "p99": 3.2000000178813934,
+     "mean": 2.1850000002980234
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0008333332836627961
+    },
+    "renderMs": {
+     "p50": 1.800000011920929,
+     "p95": 2.199999988079071,
+     "p99": 2.699999988079071,
+     "mean": 1.8441666670640309
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 4,
+     "p95": 4.700000017881393,
+     "p99": 5.4000000059604645,
+     "mean": 4.030000000645717
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 500,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 500,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 26.599999994039536,
+    "stageNodes": 1003,
+    "hookCount": 500,
+    "hooksMs": {
+     "p50": 0.5,
+     "p95": 0.7000000178813934,
+     "p99": 0.800000011920929,
+     "mean": 0.5449999991059303
+    },
+    "flushMs": {
+     "p50": 1,
+     "p95": 1.100000023841858,
+     "p99": 1.300000011920929,
+     "mean": 0.9858333336313566
+    },
+    "renderMs": {
+     "p50": 0.19999998807907104,
+     "p95": 0.30000001192092896,
+     "p99": 0.30000001192092896,
+     "mean": 0.15866666654745737
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 1.699999988079071,
+     "p95": 2,
+     "p99": 2.2000000178813934,
+     "mean": 1.6894999992847444
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 1000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 1000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 39.400000005960464,
+    "stageNodes": 2003,
+    "hookCount": 1000,
+    "hooksMs": {
+     "p50": 1.0999999940395355,
+     "p95": 1.5,
+     "p99": 1.800000011920929,
+     "mean": 1.1461666670938333
+    },
+    "flushMs": {
+     "p50": 2.0999999940395355,
+     "p95": 2.4000000059604645,
+     "p99": 2.800000011920929,
+     "mean": 2.0996666671832402
+    },
+    "renderMs": {
+     "p50": 0.29999998211860657,
+     "p95": 0.4000000059604645,
+     "p99": 0.4000000059604645,
+     "mean": 0.26299999917546907
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 3.4000000059604645,
+     "p95": 4.0999999940395355,
+     "p99": 4.800000011920929,
+     "mean": 3.5088333334525426
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 2000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 2000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 54.89999997615814,
+    "stageNodes": 4003,
+    "hookCount": 2000,
+    "hooksMs": {
+     "p50": 2.300000011920929,
+     "p95": 2.7999999821186066,
+     "p99": 3.2000000178813934,
+     "mean": 2.3303333332637948
+    },
+    "flushMs": {
+     "p50": 4.199999988079071,
+     "p95": 4.600000023841858,
+     "p99": 5.5,
+     "mean": 4.23499999995033
+    },
+    "renderMs": {
+     "p50": 0.5,
+     "p95": 0.699999988079071,
+     "p99": 0.7999999821186066,
+     "mean": 0.5488333327074846
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 7,
+     "p95": 7.899999976158142,
+     "p99": 9.199999988079071,
+     "mean": 7.1141666659216085
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 3000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 3000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 77.69999998807907,
+    "stageNodes": 6003,
+    "hookCount": 3000,
+    "hooksMs": {
+     "p50": 3.199999988079071,
+     "p95": 3.7000000178813934,
+     "p99": 4.9000000059604645,
+     "mean": 3.233500000635783
+    },
+    "flushMs": {
+     "p50": 6.5,
+     "p95": 7.300000011920929,
+     "p99": 8.699999988079071,
+     "mean": 6.625499999572833
+    },
+    "renderMs": {
+     "p50": 0.699999988079071,
+     "p95": 0.800000011920929,
+     "p99": 1.0999999940395355,
+     "mean": 0.6968333337207635
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 10.400000005960464,
+     "p95": 11.5,
+     "p99": 14.099999994039536,
+     "mean": 10.55583333392938
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.66583333333333
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 5000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 5000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 117.40000000596046,
+    "stageNodes": 10003,
+    "hookCount": 5000,
+    "hooksMs": {
+     "p50": 5.700000017881393,
+     "p95": 6.100000023841858,
+     "p99": 7.199999988079071,
+     "mean": 5.782166667083899
+    },
+    "flushMs": {
+     "p50": 11.300000011920929,
+     "p95": 12.299999982118607,
+     "p99": 13.800000011920929,
+     "mean": 11.439999999602636
+    },
+    "renderMs": {
+     "p50": 1.300000011920929,
+     "p95": 1.5,
+     "p99": 1.7000000178813934,
+     "mean": 1.3235000003377597
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 18.400000005960464,
+     "p95": 19.599999994039536,
+     "p99": 21.80000001192093,
+     "mean": 18.545666667024296
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 33.30000000000109,
+     "p99": 33.400000000000546,
+     "mean": 18.749166666666667
+    },
+    "dropped": 75,
+    "missed": 75,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 10000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 10000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 236.5,
+    "stageNodes": 20003,
+    "hookCount": 10000,
+    "hooksMs": {
+     "p50": 12.599999994039536,
+     "p95": 13.699999988079071,
+     "p99": 15.400000005960464,
+     "mean": 12.739999999453625
+    },
+    "flushMs": {
+     "p50": 25.799999982118607,
+     "p95": 27.900000005960464,
+     "p99": 29.5,
+     "mean": 26.007500000347694
+    },
+    "renderMs": {
+     "p50": 3.9000000059604645,
+     "p95": 4.200000017881393,
+     "p99": 4.9000000059604645,
+     "mean": 3.93966666718324
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 42.30000001192093,
+     "p95": 45.099999994039536,
+     "p99": 47,
+     "mean": 42.68716666698456
+    },
+    "frameMs": {
+     "p50": 49.900000000001455,
+     "p95": 50.099999999998545,
+     "p99": 50.10000000000218,
+     "mean": 42.942833333333326
+    },
+    "dropped": 600,
+    "missed": 946,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 500,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 500,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 23.399999976158142,
+    "stageNodes": 1003,
+    "hookCount": 500,
+    "hooksMs": {
+     "p50": 0.30000001192092896,
+     "p95": 0.4000000059604645,
+     "p99": 0.5,
+     "mean": 0.3155000005662441
+    },
+    "flushMs": {
+     "p50": 0.30000001192092896,
+     "p95": 0.4000000059604645,
+     "p99": 0.5,
+     "mean": 0.3285000001390775
+    },
+    "renderMs": {
+     "p50": 0.10000002384185791,
+     "p95": 0.20000001788139343,
+     "p99": 0.30000001192092896,
+     "mean": 0.13866666639844577
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 0.800000011920929,
+     "p95": 0.9000000059604645,
+     "p99": 1,
+     "mean": 0.7826666671037674
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 1000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 1000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 33,
+    "stageNodes": 2003,
+    "hookCount": 1000,
+    "hooksMs": {
+     "p50": 0.5,
+     "p95": 0.699999988079071,
+     "p99": 0.800000011920929,
+     "mean": 0.534333333671093
+    },
+    "flushMs": {
+     "p50": 0.7000000178813934,
+     "p95": 0.800000011920929,
+     "p99": 0.9000000059604645,
+     "mean": 0.7170000003278255
+    },
+    "renderMs": {
+     "p50": 0.19999998807907104,
+     "p95": 0.30000001192092896,
+     "p99": 0.4000000059604645,
+     "mean": 0.21149999951322873
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 1.5,
+     "p95": 1.699999988079071,
+     "p99": 1.9000000059604645,
+     "mean": 1.4628333335121473
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.66583333333333
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 2000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 2000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 47.20000001788139,
+    "stageNodes": 4003,
+    "hookCount": 2000,
+    "hooksMs": {
+     "p50": 1.2000000178813934,
+     "p95": 1.5,
+     "p99": 1.600000023841858,
+     "mean": 1.2375000003476937
+    },
+    "flushMs": {
+     "p50": 1.5,
+     "p95": 1.699999988079071,
+     "p99": 1.899999976158142,
+     "mean": 1.5323333326975506
+    },
+    "renderMs": {
+     "p50": 0.5,
+     "p95": 0.5999999940395355,
+     "p99": 0.699999988079071,
+     "mean": 0.47916666671633723
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 3.2000000178813934,
+     "p95": 3.5999999940395355,
+     "p99": 4,
+     "mean": 3.2489999997615815
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.800000000000182,
+     "mean": 16.66583333333333
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 3000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 3000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 62.599999994039536,
+    "stageNodes": 6003,
+    "hookCount": 3000,
+    "hooksMs": {
+     "p50": 1.7000000178813934,
+     "p95": 2,
+     "p99": 2.2999999821186066,
+     "mean": 1.7394999992350737
+    },
+    "flushMs": {
+     "p50": 2.399999976158142,
+     "p95": 2.5999999940395355,
+     "p99": 2.800000011920929,
+     "mean": 2.3700000004967055
+    },
+    "renderMs": {
+     "p50": 0.5999999940395355,
+     "p95": 0.699999988079071,
+     "p99": 0.800000011920929,
+     "mean": 0.5619999996821086
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 4.600000023841858,
+     "p95": 5.0999999940395355,
+     "p99": 5.5999999940395355,
+     "mean": 4.6714999994138875
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.80000000000109,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 5000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 5000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 87.40000000596046,
+    "stageNodes": 10003,
+    "hookCount": 5000,
+    "hooksMs": {
+     "p50": 2.7000000178813934,
+     "p95": 3.0999999940395355,
+     "p99": 3.5,
+     "mean": 2.743333333780368
+    },
+    "flushMs": {
+     "p50": 4,
+     "p95": 4.4000000059604645,
+     "p99": 5.200000017881393,
+     "mean": 4.077833334008853
+    },
+    "renderMs": {
+     "p50": 1.0999999940395355,
+     "p95": 1.300000011920929,
+     "p99": 1.5999999940395355,
+     "mean": 1.128666665305694
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 7.800000011920929,
+     "p95": 8.700000017881393,
+     "p99": 10,
+     "mean": 7.949833333094915
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.80000000000109,
+     "mean": 16.666166666666665
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 10000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 10000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 171,
+    "stageNodes": 20003,
+    "hookCount": 10000,
+    "hooksMs": {
+     "p50": 5.699999988079071,
+     "p95": 6.300000011920929,
+     "p99": 7.9000000059604645,
+     "mean": 5.784833333144586
+    },
+    "flushMs": {
+     "p50": 9,
+     "p95": 9.900000005960464,
+     "p99": 11.700000017881393,
+     "mean": 9.108499999841055
+    },
+    "renderMs": {
+     "p50": 2.5,
+     "p95": 2.800000011920929,
+     "p99": 3.199999988079071,
+     "mean": 2.5716666673123836
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 17.299999982118607,
+     "p95": 18.80000001192093,
+     "p99": 21.200000017881393,
+     "mean": 17.465000000298023
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 33.29999999999927,
+     "p99": 33.399999999999636,
+     "mean": 17.665999999999997
+    },
+    "dropped": 36,
+    "missed": 36,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 500,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 500,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 22.69999998807907,
+    "stageNodes": 1003,
+    "hookCount": 500,
+    "hooksMs": {
+     "p50": 0.20000001788139343,
+     "p95": 0.4000000059604645,
+     "p99": 0.4000000059604645,
+     "mean": 0.2391666661699613
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0006666666269302368
+    },
+    "renderMs": {
+     "p50": 0.19999998807907104,
+     "p95": 0.30000001192092896,
+     "p99": 0.30000001192092896,
+     "mean": 0.16933333401878675
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 0.4000000059604645,
+     "p95": 0.5999999940395355,
+     "p99": 0.699999988079071,
+     "mean": 0.40916666681567826
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.665999999999997
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 1000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 1000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 33.099999994039536,
+    "stageNodes": 2003,
+    "hookCount": 1000,
+    "hooksMs": {
+     "p50": 0.4000000059604645,
+     "p95": 0.5999999940395355,
+     "p99": 0.699999988079071,
+     "mean": 0.4288333335518837
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0006666666269302368
+    },
+    "renderMs": {
+     "p50": 0.29999998211860657,
+     "p95": 0.3999999761581421,
+     "p99": 0.4000000059604645,
+     "mean": 0.25349999964237213
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 0.699999988079071,
+     "p95": 0.9000000059604645,
+     "p99": 1,
+     "mean": 0.6829999998211861
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 2000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 2000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 50.400000005960464,
+    "stageNodes": 4003,
+    "hookCount": 2000,
+    "hooksMs": {
+     "p50": 0.800000011920929,
+     "p95": 1,
+     "p99": 1.0999999940395355,
+     "mean": 0.8165000002086162
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0003333333631356557
+    },
+    "renderMs": {
+     "p50": 0.5,
+     "p95": 0.6000000238418579,
+     "p99": 0.7000000178813934,
+     "mean": 0.5008333335320155
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 1.300000011920929,
+     "p95": 1.5,
+     "p99": 1.7000000178813934,
+     "mean": 1.3176666671037673
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.80000000000109,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 3000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 3000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 57.599999994039536,
+    "stageNodes": 6003,
+    "hookCount": 3000,
+    "hooksMs": {
+     "p50": 1.0999999940395355,
+     "p95": 1.300000011920929,
+     "p99": 1.5999999940395355,
+     "mean": 1.1273333324988684
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.0013333334028720856
+    },
+    "renderMs": {
+     "p50": 0.699999988079071,
+     "p95": 0.800000011920929,
+     "p99": 1,
+     "mean": 0.660666668266058
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 1.7999999821186066,
+     "p95": 2.0999999940395355,
+     "p99": 2.4000000059604645,
+     "mean": 1.7893333341677984
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 5000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 5000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 86.40000000596046,
+    "stageNodes": 10003,
+    "hookCount": 5000,
+    "hooksMs": {
+     "p50": 2.0999999940395355,
+     "p95": 2.4000000059604645,
+     "p99": 2.5999999940395355,
+     "mean": 2.1326666659116746
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.0009999999900658924
+    },
+    "renderMs": {
+     "p50": 1.2000000178813934,
+     "p95": 1.4000000059604645,
+     "p99": 1.600000023841858,
+     "mean": 1.2311666671931745
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 3.300000011920929,
+     "p95": 3.699999988079071,
+     "p99": 4,
+     "mean": 3.3648333330949147
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.80000000000109,
+     "mean": 16.66583333333333
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 10000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 10000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 151.59999999403954,
+    "stageNodes": 20003,
+    "hookCount": 10000,
+    "hooksMs": {
+     "p50": 4,
+     "p95": 4.4000000059604645,
+     "p99": 5.100000023841858,
+     "mean": 4.029500000178814
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0.0008333333333333334
+    },
+    "renderMs": {
+     "p50": 2.300000011920929,
+     "p95": 2.5999999940395355,
+     "p99": 2.800000011920929,
+     "mean": 2.3486666661997635
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 6.300000011920929,
+     "p95": 6.800000011920929,
+     "p99": 7.9000000059604645,
+     "mean": 6.378999999711911
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.66616666666667
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "particles",
+   "n": 10000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "particles",
+    "n": 10000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 4.300000011920929,
+    "stageNodes": 4,
+    "hookCount": 1,
+    "hooksMs": {
+     "p50": 0.19999998807907104,
+     "p95": 0.30000001192092896,
+     "p99": 0.4000000059604645,
+     "mean": 0.20050000056624412
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.001166666696468989
+    },
+    "renderMs": {
+     "p50": 0.19999998807907104,
+     "p95": 0.30000001192092896,
+     "p99": 0.4000000059604645,
+     "mean": 0.21249999860922494
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 0.4000000059604645,
+     "p95": 0.5999999940395355,
+     "p99": 0.7999999821186066,
+     "mean": 0.41416666587193807
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.80000000000109,
+     "mean": 16.776999999999997
+    },
+    "dropped": 2,
+    "missed": 4,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "particles",
+   "n": 20000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "particles",
+    "n": 20000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 4.4000000059604645,
+    "stageNodes": 4,
+    "hookCount": 1,
+    "hooksMs": {
+     "p50": 0.5,
+     "p95": 0.699999988079071,
+     "p99": 0.9000000059604645,
+     "mean": 0.5120000001291434
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.0009999999900658924
+    },
+    "renderMs": {
+     "p50": 0.5,
+     "p95": 0.6000000238418579,
+     "p99": 0.800000011920929,
+     "mean": 0.515833333581686
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 1,
+     "p95": 1.300000011920929,
+     "p99": 1.5999999940395355,
+     "mean": 1.0288333337008952
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.80000000000109,
+     "mean": 16.665999999999997
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "particles",
+   "n": 50000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "particles",
+    "n": 50000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 4.4000000059604645,
+    "stageNodes": 4,
+    "hookCount": 1,
+    "hooksMs": {
+     "p50": 1.300000011920929,
+     "p95": 1.5999999940395355,
+     "p99": 1.800000011920929,
+     "mean": 1.3291666666666666
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.0011666666467984518
+    },
+    "renderMs": {
+     "p50": 1,
+     "p95": 1.300000011920929,
+     "p99": 1.699999988079071,
+     "mean": 1.0701666663587093
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 2.300000011920929,
+     "p95": 2.800000011920929,
+     "p99": 3.199999988079071,
+     "mean": 2.4004999996721743
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.66583333333333
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "particles",
+   "n": 100000,
+   "rep": 2,
+   "gpu": "d3d11",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "particles",
+    "n": 100000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 4.199999988079071,
+    "stageNodes": 4,
+    "hookCount": 1,
+    "hooksMs": {
+     "p50": 2.0999999940395355,
+     "p95": 2.5,
+     "p99": 3,
+     "mean": 2.105999999841054
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.0009999999900658924
+    },
+    "renderMs": {
+     "p50": 1.7999999821186066,
+     "p95": 2.199999988079071,
+     "p99": 2.9000000059604645,
+     "mean": 1.8080000000198682
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 3.899999976158142,
+     "p95": 4.5999999940395355,
+     "p99": 5.799999982118607,
+     "mean": 3.9149999998509886
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.80000000000109,
+     "mean": 16.66583333333333
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  }
+ ]
+}

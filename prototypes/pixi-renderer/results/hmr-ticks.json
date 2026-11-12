@@ -1,0 +1,1322 @@
+[
+ {
+  "id": "a1",
+  "title": "(a) template edit: ship sprite tint",
+  "file": "demo/game-ship.ts",
+  "baseline": {
+   "bootOrigin": 1794519268943.4,
+   "canvasCount": 1,
+   "canvasUids": [
+    "1"
+   ],
+   "canvasSameElement": true,
+   "glSameContext": true,
+   "ctxLost": false,
+   "appsCreated": 1,
+   "appsDestroyed": 0,
+   "appsLive": 1,
+   "liveStageNodes": [
+    208
+   ],
+   "stageNodes": 209,
+   "nodesSurvivingFromMark": 209,
+   "freshRocksMarked": 47,
+   "freshRocksSameObject": 47,
+   "destroyedStillAttached": 0,
+   "sprites": 102,
+   "spritesWithDestroyedTexture": 0,
+   "ticks": 102,
+   "rocks": 101,
+   "nodesMinus2PerRock": 7,
+   "textures": 5,
+   "hooksLive": 103,
+   "hooksRegisteredEver": 103,
+   "worldSameInstance": true,
+   "serviceSameInstance": true,
+   "elapsed": 1.69,
+   "nextId": 101,
+   "hits": 0,
+   "spawned": 101,
+   "spawnTimer": 0.0099,
+   "heapMB": 23.8,
+   "hmrUpdates": 0
+  },
+  "edits": [
+   {
+    "k": 1,
+    "pre": {
+     "bootOrigin": 1794519268943.4,
+     "canvasCount": 1,
+     "canvasUids": [
+      "1"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 1,
+     "appsDestroyed": 0,
+     "appsLive": 1,
+     "liveStageNodes": [
+      208
+     ],
+     "stageNodes": 209,
+     "nodesSurvivingFromMark": 209,
+     "freshRocksMarked": 47,
+     "freshRocksSameObject": 47,
+     "destroyedStillAttached": 0,
+     "sprites": 102,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 102,
+     "rocks": 101,
+     "nodesMinus2PerRock": 7,
+     "textures": 5,
+     "hooksLive": 103,
+     "hooksRegisteredEver": 103,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 1.69,
+     "nextId": 101,
+     "hits": 0,
+     "spawned": 101,
+     "spawnTimer": 0.0099,
+     "heapMB": 24.4,
+     "hmrUpdates": 0
+    },
+    "applied": true,
+    "ticksPerSec": 59.3,
+    "msToAfterUpdate": 24,
+    "reloaded": false,
+    "snap": {
+     "bootOrigin": 1794519268943.4,
+     "canvasCount": 1,
+     "canvasUids": [
+      "1"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 1,
+     "appsDestroyed": 0,
+     "appsLive": 1,
+     "liveStageNodes": [
+      368
+     ],
+     "stageNodes": 369,
+     "nodesSurvivingFromMark": 184,
+     "freshRocksMarked": 47,
+     "freshRocksSameObject": 47,
+     "destroyedStillAttached": 0,
+     "sprites": 182,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 194,
+     "rocks": 181,
+     "nodesMinus2PerRock": 7,
+     "textures": 5,
+     "hooksLive": 183,
+     "hooksRegisteredEver": 195,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 3.23,
+     "nextId": 193,
+     "hits": 3,
+     "spawned": 193,
+     "spawnTimer": 0.0098,
+     "heapMB": 28.1,
+     "hmrUpdates": 1
+    },
+    "lastHmr": {
+     "status": "applied",
+     "changes": [
+      {
+       "name": "GameShip",
+       "kind": "view"
+      }
+     ],
+     "errors": []
+    }
+   },
+   {
+    "k": 2,
+    "pre": {
+     "bootOrigin": 1794519268943.4,
+     "canvasCount": 1,
+     "canvasUids": [
+      "1"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 1,
+     "appsDestroyed": 0,
+     "appsLive": 1,
+     "liveStageNodes": [
+      434
+     ],
+     "stageNodes": 435,
+     "nodesSurvivingFromMark": 433,
+     "freshRocksMarked": 46,
+     "freshRocksSameObject": 46,
+     "destroyedStillAttached": 0,
+     "sprites": 215,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 256,
+     "rocks": 214,
+     "nodesMinus2PerRock": 7,
+     "textures": 5,
+     "hooksLive": 216,
+     "hooksRegisteredEver": 257,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 4.26,
+     "nextId": 255,
+     "hits": 6,
+     "spawned": 255,
+     "spawnTimer": 0.0097,
+     "heapMB": 30.7,
+     "hmrUpdates": 1
+    },
+    "applied": true,
+    "ticksPerSec": 59.8,
+    "msToAfterUpdate": 14,
+    "reloaded": false,
+    "snap": {
+     "bootOrigin": 1794519268943.4,
+     "canvasCount": 1,
+     "canvasUids": [
+      "1"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 1,
+     "appsDestroyed": 0,
+     "appsLive": 1,
+     "liveStageNodes": [
+      506
+     ],
+     "stageNodes": 507,
+     "nodesSurvivingFromMark": 322,
+     "freshRocksMarked": 46,
+     "freshRocksSameObject": 46,
+     "destroyedStillAttached": 0,
+     "sprites": 251,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 347,
+     "rocks": 250,
+     "nodesMinus2PerRock": 7,
+     "textures": 5,
+     "hooksLive": 252,
+     "hooksRegisteredEver": 348,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 5.78,
+     "nextId": 346,
+     "hits": 8,
+     "spawned": 346,
+     "spawnTimer": 0.0096,
+     "heapMB": 31.4,
+     "hmrUpdates": 2
+    },
+    "lastHmr": {
+     "status": "applied",
+     "changes": [
+      {
+       "name": "GameShip",
+       "kind": "view"
+      }
+     ],
+     "errors": []
+    }
+   },
+   {
+    "k": 3,
+    "pre": {
+     "bootOrigin": 1794519268943.4,
+     "canvasCount": 1,
+     "canvasUids": [
+      "1"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 1,
+     "appsDestroyed": 0,
+     "appsLive": 1,
+     "liveStageNodes": [
+      528
+     ],
+     "stageNodes": 529,
+     "nodesSurvivingFromMark": 529,
+     "freshRocksMarked": 45,
+     "freshRocksSameObject": 45,
+     "destroyedStillAttached": 0,
+     "sprites": 262,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 407,
+     "rocks": 261,
+     "nodesMinus2PerRock": 7,
+     "textures": 5,
+     "hooksLive": 263,
+     "hooksRegisteredEver": 408,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 6.78,
+     "nextId": 406,
+     "hits": 9,
+     "spawned": 406,
+     "spawnTimer": 0.0096,
+     "heapMB": 30.4,
+     "hmrUpdates": 2
+    },
+    "applied": true,
+    "ticksPerSec": 59.5,
+    "msToAfterUpdate": 20,
+    "reloaded": false,
+    "snap": {
+     "bootOrigin": 1794519268943.4,
+     "canvasCount": 1,
+     "canvasUids": [
+      "1"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 1,
+     "appsDestroyed": 0,
+     "appsLive": 1,
+     "liveStageNodes": [
+      472
+     ],
+     "stageNodes": 473,
+     "nodesSurvivingFromMark": 286,
+     "freshRocksMarked": 45,
+     "freshRocksSameObject": 45,
+     "destroyedStillAttached": 0,
+     "sprites": 234,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 500,
+     "rocks": 233,
+     "nodesMinus2PerRock": 7,
+     "textures": 5,
+     "hooksLive": 235,
+     "hooksRegisteredEver": 501,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 8.33,
+     "nextId": 499,
+     "hits": 19,
+     "spawned": 499,
+     "spawnTimer": 0.0096,
+     "heapMB": 26.2,
+     "hmrUpdates": 3
+    },
+    "lastHmr": {
+     "status": "applied",
+     "changes": [
+      {
+       "name": "GameShip",
+       "kind": "view"
+      }
+     ],
+     "errors": []
+    }
+   }
+  ],
+  "consoleLogs": [
+   "debug: [vite] hot updated: /src/demo/game-ship.ts",
+   "debug: [vite] hot updated: /src/demo/game-ship.ts",
+   "debug: [vite] hot updated: /src/demo/game-ship.ts",
+   "debug: [vite] hot updated: /src/demo/game-ship.ts"
+  ]
+ },
+ {
+  "id": "b1",
+  "title": "(b) class edit: rock frame-hook body (field initialiser)",
+  "file": "demo/game-rock.ts",
+  "baseline": {
+   "bootOrigin": 1794519279422.4,
+   "canvasCount": 1,
+   "canvasUids": [
+    "1"
+   ],
+   "canvasSameElement": true,
+   "glSameContext": true,
+   "ctxLost": false,
+   "appsCreated": 1,
+   "appsDestroyed": 0,
+   "appsLive": 1,
+   "liveStageNodes": [
+    208
+   ],
+   "stageNodes": 209,
+   "nodesSurvivingFromMark": 209,
+   "freshRocksMarked": 45,
+   "freshRocksSameObject": 45,
+   "destroyedStillAttached": 0,
+   "sprites": 102,
+   "spritesWithDestroyedTexture": 0,
+   "ticks": 103,
+   "rocks": 101,
+   "nodesMinus2PerRock": 7,
+   "textures": 5,
+   "hooksLive": 103,
+   "hooksRegisteredEver": 103,
+   "worldSameInstance": true,
+   "serviceSameInstance": true,
+   "elapsed": 1.69,
+   "nextId": 101,
+   "hits": 0,
+   "spawned": 101,
+   "spawnTimer": 0.003,
+   "heapMB": 23.9,
+   "hmrUpdates": 0
+  },
+  "edits": [
+   {
+    "k": 1,
+    "pre": {
+     "bootOrigin": 1794519279422.4,
+     "canvasCount": 1,
+     "canvasUids": [
+      "1"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 1,
+     "appsDestroyed": 0,
+     "appsLive": 1,
+     "liveStageNodes": [
+      210
+     ],
+     "stageNodes": 211,
+     "nodesSurvivingFromMark": 211,
+     "freshRocksMarked": 46,
+     "freshRocksSameObject": 46,
+     "destroyedStillAttached": 0,
+     "sprites": 103,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 104,
+     "rocks": 102,
+     "nodesMinus2PerRock": 7,
+     "textures": 5,
+     "hooksLive": 104,
+     "hooksRegisteredEver": 104,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 1.7,
+     "nextId": 102,
+     "hits": 0,
+     "spawned": 102,
+     "spawnTimer": 0.003,
+     "heapMB": 24.3,
+     "hmrUpdates": 0
+    },
+    "applied": true,
+    "ticksPerSec": 59.5,
+    "msToAfterUpdate": 24,
+    "reloaded": false,
+    "snap": {
+     "bootOrigin": 1794519279422.4,
+     "canvasCount": 1,
+     "canvasUids": [
+      "1"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 1,
+     "appsDestroyed": 0,
+     "appsLive": 1,
+     "liveStageNodes": [
+      384
+     ],
+     "stageNodes": 385,
+     "nodesSurvivingFromMark": 7,
+     "freshRocksMarked": 46,
+     "freshRocksSameObject": 0,
+     "destroyedStillAttached": 0,
+     "sprites": 190,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 196,
+     "rocks": 189,
+     "nodesMinus2PerRock": 7,
+     "textures": 5,
+     "hooksLive": 191,
+     "hooksRegisteredEver": 298,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 3.24,
+     "nextId": 194,
+     "hits": 2,
+     "spawned": 194,
+     "spawnTimer": 0.0029,
+     "heapMB": 30.9,
+     "hmrUpdates": 1
+    },
+    "lastHmr": {
+     "status": "applied",
+     "changes": [
+      {
+       "name": "GameRock",
+       "kind": "resetup"
+      }
+     ],
+     "errors": []
+    }
+   },
+   {
+    "k": 2,
+    "pre": {
+     "bootOrigin": 1794519279422.4,
+     "canvasCount": 1,
+     "canvasUids": [
+      "1"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 1,
+     "appsDestroyed": 0,
+     "appsLive": 1,
+     "liveStageNodes": [
+      442
+     ],
+     "stageNodes": 443,
+     "nodesSurvivingFromMark": 441,
+     "freshRocksMarked": 47,
+     "freshRocksSameObject": 47,
+     "destroyedStillAttached": 0,
+     "sprites": 219,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 257,
+     "rocks": 218,
+     "nodesMinus2PerRock": 7,
+     "textures": 5,
+     "hooksLive": 220,
+     "hooksRegisteredEver": 359,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 4.25,
+     "nextId": 255,
+     "hits": 3,
+     "spawned": 255,
+     "spawnTimer": 0.0028,
+     "heapMB": 33.3,
+     "hmrUpdates": 1
+    },
+    "applied": true,
+    "ticksPerSec": 59.6,
+    "msToAfterUpdate": 30,
+    "reloaded": false,
+    "snap": {
+     "bootOrigin": 1794519279422.4,
+     "canvasCount": 1,
+     "canvasUids": [
+      "1"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 1,
+     "appsDestroyed": 0,
+     "appsLive": 1,
+     "liveStageNodes": [
+      468
+     ],
+     "stageNodes": 469,
+     "nodesSurvivingFromMark": 7,
+     "freshRocksMarked": 47,
+     "freshRocksSameObject": 0,
+     "destroyedStillAttached": 0,
+     "sprites": 232,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 349,
+     "rocks": 231,
+     "nodesMinus2PerRock": 7,
+     "textures": 5,
+     "hooksLive": 233,
+     "hooksRegisteredEver": 669,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 5.79,
+     "nextId": 347,
+     "hits": 9,
+     "spawned": 347,
+     "spawnTimer": 0.0029,
+     "heapMB": 31.2,
+     "hmrUpdates": 2
+    },
+    "lastHmr": {
+     "status": "applied",
+     "changes": [
+      {
+       "name": "GameRock",
+       "kind": "resetup"
+      }
+     ],
+     "errors": []
+    }
+   },
+   {
+    "k": 3,
+    "pre": {
+     "bootOrigin": 1794519279422.4,
+     "canvasCount": 1,
+     "canvasUids": [
+      "1"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 1,
+     "appsDestroyed": 0,
+     "appsLive": 1,
+     "liveStageNodes": [
+      470
+     ],
+     "stageNodes": 471,
+     "nodesSurvivingFromMark": 471,
+     "freshRocksMarked": 44,
+     "freshRocksSameObject": 44,
+     "destroyedStillAttached": 0,
+     "sprites": 233,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 410,
+     "rocks": 232,
+     "nodesMinus2PerRock": 7,
+     "textures": 5,
+     "hooksLive": 234,
+     "hooksRegisteredEver": 730,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 6.8,
+     "nextId": 408,
+     "hits": 13,
+     "spawned": 408,
+     "spawnTimer": 0.0028,
+     "heapMB": 34.9,
+     "hmrUpdates": 2
+    },
+    "applied": true,
+    "ticksPerSec": 60.4,
+    "msToAfterUpdate": 30,
+    "reloaded": false,
+    "snap": {
+     "bootOrigin": 1794519279422.4,
+     "canvasCount": 1,
+     "canvasUids": [
+      "1"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 1,
+     "appsDestroyed": 0,
+     "appsLive": 1,
+     "liveStageNodes": [
+      490
+     ],
+     "stageNodes": 491,
+     "nodesSurvivingFromMark": 7,
+     "freshRocksMarked": 44,
+     "freshRocksSameObject": 0,
+     "destroyedStillAttached": 0,
+     "sprites": 243,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 502,
+     "rocks": 242,
+     "nodesMinus2PerRock": 7,
+     "textures": 5,
+     "hooksLive": 244,
+     "hooksRegisteredEver": 1054,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 8.34,
+     "nextId": 500,
+     "hits": 20,
+     "spawned": 500,
+     "spawnTimer": 0.0027,
+     "heapMB": 32.2,
+     "hmrUpdates": 3
+    },
+    "lastHmr": {
+     "status": "applied",
+     "changes": [
+      {
+       "name": "GameRock",
+       "kind": "resetup"
+      }
+     ],
+     "errors": []
+    }
+   }
+  ],
+  "consoleLogs": [
+   "debug: [vite] hot updated: /src/demo/game-rock.ts",
+   "debug: [vite] hot updated: /src/demo/game-rock.ts",
+   "debug: [vite] hot updated: /src/demo/game-rock.ts",
+   "debug: [vite] hot updated: /src/demo/game-rock.ts"
+  ]
+ },
+ {
+  "id": "c1",
+  "title": "(c) host edit: <gable-canvas> class (Application background)",
+  "file": "gable-canvas.ts",
+  "baseline": {
+   "bootOrigin": 1794519289850.9,
+   "canvasCount": 1,
+   "canvasUids": [
+    "1"
+   ],
+   "canvasSameElement": true,
+   "glSameContext": true,
+   "ctxLost": false,
+   "appsCreated": 1,
+   "appsDestroyed": 0,
+   "appsLive": 1,
+   "liveStageNodes": [
+    208
+   ],
+   "stageNodes": 209,
+   "nodesSurvivingFromMark": 209,
+   "freshRocksMarked": 48,
+   "freshRocksSameObject": 48,
+   "destroyedStillAttached": 0,
+   "sprites": 102,
+   "spritesWithDestroyedTexture": 0,
+   "ticks": 103,
+   "rocks": 101,
+   "nodesMinus2PerRock": 7,
+   "textures": 5,
+   "hooksLive": 103,
+   "hooksRegisteredEver": 103,
+   "worldSameInstance": true,
+   "serviceSameInstance": true,
+   "elapsed": 1.69,
+   "nextId": 101,
+   "hits": 0,
+   "spawned": 101,
+   "spawnTimer": 0.0069,
+   "heapMB": 23.9,
+   "hmrUpdates": 0
+  },
+  "edits": [
+   {
+    "k": 1,
+    "pre": {
+     "bootOrigin": 1794519289850.9,
+     "canvasCount": 1,
+     "canvasUids": [
+      "1"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 1,
+     "appsDestroyed": 0,
+     "appsLive": 1,
+     "liveStageNodes": [
+      210
+     ],
+     "stageNodes": 211,
+     "nodesSurvivingFromMark": 211,
+     "freshRocksMarked": 47,
+     "freshRocksSameObject": 47,
+     "destroyedStillAttached": 0,
+     "sprites": 103,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 104,
+     "rocks": 102,
+     "nodesMinus2PerRock": 7,
+     "textures": 5,
+     "hooksLive": 104,
+     "hooksRegisteredEver": 104,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 1.71,
+     "nextId": 102,
+     "hits": 0,
+     "spawned": 102,
+     "spawnTimer": 0.0068,
+     "heapMB": 24.3,
+     "hmrUpdates": 0
+    },
+    "applied": true,
+    "ticksPerSec": 60.2,
+    "msToAfterUpdate": 24,
+    "reloaded": false,
+    "snap": {
+     "bootOrigin": 1794519289850.9,
+     "canvasCount": 1,
+     "canvasUids": [
+      "2"
+     ],
+     "canvasSameElement": false,
+     "glSameContext": false,
+     "ctxLost": false,
+     "appsCreated": 2,
+     "appsDestroyed": 1,
+     "appsLive": 1,
+     "liveStageNodes": [
+      380
+     ],
+     "stageNodes": 381,
+     "nodesSurvivingFromMark": 0,
+     "freshRocksMarked": 47,
+     "freshRocksSameObject": 0,
+     "destroyedStillAttached": 0,
+     "sprites": 188,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 195,
+     "rocks": 187,
+     "nodesMinus2PerRock": 7,
+     "textures": 4,
+     "hooksLive": 189,
+     "hooksRegisteredEver": 298,
+     "worldSameInstance": false,
+     "serviceSameInstance": true,
+     "elapsed": 3.2,
+     "nextId": 192,
+     "hits": 0,
+     "spawned": 192,
+     "spawnTimer": 0.0012,
+     "heapMB": 31.8,
+     "hmrUpdates": 1
+    },
+    "lastHmr": {
+     "status": "applied",
+     "changes": [
+      {
+       "name": "GableCanvas",
+       "kind": "resetup"
+      }
+     ],
+     "errors": []
+    }
+   },
+   {
+    "k": 2,
+    "pre": {
+     "bootOrigin": 1794519289850.9,
+     "canvasCount": 1,
+     "canvasUids": [
+      "2"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 2,
+     "appsDestroyed": 1,
+     "appsLive": 1,
+     "liveStageNodes": [
+      432
+     ],
+     "stageNodes": 433,
+     "nodesSurvivingFromMark": 433,
+     "freshRocksMarked": 43,
+     "freshRocksSameObject": 43,
+     "destroyedStillAttached": 0,
+     "sprites": 214,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 256,
+     "rocks": 213,
+     "nodesMinus2PerRock": 7,
+     "textures": 4,
+     "hooksLive": 215,
+     "hooksRegisteredEver": 359,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 4.22,
+     "nextId": 253,
+     "hits": 3,
+     "spawned": 253,
+     "spawnTimer": 0.0011,
+     "heapMB": 29.1,
+     "hmrUpdates": 1
+    },
+    "applied": true,
+    "ticksPerSec": 60.2,
+    "msToAfterUpdate": 25,
+    "reloaded": false,
+    "snap": {
+     "bootOrigin": 1794519289850.9,
+     "canvasCount": 1,
+     "canvasUids": [
+      "3"
+     ],
+     "canvasSameElement": false,
+     "glSameContext": false,
+     "ctxLost": false,
+     "appsCreated": 3,
+     "appsDestroyed": 2,
+     "appsLive": 1,
+     "liveStageNodes": [
+      484
+     ],
+     "stageNodes": 485,
+     "nodesSurvivingFromMark": 0,
+     "freshRocksMarked": 43,
+     "freshRocksSameObject": 0,
+     "destroyedStillAttached": 0,
+     "sprites": 240,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 347,
+     "rocks": 239,
+     "nodesMinus2PerRock": 7,
+     "textures": 4,
+     "hooksLive": 241,
+     "hooksRegisteredEver": 663,
+     "worldSameInstance": false,
+     "serviceSameInstance": true,
+     "elapsed": 5.71,
+     "nextId": 342,
+     "hits": 7,
+     "spawned": 342,
+     "spawnTimer": 0.0106,
+     "heapMB": 34.5,
+     "hmrUpdates": 2
+    },
+    "lastHmr": {
+     "status": "applied",
+     "changes": [
+      {
+       "name": "GableCanvas",
+       "kind": "resetup"
+      }
+     ],
+     "errors": []
+    }
+   },
+   {
+    "k": 3,
+    "pre": {
+     "bootOrigin": 1794519289850.9,
+     "canvasCount": 1,
+     "canvasUids": [
+      "3"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 3,
+     "appsDestroyed": 2,
+     "appsLive": 1,
+     "liveStageNodes": [
+      498
+     ],
+     "stageNodes": 499,
+     "nodesSurvivingFromMark": 499,
+     "freshRocksMarked": 45,
+     "freshRocksSameObject": 45,
+     "destroyedStillAttached": 0,
+     "sprites": 247,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 408,
+     "rocks": 246,
+     "nodesMinus2PerRock": 7,
+     "textures": 4,
+     "hooksLive": 248,
+     "hooksRegisteredEver": 724,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 6.73,
+     "nextId": 403,
+     "hits": 7,
+     "spawned": 403,
+     "spawnTimer": 0.0105,
+     "heapMB": 39.3,
+     "hmrUpdates": 2
+    },
+    "applied": true,
+    "ticksPerSec": 59.4,
+    "msToAfterUpdate": 27,
+    "reloaded": false,
+    "snap": {
+     "bootOrigin": 1794519289850.9,
+     "canvasCount": 1,
+     "canvasUids": [
+      "4"
+     ],
+     "canvasSameElement": false,
+     "glSameContext": false,
+     "ctxLost": false,
+     "appsCreated": 4,
+     "appsDestroyed": 3,
+     "appsLive": 1,
+     "liveStageNodes": [
+      488
+     ],
+     "stageNodes": 489,
+     "nodesSurvivingFromMark": 0,
+     "freshRocksMarked": 45,
+     "freshRocksSameObject": 0,
+     "destroyedStillAttached": 0,
+     "sprites": 242,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 500,
+     "rocks": 241,
+     "nodesMinus2PerRock": 7,
+     "textures": 4,
+     "hooksLive": 243,
+     "hooksRegisteredEver": 1062,
+     "worldSameInstance": false,
+     "serviceSameInstance": true,
+     "elapsed": 8.24,
+     "nextId": 494,
+     "hits": 13,
+     "spawned": 494,
+     "spawnTimer": 0.01,
+     "heapMB": 39.2,
+     "hmrUpdates": 3
+    },
+    "lastHmr": {
+     "status": "applied",
+     "changes": [
+      {
+       "name": "GableCanvas",
+       "kind": "resetup"
+      }
+     ],
+     "errors": []
+    }
+   }
+  ],
+  "consoleLogs": [
+   "debug: [vite] hot updated: /src/gable-canvas.ts",
+   "debug: [vite] hot updated: /src/gable-canvas.ts",
+   "debug: [vite] hot updated: /src/gable-canvas.ts",
+   "debug: [vite] hot updated: /src/gable-canvas.ts"
+  ]
+ },
+ {
+  "id": "d2",
+  "title": "(d) service edit: new field on GameState",
+  "file": "demo/game-state.ts",
+  "baseline": {
+   "bootOrigin": 1794519300313.2,
+   "canvasCount": 1,
+   "canvasUids": [
+    "1"
+   ],
+   "canvasSameElement": true,
+   "glSameContext": true,
+   "ctxLost": false,
+   "appsCreated": 1,
+   "appsDestroyed": 0,
+   "appsLive": 1,
+   "liveStageNodes": [
+    208
+   ],
+   "stageNodes": 209,
+   "nodesSurvivingFromMark": 209,
+   "freshRocksMarked": 44,
+   "freshRocksSameObject": 44,
+   "destroyedStillAttached": 0,
+   "sprites": 102,
+   "spritesWithDestroyedTexture": 0,
+   "ticks": 103,
+   "rocks": 101,
+   "nodesMinus2PerRock": 7,
+   "textures": 5,
+   "hooksLive": 103,
+   "hooksRegisteredEver": 103,
+   "worldSameInstance": true,
+   "serviceSameInstance": true,
+   "elapsed": 1.69,
+   "nextId": 101,
+   "hits": 0,
+   "spawned": 101,
+   "spawnTimer": 0.0114,
+   "heapMB": 23.9,
+   "hmrUpdates": 0
+  },
+  "edits": [
+   {
+    "k": 1,
+    "pre": {
+     "bootOrigin": 1794519300313.2,
+     "canvasCount": 1,
+     "canvasUids": [
+      "1"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 1,
+     "appsDestroyed": 0,
+     "appsLive": 1,
+     "liveStageNodes": [
+      208
+     ],
+     "stageNodes": 209,
+     "nodesSurvivingFromMark": 209,
+     "freshRocksMarked": 44,
+     "freshRocksSameObject": 44,
+     "destroyedStillAttached": 0,
+     "sprites": 102,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 103,
+     "rocks": 101,
+     "nodesMinus2PerRock": 7,
+     "textures": 5,
+     "hooksLive": 103,
+     "hooksRegisteredEver": 103,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 1.69,
+     "nextId": 101,
+     "hits": 0,
+     "spawned": 101,
+     "spawnTimer": 0.0114,
+     "heapMB": 24.5,
+     "hmrUpdates": 0
+    },
+    "applied": true,
+    "ticksPerSec": 59.6,
+    "msToAfterUpdate": 26,
+    "reloaded": false,
+    "snap": {
+     "bootOrigin": 1794519300313.2,
+     "canvasCount": 1,
+     "canvasUids": [
+      "2"
+     ],
+     "canvasSameElement": false,
+     "glSameContext": false,
+     "ctxLost": false,
+     "appsCreated": 2,
+     "appsDestroyed": 1,
+     "appsLive": 1,
+     "liveStageNodes": [
+      378
+     ],
+     "stageNodes": 379,
+     "nodesSurvivingFromMark": 0,
+     "freshRocksMarked": 44,
+     "freshRocksSameObject": 0,
+     "destroyedStillAttached": 0,
+     "sprites": 187,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 195,
+     "rocks": 186,
+     "nodesMinus2PerRock": 7,
+     "textures": 4,
+     "hooksLive": 188,
+     "hooksRegisteredEver": 298,
+     "worldSameInstance": false,
+     "serviceSameInstance": false,
+     "elapsed": 3.21,
+     "nextId": 192,
+     "hits": 1,
+     "spawned": 192,
+     "spawnTimer": 0.0067,
+     "heapMB": 32.1,
+     "hmrUpdates": 1
+    },
+    "lastHmr": {
+     "status": "applied",
+     "changes": [
+      {
+       "name": "GameState",
+       "kind": "resetup"
+      }
+     ],
+     "errors": []
+    }
+   },
+   {
+    "k": 2,
+    "pre": {
+     "bootOrigin": 1794519300313.2,
+     "canvasCount": 1,
+     "canvasUids": [
+      "2"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 2,
+     "appsDestroyed": 1,
+     "appsLive": 1,
+     "liveStageNodes": [
+      446
+     ],
+     "stageNodes": 447,
+     "nodesSurvivingFromMark": 447,
+     "freshRocksMarked": 49,
+     "freshRocksSameObject": 49,
+     "destroyedStillAttached": 0,
+     "sprites": 221,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 255,
+     "rocks": 220,
+     "nodesMinus2PerRock": 7,
+     "textures": 4,
+     "hooksLive": 222,
+     "hooksRegisteredEver": 358,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 4.21,
+     "nextId": 252,
+     "hits": 3,
+     "spawned": 252,
+     "spawnTimer": 0.0067,
+     "heapMB": 29.1,
+     "hmrUpdates": 1
+    },
+    "applied": true,
+    "ticksPerSec": 59.5,
+    "msToAfterUpdate": 26,
+    "reloaded": false,
+    "snap": {
+     "bootOrigin": 1794519300313.2,
+     "canvasCount": 1,
+     "canvasUids": [
+      "3"
+     ],
+     "canvasSameElement": false,
+     "glSameContext": false,
+     "ctxLost": false,
+     "appsCreated": 3,
+     "appsDestroyed": 2,
+     "appsLive": 1,
+     "liveStageNodes": [
+      486
+     ],
+     "stageNodes": 487,
+     "nodesSurvivingFromMark": 0,
+     "freshRocksMarked": 49,
+     "freshRocksSameObject": 0,
+     "destroyedStillAttached": 0,
+     "sprites": 241,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 347,
+     "rocks": 240,
+     "nodesMinus2PerRock": 7,
+     "textures": 4,
+     "hooksLive": 242,
+     "hooksRegisteredEver": 672,
+     "worldSameInstance": false,
+     "serviceSameInstance": false,
+     "elapsed": 5.72,
+     "nextId": 343,
+     "hits": 9,
+     "spawned": 343,
+     "spawnTimer": 0.0044,
+     "heapMB": 35.1,
+     "hmrUpdates": 2
+    },
+    "lastHmr": {
+     "status": "applied",
+     "changes": [
+      {
+       "name": "GameState",
+       "kind": "resetup"
+      }
+     ],
+     "errors": []
+    }
+   },
+   {
+    "k": 3,
+    "pre": {
+     "bootOrigin": 1794519300313.2,
+     "canvasCount": 1,
+     "canvasUids": [
+      "3"
+     ],
+     "canvasSameElement": true,
+     "glSameContext": true,
+     "ctxLost": false,
+     "appsCreated": 3,
+     "appsDestroyed": 2,
+     "appsLive": 1,
+     "liveStageNodes": [
+      492
+     ],
+     "stageNodes": 493,
+     "nodesSurvivingFromMark": 493,
+     "freshRocksMarked": 54,
+     "freshRocksSameObject": 54,
+     "destroyedStillAttached": 0,
+     "sprites": 244,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 407,
+     "rocks": 243,
+     "nodesMinus2PerRock": 7,
+     "textures": 4,
+     "hooksLive": 245,
+     "hooksRegisteredEver": 732,
+     "worldSameInstance": true,
+     "serviceSameInstance": true,
+     "elapsed": 6.72,
+     "nextId": 403,
+     "hits": 12,
+     "spawned": 403,
+     "spawnTimer": 0.0044,
+     "heapMB": 39.7,
+     "hmrUpdates": 2
+    },
+    "applied": true,
+    "ticksPerSec": 59.8,
+    "msToAfterUpdate": 26,
+    "reloaded": false,
+    "snap": {
+     "bootOrigin": 1794519300313.2,
+     "canvasCount": 1,
+     "canvasUids": [
+      "4"
+     ],
+     "canvasSameElement": false,
+     "glSameContext": false,
+     "ctxLost": false,
+     "appsCreated": 4,
+     "appsDestroyed": 3,
+     "appsLive": 1,
+     "liveStageNodes": [
+      512
+     ],
+     "stageNodes": 513,
+     "nodesSurvivingFromMark": 0,
+     "freshRocksMarked": 54,
+     "freshRocksSameObject": 0,
+     "destroyedStillAttached": 0,
+     "sprites": 254,
+     "spritesWithDestroyedTexture": 0,
+     "ticks": 499,
+     "rocks": 253,
+     "nodesMinus2PerRock": 7,
+     "textures": 4,
+     "hooksLive": 255,
+     "hooksRegisteredEver": 1069,
+     "worldSameInstance": false,
+     "serviceSameInstance": false,
+     "elapsed": 8.24,
+     "nextId": 494,
+     "hits": 17,
+     "spawned": 494,
+     "spawnTimer": 0.0018,
+     "heapMB": 40.1,
+     "hmrUpdates": 3
+    },
+    "lastHmr": {
+     "status": "applied",
+     "changes": [
+      {
+       "name": "GameState",
+       "kind": "resetup"
+      }
+     ],
+     "errors": []
+    }
+   }
+  ],
+  "consoleLogs": [
+   "debug: [vite] hot updated: /src/demo/game-state.ts",
+   "debug: [vite] hot updated: /src/demo/game-state.ts",
+   "debug: [vite] hot updated: /src/demo/game-state.ts",
+   "debug: [vite] hot updated: /src/demo/game-state.ts"
+  ]
+ }
+]

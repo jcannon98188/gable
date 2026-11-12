@@ -298,7 +298,10 @@ export function hasPendingFlush(): boolean {
   return scheduled !== null;
 }
 
-/** Runs any pending effects synchronously. */
+/**
+ * Runs any pending effects synchronously, instead of waiting for the microtask flush. A frame loop calls this after its
+ * own writes and before it renders, so a frame's bindings are applied in that frame.
+ */
 export function flushSync(): void {
   if (scheduled) flushNow();
 }

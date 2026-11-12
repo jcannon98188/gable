@@ -1,0 +1,258 @@
+{
+ "n": 5000,
+ "style": "signals",
+ "totalSampledMs": 15396,
+ "top": [
+  {
+   "fn": "producerNotifyConsumers @ assets/gable-canvas-BKbXNQHk.js:145",
+   "selfMs": 2313.5,
+   "pct": 15.03
+  },
+  {
+   "fn": "setProperty @ assets/gable-canvas-BKbXNQHk.js:25511",
+   "selfMs": 1682.5,
+   "pct": 10.93
+  },
+  {
+   "fn": "__privateIn @ assets/gable-canvas-BKbXNQHk.js:52",
+   "selfMs": 1510.1,
+   "pct": 9.81
+  },
+  {
+   "fn": "consumerPollProducersForChange @ assets/gable-canvas-BKbXNQHk.js:178",
+   "selfMs": 1164.7,
+   "pct": 7.57
+  },
+  {
+   "fn": "evaluate @ assets/gable-canvas-BKbXNQHk.js:1294",
+   "selfMs": 1155.7,
+   "pct": 7.51
+  },
+  {
+   "fn": "flushNow @ assets/gable-canvas-BKbXNQHk.js:825",
+   "selfMs": 609.8,
+   "pct": 3.96
+  },
+  {
+   "fn": "(anonymous) @ assets/bench-Dd7ur6wh.js:1103",
+   "selfMs": 509.9,
+   "pct": 3.31
+  },
+  {
+   "fn": "(anonymous) @ assets/gable-canvas-BKbXNQHk.js:3635",
+   "selfMs": 450.4,
+   "pct": 2.93
+  },
+  {
+   "fn": "read @ assets/gable-canvas-BKbXNQHk.js:718",
+   "selfMs": 431.9,
+   "pct": 2.81
+  },
+  {
+   "fn": "_updateSkew @ assets/CanvasPool-DRfW7x5s.js:7988",
+   "selfMs": 422.4,
+   "pct": 2.74
+  },
+  {
+   "fn": "byDepthThenCreation @ assets/gable-canvas-BKbXNQHk.js:822",
+   "selfMs": 318.5,
+   "pct": 2.07
+  },
+  {
+   "fn": "packQuadAttributes @ assets/RenderTargetSystem-CBGpMI0F.js:1529",
+   "selfMs": 309.4,
+   "pct": 2.01
+  },
+  {
+   "fn": "(program) @ (native):0",
+   "selfMs": 284.2,
+   "pct": 1.85
+  },
+  {
+   "fn": "updateLocalTransform @ assets/CanvasPool-DRfW7x5s.js:8077",
+   "selfMs": 272.8,
+   "pct": 1.77
+  },
+  {
+   "fn": "(anonymous) @ assets/gable-canvas-BKbXNQHk.js:905",
+   "selfMs": 258,
+   "pct": 1.68
+  },
+  {
+   "fn": "set x @ assets/CanvasPool-DRfW7x5s.js:7693",
+   "selfMs": 231.3,
+   "pct": 1.5
+  },
+  {
+   "fn": "producerAccessed @ assets/gable-canvas-BKbXNQHk.js:113",
+   "selfMs": 225.2,
+   "pct": 1.46
+  },
+  {
+   "fn": "read @ assets/gable-canvas-BKbXNQHk.js:3097",
+   "selfMs": 221.9,
+   "pct": 1.44
+  },
+  {
+   "fn": "(anonymous) @ assets/gable-canvas-BKbXNQHk.js:3636",
+   "selfMs": 191.4,
+   "pct": 1.24
+  },
+  {
+   "fn": "set x @ assets/CanvasPool-DRfW7x5s.js:428",
+   "selfMs": 179.9,
+   "pct": 1.17
+  },
+  {
+   "fn": "(anonymous) @ assets/gable-canvas-BKbXNQHk.js:504",
+   "selfMs": 169.4,
+   "pct": 1.1
+  },
+  {
+   "fn": "producerUpdateValueVersion @ assets/gable-canvas-BKbXNQHk.js:134",
+   "selfMs": 165.3,
+   "pct": 1.07
+  },
+  {
+   "fn": "inReadPhase @ assets/gable-canvas-BKbXNQHk.js:670",
+   "selfMs": 142.7,
+   "pct": 0.93
+  },
+  {
+   "fn": "assertConsumerNode @ assets/gable-canvas-BKbXNQHk.js:225",
+   "selfMs": 137.7,
+   "pct": 0.89
+  },
+  {
+   "fn": "updateRenderGroupTransforms @ assets/RenderTargetSystem-CBGpMI0F.js:2523",
+   "selfMs": 135.2,
+   "pct": 0.88
+  },
+  {
+   "fn": "signalGetFn @ assets/gable-canvas-BKbXNQHk.js:323",
+   "selfMs": 133.9,
+   "pct": 0.87
+  },
+  {
+   "fn": "Signal2.isState @ assets/gable-canvas-BKbXNQHk.js:393",
+   "selfMs": 132.9,
+   "pct": 0.86
+  },
+  {
+   "fn": "getPending @ assets/gable-canvas-BKbXNQHk.js:502",
+   "selfMs": 132.2,
+   "pct": 0.86
+  },
+  {
+   "fn": "untrack @ assets/gable-canvas-BKbXNQHk.js:421",
+   "selfMs": 123.1,
+   "pct": 0.8
+  },
+  {
+   "fn": "producerRecomputeValue @ assets/gable-canvas-BKbXNQHk.js:267",
+   "selfMs": 90.3,
+   "pct": 0.59
+  },
+  {
+   "fn": "appendFrom @ assets/CanvasPool-DRfW7x5s.js:1277",
+   "selfMs": 85.8,
+   "pct": 0.56
+  },
+  {
+   "fn": "set rotation @ assets/CanvasPool-DRfW7x5s.js:7756",
+   "selfMs": 72.9,
+   "pct": 0.47
+  },
+  {
+   "fn": "signalValueChanged @ assets/gable-canvas-BKbXNQHk.js:341",
+   "selfMs": 70,
+   "pct": 0.45
+  },
+  {
+   "fn": "updateTransformAndChildren @ assets/RenderTargetSystem-CBGpMI0F.js:2558",
+   "selfMs": 66.8,
+   "pct": 0.43
+  },
+  {
+   "fn": "tick @ assets/gable-canvas-BKbXNQHk.js:4907",
+   "selfMs": 61.5,
+   "pct": 0.4
+  },
+  {
+   "fn": "signalSetFn @ assets/gable-canvas-BKbXNQHk.js:327",
+   "selfMs": 48.3,
+   "pct": 0.31
+  },
+  {
+   "fn": "consumerMarkDirty @ assets/gable-canvas-BKbXNQHk.js:158",
+   "selfMs": 46.2,
+   "pct": 0.3
+  },
+  {
+   "fn": "_getGpuSprite @ assets/RenderTargetSystem-CBGpMI0F.js:2357",
+   "selfMs": 45.3,
+   "pct": 0.29
+  },
+  {
+   "fn": "read.set @ assets/gable-canvas-BKbXNQHk.js:719",
+   "selfMs": 44.5,
+   "pct": 0.29
+  },
+  {
+   "fn": "_onUpdate @ assets/CanvasPool-DRfW7x5s.js:7606",
+   "selfMs": 44.3,
+   "pct": 0.29
+  }
+ ],
+ "gable": [],
+ "result": {
+  "style": "signals",
+  "n": 5000,
+  "finish": false,
+  "frames": 600,
+  "mountMs": 195.59999999403954,
+  "stageNodes": 10003,
+  "hookCount": 5000,
+  "hooksMs": {
+   "p50": 6.200000017881393,
+   "p95": 6.899999976158142,
+   "p99": 7.699999988079071,
+   "mean": 6.286333334098259
+  },
+  "flushMs": {
+   "p50": 12.5,
+   "p95": 13.699999988079071,
+   "p99": 15,
+   "mean": 12.668333332687617
+  },
+  "renderMs": {
+   "p50": 1.4000000059604645,
+   "p95": 1.600000023841858,
+   "p99": 1.9000000059604645,
+   "mean": 1.4456666669249534
+  },
+  "finishMs": {
+   "p50": 0,
+   "p95": 0,
+   "p99": 0,
+   "mean": 0
+  },
+  "jsTotalMs": {
+   "p50": 20.200000017881393,
+   "p95": 22.099999994039536,
+   "p99": 24.5,
+   "mean": 20.40033333371083
+  },
+  "frameMs": {
+   "p50": 16.699999999999818,
+   "p95": 33.399999999999636,
+   "p99": 33.400000000000546,
+   "mean": 20.637999999999998
+  },
+  "dropped": 143,
+  "missed": 143,
+  "gl": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2060 SUPER (0x00001F06) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+ }
+}

@@ -91,3 +91,13 @@ export function runInScope<T>(scope: Scope | null, fn: () => T): T {
     current = previous;
   }
 }
+
+/**
+ * Registers `fn` to run when the current scope (the component or block whose Setup is running) is disposed. Throws outside a scope.
+ *
+ * @param fn - The cleanup.
+ */
+export function onCleanup(fn: () => void): void {
+  if (!current) throw new Error("onCleanup() called outside a scope (a component Setup, effect or block).");
+  current.onDispose(fn);
+}

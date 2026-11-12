@@ -63,6 +63,8 @@ export interface Renderer<N = unknown> {
   overlayRoot?(): N;
   /** Document order of two attached nodes: negative when `a` comes first, positive when `b` does, 0 when unknown (detached). Lets `contentChildren` list late-created matches in markup order. */
   compare?(a: N, b: N): number;
+  /** Releases what the renderer owns (GPU resources, a canvas, listeners). Called when the component that declared this renderer as a boundary (`meta.renderer`) is disposed. */
+  destroy?(): void;
   /** Optional DOM-state preservation around a view rebuild (HMR). */
   captureViewState?(rootNodes: N[]): unknown;
   restoreViewState?(newRootNodes: N[], token: unknown): void;

@@ -1,0 +1,20 @@
+{
+  "name": "gable-pixi-renderer-spike",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Throwaway spike: a Pixi Renderer, a <gable-canvas> renderer boundary, a Gable-owned frame loop, a demo game, a benchmark and an HMR experiment driver.",
+  "scripts": {
+    "dev": "vite --port 5290 --strictPort",
+    "build": "vite build",
+    "bench": "node driver/bench.mjs",
+    "hmr": "node driver/hmr.mjs",
+    "profile": "node driver/profile.mjs"
+  },
+  "dependencies": {
+    "pixi.js": "^8.23.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.58.0"
+  }
+}

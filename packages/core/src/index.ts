@@ -1,11 +1,12 @@
-export { signal, computed, effect, untracked } from "./signals.js";
+export { signal, computed, effect, untracked, flushSync, whenFlushed } from "./signals.js";
+export { onCleanup } from "./scope.js";
 export type { ReadonlySignal, WritableSignal, SignalOptions } from "./signals.js";
 export { lazy } from "./lazy.js";
 export type { LazyEntry } from "./lazy.js";
 export { html } from "./template.js";
 export type { TemplateResult } from "./template.js";
 export { injectHost } from "./component.js";
-export type { ComponentMeta, ComponentClass, HostRef } from "./component.js";
+export type { ComponentMeta, ComponentClass, HostRef, RendererBoundary } from "./component.js";
 export { input, model } from "./input.js";
 export type { InputSignal, ModelSignal } from "./input.js";
 export { output, OutputEmitter } from "./output.js";

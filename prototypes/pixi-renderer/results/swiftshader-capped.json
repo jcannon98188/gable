@@ -1,0 +1,720 @@
+{
+ "args": {
+  "gpu": "swiftshader",
+  "reps": "1",
+  "counts": "500,1000,2000,5000",
+  "styles": "signals,pose,ref",
+  "particles": "",
+  "timeout": "400000"
+ },
+ "results": [
+  {
+   "style": "signals",
+   "n": 500,
+   "rep": 0,
+   "gpu": "swiftshader",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 500,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 26.799999982118607,
+    "stageNodes": 1003,
+    "hookCount": 500,
+    "hooksMs": {
+     "p50": 0.800000011920929,
+     "p95": 1.300000011920929,
+     "p99": 1.4000000059604645,
+     "mean": 0.8371666663388411
+    },
+    "flushMs": {
+     "p50": 1.800000011920929,
+     "p95": 2,
+     "p99": 2.2999999821186066,
+     "mean": 1.8160000003377597
+    },
+    "renderMs": {
+     "p50": 0.29999998211860657,
+     "p95": 0.4000000059604645,
+     "p99": 0.4000000059604645,
+     "mean": 0.27899999941388764
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 2.9000000059604645,
+     "p95": 3.4000000059604645,
+     "p99": 4,
+     "mean": 2.9321666660904886
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 1000,
+   "rep": 0,
+   "gpu": "swiftshader",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 1000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 39.79999998211861,
+    "stageNodes": 2003,
+    "hookCount": 1000,
+    "hooksMs": {
+     "p50": 1.699999988079071,
+     "p95": 2.2999999821186066,
+     "p99": 2.5,
+     "mean": 1.738999999463558
+    },
+    "flushMs": {
+     "p50": 3.5,
+     "p95": 3.9000000059604645,
+     "p99": 4.300000011920929,
+     "mean": 3.562833333214124
+    },
+    "renderMs": {
+     "p50": 0.3999999761581421,
+     "p95": 0.5,
+     "p99": 0.5999999940395355,
+     "mean": 0.3634999995430311
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 5.5999999940395355,
+     "p95": 6.200000017881393,
+     "p99": 7.0999999940395355,
+     "mean": 5.665333332220714
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.66583333333333
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 2000,
+   "rep": 0,
+   "gpu": "swiftshader",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 2000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 56.30000001192093,
+    "stageNodes": 4003,
+    "hookCount": 2000,
+    "hooksMs": {
+     "p50": 3.699999988079071,
+     "p95": 4.4000000059604645,
+     "p99": 6.5,
+     "mean": 3.734499999334415
+    },
+    "flushMs": {
+     "p50": 7.299999982118607,
+     "p95": 9.699999988079071,
+     "p99": 12.200000017881393,
+     "mean": 7.108833333750566
+    },
+    "renderMs": {
+     "p50": 0.5999999940395355,
+     "p95": 1,
+     "p99": 1.699999988079071,
+     "mean": 0.6546666665871939
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 11.699999988079071,
+     "p95": 14.300000011920929,
+     "p99": 17.69999998807907,
+     "mean": 11.497999999672174
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.80000000000109,
+     "mean": 16.66583333333333
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "signals",
+   "n": 5000,
+   "rep": 0,
+   "gpu": "swiftshader",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "signals",
+    "n": 5000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 117.09999999403954,
+    "stageNodes": 10003,
+    "hookCount": 5000,
+    "hooksMs": {
+     "p50": 10.900000005960464,
+     "p95": 20,
+     "p99": 24.5,
+     "mean": 12.040833333383004
+    },
+    "flushMs": {
+     "p50": 17.400000005960464,
+     "p95": 20.299999982118607,
+     "p99": 22.19999998807907,
+     "mean": 17.26633333414793
+    },
+    "renderMs": {
+     "p50": 1.199999988079071,
+     "p95": 1.7000000178813934,
+     "p99": 2,
+     "mean": 1.2493333333730698
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 30.200000017881393,
+     "p95": 34.80000001192093,
+     "p99": 38.79999998211861,
+     "mean": 30.556500000904006
+    },
+    "frameMs": {
+     "p50": 33.30000000000018,
+     "p95": 33.400000000001455,
+     "p99": 50,
+     "mean": 30.748833333333337
+    },
+    "dropped": 494,
+    "missed": 507,
+    "gl": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 500,
+   "rep": 0,
+   "gpu": "swiftshader",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 500,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 24.5,
+    "stageNodes": 1003,
+    "hookCount": 500,
+    "hooksMs": {
+     "p50": 0.4000000059604645,
+     "p95": 0.9000000059604645,
+     "p99": 1,
+     "mean": 0.515000000745058
+    },
+    "flushMs": {
+     "p50": 0.5999999940395355,
+     "p95": 0.7999999821186066,
+     "p99": 0.9000000059604645,
+     "mean": 0.5784999995927016
+    },
+    "renderMs": {
+     "p50": 0.20000001788139343,
+     "p95": 0.3999999761581421,
+     "p99": 0.5,
+     "mean": 0.23700000042716662
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 1.2000000178813934,
+     "p95": 1.9000000059604645,
+     "p99": 2.100000023841858,
+     "mean": 1.3305000007649264
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666166666666665
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 1000,
+   "rep": 0,
+   "gpu": "swiftshader",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 1000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 33.099999994039536,
+    "stageNodes": 2003,
+    "hookCount": 1000,
+    "hooksMs": {
+     "p50": 0.800000011920929,
+     "p95": 1.4000000059604645,
+     "p99": 1.5,
+     "mean": 0.8653333328664303
+    },
+    "flushMs": {
+     "p50": 1.4000000059604645,
+     "p95": 1.699999988079071,
+     "p99": 1.9000000059604645,
+     "mean": 1.4585000003874302
+    },
+    "renderMs": {
+     "p50": 0.4000000059604645,
+     "p95": 0.5,
+     "p99": 0.699999988079071,
+     "mean": 0.4224999997516473
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 2.699999988079071,
+     "p95": 3.300000011920929,
+     "p99": 3.5,
+     "mean": 2.746333333005508
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 2000,
+   "rep": 0,
+   "gpu": "swiftshader",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 2000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 45.60000002384186,
+    "stageNodes": 4003,
+    "hookCount": 2000,
+    "hooksMs": {
+     "p50": 2.0999999940395355,
+     "p95": 2.699999988079071,
+     "p99": 3.0999999940395355,
+     "mean": 2.1621666662891705
+    },
+    "flushMs": {
+     "p50": 2.7000000178813934,
+     "p95": 3.7000000178813934,
+     "p99": 5.399999976158142,
+     "mean": 2.850666667222977
+    },
+    "renderMs": {
+     "p50": 0.800000011920929,
+     "p95": 1.199999988079071,
+     "p99": 1.5,
+     "mean": 0.876666667064031
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 5.699999988079071,
+     "p95": 7.199999988079071,
+     "p99": 10.600000023841858,
+     "mean": 5.889500000576178
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.799999999999272,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "pose",
+   "n": 5000,
+   "rep": 0,
+   "gpu": "swiftshader",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "pose",
+    "n": 5000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 88.90000000596046,
+    "stageNodes": 10003,
+    "hookCount": 5000,
+    "hooksMs": {
+     "p50": 5.699999988079071,
+     "p95": 11.099999994039536,
+     "p99": 24.80000001192093,
+     "mean": 6.600333333859841
+    },
+    "flushMs": {
+     "p50": 8.5,
+     "p95": 14.599999994039536,
+     "p99": 20.599999994039536,
+     "mean": 9.441833333025375
+    },
+    "renderMs": {
+     "p50": 2.5,
+     "p95": 5.799999982118607,
+     "p99": 8.600000023841858,
+     "mean": 2.975499999821186
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 17.600000023841858,
+     "p95": 28.80000001192093,
+     "p99": 38.599999994039536,
+     "mean": 19.017666666706404
+    },
+    "frameMs": {
+     "p50": 16.700000000000728,
+     "p95": 33.399999999999636,
+     "p99": 33.5,
+     "mean": 21.749000000000002
+    },
+    "dropped": 179,
+    "missed": 183,
+    "gl": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 500,
+   "rep": 0,
+   "gpu": "swiftshader",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 500,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 23.299999982118607,
+    "stageNodes": 1003,
+    "hookCount": 500,
+    "hooksMs": {
+     "p50": 0.30000001192092896,
+     "p95": 1,
+     "p99": 1.199999988079071,
+     "mean": 0.45766666730244954
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.0011666666467984518
+    },
+    "renderMs": {
+     "p50": 0.29999998211860657,
+     "p95": 0.5,
+     "p99": 0.800000011920929,
+     "mean": 0.285833332836628
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 0.699999988079071,
+     "p95": 1.300000011920929,
+     "p99": 1.5999999940395355,
+     "mean": 0.744666666785876
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 1000,
+   "rep": 0,
+   "gpu": "swiftshader",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 1000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 36.599999994039536,
+    "stageNodes": 2003,
+    "hookCount": 1000,
+    "hooksMs": {
+     "p50": 0.5999999940395355,
+     "p95": 1.199999988079071,
+     "p99": 1.2999999821186066,
+     "mean": 0.681833333025376
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.0014999999602635702
+    },
+    "renderMs": {
+     "p50": 0.4000000059604645,
+     "p95": 0.800000011920929,
+     "p99": 1.300000011920929,
+     "mean": 0.4824999995529652
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 1.0999999940395355,
+     "p95": 1.7000000178813934,
+     "p99": 2.100000023841858,
+     "mean": 1.1658333325386048
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.80000000000109,
+     "mean": 16.66583333333333
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 2000,
+   "rep": 0,
+   "gpu": "swiftshader",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 2000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 46.099999994039536,
+    "stageNodes": 4003,
+    "hookCount": 2000,
+    "hooksMs": {
+     "p50": 1.2000000178813934,
+     "p95": 2.199999988079071,
+     "p99": 4.5,
+     "mean": 1.442999999622504
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.0013333334028720856
+    },
+    "renderMs": {
+     "p50": 1,
+     "p95": 1.800000011920929,
+     "p99": 4.4000000059604645,
+     "mean": 1.1253333336114884
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 2.300000011920929,
+     "p95": 3.800000011920929,
+     "p99": 9.5,
+     "mean": 2.569666666636864
+    },
+    "frameMs": {
+     "p50": 16.699999999999818,
+     "p95": 16.700000000000728,
+     "p99": 16.800000000000182,
+     "mean": 16.666
+    },
+    "dropped": 0,
+    "missed": 0,
+    "gl": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  },
+  {
+   "style": "ref",
+   "n": 5000,
+   "rep": 0,
+   "gpu": "swiftshader",
+   "uncapped": false,
+   "finish": false,
+   "errors": [],
+   "result": {
+    "style": "ref",
+    "n": 5000,
+    "finish": false,
+    "frames": 600,
+    "mountMs": 90.19999998807907,
+    "stageNodes": 10003,
+    "hookCount": 5000,
+    "hooksMs": {
+     "p50": 3.4000000059604645,
+     "p95": 4,
+     "p99": 8.600000023841858,
+     "mean": 3.5596666673819226
+    },
+    "flushMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0.09999999403953552,
+     "mean": 0.002499999850988388
+    },
+    "renderMs": {
+     "p50": 2,
+     "p95": 2.600000023841858,
+     "p99": 5.300000011920929,
+     "mean": 2.162500000099341
+    },
+    "finishMs": {
+     "p50": 0,
+     "p95": 0,
+     "p99": 0,
+     "mean": 0
+    },
+    "jsTotalMs": {
+     "p50": 5.5,
+     "p95": 6.700000017881393,
+     "p99": 14.699999988079071,
+     "mean": 5.724666667332252
+    },
+    "frameMs": {
+     "p50": 16.700000000000728,
+     "p95": 33.399999999999636,
+     "p99": 33.400000000001455,
+     "mean": 21.693666666666665
+    },
+    "dropped": 181,
+    "missed": 181,
+    "gl": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+   }
+  }
+ ]
+}
