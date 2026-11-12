@@ -7,3 +7,5 @@ export type { FixedStepHook, FrameHook } from "./frame.js";
 export { GableCanvas } from "./host.js";
 export { createPixiRenderer, pixiRenderer } from "./renderer.js";
 export type { ApplicationLike, FrameScheduler, PixiRendererOptions, PixiSceneRenderer, TagRegistration } from "./renderer.js";
+export { Assets, provideAssets } from "./assets.js";
+export type { AssetsBackend, AssetsOptions, BundleEntries, BundleHandle, BundleStatus, LoadOptions } from "./assets.js";
