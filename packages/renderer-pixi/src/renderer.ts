@@ -11,6 +11,7 @@ import { flushSync, type Provider } from "@gable/core";
 import type { Renderer } from "@gable/core/renderer";
 import { DEV } from "./dev.js";
 import { CanvasSize } from "./canvas-size.js";
+import { Frame } from "./frame.js";
 import {
   SCENE_TAGS,
   SHAPE_TAGS,
@@ -22,6 +23,13 @@ import {
   type SceneTagName,
   type ShapeTagName,
 } from "./elements.js";
+
+/** Where animation frames come from. Default: `requestAnimationFrame`. Tests pass a manual one, so no real timer runs. */
+export interface FrameScheduler {
+  /** Calls `callback` once with a timestamp in milliseconds at the next frame; returns an id for `cancel`. */
+  request(callback: (time: number) => void): number;
+  cancel(id: number): void;
+}
 
 /** The slice of Pixi's `Application` the renderer uses; tests (and exotic setups) may supply their own. */
 export interface ApplicationLike {
@@ -46,6 +54,10 @@ export interface PixiRendererOptions {
   height?: number;
   /** Provide an Application (tests, or an app that wants to configure Pixi itself). Default: `new Application()`. */
   createApplication?: () => ApplicationLike;
+  /** `always` (default) renders every frame; `on-demand` renders only after a hook or an effect wrote to the scene (or `invalidate()` was called). */
+  renderMode?: "always" | "on-demand";
+  /** Frame source for the loop. Default: `requestAnimationFrame`. */
+  scheduler?: FrameScheduler;
   /** Extra tags registered before the scene is built. */
   tags?: Readonly<Record<string, TagRegistration>>;
 }
@@ -61,9 +73,13 @@ export interface PixiSceneRenderer extends Renderer<Container> {
   /** The node the scene is built into; `mount()` adds it to the stage. */
   readonly root: Container;
   readonly size: CanvasSize;
+  /** The per-frame hooks of this boundary; provided to scene components as `Frame`. */
+  readonly frames: Frame;
+  /** Marks the scene dirty so an on-demand renderer draws at the next frame. Input handlers call this. */
+  invalidate(): void;
   /** Adds a tag. Registering an existing tag replaces it. */
   registerTag(tag: string, registration: TagRegistration): void;
-  /** Redraws every graphics whose shapes changed since the last frame, once each. The host calls this before each render. */
+  /** Redraws every graphics whose shapes changed since the last frame, once each. The loop calls this before each render. */
   frame(): void;
   /** Creates the Application (a dynamic, async init), puts its canvas into `element`, attaches the scene and starts the render loop. */
   mount(element: HTMLElement): Promise<void>;
@@ -127,6 +143,8 @@ const spec = (r: Resolved): PropSpec => ({ kind: r.kind, ...("type" in r ? { typ
 export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRendererOptions) = {}): PixiSceneRenderer {
   const root = new Container({ label: "gable-scene-root" });
   const size = new CanvasSize();
+  const frameService = new Frame();
+  let touched = true; // the scene changed since the last render; the first frame always draws
   const registry = new Map<string, TagRegistration & { info: TagInfo }>();
   const infos = new WeakMap<Container, TagInfo>();
   const shapeLists = new WeakMap<Graphics, ShapeNode[]>();
@@ -212,6 +230,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
   }
 
   function setProperty(node: Container, name: string, value: unknown): void {
+    touched = true;
     if ((node as unknown) instanceof ShapeNode) {
       const shape = node as unknown as ShapeNode;
       if (!lookup(SHAPE_TAGS[shape.tag].props, name)) unknownProperty(shape.tag, name);
@@ -249,7 +268,11 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     name: "pixi",
     root,
     size,
-    providers: [{ provide: CanvasSize, useValue: size } as Provider],
+    frames: frameService,
+    invalidate() {
+      touched = true;
+    },
+    providers: [{ provide: CanvasSize, useValue: size } as Provider, { provide: Frame, useValue: frameService } as Provider],
     registerTag,
     createElement(tag) {
       if (isShapeTag(tag)) return new ShapeNode(tag) as unknown as Container;
@@ -297,11 +320,13 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       throw new Error(`[style.${name}] is a CSS style and means nothing in a scene. Text style fields are written flat, e.g. [fontSize]="..." or [fill]="...".`);
     },
     setText(node, text) {
+      touched = true;
       const content = node as unknown as ContentNode;
       content.text = text;
       if (content.owner) writeText(content.owner);
     },
     insert(parent, node, before) {
+      touched = true;
       if ((node as unknown) instanceof ShapeNode) {
         const shape = node as unknown as ShapeNode;
         if (!(parent instanceof Graphics)) throw new Error(`<${shape.tag}> can only be a child of <graphics>.`);
@@ -339,6 +364,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       }
     },
     remove(node) {
+      touched = true;
       if ((node as unknown) instanceof ShapeNode) {
         const shape = node as unknown as ShapeNode;
         const list = shape.owner ? shapeLists.get(shape.owner) : undefined;
@@ -415,25 +441,39 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         const { w, h } = measure();
         if (w === size.width() && h === size.height()) return;
         created.renderer.resize(w, h, ratio);
+        touched = true;
         size.width.set(w);
         size.height.set(h);
       };
       const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(resize);
       observer?.observe(element);
 
+      // One loop per boundary. Per frame: hooks, then a synchronous effect flush, then one render (ADR 0020).
+      const scheduler = options.scheduler ?? defaultScheduler;
+      const onDemand = options.renderMode === "on-demand";
       let raf = 0;
       let running = true;
-      const tick = () => {
+      let last: number | null = null;
+      const tick = (time: number) => {
         if (!running) return;
-        raf = request(tick);
-        flushSync(); // apply signal writes to Pixi nodes
-        renderer.frame(); // redraw changed graphics
-        created.render(); // one render
+        raf = scheduler.request(tick);
+        const seconds = last === null ? 0 : (time - last) / 1000;
+        last = time;
+        try {
+          frameService.advance(seconds);
+          flushSync(); // apply signal writes to Pixi nodes
+          if (onDemand && !touched) return;
+          touched = false;
+          renderer.frame();
+          created.render();
+        } catch (error) {
+          console.error("[gable] error in the canvas frame loop", error);
+        }
       };
-      raf = request(tick);
+      raf = scheduler.request(tick);
       stopLoop = () => {
         running = false;
-        cancel(raf);
+        scheduler.cancel(raf);
         observer?.disconnect();
       };
     },
@@ -456,9 +496,10 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
   return renderer;
 }
 
-const request = (cb: () => void): number =>
-  typeof requestAnimationFrame === "function" ? requestAnimationFrame(cb) : (setTimeout(cb, 16) as unknown as number);
-const cancel = (id: number): void => (typeof cancelAnimationFrame === "function" ? cancelAnimationFrame(id) : clearTimeout(id));
+const defaultScheduler: FrameScheduler = {
+  request: (cb) => (typeof requestAnimationFrame === "function" ? requestAnimationFrame(cb) : (setTimeout(() => cb(Date.now()), 16) as unknown as number)),
+  cancel: (id) => (typeof cancelAnimationFrame === "function" ? cancelAnimationFrame(id) : clearTimeout(id)),
+};
 
 /**
  * The renderer boundary factory for `meta.renderer`: `renderer: pixiRenderer({ background: "#000" })`. The scene is built

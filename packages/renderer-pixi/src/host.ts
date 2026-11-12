@@ -4,7 +4,7 @@
 // loads, the host shows the `placeholder` slot (a quiet empty box by default).
 //
 // Do not import pixi.js, ./renderer.js or ./scene.js statically here: the lazy chunk would stop being lazy.
-import { html, injectHost, input, lazy } from "@gable/core";
+import { computed, html, injectHost, input, lazy } from "@gable/core";
 import type { PixiRendererOptions } from "./renderer.js";
 
 export class GableCanvas {
@@ -12,7 +12,7 @@ export class GableCanvas {
     selector: "gable-canvas",
     imports: [lazy(() => import("./scene.js"), "GableCanvasScene")],
     template: html`@defer (when true) {
-      <gable-canvas-scene [options]="options()"><slot></slot></gable-canvas-scene>
+      <gable-canvas-scene [options]="sceneOptions()"><slot></slot></gable-canvas-scene>
     } @placeholder {
       <slot name="placeholder"><span class="gable-canvas-placeholder"></span></slot>
     } @loading {
@@ -30,4 +30,8 @@ export class GableCanvas {
 
   /** Renderer options: background, antialias, resolution, fallback size. */
   options = input<PixiRendererOptions>({});
+  /** `always` (default) renders every frame; `on-demand` renders only after a hook or an effect wrote to the scene. */
+  renderMode = input<"always" | "on-demand">("always");
+
+  sceneOptions = computed<PixiRendererOptions>(() => ({ ...this.options(), renderMode: this.renderMode() }));
 }
