@@ -3,11 +3,11 @@ id: TASK-105.1
 title: >-
   Canvas core changes: renderer boundary, Renderer.destroy, public flush,
   onCleanup, hotData
-status: In Progress
+status: Done
 assignee:
   - '@jason'
 created_date: '2026-11-12T21:46:00Z'
-updated_date: '2026-11-12T22:39:00Z'
+updated_date: '2026-11-12T23:15:00Z'
 labels: []
 dependencies: []
 references:
@@ -24,10 +24,16 @@ The canvas binding needs five small additive changes to @gable/core, decided in 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 meta.renderer declares a renderer boundary: template and projected slot content build with the boundary renderer, sharing the host scope and injector, per ADR 0019
-- [ ] #2 Renderer.destroy is optional and is called when a boundary host is destroyed
-- [ ] #3 flushSync and whenFlushed are importable from a public entry point, not /internal
-- [ ] #4 onCleanup registers a callback run when the calling scope is disposed
-- [ ] #5 hotData(key, create) returns the stored value for the component identity in dev and just calls create in production
-- [ ] #6 All existing core tests pass unchanged and each new API has tests
+- [x] #1 meta.renderer declares a renderer boundary: template and projected slot content build with the boundary renderer, sharing the host scope and injector, per ADR 0019
+- [x] #2 Renderer.destroy is optional and is called when a boundary host is destroyed
+- [x] #3 flushSync and whenFlushed are importable from a public entry point, not /internal
+- [x] #4 onCleanup registers a callback run when the calling scope is disposed
+- [x] #5 hotData(key, create) returns the stored value for the component identity in dev and just calls create in production
+- [x] #6 All existing core tests pass unchanged and each new API has tests
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added the five additive core changes in @gable/core: meta.renderer boundary (host in the parent renderer; template and projected slots built with the boundary renderer; shared injector and scope; boundary providers layered as a child injector), optional Renderer.destroy called on boundary host destroy, flushSync/whenFlushed exported from the main entry, onCleanup, and dev-only hotData(key, create) paired through the existing hot-update instance pairing. Tests: packages/testing/src/canvas-core.test.ts. Verified after merge (integration cec96c4): core 96/96, testing 344 tests pass; only hmr-review.test.ts fails (@gable/vite unbuilt, pre-existing). Notes: tests were written after the implementation, not strictly test-first; renderer-dom browser.test.ts not run (known failing).
+<!-- SECTION:FINAL_SUMMARY:END -->
