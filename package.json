@@ -16,7 +16,9 @@
     "pack:local": "node scripts/pack-local.mjs",
     "bench:hmr": "node examples/hmr-benchmark/bench.mjs",
     "typecheck:tests": "tsc -p tsconfig.test.json",
-    "build:site": "npm run build -w site"
+    "build:site": "npm run build -w site",
+    "bench:canvas:micro": "vitest run --config examples/canvas-benchmark/vitest.config.ts",
+    "test:canvas-bench-gate": "node --test examples/canvas-benchmark/scripts/compare.test.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
