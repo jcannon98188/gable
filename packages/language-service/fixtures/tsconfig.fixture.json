@@ -13,6 +13,7 @@
     "paths": { "@gable/core": ["../../core/src/index.ts"], "@gable/core/rxjs": ["../../core/src/rxjs.ts"],
       "@gable/core/forms": ["../../core/src/forms.ts"],
       "@gable/core/router": ["../../core/src/router.ts"],
-      "@gable/store": ["../../store/src/index.ts"] }
+      "@gable/store": ["../../store/src/index.ts"],
+      "@gable/renderer-pixi/elements": ["../../renderer-pixi/src/elements.ts"] }
   }
 }

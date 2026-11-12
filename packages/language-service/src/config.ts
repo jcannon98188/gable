@@ -46,6 +46,10 @@ export const RULES = {
   "i18n-empty": "warn",
   "i18n-missing-translation": "warn",
   "i18n-unmarked-text": "off",
+  "scene-unknown-tag": "error",
+  "scene-unknown-property": "error",
+  "scene-attribute": "error",
+  "scene-tag-in-dom": "error",
 } as const satisfies Record<string, Severity>;
 
 /** The name of one analyzer rule, for example `"bare-signal"`: a key of {@link RULES}. Used in the `rules` plugin option and on every diagnostic. */

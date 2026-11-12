@@ -7,6 +7,7 @@ import path from "node:path";
 import ts from "@typescript/typescript6";
 import { norm, type Analysis, type Diagnostic } from "./analyze.js";
 import { RULES, type RuleId } from "./config.js";
+import { sceneCompletions } from "./scene.js";
 
 export interface Span {
   start: number;
@@ -102,6 +103,11 @@ export class EditorSession {
       optionalReplacementSpan: undefined,
       entries: info.entries.map((e) => ({ ...e, replacementSpan: undefined, source: undefined, sourceDisplay: undefined })),
     };
+  }
+
+  /** Completions for scene tag and attribute names, which sit outside expressions. */
+  sceneCompletions(text: string, offset: number, templateTag: string): ts.WithMetadata<ts.CompletionInfo> | undefined {
+    return sceneCompletions(text, offset, templateTag, this.analysis.components);
   }
 
   completionDetails(file: string, offset: number, name: string): ts.CompletionEntryDetails | undefined {
