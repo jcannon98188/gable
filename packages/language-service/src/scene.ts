@@ -8,7 +8,6 @@ import ts from "@typescript/typescript6";
 import {
   buildElementMap,
   convertStaticAttribute,
-  isSceneEvent,
   isSceneTag,
   isShapeTag,
   propertiesOf,
@@ -151,5 +150,104 @@ export function scenePropertyNames(tag: string): string[] {
   return names;
 }
 
-export { isSceneEvent };
 export const sceneEventNames = (): string[] => Object.keys(SCENE_EVENTS);
+
+// --- completions ------------------------------------------------------------------
+
+const VOID_OR_SELF = /\/\s*$/;
+
+/** The component classes the completions need to know: selectors, and which of them are renderer boundaries. */
+export interface SceneComponents {
+  selectors: readonly string[];
+  boundaries: ReadonlySet<string>;
+}
+
+/**
+ * Completions at `offset` of `text` when the cursor is in a tag name or attribute name of a scene template: the
+ * scene tags and the project's components after `<`, the tag's properties (`[`, a plain attribute) with the x and y
+ * axes of point-like ones, and the scene events inside `( )`. Lexical on purpose: a half-typed tag does not scan.
+ */
+export function sceneCompletions(text: string, offset: number, templateTag: string, components: SceneComponents): ts.WithMetadata<ts.CompletionInfo> | undefined {
+  const sf = ts.createSourceFile("template.ts", text, ts.ScriptTarget.Latest, true);
+  let literal: ts.TaggedTemplateExpression | undefined;
+  let meta: ts.ObjectLiteralExpression | undefined;
+  const visit = (node: ts.Node): void => {
+    if (literal || offset < node.pos || offset > node.end) return;
+    if (ts.isTaggedTemplateExpression(node) && ts.isIdentifier(node.tag) && node.tag.text === templateTag && offset > node.template.getStart(sf) && offset < node.template.end) {
+      literal = node;
+      for (let up: ts.Node | undefined = node; up; up = up.parent) {
+        if (ts.isObjectLiteralExpression(up) && up.parent && ts.isPropertyDeclaration(up.parent)) meta = up;
+      }
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  if (!literal) return undefined;
+  const body = text.slice(literal.template.getStart(sf) + 1, offset);
+
+  // Walk the tags before the cursor: the open-element stack tells whether a boundary projects the scene map here.
+  const stack: string[] = [];
+  let open: { name: string; attrs: string; nameStart: number } | undefined;
+  const base = literal.template.getStart(sf) + 1;
+  for (let i = 0; i < body.length; i++) {
+    if (body[i] !== "<") continue;
+    const close = /^<\/([A-Za-z][\w-]*)/.exec(body.slice(i));
+    if (close) {
+      stack.pop();
+      i += close[0].length;
+      continue;
+    }
+    const tag = /^<([A-Za-z][\w-]*|)/.exec(body.slice(i))!;
+    let j = i + tag[0].length;
+    let quote = "";
+    for (; j < body.length; j++) {
+      const c = body[j]!;
+      if (quote) {
+        if (c === quote) quote = "";
+      } else if (c === '"' || c === "'") quote = c;
+      else if (c === ">") break;
+    }
+    if (j >= body.length) {
+      open = { name: tag[1]!, attrs: body.slice(i + tag[0].length), nameStart: base + i + 1 };
+      break;
+    }
+    if (tag[1] && !VOID_OR_SELF.test(body.slice(i, j)) && !VOID_TAGS.has(tag[1])) stack.push(tag[1]);
+    i = j;
+  }
+  if (!open) return undefined;
+
+  const scene = (meta ? metaIsScene(meta) : false) || stack.some((t) => components.boundaries.has(t));
+  if (!scene) return undefined;
+
+  const info = (names: Array<{ name: string; kind: ts.ScriptElementKind }>, from: number): ts.WithMetadata<ts.CompletionInfo> => ({
+    isGlobalCompletion: false,
+    isMemberCompletion: false,
+    isNewIdentifierLocation: false,
+    optionalReplacementSpan: { start: from, length: offset - from },
+    entries: names.map((n, i) => ({ ...n, kindModifiers: "", sortText: String(i).padStart(4, "0"), replacementSpan: { start: from, length: offset - from } })),
+  });
+
+  // In the tag name.
+  if (open.attrs === "") {
+    return info(
+      [...sceneTagNames().map((name) => ({ name, kind: ts.ScriptElementKind.classElement })), ...components.selectors.map((name) => ({ name, kind: ts.ScriptElementKind.classElement }))],
+      open.nameStart,
+    );
+  }
+  // In an attribute name: the token after the last whitespace, outside any quoted value.
+  const attrs = open.attrs;
+  if (!/\s/.test(attrs)) return undefined;
+  const quotes = (attrs.match(/["']/g) ?? []).length;
+  if (quotes % 2 === 1) return undefined;
+  const tokenAt = attrs.search(/\S*$/);
+  const token = attrs.slice(tokenAt);
+  if (token.includes("=")) return undefined;
+  if (!knownSceneTag(open.name)) return undefined;
+  const tokenStart = offset - token.length;
+  if (token.startsWith("(")) return info(sceneEventNames().map((name) => ({ name, kind: ts.ScriptElementKind.memberFunctionElement })), tokenStart + 1);
+  const from = token.startsWith("[") ? tokenStart + 1 : tokenStart;
+  return info(scenePropertyNames(open.name).map((name) => ({ name, kind: ts.ScriptElementKind.memberVariableElement })), from);
+}
+
+const VOID_TAGS = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);

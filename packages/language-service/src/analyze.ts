@@ -10,7 +10,7 @@ import { a11yRules } from "./a11y-rules.js";
 import { i18nRules, i18nSourceRules } from "./i18n-rules.js";
 import { projectRules, sourceRules } from "./source-rules.js";
 import { componentMetaRules } from "./meta-rules.js";
-import { metaIsBoundary, metaIsScene, sceneRules } from "./scene.js";
+import { metaIsBoundary, metaIsScene, sceneRules, type SceneComponents } from "./scene.js";
 import { scanTemplate, ScanError, type ExprKind, type Src, type TNode } from "./scan.js";
 
 /** One problem the analyzer found in a template, a component or a source file. */
@@ -68,6 +68,8 @@ export interface Analysis {
   overlay: Map<string, string>;
   /** Files that hold templates, with their generated type-check blocks. */
   files: Map<string, { sf: ts.SourceFile; emitted: Emitted }>;
+  /** The project's components, for scene tag completions. */
+  components: SceneComponents;
 }
 
 export const norm = (f: string) => f.replace(/\\/g, "/");
@@ -243,7 +245,8 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
   const overlay = new Map([...overrides, ...final.overlay]);
   const analyzed = new Map<string, { sf: ts.SourceFile; emitted: Emitted }>();
   for (const [file, state] of files) analyzed.set(file, { sf: state.sf, emitted: final.emitted.get(file)! });
-  return { diagnostics: out, options, rootNames, overlay, files: analyzed, defaultLib };
+  const sceneComponents: SceneComponents = { selectors: [...components.keys()], boundaries: new Set([...components.values()].filter((c) => c.boundary).map((c) => c.selector)) };
+  return { diagnostics: out, options, rootNames, overlay, files: analyzed, defaultLib, components: sceneComponents };
 }
 
 /** Why @gable/core's expression parser rejects `text`, or null when it accepts it. */

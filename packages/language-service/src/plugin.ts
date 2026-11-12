@@ -96,6 +96,11 @@ export function createPlugin(info: PluginInfo): ts.LanguageService {
       const text = textOf(file)!;
       const keywords = blockKeywordCompletions(text, position, settings().config.templateTag);
       if (keywords) return keywords;
+      const scene = current().sceneCompletions(text, position, settings().config.templateTag);
+      if (scene) {
+        probe = undefined;
+        return scene;
+      }
       const p = completionProbe(text, position);
       const session = p.text === text ? current() : analyze(new Map([[norm(file), p.text]]));
       const result = session.completions(file, p.offset);
