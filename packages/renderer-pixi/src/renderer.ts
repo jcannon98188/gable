@@ -6,12 +6,15 @@
 // Writes are retained-mode: a signal write sets one Pixi property (a dotted path sets one axis). Graphics shapes are
 // lightweight records that mark their graphics dirty; `frame()` redraws each dirty graphics once.
 import "pixi.js/events"; // installs eventMode, cursor, hitArea and interactiveChildren on Container
-import { Application, BitmapText, Cache, Container, Graphics, NineSliceSprite, Sprite, Text, Texture, TilingSprite } from "pixi.js";
+import { Application, BitmapText, Cache, Container, Graphics, NineSliceSprite, Rectangle, Sprite, Text, Texture, TilingSprite } from "pixi.js";
 import { flushSync, type Provider } from "@gable/core";
 import type { Renderer } from "@gable/core/renderer";
 import { DEV } from "./dev.js";
 import { CanvasSize } from "./canvas-size.js";
 import { Frame } from "./frame.js";
+import { Gamepad, type GetGamepads } from "./gamepad.js";
+import { Keyboard } from "./keyboard.js";
+import { Pointer } from "./pointer.js";
 import {
   SCENE_TAGS,
   SHAPE_TAGS,
@@ -37,7 +40,7 @@ export interface ApplicationLike {
   readonly canvas: HTMLCanvasElement;
   readonly stage: Container;
   render(): void;
-  readonly renderer: { resize(width: number, height: number, resolution?: number): void };
+  readonly renderer: { resize(width: number, height: number, resolution?: number): void; events?: { autoPreventDefault: boolean } };
   destroy(removeView?: boolean, options?: { children?: boolean }): void;
 }
 
@@ -58,6 +61,12 @@ export interface PixiRendererOptions {
   renderMode?: "always" | "on-demand";
   /** Frame source for the loop. Default: `requestAnimationFrame`. */
   scheduler?: FrameScheduler;
+  /** CSS `touch-action` of the canvas. Default `none`, so touch drags reach the scene instead of scrolling the page. */
+  touchAction?: string;
+  /** Where the Keyboard service listens: `host` (default) only while the canvas host has focus, `global` on the window. */
+  keyboard?: "host" | "global";
+  /** Source of gamepads, polled once per frame. Default: `navigator.getGamepads` where it exists. */
+  getGamepads?: GetGamepads;
   /** Extra tags registered before the scene is built. */
   tags?: Readonly<Record<string, TagRegistration>>;
 }
@@ -77,6 +86,10 @@ export interface PixiSceneRenderer extends Renderer<Container> {
   readonly frames: Frame;
   /** Marks the scene dirty so an on-demand renderer draws at the next frame. Input handlers call this. */
   invalidate(): void;
+  /** Input services of this boundary; provided to scene components. */
+  readonly pointer: Pointer;
+  readonly keyboard: Keyboard;
+  readonly gamepad: Gamepad;
   /** Adds a tag. Registering an existing tag replaces it. */
   registerTag(tag: string, registration: TagRegistration): void;
   /** Redraws every graphics whose shapes changed since the last frame, once each. The loop calls this before each render. */
@@ -144,6 +157,10 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
   const root = new Container({ label: "gable-scene-root" });
   const size = new CanvasSize();
   const frameService = new Frame();
+  const pointer = new Pointer();
+  const keyboard = new Keyboard();
+  const gamepad = new Gamepad();
+  const detachInput: Array<() => void> = [];
   let touched = true; // the scene changed since the last render; the first frame always draws
   const registry = new Map<string, TagRegistration & { info: TagInfo }>();
   const infos = new WeakMap<Container, TagInfo>();
@@ -269,10 +286,17 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     root,
     size,
     frames: frameService,
+    pointer,
+    keyboard,
+    gamepad,
     invalidate() {
       touched = true;
     },
-    providers: [{ provide: CanvasSize, useValue: size } as Provider, { provide: Frame, useValue: frameService } as Provider],
+    providers: [{ provide: CanvasSize, useValue: size } as Provider, { provide: Frame, useValue: frameService } as Provider,
+      { provide: Pointer, useValue: pointer } as Provider,
+      { provide: Keyboard, useValue: keyboard } as Provider,
+      { provide: Gamepad, useValue: gamepad } as Provider,
+    ],
     registerTag,
     createElement(tag) {
       if (isShapeTag(tag)) return new ShapeNode(tag) as unknown as Container;
@@ -394,7 +418,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         throw new Error(`Events can only be listened to on display nodes; ${name} was given to a shape or text content.`);
       }
       if (!isSceneEvent(name)) throw new Error(`Unknown scene event "${name}" on <${infoOf(node).tag}>.`);
-      if (node.eventMode === "passive" || node.eventMode === "auto") node.eventMode = "static";
+      if (node.eventMode === undefined || node.eventMode === "passive" || node.eventMode === "auto") node.eventMode = "static"; // undefined: no EventSystem yet (the scene is built before the Application)
       node.on(name as never, handler as never);
       return () => node.off(name as never, handler as never);
     },
@@ -407,6 +431,29 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       dirty.clear();
     },
     async mount(element) {
+      function mountInput(created: ApplicationLike, element: HTMLElement, options: PixiRendererOptions, first: { w: number; h: number }) {
+        const stage = created.stage;
+        // The stage is a pointer target covering the canvas, so moves over empty space reach the Pointer service.
+        stage.eventMode = "static";
+        stage.hitArea = new Rectangle(0, 0, first.w, first.h);
+        detachInput.push(pointer.attach(stage as never, (p) => root.toLocal(p)));
+        // The scene never prevents the default of the DOM event by itself (Pixi would for legacy mouse and touch events).
+        if (created.renderer.events) created.renderer.events.autoPreventDefault = false;
+        created.canvas.style.touchAction = options.touchAction ?? "none";
+        // Keyboard: focus-scoped on the host unless asked for the window.
+        if (options.keyboard === "global") {
+          detachInput.push(keyboard.attach(window, "global"));
+        } else {
+          if (!element.hasAttribute("tabindex")) element.tabIndex = 0;
+          detachInput.push(keyboard.attach(element, "host"));
+          const focusHost = () => element.focus({ preventScroll: true });
+          created.canvas.addEventListener("pointerdown", focusHost);
+          detachInput.push(() => created.canvas.removeEventListener("pointerdown", focusHost));
+        }
+        const getGamepads = options.getGamepads ?? (typeof navigator !== "undefined" && typeof navigator.getGamepads === "function" ? () => navigator.getGamepads() : null);
+        gamepad.attach(getGamepads as GetGamepads | null);
+      }
+
       if (destroyed) return;
       const options = typeof given === "function" ? given() : given;
       const created = (options.createApplication ?? (() => new Application() as unknown as ApplicationLike))();
@@ -436,12 +483,14 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       size.pixelRatio.set(ratio);
       size.width.set(first.w);
       size.height.set(first.h);
+      mountInput(created, element, options, first);
 
       const resize = () => {
         const { w, h } = measure();
         if (w === size.width() && h === size.height()) return;
         created.renderer.resize(w, h, ratio);
         touched = true;
+        created.stage.hitArea = new Rectangle(0, 0, w, h);
         size.width.set(w);
         size.height.set(h);
       };
@@ -460,6 +509,8 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         const seconds = last === null ? 0 : (time - last) / 1000;
         last = time;
         try {
+          keyboard.beginFrame();
+          gamepad.beginFrame();
           frameService.advance(seconds);
           flushSync(); // apply signal writes to Pixi nodes
           if (onDemand && !touched) return;
@@ -475,6 +526,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         running = false;
         scheduler.cancel(raf);
         observer?.disconnect();
+        while (detachInput.length) detachInput.pop()!();
       };
     },
     destroy() {
