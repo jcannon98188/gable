@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Gable canvas authoring prototype</title>
+    <style>
+      body { margin: 0; background: #05070d; color: #dde; font: 14px monospace; }
+      .wrap { width: 400px; margin: 12px auto; }
+      .hud { display: flex; gap: 16px; align-items: center; padding: 8px 0; }
+      .hud span { flex: 1; }
+      .hud button { font: inherit; padding: 4px 10px; }
+      .bar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; justify-content: center; padding: 6px; background: #111; border-top: 1px solid #333; }
+      .bar a { color: #9ab; padding: 2px 10px; border: 1px solid #345; text-decoration: none; }
+      .bar a.on { background: #fc3; color: #000; }
+      canvas { display: block; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

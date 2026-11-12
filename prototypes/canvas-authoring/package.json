@@ -1,0 +1,19 @@
+{
+  "name": "gable-canvas-authoring-prototype",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5199"
+  },
+  "dependencies": {
+    "@gable/core": "*",
+    "@gable/renderer-dom": "*",
+    "pixi.js": "^8.23.0"
+  },
+  "devDependencies": {
+    "@gable/vite": "*",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6"
+  }
+}
