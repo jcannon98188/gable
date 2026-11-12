@@ -38,6 +38,8 @@ export interface Construction {
 }
 
 export interface ComponentBegin extends Construction {
+  /** Per-instance store for `hotData`; a re-created component gets the store of the instance it replaces. */
+  hot: Map<string, unknown>;
   done(info: ComponentInfo): void;
 }
 

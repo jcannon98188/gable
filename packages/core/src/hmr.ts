@@ -173,6 +173,7 @@ interface Rec {
   renderer?: Renderer<any>;
   injector?: object | null;
   buildView?: () => Swap;
+  hot?: Map<string, unknown>;
   // service
   token?: unknown;
   owner?: object;
@@ -237,7 +238,9 @@ const impl: DevHooks = {
         if (byInstance.has(injectors.get(old.injector)!.value(token) as object)) (own as { get(t: unknown): unknown }).get(token);
       }
     }
+    const hot = old?.hot ?? new Map<string, unknown>();
     return {
+      hot,
       construct: () => construct(C, (d) => (deps = d)),
       done(info) {
         const rec: Rec = {
@@ -250,6 +253,7 @@ const impl: DevHooks = {
           renderer: info.renderer,
           injector: info.injector,
           buildView: info.buildView,
+          hot,
         };
         records.add(rec);
         byInstance.set(info.instance, rec);
