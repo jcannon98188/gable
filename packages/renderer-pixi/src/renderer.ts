@@ -276,6 +276,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     invalidate() {
       touched = true;
     },
+    warnRawTimers: DEV,
     providers: [{ provide: CanvasSize, useValue: size } as Provider, { provide: Frame, useValue: frameService } as Provider],
     registerTag,
     createElement(tag) {
