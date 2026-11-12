@@ -2,6 +2,8 @@ import { reportError } from "./errors.js";
 import { createScope, runInScope, type Scope } from "./scope.js";
 import { untracked } from "./signals.js";
 import type { Renderer } from "./renderer.js";
+import { RENDERER } from "./app.js";
+import { setup as hotSetup } from "./hot-data.js";
 import { InjectionToken, assertNoConstructor, createInjector, type Injector, type Provider } from "./di.js";
 import { DEV, devtools, hooks, retireView, type Region, type Swap } from "./dev-hooks.js";
 import { createEnv } from "./expression.js";
@@ -35,6 +37,21 @@ export interface ComponentMeta {
   encapsulation?: "scoped" | "none";
   /** Stable id for style registration (HMR replaces styles by id). Defaults to the class name. */
   id?: string;
+  /**
+   * Declares a renderer boundary (ADR 0019). Called once per instance, right after Setup, with the instance and the
+   * parent renderer and host. The host node stays in the parent renderer; this component's template, any slot content
+   * projected into it and every component below are built with the returned renderer into the returned root node, in the
+   * component's own scope and injector. The returned renderer's `providers` are layered as a child injector for the
+   * subtree, where `RENDERER` is shadowed by the boundary renderer, and its `destroy()` runs when the component's scope
+   * is disposed.
+   */
+  renderer?: (instance: any, parent: { renderer: Renderer<any>; host: unknown }) => RendererBoundary<any>;
+}
+
+/** What a `meta.renderer` factory returns: the renderer for the subtree and the node the template is built into. */
+export interface RendererBoundary<M> {
+  renderer: Renderer<M>;
+  root: M;
 }
 
 /** A component is a plain class with `static meta`. No base class, no constructor. */
@@ -173,20 +190,36 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
     const queries = createQueryHost();
     const make = (): T => {
       const previous = hostContext;
+      const previousHot = { active: hotSetup.active, store: hotSetup.store };
       hostContext = { renderer, host };
       try {
+        hotSetup.active = true;
+        hotSetup.store = dev?.hot;
         return inReadPhase("setup", () => (dev ? (dev.construct() as T) : new Class()));
       } finally {
+        hotSetup.active = previousHot.active;
+        hotSetup.store = previousHot.store;
         hostContext = previous;
       }
     };
     const instance = declareQueries(queries, () => (own ? own.run(() => runInScope(scope, make)) : make()));
     for (const out of describeFields(instance, Class.name)) scope.onDispose(() => completeOutput(out));
     tools?.component({ Class, instance, host, scope, renderer, injector: own });
+    // A renderer boundary: the view below this host is built with another renderer into its own root node.
+    const boundary = Class.meta.renderer ? Class.meta.renderer(instance, { renderer, host }) : null;
+    let viewInjector = own;
+    if (boundary) {
+      scope.onDispose(() => boundary.renderer.destroy?.());
+      const layer = createInjector([{ provide: RENDERER, useValue: boundary.renderer }, ...(boundary.renderer.providers ?? [])], own);
+      viewInjector = layer;
+      scope.onDispose(() => layer.destroy());
+    }
+    const vr: Renderer<any> = boundary ? boundary.renderer : renderer;
+    const vroot: any = boundary ? boundary.root : host;
     const env = createEnv(instance);
     env.view = {
       imports: applyOverrides(own, imports ?? []).filter((e): e is ComponentClass<any> => !isLazy(e)),
-      lazies: applyOverrides(own, imports ?? []).filter(isLazy), injector: own, queries, content: options.content ?? null, scopeToken };
+      lazies: applyOverrides(own, imports ?? []).filter(isLazy), injector: viewInjector, queries, content: options.content ?? null, scopeToken };
     if (scopeToken) renderer.setAttribute(host, scopeToken, "");
     // Host bindings are applied by render(), after the parent has bound inputs, so they may read required inputs.
     let hostBound = false;
@@ -199,7 +232,7 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
     // Dev: the view lives in its own scope so a hot update can rebuild it without touching Setup.
     let viewScope: Scope | null = null;
     const build = (into: Scope) =>
-      runInScope(into, () => withContentTarget(null, () => buildNodes(parseTemplate(Class.meta.template!), renderer, env, host, null)));
+      runInScope(into, () => withContentTarget(null, () => buildNodes(parseTemplate(Class.meta.template!), vr, env, vroot, null)));
     const prepared: PreparedComponent<T, N> = {
       instance,
       host,
@@ -212,7 +245,7 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
       },
       nodes: () => parts.flatMap((part) => part()),
       clear() {
-        for (const part of parts) for (const node of part()) renderer.remove(node);
+        for (const part of parts) for (const node of part()) vr.remove(node);
         parts = [];
         viewScope?.dispose();
         viewScope = null;
@@ -241,16 +274,16 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
           return {
             commit() {
               const oldNodes = old.parts.flatMap((part) => part());
-              retireView(renderer, oldNodes, nextParts.flatMap((part) => part()), () => {
+              retireView(vr, oldNodes, nextParts.flatMap((part) => part()), () => {
                 parts = nextParts;
                 viewScope = next;
                 old.viewScope?.dispose();
-                for (const node of oldNodes) renderer.remove(node);
+                for (const node of oldNodes) vr.remove(node);
               });
             },
             abort() {
               next.dispose();
-              for (const part of nextParts) for (const node of part()) renderer.remove(node);
+              for (const part of nextParts) for (const node of part()) vr.remove(node);
             },
           };
         },
