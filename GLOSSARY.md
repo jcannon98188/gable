@@ -40,6 +40,30 @@ _Avoid_: LSP, compiler plugin
 The pluggable layer that turns a Component's Template into output on a target platform. The DOM renderer is one renderer; a future native renderer (gable.native) is another.
 _Avoid_: Platform, backend, view engine
 
+**Renderer boundary**:
+A Component whose Template, and any content projected into it, is built by a different Renderer than the one its Host belongs to. It lets a DOM app embed non-DOM content, such as a canvas scene, while sharing the host's Injector.
+_Avoid_: Portal, embedded renderer, sub-app
+
+**Scene tag**:
+A template tag, inside a Renderer boundary, that creates a display object of the canvas renderer's library (a sprite, a text, a container). Its names and properties mirror the library's own.
+_Avoid_: Element, widget, game object
+
+**Element map**:
+The typed description of a Renderer's tags: which tags exist, each tag's properties and their types, and its events. The Template language service uses it to check and complete Templates.
+_Avoid_: Schema, tag table
+
+**Asset bundle**:
+A named group of textures, spritesheets, fonts and other files a scene needs, loaded together and released when no component using it remains.
+_Avoid_: Resource pack, preload list
+
+**Frame loop**:
+The per-boundary loop that, once per display frame, runs the Frame hooks, then applies pending signal writes to the scene, then renders it. Owned by Gable, not by the graphics library.
+_Avoid_: Game loop, ticker, render loop
+
+**Frame hook**:
+A function a Component registers to run on every frame of its Frame loop with the elapsed time, tied to the Component's lifetime.
+_Avoid_: Update callback, tick handler
+
 **Platform services**:
 Capabilities a target platform supplies through injection alongside its Renderer, such as location and history for the router. The core and router depend only on abstract Tokens; each platform provides the implementations.
 _Avoid_: Platform APIs, environment
