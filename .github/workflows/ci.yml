@@ -16,3 +16,53 @@ jobs:
       - run: npm run build
       - run: npm run typecheck:tests
       - run: npm test
+      # The canvas benchmark's Node microbench: the frame-cost model with no browser, on every PR (TASK-105.19).
+      - run: npm run bench:canvas:micro
+      - run: npm run test:canvas-bench-gate
+
+  # The canvas regression gate: the same benchmark page in headless Chromium, built against the base commit and against
+  # this commit, both measured on this runner. A JS-side phase more than 15 percent worse than the base fails the job.
+  # Absolute budgets are never gated here: software GL on a shared runner says nothing about real hardware.
+  canvas-benchmark:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm ci
+        working-directory: examples/canvas-benchmark
+      - run: npx playwright install --with-deps chromium
+        working-directory: examples/canvas-benchmark
+      - name: Check out the base commit next to this one
+        run: |
+          git worktree add ../gable-base "${{ github.event.pull_request.base.sha }}"
+          ln -s "$PWD/node_modules" ../gable-base/node_modules
+      - name: Measure the baseline (base commit's packages, this commit's benchmark page)
+        id: baseline
+        working-directory: examples/canvas-benchmark
+        run: |
+          if [ -d ../../../gable-base/packages/renderer-pixi/src ]; then
+            node scripts/run.mjs --src ../../../gable-base --reps 5 --out results/baseline.json
+          else
+            echo "The base commit has no @gable/renderer-pixi, so there is nothing to compare against."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Measure this commit
+        if: steps.baseline.outputs.skip != 'true'
+        working-directory: examples/canvas-benchmark
+        run: node scripts/run.mjs --reps 5 --out results/head.json
+      - name: Compare (fails above 15 percent worse)
+        if: steps.baseline.outputs.skip != 'true'
+        working-directory: examples/canvas-benchmark
+        run: node scripts/compare.mjs results/baseline.json results/head.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canvas-benchmark-results
+          path: examples/canvas-benchmark/results/*.json

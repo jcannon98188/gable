@@ -1,10 +1,11 @@
 ---
 id: TASK-105.17
 title: Frame-flush optimisation in four gated steps
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@jason'
 created_date: '2026-11-12T21:47:00Z'
-updated_date: '2026-11-12T22:28:00Z'
+updated_date: '2026-11-12T23:46:00Z'
 labels: []
 dependencies:
   - TASK-105.19
