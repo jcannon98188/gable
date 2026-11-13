@@ -5,3 +5,6 @@ site/src/generated/api/
 examples/canvas-benchmark/.bench-dist
 examples/canvas-benchmark/results/*.json
 !examples/canvas-benchmark/results/real-gpu.json
+
+# Golden-image diffs from failing runs (packages/renderer-pixi/golden/README.md)
+packages/renderer-pixi/golden/__output__
