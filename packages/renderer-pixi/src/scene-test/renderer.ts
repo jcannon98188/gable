@@ -246,6 +246,7 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
 
   const renderer: Renderer<SceneNode> = {
     name: "pixi-test",
+    knowsElement: (tag) => isShapeTag(tag) || isSceneTag(tag) || custom.has(tag),
     providers: [
       { provide: CanvasSize, useValue: size } as Provider,
       { provide: Frame, useValue: frames } as Provider,

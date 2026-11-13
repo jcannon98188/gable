@@ -325,6 +325,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
 
   const renderer: PixiSceneRenderer = {
     name: "pixi",
+    knowsElement: (tag) => isShapeTag(tag) || isSceneTag(tag) || registry.has(tag),
     root,
     size,
     frames: frameService,
