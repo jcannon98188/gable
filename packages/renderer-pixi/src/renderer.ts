@@ -662,7 +662,8 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       function mountInput(created: ApplicationLike, element: HTMLElement, options: PixiRendererOptions, first: { w: number; h: number }) {
         const stage = created.stage;
         // The stage is a pointer target covering the canvas, so moves over empty space reach the Pointer service.
-        stage.eventMode = "static";
+        // Off until the first frame is rendered (see `tick`): before that no node has a world transform, so a hit test would miss every node and the stage would take the event.
+        stage.eventMode = "none";
         stage.hitArea = new Rectangle(0, 0, first.w, first.h);
         detachInput.push(pointer.attach(stage as never, (p) => root.toLocal(p)));
         // The scene never prevents the default of the DOM event by itself (Pixi would for legacy mouse and touch events).
@@ -764,6 +765,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         stopDebug = () => (dbg.overlay.destroy(), stopSession?.());
       }
       const reportFrameError = createFrameErrorReporter();
+      let inputReady = false;
       const tick = (time: number) => {
         if (!running) return;
         raf = scheduler.request(tick);
@@ -790,6 +792,10 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
           guarded("render", () => {
             renderer.frame();
             created.render();
+            if (!inputReady) {
+              inputReady = true;
+              created.stage.eventMode = "static";
+            }
           });
         }
         if (dbg) dbg.frame(time, t1 - t0, t2 - t1, dbg.now() - t2, ran);

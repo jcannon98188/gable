@@ -99,6 +99,17 @@ function sceneWith(register: (frame: Frame) => void, selector = "scene-actor") {
 }
 
 describe("frame loop", () => {
+  // TASK-105.10 follow-up: before the first render no node has a world transform, so a hit test would miss every node and the stage would take the event.
+  it("takes no pointer input until the first frame has been rendered", async () => {
+    const h = harness();
+    await mountScene(h, html`<container></container>`);
+    expect(h.stage.eventMode).toBe("none");
+    h.frame(16);
+    expect(h.renders).toBe(1);
+    expect(h.stage.eventMode).toBe("static");
+  });
+
+
   it("runs inject(Frame) hooks each frame and removes them with the component scope", async () => {
     const h = harness();
     const dts: number[] = [];

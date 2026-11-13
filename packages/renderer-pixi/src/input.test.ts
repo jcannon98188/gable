@@ -170,6 +170,7 @@ describe("Pointer", () => {
   it("makes the stage a pointer target covering the canvas, so moves over empty space are seen", async () => {
     const h = harness({ width: 320, height: 200 });
     await mountScene(h, html`<container></container>`);
+    h.frame(); // input is off until the first frame has been rendered
     expect(h.stage.eventMode).toBe("static");
     expect(h.stage.hitArea).toEqual(new Rectangle(0, 0, 320, 200));
   });
