@@ -107,8 +107,24 @@ function unknownProperty(tag: string, name: string): string {
   return `Unknown property "${name}" on <${tag}>${hint ? `. Did you mean "${hint}"?` : ""}`;
 }
 
+/** Tags passed as a string literal to a `registerTag(...)` call in `sf`: custom scene tags the renderer will know at runtime. */
+export function registeredTags(sf: ts.SourceFile): string[] {
+  const found: string[] = [];
+  const visit = (node: ts.Node): void => {
+    if (ts.isCallExpression(node)) {
+      const callee = node.expression;
+      const name = ts.isPropertyAccessExpression(callee) ? callee.name.text : ts.isIdentifier(callee) ? callee.text : "";
+      const first = node.arguments[0];
+      if (name === "registerTag" && first && ts.isStringLiteralLike(first)) found.push(first.text);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  return found;
+}
+
 /** Tag, property, static-attribute and DOM-leak rules for one template. Event names and value types go through the type-check blocks. */
-export function sceneRules(model: TemplateModel, isComponent: (tag: string) => boolean, isBoundary: (tag: string) => boolean, report: Report): void {
+export function sceneRules(model: TemplateModel, isComponent: (tag: string) => boolean, isBoundary: (tag: string) => boolean, report: Report, customTags: ReadonlySet<string> = new Set()): void {
   const tags = [...Object.keys(elementMap)];
   walkMode(model.tree, model.scene, isBoundary, (el, scene) => {
     if (!scene) {
@@ -117,7 +133,7 @@ export function sceneRules(model: TemplateModel, isComponent: (tag: string) => b
       }
       return;
     }
-    if (isComponent(el.tag)) return;
+    if (isComponent(el.tag) || customTags.has(el.tag)) return; // a registered tag: its properties are the author's own
     if (!knownSceneTag(el.tag)) {
       const hint = closest(el.tag, tags);
       report(el.tagStart, el.tag.length, "scene-unknown-tag", `Unknown scene tag <${el.tag}>${hint ? `. Did you mean "${hint}"?` : ""} (a Pixi scene template takes Pixi tags and components)`);

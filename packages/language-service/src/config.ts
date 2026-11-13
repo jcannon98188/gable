@@ -77,6 +77,8 @@ export interface AnalyzerConfig {
   /** Tag of tagged template literals that hold Gable templates. */
   templateTag: string;
   severity: Record<RuleId, Severity>;
+  /** Extra scene tags to accept (a tag registered with `registerTag` in a way the analyzer cannot see). Calls like `renderer.registerTag("star", ...)` with a string literal are found automatically. */
+  sceneTags: string[];
   /** Set when the plugin entry has an `i18n` section; `i18n-missing-translation` does nothing without it. */
   i18n?: I18nCheckConfig;
 }
@@ -87,11 +89,15 @@ export const PLUGIN_NAME = "@gable/language-service";
 export function readConfig(options: ts.CompilerOptions): { config: AnalyzerConfig; errors: string[] } {
   const errors: string[] = [];
   const entry = ((options.plugins as ts.PluginImport[] | undefined) ?? []).find((p) => p.name === PLUGIN_NAME) as Record<string, unknown> | undefined;
-  const config: AnalyzerConfig = { templateTag: "html", severity: { ...RULES } };
+  const config: AnalyzerConfig = { templateTag: "html", severity: { ...RULES }, sceneTags: [] };
   if (!entry) return { config, errors };
   if (entry.templateTag !== undefined) {
     if (typeof entry.templateTag === "string" && /^[A-Za-z_$][\w$]*$/.test(entry.templateTag)) config.templateTag = entry.templateTag;
     else errors.push(`plugin option "templateTag" must be an identifier, got ${JSON.stringify(entry.templateTag)}`);
+  }
+  if (entry.sceneTags !== undefined) {
+    if (Array.isArray(entry.sceneTags) && entry.sceneTags.every((t) => typeof t === "string" && /^[a-z][\w-]*$/i.test(t))) config.sceneTags = entry.sceneTags as string[];
+    else errors.push(`plugin option "sceneTags" must be an array of tag names`);
   }
   if (entry.i18n !== undefined) {
     const i18n = entry.i18n as Record<string, unknown> | null;

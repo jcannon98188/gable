@@ -170,6 +170,8 @@ export class Runner {
 }
 ```
 
+**Custom tags and the checker.** A tag you add with `renderer.registerTag("star", ...)` is known to `gable-check` and the editor when the call passes a string literal anywhere in the project; for any other registration list the name in the plugin option `"sceneTags": ["star"]` (tsconfig `compilerOptions.plugins`). Such a tag no longer raises `scene-unknown-tag`; its properties are not checked.
+
 ## Input services and DOM rules
 
 **Pointer events on scene tags** map one to one to Pixi's federated event names, with the same bubbling: `(pointerdown)`, `(pointerup)`, `(pointerupoutside)`, `(pointermove)`, `(pointertap)`, `(pointerover)`, `(pointerout)`, `(rightdown)`, `(wheel)` and the rest. Attaching a listener turns on `eventMode: static` for you; `[eventMode]` overrides it (for example `dynamic` for hover while an object moves under a still pointer). Handlers receive Pixi's own `FederatedPointerEvent` unwrapped (`$event.global`, `$event.getLocalPosition(node)`, `$event.stopPropagation()`). A node is hit where its bounds are; to change that, see [hit areas](./canvas-hit-areas.md).

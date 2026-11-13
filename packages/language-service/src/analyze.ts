@@ -10,7 +10,7 @@ import { a11yRules } from "./a11y-rules.js";
 import { i18nRules, i18nSourceRules } from "./i18n-rules.js";
 import { projectRules, sourceRules } from "./source-rules.js";
 import { componentMetaRules } from "./meta-rules.js";
-import { metaIsBoundary, metaIsScene, sceneRules, type SceneComponents } from "./scene.js";
+import { metaIsBoundary, metaIsScene, registeredTags, sceneRules, type SceneComponents } from "./scene.js";
 import { scanTemplate, ScanError, type ExprKind, type Src, type TNode } from "./scan.js";
 
 /** One problem the analyzer found in a template, a component or a source file. */
@@ -107,6 +107,7 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
   projectRules(options, (file, start, length, rule, message) => raw.push({ file, start, length, rule, message }));
   const components = new Map<string, ComponentInfo>();
   const sources = new Map<string, ts.SourceFile>();
+  const customTags = new Set<string>(config.sceneTags);
   const pendingScene: Array<{ model: TemplateModel; add: (start: number, length: number, rule: RuleId, message: string) => void }> = [];
   for (const sf of base.getSourceFiles()) {
     if (sf.isDeclarationFile || !rootNames.some((r) => norm(r) === norm(sf.fileName))) continue;
@@ -114,6 +115,7 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
     sourceRules(sf, base.getTypeChecker(), config.templateTag, (start, length, rule, message) => raw.push({ file: sf.fileName, start, length, rule, message }));
     i18nSourceRules(sf, (start, length, rule, message) => raw.push({ file: sf.fileName, start, length, rule, message }), config);
     componentMetaRules(sf, base.getTypeChecker(), base, (start, length, message, fixes) => raw.push({ file: sf.fileName, start, length, rule: "component-meta", message, fixes }));
+    for (const tag of registeredTags(sf)) customTags.add(tag);
     for (const c of findComponents(sf)) components.set(c.selector, c);
     const models = findTemplates(sf, config.templateTag, (start, length, message) =>
       raw.push({ file: sf.fileName, start, length, rule: "template-syntax", message }),
@@ -130,7 +132,7 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
 
   // Scene rules need every component of the project (a tag may select one declared in a later file).
   const isBoundary = (tag: string) => !!components.get(tag)?.boundary;
-  for (const { model, add } of pendingScene) sceneRules(model, (tag) => components.has(tag), isBoundary, add);
+  for (const { model, add } of pendingScene) sceneRules(model, (tag) => components.has(tag), isBoundary, add, customTags);
 
   // Expression grammar is owned by @gable/core; a rejected expression gets one diagnostic and no check code.
   const validator = (state: FileState) => (e: Src, kind: ExprKind): boolean => {
