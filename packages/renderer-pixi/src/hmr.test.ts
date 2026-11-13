@@ -40,4 +40,32 @@ describe("Application survival", () => {
     expect(target.querySelector("canvas")).toBe(canvas);
     expect(target.querySelectorAll("canvas").length).toBe(1);
   });
+
+  it("with two canvases, each keeps its own Application even when the rebuild creates them in the other order", async () => {
+    const app = fakeApp();
+    const options = { createApplication: () => app.create(), scheduler: manualScheduler().scheduler };
+    const one = html`<gable-canvas id="a" [options]="options"><sprite x="1"></sprite></gable-canvas><gable-canvas id="b" [options]="options"><sprite x="2"></sprite></gable-canvas>`;
+    const swapped = html`<gable-canvas id="b" [options]="options"><sprite x="2"></sprite></gable-canvas><gable-canvas id="a" [options]="options"><sprite x="1"></sprite></gable-canvas>`;
+    const v1 = class Host {
+      static meta = { selector: "app-host", imports: [GableCanvas], template: one };
+      options = options;
+    };
+    const v2 = class Host {
+      static meta = { selector: "app-host", imports: [GableCanvas], template: swapped };
+      options = options;
+    };
+    const { ref, target } = boot(v1);
+    await vi.waitFor(() => expect(target.querySelectorAll("canvas").length).toBe(2));
+    const canvasA = target.querySelector("#a canvas")!;
+    const canvasB = target.querySelector("#b canvas")!;
+    expect(canvasA).not.toBe(canvasB);
+
+    expect(update(ref, v2).status).toBe("applied");
+    await vi.waitFor(() => expect(target.querySelectorAll("canvas").length).toBe(2));
+    await new Promise((r) => setTimeout(r, 300)); // past the orphan grace period
+    expect(target.querySelector("#a canvas")).toBe(canvasA);
+    expect(target.querySelector("#b canvas")).toBe(canvasB);
+    expect(app.log.created).toBe(2);
+    expect(app.log.destroyed).toBe(0);
+  });
 });
