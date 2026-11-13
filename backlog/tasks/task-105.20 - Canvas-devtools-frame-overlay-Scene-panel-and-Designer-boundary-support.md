@@ -1,10 +1,11 @@
 ---
 id: TASK-105.20
 title: 'Canvas devtools: frame overlay, Scene panel and Designer boundary support'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@jason'
 created_date: '2026-11-12T21:47:00Z'
-updated_date: '2026-11-12T21:48:00Z'
+updated_date: '2026-11-13T00:05:00Z'
 labels: []
 dependencies:
   - TASK-105.4

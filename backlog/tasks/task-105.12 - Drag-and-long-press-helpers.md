@@ -1,10 +1,11 @@
 ---
 id: TASK-105.12
 title: Drag and long-press helpers
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@jason'
 created_date: '2026-11-12T21:47:00Z'
-updated_date: '2026-11-12T21:48:00Z'
+updated_date: '2026-11-13T00:05:00Z'
 labels: []
 dependencies:
   - TASK-105.5
