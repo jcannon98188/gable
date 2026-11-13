@@ -19,5 +19,5 @@ export const aliases = [
 export default defineConfig({
   resolve: { alias: aliases },
   server: { fs: { strict: false } },
-  build: { outDir: process.env.GABLE_BENCH_OUT ?? "dist", emptyOutDir: true, minify: true, target: "es2022" },
+  build: { outDir: process.env.GABLE_BENCH_OUT ?? "dist", emptyOutDir: true, minify: process.env.GABLE_BENCH_MINIFY !== "0", target: "es2022" },
 });
