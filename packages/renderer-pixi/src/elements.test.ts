@@ -14,7 +14,7 @@ import {
 describe("tag table coverage", () => {
   it("lists the v1 scene tags", () => {
     expect(Object.keys(SCENE_TAGS).sort()).toEqual(
-      ["bitmap-text", "container", "graphics", "nine-slice-sprite", "sprite", "text", "tiling-sprite"].sort(),
+      ["bitmap-text", "container", "graphics", "nine-slice-sprite", "particle-container", "sprite", "text", "tiling-sprite"].sort(),
     );
   });
 
@@ -50,6 +50,15 @@ describe("tag table coverage", () => {
     }
     expect(propertiesOf("sprite").fontSize).toBeUndefined();
     expect(propertiesOf("text").text?.kind).toBe("string");
+  });
+});
+
+describe("particle-container", () => {
+  it("maps onto Pixi ParticleContainer with the container properties and its own", () => {
+    expect(SCENE_TAGS["particle-container"].pixiClass).toBe("ParticleContainer");
+    const props = propertiesOf("particle-container");
+    for (const p of ["x", "y", "alpha", "visible", "label", "zIndex", "texture", "dynamicProperties", "roundPixels"]) expect(props[p], p).toBeDefined();
+    expect(SCENE_TAGS["particle-container"].children).toBeUndefined();
   });
 });
 

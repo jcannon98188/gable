@@ -122,7 +122,8 @@ export type SceneTagName =
   | "bitmap-text"
   | "graphics"
   | "tiling-sprite"
-  | "nine-slice-sprite";
+  | "nine-slice-sprite"
+  | "particle-container";
 
 export type ShapeTagName = "rect" | "rounded-rect" | "circle" | "ellipse" | "polygon";
 
@@ -232,6 +233,11 @@ export const SCENE_TAGS: Readonly<Record<SceneTagName, TagSpec>> = {
       bottomHeight: num,
       roundPixels: bool,
     },
+  },
+  // The high-count tier (TASK-104.14). Particles are not display objects: no child tags, they are made through the particles() ref helper.
+  "particle-container": {
+    pixiClass: "ParticleContainer",
+    props: { ...CONTAINER_PROPS, texture: obj("Texture"), dynamicProperties: obj("ParticleProperties"), roundPixels: bool },
   },
 };
 

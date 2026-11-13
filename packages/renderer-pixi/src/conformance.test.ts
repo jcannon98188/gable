@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { SCENE_EVENTS, SCENE_TAGS, SHAPE_TAGS, propertiesOf, type SceneEventName, type SceneTagName } from "./elements.js";
 
 // Properties that are Gable-level conventions rather than fields of a Pixi class.
-const GABLE_ONLY = new Set(["fill", "stroke", "strokeWidth", "text", "context", "a11y"]);
+const GABLE_ONLY = new Set(["fill", "stroke", "strokeWidth", "text", "context", "a11y", "dynamicProperties"]);
 
 function make(tag: SceneTagName): object {
   switch (tag) {
@@ -23,6 +23,8 @@ function make(tag: SceneTagName): object {
       return new PIXI.TilingSprite({ texture: PIXI.Texture.EMPTY });
     case "nine-slice-sprite":
       return new PIXI.NineSliceSprite({ texture: PIXI.Texture.EMPTY });
+    case "particle-container":
+      return new PIXI.ParticleContainer();
   }
 }
 

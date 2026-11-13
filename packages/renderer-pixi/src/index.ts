@@ -1,6 +1,8 @@
 // Entry point for the Pixi renderer, the <gable-canvas> host and the services.
 // The shared tag and property table is re-exported from here and lives in ./elements.
 export * from "./elements.js";
+export { isParticleHost, particles } from "./particles.js";
+export type { ParticleHost, ParticleLike, ParticleOptions, ParticleSet } from "./particles.js";
 export { CanvasSize } from "./canvas-size.js";
 export { Frame, MAX_FRAME_DT } from "./frame.js";
 export type { FixedStepHook, FrameHook } from "./frame.js";

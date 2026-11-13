@@ -21,7 +21,7 @@ import { Gamepad } from "../gamepad.js";
 import { Keyboard } from "../keyboard.js";
 import { Pointer } from "../pointer.js";
 import { createInputSimulators, type GamepadSimulator, type KeyboardSimulator, type PointerSimulator } from "./input.js";
-import { SceneNode, apply, isStyleField, paintOrder, tagInfoFor, toData, worldMatrix, type Point, type SceneNodeData, type StubTexture, type TagInfo } from "./node.js";
+import { SceneNode, apply, attachParticleHost, isStyleField, paintOrder, tagInfoFor, toData, worldMatrix, type Point, type SceneNodeData, type StubTexture, type TagInfo } from "./node.js";
 import { findAll as selectAll } from "./select.js";
 
 export interface SceneTestOptions {
@@ -258,7 +258,11 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
       if (isShapeTag(tag)) return new SceneNode("shape", tag, null);
       const extra = custom.get(tag);
       if (extra) return new SceneNode("node", tag, extra);
-      if (isSceneTag(tag)) return new SceneNode("node", tag, tagInfoFor(tag));
+      if (isSceneTag(tag)) {
+        const node = new SceneNode("node", tag, tagInfoFor(tag));
+        if (tag === "particle-container") attachParticleHost(node);
+        return node;
+      }
       if (tag.includes("-")) return new SceneNode("node", tag, hostInfo(tag));
       if (lenient) return new SceneNode("node", tag, { tag, table: containerProps, textContent: false, label: null });
       throw new Error(`Unknown scene tag <${tag}> in the "pixi" renderer. Scene tags: ${[...Object.keys(SCENE_TAGS), ...Object.keys(SHAPE_TAGS), ...custom.keys()].join(", ")}. A component is used by its hyphenated selector.`);
@@ -321,6 +325,9 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
         node.owner = parent;
         writeText(parent);
         return;
+      }
+      if (parent.tag === "particle-container" && !lenient) {
+        throw new Error("<particle-container> takes no child tags: particles are not display objects. Create them with particles(ref) on a #ref to the container.");
       }
       insertDisplay(parent, node, next);
     },

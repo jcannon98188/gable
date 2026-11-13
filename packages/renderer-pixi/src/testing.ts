@@ -2,7 +2,7 @@
 export { createSceneTestRenderer } from "./scene-test/renderer.js";
 export type { SceneTestOptions, SceneTestRenderer, StubTextures } from "./scene-test/renderer.js";
 export { SceneNode } from "./scene-test/node.js";
-export type { Point, SceneNodeData, ShapeData, StubTexture } from "./scene-test/node.js";
+export type { Point, SceneNodeData, ShapeData, StubParticle, StubTexture } from "./scene-test/node.js";
 export type { GamepadSimulator, KeyboardSimulator, PointerSimulator } from "./scene-test/input.js";
 export { provideTestAssets } from "./scene-test/assets.js";
 export type { BundleScript, TestAssets, TestAssetsOptions } from "./scene-test/assets.js";
