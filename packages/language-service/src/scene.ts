@@ -9,6 +9,7 @@ import {
   buildElementMap,
   convertStaticAttribute,
   isSceneTag,
+  isSceneEvent,
   isShapeTag,
   propertiesOf,
   resolveProperty,
@@ -124,6 +125,12 @@ export function sceneRules(model: TemplateModel, isComponent: (tag: string) => b
       if (e.kind === "handler") continue;
       if (e.kind === "field") continue;
       if (!resolveProperty(tag, e.name)) report(e.nameStart, e.name.length, "scene-unknown-property", unknownProperty(tag, e.name));
+    }
+    // scene-pointer-a11y: a pointer listener makes the node interactive, so assistive technology needs [a11y] (TASK-104.11).
+    const pointer = el.expressions.find((e) => e.kind === "handler" && isSceneEvent(e.name) && e.name !== "wheel");
+    const hasA11y = el.attrs.some((a) => a.name === "a11y") || el.expressions.some((e) => e.kind === "value" && e.name === "a11y");
+    if (pointer && !hasA11y) {
+      report(el.tagStart, el.tag.length, "scene-pointer-a11y", `<${tag}> listens for pointer events ((${pointer.name})) but has no [a11y]: add [a11y]="{ role, label }" so keyboard and assistive technology users can reach it, or give the action a non-pointer route`);
     }
     for (const a of el.attrs) {
       const spec = resolveProperty(tag, a.name);
