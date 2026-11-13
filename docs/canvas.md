@@ -272,6 +272,8 @@ export class Level {
 
 `@defer (when level.ready()) { <game-world></game-world> }` keeps the heavy part of a scene out of the download until the assets are in. In tests, `provideTestAssets` replaces the asset system under the real `Assets` service and lets a test hold a load, report progress, finish it or fail it (`bundle.setStatus("loading", 0.25)`, `setStatus("ready")`, `fail(error)`); see `packages/renderer-pixi/src/guide/assets.test.ts`.
 
+**Spritesheets and bitmap fonts: `?family`.** A descriptor names its image by relative path, which Vite's hashing would break. Add `gableAssetFamilies()` from `@gable/vite` to the Vite plugins and import the descriptor with the query: `import sheet from "./hero.json?family"` gives the URL of the descriptor with its siblings hashed and rewritten; use it as a bundle entry's `src`. For types, add `/// <reference types="@gable/vite/client" />` (or `"@gable/vite/client"` in tsconfig `types`). A real-browser test of the built output runs under `GABLE_BROWSER_SMOKE=1`.
+
 ## Accessibility checklist
 
 A canvas is not exposed as content. There is no automatic accessibility tree guessed from sprites; what a user must perceive or operate comes from the DOM HUD, live announcements, or the opt-in semantic mirror below.
