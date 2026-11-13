@@ -55,7 +55,8 @@ export interface SignalOptions<T> {
  */
 export function signal<T>(initial: T, options?: SignalOptions<T>): WritableSignal<T> {
   const state = new Signal.State<T>(initial, options?.equal ? { equals: options.equal } : undefined);
-  const read = (() => state.get()) as WritableSignal<T>;
+  // Bound, not a closure: a read then goes from the function straight to the state, one object fewer to load per read.
+  const read = state.get.bind(state) as WritableSignal<T>;
   read.set = (value) => (DEV && willWrite(state), firstRuns > 0 && writes++, state.set(value));
   read.update = (fn) => (DEV && willWrite(state), firstRuns > 0 && writes++, state.set(fn(state.get())));
   if (DEV) devtools.current?.signal(read, state, "state", currentScope());
