@@ -243,4 +243,50 @@ describe("frame loop", () => {
       expect(ran).toEqual(["g2:frame", "g2:step"]);
     });
   });
+
+  it("a throwing frame hook does not skip the other hooks, the flush or the render of that frame", async () => {
+    const h = harness();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const x = signal(0);
+    const Actor = sceneWith((f) => {
+      f.onFrame(() => {
+        h.log.push("bad hook");
+        throw new Error("boom");
+      });
+      f.onFrame(() => (h.log.push("good hook"), x.set(x() + 1)));
+    });
+    await mountScene(h, html`<scene-actor></scene-actor><sprite #s [x]="x()"></sprite>`, { x }, [Actor]);
+    h.probe.sprite = h.stage.children[0]!.children.find((c) => c instanceof Sprite) as Sprite;
+    h.log.length = 0;
+    h.frame();
+    expect(h.log).toEqual(["bad hook", "good hook", "render x=1"]); // hooks, then flush, then render: ADR 0020 order holds
+    expect(console.error).toHaveBeenCalledTimes(1);
+  });
+
+  it("a persistent error is reported once, then summarised, not once per frame", async () => {
+    const h = harness();
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const Actor = sceneWith((f) => f.onFrame(() => {
+      throw new Error("same every frame");
+    }));
+    await mountScene(h, html`<scene-actor></scene-actor>`, {}, [Actor]);
+    for (let i = 0; i < 100; i++) h.frame();
+    expect(error.mock.calls.length).toBeLessThanOrEqual(3);
+    expect(error.mock.calls.length).toBeGreaterThanOrEqual(1);
+    expect(String(error.mock.calls[0]![0])).toContain("canvas frame");
+  });
+
+  it("a different error is reported on its own", async () => {
+    const h = harness();
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    let n = 0;
+    const Actor = sceneWith((f) => f.onFrame(() => {
+      throw new Error(n++ === 0 ? "first" : "second");
+    }));
+    await mountScene(h, html`<scene-actor></scene-actor>`, {}, [Actor]);
+    h.frame();
+    h.frame();
+    h.frame();
+    expect(error.mock.calls.map((c) => String(c[1]))).toEqual(["Error: first", "Error: second"]);
+  });
 });

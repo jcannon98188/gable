@@ -3,10 +3,14 @@
 // Kept free of any pixi.js import so injecting it never loads Pixi.
 import { onCleanup } from "@gable/core";
 
-/** The longest dt a frame reports, in seconds. A tab that was hidden or a long stall must not become one giant step. */
+/**
+ * The longest dt a frame reports, in seconds. A tab that was hidden or a long stall must not become one giant step. This is a
+ * deliberate time drop: wall-clock time beyond 50 ms in one frame is discarded, not caught up, so a fixed-step hook runs at most
+ * `ceil(0.05 * hz)` steps in a frame (three at 60 Hz) and simulated time falls behind real time after a stall.
+ */
 export const MAX_FRAME_DT = 0.05;
 
-// Whole steps are counted with a little slack so that 100 ms at 60 Hz is six steps, not five and a rounding error.
+// Whole steps are counted with a little slack so that 50 ms at 60 Hz is three steps, not two and a rounding error.
 const EPSILON = 1e-9;
 
 interface Hook<F> {
@@ -36,6 +40,12 @@ export class Frame {
   readonly #frameHooks = new Set<Hook<FrameHook>>();
   readonly #accumulators = new Map<number, Accumulator>();
 
+  /**
+   * Where a throwing hook's error goes. The boundary's loop sets it so one bad hook cannot stop the other hooks, the effect flush
+   * or the render of that frame. Unset (a direct `advance` call in a test), the first error is rethrown after every hook has run.
+   */
+  onError: ((error: unknown) => void) | null = null;
+
   /** Runs `hook(dt)` every frame. */
   onFrame(hook: FrameHook): () => void {
     return this.#register(this.#frameHooks, hook);
@@ -55,7 +65,16 @@ export class Frame {
    */
   advance(seconds: number): void {
     const dt = Math.min(Math.max(seconds, 0), MAX_FRAME_DT);
-    for (const hook of [...this.#frameHooks]) if (hook.active) hook.fn(dt);
+    let first: { error: unknown } | null = null;
+    const run = (call: () => void) => {
+      try {
+        call();
+      } catch (error) {
+        if (this.onError) this.onError(error);
+        else first ??= { error };
+      }
+    };
+    for (const hook of [...this.#frameHooks]) if (hook.active) run(() => hook.fn(dt));
     for (const acc of this.#accumulators.values()) {
       acc.value += dt;
       const hooks = [...acc.hooks];
@@ -65,8 +84,9 @@ export class Frame {
         steps++;
       }
       const alpha = acc.value / acc.step;
-      for (let i = 0; i < steps; i++) for (const hook of hooks) if (hook.active) hook.fn(acc.step, alpha);
+      for (let i = 0; i < steps; i++) for (const hook of hooks) if (hook.active) run(() => hook.fn(acc.step, alpha));
     }
+    if (first) throw (first as { error: unknown }).error;
   }
 
   #register<F>(into: Set<Hook<F>>, fn: F): () => void {

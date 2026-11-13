@@ -763,29 +763,38 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         const stopSession = stopDebug;
         stopDebug = () => (dbg.overlay.destroy(), stopSession?.());
       }
+      const reportFrameError = createFrameErrorReporter();
       const tick = (time: number) => {
         if (!running) return;
         raf = scheduler.request(tick);
         const seconds = last === null ? 0 : (time - last) / 1000;
         last = time;
-        try {
-          const t0 = dbg ? dbg.now() : 0;
-          keyboard.beginFrame();
-          gamepad.beginFrame();
-          frameService.advance(seconds);
-          const t1 = dbg ? dbg.now() : 0;
-          const ran = flushSync(); // apply signal writes to Pixi nodes
-          const t2 = dbg ? dbg.now() : 0;
-          if (!(onDemand && !touched)) {
-            touched = false;
+        // Each phase is guarded on its own: a throwing hook, flush or render does not skip the phases after it (ADR 0020 order holds).
+        const guarded = (phase: string, call: () => void) => {
+          try {
+            call();
+          } catch (error) {
+            reportFrameError(phase, error);
+          }
+        };
+        const t0 = dbg ? dbg.now() : 0;
+        keyboard.beginFrame();
+        gamepad.beginFrame();
+        guarded("frame hook", () => frameService.advance(seconds));
+        const t1 = dbg ? dbg.now() : 0;
+        let ran = 0;
+        guarded("effect flush", () => (ran = flushSync())); // apply signal writes to Pixi nodes
+        const t2 = dbg ? dbg.now() : 0;
+        if (!(onDemand && !touched)) {
+          touched = false;
+          guarded("render", () => {
             renderer.frame();
             created.render();
-          }
-          if (dbg) dbg.frame(time, t1 - t0, t2 - t1, dbg.now() - t2, ran);
-        } catch (error) {
-          console.error("[gable] error in the canvas frame loop", error);
+          });
         }
+        if (dbg) dbg.frame(time, t1 - t0, t2 - t1, dbg.now() - t2, ran);
       };
+      frameService.onError = (error) => reportFrameError("frame hook", error);
       raf = scheduler.request(tick);
       stopLoop = () => {
         running = false;
@@ -820,6 +829,22 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     },
   };
   return renderer;
+}
+
+/** How many times the same frame error is logged before it is only summarised: first occurrence, then each power of ten. */
+const SEEN_ERRORS_MAX = 50;
+
+/** A per-boundary reporter: logs an error the first time, then only when its count reaches 10, 100, 1000... so a persistent error does not flood the console at 60 per second. */
+function createFrameErrorReporter(): (phase: string, error: unknown) => void {
+  const seen = new Map<string, number>();
+  return (phase, error) => {
+    const key = phase + ":" + (error instanceof Error ? error.message + "|" + (error.stack ?? "").split("\n").slice(1, 4).join("|") : String(error));
+    const count = (seen.get(key) ?? 0) + 1;
+    if (seen.size >= SEEN_ERRORS_MAX && !seen.has(key)) seen.clear();
+    seen.set(key, count);
+    if (count === 1) console.error(`[gable] error in the canvas frame loop (${phase})`, error);
+    else if (Number.isInteger(Math.log10(count))) console.error(`[gable] error in the canvas frame loop (${phase}), repeated ${count} times`, error);
+  };
 }
 
 /** Dev only: the statistics and overlay of one canvas boundary. */
