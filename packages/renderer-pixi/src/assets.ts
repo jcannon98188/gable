@@ -1,6 +1,5 @@
 // The app-level Assets service (TASK-104.9): explicit loading through bundle handles over Pixi's global `Assets`.
 // Templates never start a load; they read the handle's signals. Textures resolve from Pixi's cache (see renderer.ts).
-import { Assets as PixiAssets } from "pixi.js";
 import { InjectionToken, computed, inject, onCleanup, signal, type Provider, type ReadonlySignal } from "@gable/core";
 
 /** A Pixi manifest entry list for one bundle: `{ alias, src }` entries (spritesheets, bitmap fonts and web fonts included). */
@@ -16,11 +15,31 @@ export interface AssetsBackend {
   unloadBundle(name: string): Promise<unknown>;
 }
 
-const pixiBackend: AssetsBackend = {
-  addBundle: (name, entries) => PixiAssets.addBundle(name, entries as never),
-  loadBundle: (name, onProgress) => PixiAssets.loadBundle(name, onProgress),
-  unloadBundle: (name) => PixiAssets.unloadBundle(name),
-};
+/**
+ * The default backend over Pixi's global `Assets`. Pixi is loaded by dynamic import on the first load or unload, so an app
+ * that only provides the service never downloads it (TASK-105.3 #3). Bundles are recorded at once and registered with Pixi
+ * just before their first load.
+ */
+function createPixiBackend(): AssetsBackend {
+  const declared = new Map<string, BundleEntries>();
+  const registered = new Set<string>();
+  const pixi = () => import("pixi.js").then((m) => m.Assets);
+  return {
+    addBundle: (name, entries) => void declared.set(name, entries),
+    async loadBundle(name, onProgress) {
+      const assets = await pixi();
+      if (!registered.has(name)) {
+        registered.add(name);
+        assets.addBundle(name, declared.get(name) as never);
+      }
+      return assets.loadBundle(name, onProgress);
+    },
+    async unloadBundle(name) {
+      if (!registered.has(name)) return;
+      return (await pixi()).unloadBundle(name);
+    },
+  };
+}
 
 export interface AssetsOptions {
   /** Bundles by name, as Pixi manifest entries. Import single files normally so Vite hashes their URLs. */
@@ -75,7 +94,7 @@ export class Assets {
   static scope = "root";
 
   readonly #options = inject(ASSETS_OPTIONS, { optional: true }) ?? { bundles: {} };
-  readonly #backend: AssetsBackend = this.#options.backend ?? pixiBackend;
+  readonly #backend: AssetsBackend = this.#options.backend ?? createPixiBackend();
   readonly #handles = new Map<string, BundleHandle>();
 
   /** The handle for a bundle declared in `provideAssets`. The same handle is returned for the same name. */
