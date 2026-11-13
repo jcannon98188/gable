@@ -36,6 +36,15 @@ npm run bench -- --counts 500,1000 --styles signals,ref --reps 1 --frames 120   
 
 `scripts/run.mjs` builds the page with Vite (packages resolve from source, no prior build), serves it, loads one configuration per page and writes raw results JSON. `--help`-style options are listed at the top of the script.
 
+## Profile the flush
+
+```sh
+cd examples/canvas-benchmark
+node scripts/profile.mjs --style signals --n 5000      # writes results/profile-signals-5000.cpuprofile
+```
+
+`scripts/profile.mjs` records a CPU profile of one configuration and prints self time per function over the samples taken inside the frame's `flushSync`. It builds the page unminified so the names are real, so use it for attribution and `npm run bench` for the numbers. `docs/research/frame-flush-optimisation.md` records what the profiles showed.
+
 ## CI regression gate
 
 - **Every PR** runs the Node microbench (`npm run bench:canvas:micro`, in the `build-test` job) and the unit tests of the gate itself.
