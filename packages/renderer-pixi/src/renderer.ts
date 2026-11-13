@@ -227,6 +227,20 @@ function setDynamicProperties(node: Container, value: Record<string, boolean> | 
   }
 }
 
+/** The per-parent ordered list in `lists`, created on first use. */
+function listOf<K extends object, T>(lists: WeakMap<K, T[]>, owner: K): T[] {
+  let list = lists.get(owner);
+  if (list === undefined) lists.set(owner, (list = []));
+  return list;
+}
+
+/** Puts `item` before `before` in `list`, or at the end when `before` is absent or not in the list. */
+function insertBefore<T>(list: T[], item: T, before: unknown): void {
+  const at = before ? list.indexOf(before as T) : -1;
+  if (at === -1) list.push(item);
+  else list.splice(at, 0, item);
+}
+
 type Resolved = PropSpec | { readonly kind: "number"; readonly axis: "x" | "y"; readonly of: string };
 
 /** A property name in a table: a plain property, or an axis (`scale.x`) of a point-like property. */
@@ -519,12 +533,21 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     setProperty,
     setAttribute(node, name, value) {
       if (value === null) return;
-      const hitNode = (node as unknown) instanceof HitNode ? (node as unknown as HitNode) : null;
-      const table = hitNode ? HIT_TAGS[hitNode.tag].props : (node as unknown) instanceof ShapeNode ? SHAPE_TAGS[(node as unknown as ShapeNode).tag].props : infoOf(node).table;
-      const tag = hitNode ? hitNode.tag : (node as unknown) instanceof ShapeNode ? (node as unknown as ShapeNode).tag : infoOf(node).tag;
+      const virtual = (node as unknown) instanceof HitNode || (node as unknown) instanceof ShapeNode;
+      let table: Readonly<Record<string, PropSpec>>;
+      let tag: string;
+      if ((node as unknown) instanceof HitNode) {
+        tag = (node as unknown as HitNode).tag;
+        table = HIT_TAGS[tag as keyof typeof HIT_TAGS].props;
+      } else if ((node as unknown) instanceof ShapeNode) {
+        tag = (node as unknown as ShapeNode).tag;
+        table = SHAPE_TAGS[tag as keyof typeof SHAPE_TAGS].props;
+      } else {
+        ({ table, tag } = infoOf(node));
+      }
       const resolved = lookup(table, name);
       if (!resolved) throw unknownProperty(tag, name);
-      if (name === "texture" && !hitNode && !(node as unknown instanceof ShapeNode)) {
+      if (name === "texture" && !virtual) {
         setProperty(node, name, value);
         return;
       }
@@ -551,12 +574,9 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       if ((node as unknown) instanceof ShapeNode) {
         const shape = node as unknown as ShapeNode;
         if (!(parent instanceof Graphics)) throw new Error(`<${shape.tag}> can only be a child of <graphics>.`);
-        const list = shapeLists.get(parent) ?? (shapeLists.set(parent, []), shapeLists.get(parent)!);
         const old = shape.owner ? shapeLists.get(shape.owner) : undefined;
         if (old) old.splice(old.indexOf(shape), 1);
-        const at = before ? list.indexOf(before as unknown as ShapeNode) : -1;
-        if (at === -1) list.push(shape);
-        else list.splice(at, 0, shape);
+        insertBefore(listOf(shapeLists, parent), shape, before);
         if (shape.owner && shape.owner !== parent) markDirty(shape.owner);
         shape.owner = parent;
         markDirty(parent);
@@ -564,12 +584,9 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       }
       if ((node as unknown) instanceof HitNode) {
         const hit = node as unknown as HitNode;
-        const list = hitLists.get(parent) ?? (hitLists.set(parent, []), hitLists.get(parent)!);
         const old = hit.owner ? hitLists.get(hit.owner) : undefined;
         if (old) old.splice(old.indexOf(hit), 1);
-        const at = before ? list.indexOf(before as unknown as HitNode) : -1;
-        if (at === -1) list.push(hit);
-        else list.splice(at, 0, hit);
+        insertBefore(listOf(hitLists, parent), hit, before);
         const previous = hit.owner;
         hit.owner = parent;
         if (previous && previous !== parent) applyHitArea(previous);
@@ -582,10 +599,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
           if (content.text.trim() === "") return;
           throw new Error(`Text content is only allowed in <text> and <bitmap-text>, not <${infoOf(parent).tag}>: "${content.text.trim().slice(0, 30)}". Bind [text] on a <text> instead.`);
         }
-        const list = textParts.get(parent) ?? (textParts.set(parent, []), textParts.get(parent)!);
-        const at = before ? list.indexOf(before as unknown as ContentNode) : -1;
-        if (at === -1) list.push(content);
-        else list.splice(at, 0, content);
+        insertBefore(listOf(textParts, parent), content, before);
         content.owner = parent;
         writeText(parent);
         return;
