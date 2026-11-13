@@ -6,10 +6,11 @@
 // Writes are retained-mode: a signal write sets one Pixi property (a dotted path sets one axis). Graphics shapes are
 // lightweight records that mark their graphics dirty; `frame()` redraws each dirty graphics once.
 import "pixi.js/events"; // installs eventMode, cursor, hitArea and interactiveChildren on Container
-import { Application, BitmapText, Cache, Container, Graphics, NineSliceSprite, Rectangle, Sprite, Text, Texture, TilingSprite } from "pixi.js";
+import { Application, BitmapText, Cache, Container, Graphics, NineSliceSprite, Particle, ParticleContainer, Rectangle, Sprite, Text, Texture, TilingSprite } from "pixi.js";
 import { flushSync, type Provider } from "@gable/core";
 import type { Renderer } from "@gable/core/renderer";
 import { DEV } from "./dev.js";
+import type { ParticleLike, ParticleOptions } from "./particles.js";
 import { CanvasSize } from "./canvas-size.js";
 import { Frame } from "./frame.js";
 import { Gamepad, type GetGamepads } from "./gamepad.js";
@@ -142,7 +143,29 @@ const CLASSES: Record<string, () => Container> = {
   Graphics: () => new Graphics(),
   TilingSprite: () => new TilingSprite({ texture: Texture.EMPTY }),
   NineSliceSprite: () => new NineSliceSprite({ texture: Texture.EMPTY }),
+  ParticleContainer: () => particleContainer(),
 };
+
+/** A ParticleContainer that also carries the particles() helper protocol (see ./particles.ts). */
+function particleContainer(): Container {
+  const node = new ParticleContainer();
+  Object.defineProperty(node, "newParticle", {
+    value: ({ texture, ...rest }: ParticleOptions): ParticleLike =>
+      new Particle({ ...rest, texture: (texture as Texture | undefined) ?? node.texture ?? Texture.EMPTY }) as unknown as ParticleLike,
+  });
+  return node;
+}
+
+/** `[dynamicProperties]`: Pixi only takes these at construction, so the flags are written onto the container before its first upload. */
+function setDynamicProperties(node: Container, value: Record<string, boolean> | null | undefined): void {
+  const flags = (node as unknown as { _properties?: Record<string, { dynamic: boolean }> })._properties;
+  for (const [name, on] of Object.entries(value ?? {})) {
+    if (!flags || !Object.prototype.hasOwnProperty.call(flags, name)) {
+      throw new Error(`Unknown dynamicProperties key "${name}" on <particle-container>. Keys: ${flags ? Object.keys(flags).join(", ") : "none"}.`);
+    }
+    flags[name]!.dynamic = on === true;
+  }
+}
 
 type Resolved = PropSpec | { readonly kind: "number"; readonly axis: "x" | "y"; readonly of: string };
 
@@ -300,6 +323,10 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       mirror.set(node, value as A11yProps | null | undefined);
       return;
     }
+    if (name === "dynamicProperties") {
+      setDynamicProperties(node, value as Record<string, boolean> | null | undefined);
+      return;
+    }
     const target = node as unknown as Record<string, any>;
     if (name === "texture" && typeof value === "string") value = textureFromCache(value, info.tag);
     const dot = name.indexOf(".");
@@ -344,6 +371,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       { provide: ReducedMotion, useValue: reducedMotion } as Provider,
     ],
     registerTag,
+    hasTag: (tag) => isSceneTag(tag) || isShapeTag(tag) || registry.has(tag),
     createElement(tag) {
       if (isShapeTag(tag)) return new ShapeNode(tag) as unknown as Container;
       const custom = registry.get(tag);
@@ -427,6 +455,9 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         content.owner = parent;
         writeText(parent);
         return;
+      }
+      if (parent instanceof ParticleContainer) {
+        throw new Error("<particle-container> takes no child tags: particles are not display objects. Create them with particles(ref) on a #ref to the container.");
       }
       const order = layouts.get(parent)!;
       let next: Container | undefined;

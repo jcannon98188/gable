@@ -29,6 +29,8 @@ export interface Renderer<N = unknown> {
   readonly providers?: readonly Provider[];
   /** Dev: warn when a component built by this renderer starts a raw setInterval or setTimeout in its Setup without registering an `onCleanup` (a hot edit or unmount would leak the timer). */
   readonly warnRawTimers?: boolean;
+  /** True for a hyphenated tag this renderer owns natively (e.g. `<tiling-sprite>`), so the dev check for an unimported component does not reject it. */
+  hasTag?(tag: string): boolean;
   // Create. `parent` is context only (e.g. SVG/MathML namespace); it does not insert.
   createElement(tag: string, parent: N | null): N;
   createText(text: string): N;

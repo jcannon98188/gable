@@ -2,10 +2,11 @@
 // test renderer, and every property and the child order must agree, so the double cannot drift from Pixi. Excluded: Text
 // (it measures through a canvas, which Node lacks) and rendering itself.
 import "pixi.js/events";
-import { Container, Graphics, NineSliceSprite, Sprite, Texture, TilingSprite } from "pixi.js";
+import { Container, Graphics, NineSliceSprite, ParticleContainer, Sprite, Texture, TilingSprite } from "pixi.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createComponent, flushSync, html, signal, type ComponentRef } from "@gable/core";
 import { isSceneTag, propertiesOf, type SceneTagName } from "../elements.js";
+import { particles } from "../particles.js";
 import { createPixiRenderer } from "../renderer.js";
 import { createSceneTestRenderer, type SceneNode } from "../testing.js";
 
@@ -15,10 +16,11 @@ function pixiTagOf(p: Container): SceneTagName {
   if (p instanceof NineSliceSprite) return "nine-slice-sprite";
   if (p instanceof Sprite) return "sprite";
   if (p instanceof Graphics) return "graphics";
+  if (p instanceof ParticleContainer) return "particle-container";
   return "container";
 }
 // Pixi computes these from content (bounds, text measurement), which the double does not model.
-const SKIP = new Set(["width", "height", "style", "text", "context", "filters", "mask"]);
+const SKIP = new Set(["width", "height", "style", "text", "context", "filters", "mask", "dynamicProperties"]);
 const POINTS = new Set(["position", "scale", "pivot", "skew", "anchor", "tilePosition", "tileScale"]);
 const ANCHOR = "#anchor";
 
@@ -66,7 +68,8 @@ function sameNode(p: Container, s: SceneNode, path: string): void {
     const pv = (p as any)[name];
     if (name === "texture") {
       expect(s.rawProperty(name) ?? null === null, `${path}.${name}`).toBeTruthy();
-      expect(pv === Texture.EMPTY || pv === undefined, `${path}.${name} is empty`).toBe(true);
+      expect(pv === Texture.EMPTY || pv == null, // a ParticleContainer starts with no texture
+         `${path}.${name} is empty`).toBe(true);
       continue;
     }
     if (pv === undefined && s.rawProperty(name) === undefined) continue;
@@ -175,6 +178,19 @@ describe("scene test renderer parity with Pixi", () => {
     expect(scene.root.children.map((c) => c.tag)).toEqual(["tiling-sprite", "nine-slice-sprite"]);
   });
 
+  it("particle-container takes the same properties and its particles start with the same fields", () => {
+    check(both(html`<particle-container label="field" x="5" alpha="0.5" roundPixels="true" />`));
+    const pixi = createPixiRenderer();
+    const scene = createSceneTestRenderer();
+    const sets = [particles(pixi.createElement("particle-container")), particles(scene.renderer.createElement("particle-container"))];
+    const fields = ["x", "y", "scaleX", "scaleY", "anchorX", "anchorY", "rotation", "tint", "alpha"] as const;
+    for (const set of sets) {
+      set.add();
+      set.add({ x: 3, y: 4, scaleX: 2, anchorX: 0.5, rotation: 1, tint: 0x336699, alpha: 0.25 });
+    }
+    for (let i = 0; i < 2; i++) for (const f of fields) expect(sets[1]!.items[i]![f], `particle ${i}.${f}`).toEqual(sets[0]!.items[i]![f]);
+  });
+
   it("listening upgrades eventMode to static on both", () => {
     const r = both(html`<container label="c" (pointerdown)="noop()" /><container label="d" eventMode="dynamic" (pointerdown)="noop()" />`, { noop() {} });
     check(r);
@@ -192,6 +208,7 @@ describe("scene test renderer parity with Pixi", () => {
       (r) => r.setAttribute(r.createElement("container", null), "x", "abc"),
       (r) => r.setAttribute(r.createElement("container", null), "visible", "maybe"),
       (r) => r.setAttribute(r.createElement("sprite", null), "texture2", "x"),
+      (r) => r.insert(r.createElement("particle-container", null), r.createElement("sprite", null), null),
     ];
     for (const run of cases) {
       let pixiError = "";

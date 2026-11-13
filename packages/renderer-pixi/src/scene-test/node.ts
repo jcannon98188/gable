@@ -57,6 +57,7 @@ function defaultsFor(info: TagInfo): Record<string, unknown> {
   }
   if (!("position" in out)) out.position = { x: 0, y: 0 };
   if ("texture" in info.table) out.texture = null;
+  if ("dynamicProperties" in info.table) out.dynamicProperties = {};
   if ("roundPixels" in info.table) out.roundPixels = false;
   if ("tileRotation" in info.table) out.tileRotation = 0;
   if ("leftWidth" in info.table) Object.assign(out, { leftWidth: 10, topHeight: 10, rightWidth: 10, bottomHeight: 10 });
@@ -67,6 +68,48 @@ function defaultsFor(info: TagInfo): Record<string, unknown> {
 export function tagInfoFor(tag: SceneTagName): TagInfo {
   const def = SCENE_TAGS[tag];
   return { tag, table: def.props, textContent: def.textContent === true, label: def.pixiClass === "Container" ? null : def.pixiClass };
+}
+
+/** A particle in the double: the plain fields of Pixi's Particle with its defaults. */
+export interface StubParticle {
+  x: number;
+  y: number;
+  scaleX: number;
+  scaleY: number;
+  anchorX: number;
+  anchorY: number;
+  rotation: number;
+  tint: number;
+  alpha: number;
+  texture: unknown;
+}
+
+/** Gives a `particle-container` node the particles() helper protocol (see ../particles.ts), with Pixi's Particle defaults. */
+export function attachParticleHost(node: SceneNode): void {
+  const host = node as unknown as Record<string, unknown>;
+  host.particleChildren = [] as StubParticle[];
+  const list = () => host.particleChildren as StubParticle[];
+  host.newParticle = (o: Partial<StubParticle> & { tint?: number | string }): StubParticle => ({
+    x: o.x ?? 0,
+    y: o.y ?? 0,
+    scaleX: o.scaleX ?? 1,
+    scaleY: o.scaleY ?? 1,
+    anchorX: o.anchorX ?? 0,
+    anchorY: o.anchorY ?? 0,
+    rotation: o.rotation ?? 0,
+    tint: (o.tint as number | undefined) ?? 0xffffff,
+    alpha: o.alpha ?? 1,
+    texture: o.texture ?? node.values.texture ?? null,
+  });
+  host.addParticle = (...ps: StubParticle[]) => void list().push(...ps);
+  host.removeParticle = (...ps: StubParticle[]) => {
+    for (const p of ps) {
+      const i = list().indexOf(p);
+      if (i >= 0) list().splice(i, 1);
+    }
+  };
+  host.removeParticles = () => void (list().length = 0);
+  host.update = () => {};
 }
 
 type Listener = (event: unknown) => void;
@@ -253,6 +296,8 @@ export interface SceneNodeData {
   children: SceneNodeData[];
   /** The same children in paint order (`zIndex`, then insertion), later on top. */
   drawChildren: SceneNodeData[];
+  /** Particles of a `<particle-container>` in order, as copies. */
+  particles?: StubParticle[];
   /** Graphics shapes in order. */
   shapes?: ShapeData[];
   /** Every property of the node by name (the same values as above, plus tag-specific ones such as `anchor` or `fontSize`). */
@@ -301,6 +346,7 @@ export function toData(node: SceneNode): SceneNodeData {
     node,
   };
   if (node.info?.textContent) data.text = node.joinedText();
+  if (node.tag === "particle-container") data.particles = [...(node as unknown as { particleChildren: StubParticle[] }).particleChildren].map((p) => ({ ...p }));
   if (node.tag === "graphics") data.shapes = node.shapes.map((s) => ({ tag: s.tag as ShapeTagName, ...s.values }));
   return data;
 }
