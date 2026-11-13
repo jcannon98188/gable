@@ -126,6 +126,30 @@ describe("renderer boundaries", () => {
     expect(nodes.find((n) => n.name === "p")!.effects).toHaveLength(1);
   });
 
+  it("places nodes on the page from the host's box and the boundary's own rects, and answers pageRectOf for any node", () => {
+    const f = mount(Hud);
+    const host = { getBoundingClientRect: () => ({ left: 100, top: 50 }) };
+    dt.hook.registerBoundary("b", {
+      ...spec(f.root),
+      host,
+      rectOf: (node) => (node === f.root ? { x: 0, y: 0, width: 300, height: 150 } : null),
+    });
+    const nodes = tree("b")!.nodes;
+    expect(nodes[0]!.rect).toEqual({ x: 100, y: 50, width: 300, height: 150 });
+    expect(nodes[1]!.rect).toBeNull();
+    expect(dt.hook.pageRectOf(f.root)).toEqual({ x: 100, y: 50, width: 300, height: 150 });
+    expect(dt.hook.pageRectOf({})).toBeNull();
+    expect(dt.hook.pageRectOf(null)).toBeNull();
+  });
+
+  it("carries the designer id of the template node so a design tool can select it", () => {
+    designer = createDesigner(target);
+    const f = mount(Hud);
+    dt.hook.registerBoundary("b", spec(f.root));
+    const span = tree("b")!.nodes.find((n) => n.name === "span")!;
+    expect(span.template!.id).toBe(designer.hook.nodeOf(f.query("span")!)!.id);
+  });
+
   it("survives a snapshot that throws", () => {
     dt.hook.registerBoundary("bad", {
       label: "Bad",

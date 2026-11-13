@@ -20,3 +20,5 @@ export { announceOnChange } from "./announce.js";
 export type { AnnounceOptions } from "./announce.js";
 export { ReducedMotion } from "./reduced-motion.js";
 export type { MatchMedia, MediaQueryListLike } from "./reduced-motion.js";
+export { CANVAS_DEBUG, provideCanvasDebug } from "./canvas-debug.js";
+export type { CanvasDebugOptions } from "./canvas-debug.js";

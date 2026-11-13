@@ -397,6 +397,18 @@ export interface BoundarySpec {
   kind: string;
   /** The node tree now, flat, parents before children. Read when a client asks. */
   snapshot(): BoundaryNodeSpec[];
+  /** The element that hosts the boundary (it has `getBoundingClientRect`); with `rectOf` it places nodes on the page. */
+  host?: unknown;
+  /** A node's box in CSS pixels relative to `host`, or null when it has none (not drawn, or destroyed). */
+  rectOf?(node: object): PageRect | null;
+}
+
+/** A box in CSS pixels. */
+export interface PageRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 /** One registered boundary, as `boundaries` lists it. */
@@ -408,6 +420,8 @@ export interface BoundaryInfo {
 
 /** Where a node sits in the template it was written in (1-based line and column inside the template literal). */
 export interface BoundaryTemplatePos {
+  /** The designer id of the template node (`selectNode` takes it). */
+  id: string;
   line: number;
   column: number;
   /** Offsets into the template literal text (`raw`) as written. */
@@ -429,6 +443,8 @@ export interface BoundaryNode {
   source: SourceInfo | null;
   /** The position in the template, when the designer hook is installed and knows the node. */
   template: BoundaryTemplatePos | null;
+  /** Its box on the page in CSS pixels, when the boundary can say. */
+  rect: PageRect | null;
   /** The template binding effects of the last flush that updated this node. Pass an effect id to `why`. */
   effects: EffectRun[];
 }
@@ -531,6 +547,8 @@ export interface GableDevtoolsHook {
   registerInspector(id: string, spec: InspectorSpec): InspectorHandle;
   /** Lets a renderer show its node tree (a canvas scene) to clients. Returns the way to unregister. Added after version 1; additive. */
   registerBoundary(id: string, spec: BoundarySpec): { dispose(): void };
+  /** The page box (CSS pixels) of a node of any registered boundary, or null. Lets design tooling draw over a canvas scene. Additive. */
+  pageRectOf(node: unknown): PageRect | null;
 }
 
 declare global {
@@ -1011,6 +1029,18 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
     emit({ type: "flush", flush });
   }
 
+  function pageRect(spec: BoundarySpec, node: object): PageRect | null {
+    try {
+      const local = spec.rectOf?.(node);
+      const host = spec.host as { getBoundingClientRect?: () => { left: number; top: number } } | undefined;
+      if (!local || !host?.getBoundingClientRect) return null;
+      const origin = host.getBoundingClientRect();
+      return { x: origin.left + local.x, y: origin.top + local.y, width: local.width, height: local.height };
+    } catch {
+      return null;
+    }
+  }
+
   function boundaryTree(id: string, spec: BoundarySpec): BoundaryTree {
     const base = { id, label: spec.label, kind: spec.kind };
     let specs: BoundaryNodeSpec[];
@@ -1026,7 +1056,7 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
       const on = lookup(run.id)?.target?.on.deref() as object | undefined;
       if (on) byNode.set(on, [...(byNode.get(on) ?? []), run]);
     }
-    const designerHook = ((target ?? globalThis) as { __GABLE_DESIGNER_HOOK__?: { nodeOf(node: unknown): { raw: string; start: number; end: number } | null } }).__GABLE_DESIGNER_HOOK__;
+    const designerHook = ((target ?? globalThis) as { __GABLE_DESIGNER_HOOK__?: { nodeOf(node: unknown): { id: string; raw: string; start: number; end: number } | null } }).__GABLE_DESIGNER_HOOK__;
     const ids = new Map<object, string>();
     const nodes = specs.map((n, i): BoundaryNode => {
       const nid = `n${i + 1}`;
@@ -1038,7 +1068,7 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
         const d = designerHook?.nodeOf(n.node);
         if (d) {
           const before = d.raw.slice(0, d.start);
-          template = { line: before.split("\n").length, column: d.start - (before.lastIndexOf("\n") + 1) + 1, start: d.start, end: d.end };
+          template = { id: d.id, line: before.split("\n").length, column: d.start - (before.lastIndexOf("\n") + 1) + 1, start: d.start, end: d.end };
         }
       } catch {
         // an unreadable node has no position
@@ -1052,6 +1082,7 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
         component: comp ? { id: comp.id, name: className(comp.Class) } : null,
         source: comp ? sourceOf(comp.Class) : null,
         template,
+        rect: pageRect(spec, n.node),
         effects: byNode.get(n.node) ?? [],
       };
     });
@@ -1528,6 +1559,14 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
         if (on && wanted.has(on)) out.push(idOf(rec));
       }
       return out;
+    },
+    pageRectOf(node) {
+      if (!node || typeof node !== "object") return null;
+      for (const spec of boundaries.values()) {
+        const r = pageRect(spec, node);
+        if (r) return r;
+      }
+      return null;
     },
     registerBoundary(id, spec) {
       boundaries.set(id, spec);
