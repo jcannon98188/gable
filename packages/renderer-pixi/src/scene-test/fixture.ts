@@ -26,6 +26,10 @@ export interface SceneFixture<T extends object> extends AppFixture<T> {
 /**
  * Mounts `Root` (a page that contains a canvas host component whose `meta.renderer` is `scene.boundary`) into the
  * in-memory DOM renderer, with the router, the Assets double and the scene test renderer wired in.
+ *
+ * A scene component that throws in its setup, or whose template expression throws, is reported to the fixture's error collector
+ * like any DOM-side failure: the test fails when the fixture is destroyed (automatically after each test) unless the failure is
+ * claimed with `fixture.errors.expect()`. The component's nodes are absent from the scene meanwhile, which is why an assertion on them fails first.
  */
 export function mountWithScene<T extends object>(Root: ComponentClass<T>, options: MountWithSceneOptions): SceneFixture<T> {
   const { scene, assets, routes = [{ path: "**" }], providers = [], ...rest } = options;

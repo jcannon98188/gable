@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computed, html, inject, signal } from "@gable/core";
-import { Assets, Frame } from "../index.js";
+import { Assets, Frame, ReducedMotion } from "../index.js";
 import { createSceneTestRenderer, mountWithScene, provideTestAssets } from "../testing.js";
 
 class GameState {
@@ -150,5 +150,72 @@ describe("mountWithScene: the accessibility mirror (TASK-105.9)", () => {
     fixture.scene.find("sprite#quit")!.node.values.visible = false;
     fixture.frame();
     expect(fixture.scene.a11y().map((e) => e.label)).toEqual(["Play", "Logo"]);
+  });
+
+  // TASK-105.22: a scene component that fails must fail the test, not quietly vanish from the scene.
+  function failing(Scene: new () => object) {
+    const scene = createSceneTestRenderer();
+    class Canvas {
+      static meta = { selector: "game-canvas", imports: [Scene], template: html`<scene-bad></scene-bad>`, renderer: scene.boundary };
+    }
+    class App {
+      static meta = { selector: "app-root", imports: [Canvas], template: html`<game-canvas></game-canvas>` };
+    }
+    return { scene, App };
+  }
+
+  it("fails loudly when a scene component throws in its setup", () => {
+    class Bad {
+      static meta = { selector: "scene-bad", template: html`<sprite label="bad" />` };
+      oops = (() => {
+        throw new Error("setup exploded");
+      })();
+    }
+    const { scene, App } = failing(Bad);
+    const run = () => {
+      const fixture = mountWithScene(App, { scene });
+      fixture.frame();
+      fixture.destroy();
+    };
+    expect(run).toThrow(/setup exploded/);
+  });
+
+  it("fails loudly when a scene template expression throws", () => {
+    class Bad {
+      static meta = { selector: "scene-bad", template: html`<sprite label="bad" [x]="broken()" />` };
+      broken(): number {
+        throw new Error("binding exploded");
+      }
+    }
+    const { scene, App } = failing(Bad);
+    const run = () => {
+      const fixture = mountWithScene(App, { scene });
+      fixture.frame();
+      fixture.destroy();
+    };
+    expect(run).toThrow(/binding exploded/);
+  });
+
+  it("provides ReducedMotion like the real host, so a scene component can inject it", () => {
+    const scene = createSceneTestRenderer();
+    let reduced: boolean | undefined;
+    let injected: ReducedMotion | undefined;
+    class Calm {
+      static meta = { selector: "scene-calm", template: html`<sprite label="calm" />` };
+      motion = (injected = inject(ReducedMotion));
+      read = (reduced = this.motion.reduced());
+    }
+    class Canvas {
+      static meta = { selector: "game-canvas", imports: [Calm], template: html`<scene-calm></scene-calm>`, renderer: scene.boundary };
+    }
+    class App {
+      static meta = { selector: "app-root", imports: [Canvas], template: html`<game-canvas></game-canvas>` };
+    }
+    const fixture = mountWithScene(App, { scene });
+    expect(reduced).toBe(false);
+    scene.services.reducedMotion.reduced.set(true);
+    expect(injected).toBe(scene.services.reducedMotion);
+    expect(injected!.reduced()).toBe(true);
+    expect(fixture.scene.find("sprite#calm")).not.toBeNull();
   });
 });

@@ -22,6 +22,7 @@ import { Frame } from "../frame.js";
 import { Gamepad } from "../gamepad.js";
 import { Keyboard } from "../keyboard.js";
 import { Pointer } from "../pointer.js";
+import { ReducedMotion } from "../reduced-motion.js";
 import { createInputSimulators, type GamepadSimulator, type KeyboardSimulator, type PointerSimulator } from "./input.js";
 import { SceneNode, apply, attachParticleHost, isStyleField, paintOrder, tagInfoFor, toData, worldMatrix, type Point, type SceneNodeData, type StubTexture, type TagInfo } from "./node.js";
 import { findAll as selectAll } from "./select.js";
@@ -67,7 +68,7 @@ export interface SceneTestRenderer {
   readonly keyboard: KeyboardSimulator;
   readonly gamepad: GamepadSimulator;
   /** The real services of this boundary, for assertions. */
-  readonly services: { readonly frame: Frame; readonly pointer: Pointer; readonly keyboard: Keyboard; readonly gamepad: Gamepad; readonly size: CanvasSize };
+  readonly services: { readonly frame: Frame; readonly pointer: Pointer; readonly keyboard: Keyboard; readonly gamepad: Gamepad; readonly size: CanvasSize; readonly reducedMotion: ReducedMotion };
   /** The semantic mirror (TASK-105.9): what `[a11y]` nodes would put in the DOM, in tab order, as of the last frame. */
   a11y(): readonly A11yEntry<SceneNode>[];
   /** Focuses the node's mirror element (a node, its data, or a selector). False when it has no focusable mirror. */
@@ -124,6 +125,7 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
   const pointerService = new Pointer();
   const keyboardService = new Keyboard();
   const gamepadService = new Gamepad();
+  const reducedMotionService = new ReducedMotion(); // not reduced; a test sets `services.reducedMotion.reduced.set(true)`
 
   const containerProps = SCENE_TAGS.container.props;
   const hostInfo = (tag: string): TagInfo => ({ tag, table: containerProps, textContent: false, label: tag });
@@ -260,6 +262,7 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
       { provide: Pointer, useValue: pointerService } as Provider,
       { provide: Keyboard, useValue: keyboardService } as Provider,
       { provide: Gamepad, useValue: gamepadService } as Provider,
+      { provide: ReducedMotion, useValue: reducedMotionService } as Provider,
     ],
     createElement(tag) {
       if (isShapeTag(tag)) return new SceneNode("shape", tag, null);
@@ -499,7 +502,7 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
     pointer: input.pointer,
     keyboard: input.keyboard,
     gamepad: input.gamepad,
-    services: { frame: frames, pointer: pointerService, keyboard: keyboardService, gamepad: gamepadService, size },
+    services: { frame: frames, pointer: pointerService, keyboard: keyboardService, gamepad: gamepadService, size, reducedMotion: reducedMotionService },
     frame(dtMs = 16) {
       // The order of the production loop (ADR 0020): input snapshots, hooks, a synchronous flush, then one render.
       keyboardService.beginFrame();
