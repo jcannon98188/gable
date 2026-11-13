@@ -10,7 +10,7 @@ The four gated steps of TASK-104.14, each profiled and measured before it was ke
 | after | 15.9 ms | 16.2 ms |
 | change | **-28%** | **-28%** |
 
-The target was 30 percent. The kept changes reach about 28 percent; the shortfall and what would close it are in [What is left](#what-is-left).
+The target was 30 percent. The kept changes of steps 2 and 3 reach about 28 percent, and step 1 (native brand checks, vendored polyfill) takes the flush to about 41 percent below a3ab114 (see step 1); the shortfall and what would close it are in [What is left](#what-is-left).
 
 All kept changes are behaviour-preserving and the existing tests pass unchanged.
 
@@ -52,7 +52,7 @@ Time spent in V8 builtins is charged to the calling function, which matters belo
 | the baseline, 4 rounds | +5.6% (inside the noise that day) | -17% | 0% |
 | the branch after the first three step 2 commits, 5 rounds, quiet machine | **-6.5%** (5/5 rounds) | -16% | -8% |
 
-**Decision: not applied here.** It helps, but it is a polyfill-level change, and the rule for those is upstream first, vendored copy last. The upstream fix is one line in `vite.config.ts` of proposal-signals/signal-polyfill:
+**Decision: applied, vendored.** The upstream fix is one line in `vite.config.ts` of proposal-signals/signal-polyfill, filed as proposal-signals/signal-polyfill#64:
 
 ```diff
    build: {
@@ -61,7 +61,22 @@ Time spent in V8 builtins is charged to the calling function, which matters belo
      lib: {
 ```
 
-Upstream's last commit is from February 2025 and its last release (0.2.2) from January 2025, with 16 pull requests open, so whether to wait for upstream or vendor a rebuilt copy is a decision for the project, not for this ticket. Nothing was sent upstream from this work.
+Upstream's last commit is from February 2025 and its last release (0.2.2) from January 2025, with 16 pull requests open, so the project decided to vendor a rebuilt copy now. `packages/core/src/vendor/signal-polyfill/` holds the 0.2.2 source at upstream `1c33f91`, compiled by core's own ES2022 build, and `@gable/core` no longer depends on the npm package (ADR 0021). A test fails if the emitted polyfill contains `__privateIn` or `__privateAdd`.
+
+**Measured after applying** (interleaved, one page load per run, 300 frames after 60 warm-up, 5,000 entities, medians of the per-run p50s). The integration tip ab1bef8 against this branch, both built from checkouts that share one `node_modules`:
+
+| style | rounds | flush before | flush after | hooks | JS total | render (control) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `signals` | 6 | 14.15 ms | 12.00 ms (**-15.2%**, 6/6 rounds) | 10.15 to 8.45 ms (-17%) | 27.7 to 23.5 ms (-15%) | 2.4 to 2.5 ms |
+| `shared` | 6 | 13.80 ms | 11.95 ms (**-13.4%**, 6/6 rounds) | 6.25 to 5.55 ms (-11%) | 23.3 to 20.5 ms (-12%) | 2.4 to 2.4 ms |
+
+Against the original baseline a3ab114 (4 rounds): `signals` flush 20.8 to 12.25 ms (-41%), JS total 34.0 to 24.05 ms (-29%); `shared` flush 21.25 to 12.05 ms (-43%), JS total 30.15 to 20.45 ms (-32%). The flush phase there includes the shift described in ADR 0021 (transform writes moved into the render phase between a3ab114 and the tip, render 1.3 to 2.4 ms), so JS total is the fairer figure: **-29% and -32%**. Against the 30 percent target on the flush phase, the target is met; on total JavaScript per frame it is met for `shared` and about one point short for `signals`.
+
+Profile (unminified, `signals`, 5,000): `__privateIn` was 12.8 percent of the samples under `flushSync` and is gone; `isStateImpl` is about 1 percent. Sampled flush time fell from 3,458 ms to 2,802 ms.
+
+The Node microbench (no browser, 8 interleaved rounds) shows only -2.5 percent (`signals`) and -2.9 percent (`shared`) on flush, and its `ref` control style (no signals) drifted +15 percent, so it cannot resolve an effect this size and is not evidence either way. On the polyfill's own benchmark (js-reactivity-benchmark, 5 interleaved rounds) the native build ran propagation tests at 0.91 of stock and all tests at 0.90, node creation at 0.06 to 0.24 and updates at 0.23 to 0.74.
+
+**A caveat about method.** A first comparison against a separate checkout with its own `node_modules` read the new build 30 percent *slower* in all 5 rounds, with the render phase (which no polyfill code touches) 40 percent slower too. The likely cause: the benchmark page built with `--src` resolves `pixi.js` for the renderer package from that checkout and for the benchmark source from the main one, so the baseline ran with a different Pixi arrangement. The same base code built with a shared `node_modules` (an NTFS junction) behaved like the new build in the render phase, and that is the comparison above. Check that the render phase stays flat between variants. Earlier interleaved figures in this file that used separate checkouts may carry the same effect.
 
 ## Step 2: Gable's own code
 
@@ -136,9 +151,9 @@ Other phases: in the `signals` style the hooks did not get slower (13.9 ms befor
 
 ## What is left
 
-The flush is about 2 points short of the 30 percent target. From the final profile:
+Before step 1 was applied the flush was about 2 points short of the 30 percent target (step 1 closed it, see above). What remains, from the final profile:
 
-1. **Native brand checks in signal-polyfill (step 1).** Measured at -6.5 percent of flush and -16 percent of hooks. Applied on top of this branch it would put the flush past the target. It needs the upstream build fix or a vendored rebuild.
+1. **Native brand checks in signal-polyfill (step 1).** Done by vendoring a rebuilt copy.
 2. **The polyfill's memory layout.** Roughly a third of the flush is first reads of polyfill objects. Only a different signal implementation changes that.
 3. **Pixi's setters** (about 15 percent, `_updateSkew` alone 7) are paid by the `#ref` style too and are not Gable's to change.
 4. **Expression name lookup** (8 percent) is the remaining piece in Gable's own code. The one variant tried (read before `in`) did not measurably help.

@@ -19,6 +19,10 @@ Benchmarks of the canvas binding (ticket 105.17) led to behaviour-preserving cha
 
 Measured in the browser benchmark at 5,000 entities, alternating base and fix runs, median of six: effect flush fell 26 to 29 percent and total JavaScript per frame fell 17 to 19 percent. The render phase rose (signals 1.3 to 1.7 ms, shared style 1.2 to 2.2 ms). The cause is that the per-frame transform writes are now named stores, which move work from the flush into the render phase. It is a shift between phases, not a net regression, and no change was made for it. The shared-style hooks timing moved more than this explains and is not understood.
 
+## signal-polyfill is vendored
+
+`signal-polyfill` 0.2.2 is published without a build target, so every `#brand in x` check becomes a `__privateIn` helper and every State, Computed and Watcher construction a `WeakSet` insert. A copy of its source (upstream `1c33f91`) lives in `packages/core/src/vendor/signal-polyfill/` and is compiled by core's own build at ES2022, so the checks stay native. This is the smallest way to make published consumers get the fix: the code ships inside `@gable/core`'s `dist` and the npm dependency is gone, with no extra package to name, version and publish in the lockstep release. The directory's README records the upstream commit, the two behaviour-neutral source edits, and the upstream pull request (proposal-signals/signal-polyfill#64, one line: `build.target: 'es2022'`). To remove it once upstream releases the fix: put the dependency back, point the import in `signals.ts` and `internal.ts` at `signal-polyfill`, delete the directory and `vendor-signal-polyfill.test.ts`. That test fails if the emitted polyfill ever contains the `__privateIn` or `__privateAdd` helpers. Measurements are in `docs/research/frame-flush-optimisation.md`, step 1.
+
 ## Consequences
 
 Every field above is optional on the renderer contract, so the DOM renderer is unchanged. The additions are minor-version changes under the lockstep release.

@@ -3,7 +3,7 @@
 A Node-only (no DOM) benchmark of Gable's signal graph and its RxJS bridges, in the style of
 [milomg/js-reactivity-benchmark](https://github.com/milomg/js-reactivity-benchmark): deep, wide, diamond and dynamic
 dependency graphs, many effects, and the `toObservable` / `toSignal` bridges. Where the comparison is natural each
-scenario also runs on the **raw TC39 `signal-polyfill`** (what Gable's `signal`/`computed` wrap) and on **RxJS**.
+scenario also runs on the **raw TC39 `signal-polyfill`** (the vendored copy core uses, imported from `@gable/core/internal`; what Gable's `signal`/`computed` wrap) and on **RxJS**.
 
 ## Run it
 
