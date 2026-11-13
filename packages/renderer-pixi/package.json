@@ -23,7 +23,9 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "soak": "vitest run --config soak/vitest.config.ts"
+    "soak": "vitest run --config soak/vitest.config.ts",
+    "golden": "node golden/run.mjs",
+    "golden:update": "node golden/run.mjs --update"
   },
   "peerDependencies": {
     "@gable/core": "~0.0.0",

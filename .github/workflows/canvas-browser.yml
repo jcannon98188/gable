@@ -1,4 +1,5 @@
 name: Canvas browser smoke
+# The same workflow also runs the golden-image suite (TASK-105.14): see packages/renderer-pixi/golden/README.md.
 # The real-Chromium smoke suite for the canvas binding (TASK-105.10). It runs only when the canvas packages (or this
 # workflow) change; the main CI job never runs it (the test is opt-in through GABLE_BROWSER_SMOKE).
 on:
@@ -15,8 +16,15 @@ on:
       - "packages/core/**"
       - "packages/renderer-dom/**"
       - ".github/workflows/canvas-browser.yml"
+  workflow_dispatch:
+    inputs:
+      update_goldens:
+        description: Regenerate the golden images and upload them as an artifact instead of comparing
+        type: boolean
+        default: false
 jobs:
   browser-smoke:
+    if: ${{ !inputs.update_goldens }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,3 +38,27 @@ jobs:
         env:
           GABLE_BROWSER_SMOKE: "1"
           GABLE_BROWSER: /usr/bin/google-chrome
+  golden-images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Compare against packages/renderer-pixi/golden/*.png, or (manual dispatch with update_goldens) rewrite them.
+      - run: node packages/renderer-pixi/golden/run.mjs${{ inputs.update_goldens && ' --update' || '' }}
+        env:
+          GABLE_BROWSER: /usr/bin/google-chrome
+      - if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-diffs
+          path: packages/renderer-pixi/golden/__output__
+          if-no-files-found: ignore
+      - if: ${{ inputs.update_goldens }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-images
+          path: packages/renderer-pixi/golden/*.png
