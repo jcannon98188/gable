@@ -33,7 +33,7 @@ Spritesheet JSON and bitmap-font descriptors refer to sibling files by relative 
 `inject(Assets).bundle("level1")` returns a handle with the signals `status` (`idle`, `loading`, `ready`, `error`), `progress` (0 to 1), `error` and `ready`, and the methods `load()` and `unload()`.
 
 ```ts
-import { html, inject, onCleanup } from "@gable/core";
+import { computed, html, inject } from "@gable/core";
 import { Assets } from "@gable/renderer-pixi";
 
 export class Level {
@@ -48,14 +48,15 @@ export class Level {
         <bitmap-text fontFamily="score-font" [y]="10">Score</bitmap-text>
       } @else {
         <graphics>
-          <rect [x]="20" [y]="20" [width]="level.progress() * 200" [height]="8" fill="#fff"></rect>
+          <rect [x]="20" [y]="20" [width]="barWidth()" [height]="8" fill="#fff"></rect>
         </graphics>
       }
     `,
   };
 
   level = inject(Assets).bundle("level1");
-  #start = void this.level.load(); // counted against this component's scope
+  barWidth = computed(() => this.level.progress() * 200); // templates cannot compute, so derive the width here
+  start = this.level.load().catch(() => {}); // counted against this component's scope; a failure shows in level.error()
 }
 ```
 

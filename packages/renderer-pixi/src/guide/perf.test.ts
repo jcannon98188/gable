@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { html } from "@gable/core";
+import { html, type ComponentClass } from "@gable/core";
 import { createSceneTestRenderer, mountWithScene } from "@gable/renderer-pixi/testing";
 import { Dot, PoseDot, Sparks } from "./perf.js";
 
-function mount(template: ReturnType<typeof html>, imports: unknown[]) {
+function mount(template: ReturnType<typeof html>, imports: ComponentClass[]) {
   const scene = createSceneTestRenderer();
   class Canvas {
     static meta = { selector: "game-canvas", imports, renderer: scene.boundary, template };

@@ -40,16 +40,16 @@ import { Frame, particles, pixiElements, type ParticleSet } from "@gable/rendere
 class Fireworks {
   static meta = { selector: "game-fireworks", elements: pixiElements, template: html`<particle-container #sparks texture="spark" />` };
   sparks = viewChild("sparks");
-  #field: ParticleSet | undefined;
+  field: ParticleSet | undefined; // not #private: see the HMR rules in the canvas guide
 
   hook = inject(Frame).onFrame((dt) => {
-    if (!this.#field) {
+    if (!this.field) {
       const ref = this.sparks();
       if (!ref) return; // the template is not built yet
-      this.#field = particles(ref);
-      for (let i = 0; i < 50_000; i++) this.#field.add({ x: Math.random() * 800, y: Math.random() * 600, tint: 0xffaa00 });
+      this.field = particles(ref);
+      for (let i = 0; i < 50_000; i++) this.field.add({ x: Math.random() * 800, y: Math.random() * 600, tint: 0xffaa00 });
     }
-    for (const p of this.#field.items) p.y += 40 * dt; // direct writes, no signals
+    for (const p of this.field.items) p.y += 40 * dt; // direct writes, no signals
   });
 }
 ```
