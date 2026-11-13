@@ -312,7 +312,27 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       }
       return;
     }
-    target[name] = value;
+    // The transform properties a scene writes every frame are assigned by name: a named store to a Pixi accessor is
+    // cached per node class, where the computed store below goes through the generic path on every write.
+    switch (name) {
+      case "x":
+        target.x = value;
+        return;
+      case "y":
+        target.y = value;
+        return;
+      case "rotation":
+        target.rotation = value;
+        return;
+      case "angle":
+        target.angle = value;
+        return;
+      case "alpha":
+        target.alpha = value;
+        return;
+      default:
+        target[name] = value;
+    }
   }
 
   const renderer: PixiSceneRenderer = {
