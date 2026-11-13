@@ -21,7 +21,8 @@ afterEach(() => {
 });
 
 class Hud {
-  static meta = { selector: "app-hud", template: html`<p>{{ n() }}</p>\n<span [title]="t()">x</span>` };
+  static meta = { selector: "app-hud", template: html`<p>{{ n() }}</p>
+<span [title]="t()">x</span>` };
   n = signal(1);
   t = signal("a");
 }
