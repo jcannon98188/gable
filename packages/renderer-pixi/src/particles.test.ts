@@ -18,16 +18,16 @@ const live = () => {
 
 describe.each(live())("particle-container on the $name renderer", ({ renderer, root }) => {
   it("is created, and children tags are refused with a pointer to the helper", () => {
-    const field = renderer.createElement("particle-container");
+    const field = renderer.createElement("particle-container", null);
     renderer.insert(root, field, null);
-    expect(() => renderer.insert(field, renderer.createElement("sprite"), null)).toThrow(/particles\(/);
+    expect(() => renderer.insert(field, renderer.createElement("sprite", null), null)).toThrow(/particles\(/);
     expect(() => renderer.insert(field, renderer.createAnchor(), null)).toThrow(/particles\(/);
     // whitespace between tags is ignored, as under any container
     expect(() => renderer.insert(field, renderer.createText("\n  "), null)).not.toThrow();
   });
 
   it("takes the container properties, a texture property and dynamicProperties", () => {
-    const field = renderer.createElement("particle-container");
+    const field = renderer.createElement("particle-container", null);
     renderer.setAttribute(field, "x", "10");
     renderer.setProperty(field, "alpha", 0.5);
     renderer.setProperty(field, "dynamicProperties", { rotation: true, color: true });
@@ -35,7 +35,7 @@ describe.each(live())("particle-container on the $name renderer", ({ renderer, r
   });
 
   it("particles(ref) adds, updates and removes particles", () => {
-    const field = renderer.createElement("particle-container");
+    const field = renderer.createElement("particle-container", null);
     const set = particles(field);
     expect(set.count).toBe(0);
     const a = set.add({ x: 1, y: 2, scaleX: 3, tint: 0xff0000, alpha: 0.5 });
@@ -57,13 +57,13 @@ describe.each(live())("particle-container on the $name renderer", ({ renderer, r
 describe("particles(ref)", () => {
   it("refuses a node that is not a particle-container", () => {
     const pixi = createPixiRenderer();
-    expect(() => particles(pixi.createElement("container"))).toThrow(/particle-container/);
+    expect(() => particles(pixi.createElement("container", null))).toThrow(/particle-container/);
     expect(() => particles({} as never)).toThrow(/particle-container/);
   });
 
   it("drives a real Pixi ParticleContainer with real Pixi particles", () => {
     const pixi = createPixiRenderer();
-    const field = pixi.createElement("particle-container") as unknown as ParticleContainer;
+    const field = pixi.createElement("particle-container", null) as unknown as ParticleContainer;
     expect(field).toBeInstanceOf(ParticleContainer);
     const set = particles(field);
     const p = set.add({ x: 4 });
@@ -76,7 +76,7 @@ describe("particles(ref)", () => {
 
   it("writes dynamicProperties onto the real container's property flags", () => {
     const pixi = createPixiRenderer();
-    const field = pixi.createElement("particle-container") as unknown as ParticleContainer & { _properties: Record<string, { dynamic: boolean }> };
+    const field = pixi.createElement("particle-container", null) as unknown as ParticleContainer & { _properties: Record<string, { dynamic: boolean }> };
     expect(field._properties.rotation!.dynamic).toBe(false);
     pixi.setProperty(field as never, "dynamicProperties", { rotation: true });
     expect(field._properties.rotation!.dynamic).toBe(true);
@@ -86,7 +86,7 @@ describe("particles(ref)", () => {
   it("the scene test renderer exposes the particles in its data, with the texture by alias", () => {
     const scene = createSceneTestRenderer();
     scene.textures.set("spark", { alias: "spark", width: 4, height: 4 });
-    const field = scene.renderer.createElement("particle-container");
+    const field = scene.renderer.createElement("particle-container", null);
     scene.renderer.insert(scene.root, field, null);
     scene.renderer.setProperty(field, "texture", "spark");
     const set = particles(field);

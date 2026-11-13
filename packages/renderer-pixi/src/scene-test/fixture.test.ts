@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computed, html, inject, signal } from "@gable/core";
+import { computed, html, inject, signal, type ComponentClass } from "@gable/core";
 import { Assets, Frame, ReducedMotion } from "../index.js";
 import { createSceneTestRenderer, mountWithScene, provideTestAssets } from "../testing.js";
 
@@ -153,7 +153,7 @@ describe("mountWithScene: the accessibility mirror (TASK-105.9)", () => {
   });
 
   // TASK-105.22: a scene component that fails must fail the test, not quietly vanish from the scene.
-  function failing(Scene: new () => object) {
+  function failing(Scene: ComponentClass<any>) {
     const scene = createSceneTestRenderer();
     class Canvas {
       static meta = { selector: "game-canvas", imports: [Scene], template: html`<scene-bad></scene-bad>`, renderer: scene.boundary };

@@ -182,7 +182,7 @@ describe("scene test renderer parity with Pixi", () => {
     check(both(html`<particle-container label="field" x="5" alpha="0.5" roundPixels="true" />`));
     const pixi = createPixiRenderer();
     const scene = createSceneTestRenderer();
-    const sets = [particles(pixi.createElement("particle-container")), particles(scene.renderer.createElement("particle-container"))];
+    const sets = [particles(pixi.createElement("particle-container", null)), particles(scene.renderer.createElement("particle-container", null))];
     const fields = ["x", "y", "scaleX", "scaleY", "anchorX", "anchorY", "rotation", "tint", "alpha"] as const;
     for (const set of sets) {
       set.add();
@@ -201,7 +201,7 @@ describe("scene test renderer parity with Pixi", () => {
   it("rejects the same unknown tags, properties and static values", () => {
     const pixi = createPixiRenderer();
     const scene = createSceneTestRenderer();
-    const cases: Array<(r: { createElement: any; setProperty: any; setAttribute: any }) => void> = [
+    const cases: Array<(r: { createElement: any; setProperty: any; setAttribute: any; insert: any }) => void> = [
       (r) => r.createElement("div", null),
       (r) => r.setProperty(r.createElement("sprite", null), "nope", 1),
       (r) => r.setProperty(r.createElement("container", null), "scale.z", 1),
