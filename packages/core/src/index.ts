@@ -1,6 +1,6 @@
 export { signal, computed, effect, untracked, flushSync, whenFlushed } from "./signals.js";
 export { onCleanup } from "./scope.js";
-export { hotData } from "./hot-data.js";
+export { hotData, isHotUpdating } from "./hot-data.js";
 export type { ReadonlySignal, WritableSignal, SignalOptions } from "./signals.js";
 export { lazy } from "./lazy.js";
 export type { LazyEntry } from "./lazy.js";
