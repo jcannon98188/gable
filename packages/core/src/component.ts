@@ -4,6 +4,7 @@ import { untracked } from "./signals.js";
 import type { Renderer } from "./renderer.js";
 import { RENDERER } from "./app.js";
 import { setup as hotSetup } from "./hot-data.js";
+import { cleanupCalls, watchTimers } from "./timer-watch.js";
 import { InjectionToken, assertNoConstructor, createInjector, type Injector, type Provider } from "./di.js";
 import { DEV, devtools, hooks, retireView, type Region, type Swap } from "./dev-hooks.js";
 import { createEnv } from "./expression.js";
@@ -91,6 +92,14 @@ export interface PreparedComponent<T extends object, N> {
 }
 
 const hostSpecs = new WeakMap<object, { host: unknown; spec: ElementNode }>();
+
+/** Dev: a Setup started raw timers and registered no onCleanup, so nothing will clear them. */
+function warnRawTimers(name: string, found: { setInterval: number; setTimeout: number }): void {
+  for (const kind of ["setInterval", "setTimeout"] as const) {
+    if (found[kind] === 0) continue;
+    console.warn(`[gable] ${name || "A component"} started a raw ${kind} in its Setup without onCleanup(), so a hot edit or unmount leaks the timer. Keep the timer state in a service (Frame hooks and fixed steps for game time), or clear it with onCleanup().`);
+  }
+}
 
 function hostSpec(Class: ComponentClass<any>): ElementNode {
   const cached = hostSpecs.get(Class);
@@ -201,7 +210,12 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
       try {
         hotSetup.active = true;
         hotSetup.store = dev?.hot;
-        return inReadPhase("setup", () => (dev ? (dev.construct() as T) : new Class()));
+        const construct = () => inReadPhase("setup", () => (dev ? (dev.construct() as T) : new Class()));
+        if (!DEV || !renderer.warnRawTimers) return construct();
+        const before = cleanupCalls.count;
+        const watched = watchTimers(construct);
+        if (cleanupCalls.count === before) warnRawTimers(Class.name, watched);
+        return watched.value;
       } finally {
         hotSetup.active = previousHot.active;
         hotSetup.store = previousHot.store;

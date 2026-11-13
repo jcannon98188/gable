@@ -22,14 +22,22 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json"
+    "build": "tsc -p tsconfig.build.json",
+    "soak": "vitest run --config soak/vitest.config.ts"
   },
   "peerDependencies": {
     "@gable/core": "~0.0.0",
-    "pixi.js": "^8.0.0"
+    "pixi.js": "^8.0.0",
+    "@gable/testing": "~0.0.0"
   },
   "devDependencies": {
     "@gable/core": "0.0.0",
-    "pixi.js": "^8.23.0"
+    "pixi.js": "^8.23.0",
+    "@gable/testing": "0.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@gable/testing": {
+      "optional": true
+    }
   }
 }

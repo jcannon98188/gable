@@ -105,6 +105,8 @@ export interface PixiSceneRenderer extends Renderer<Container> {
   frame(): void;
   /** Creates the Application (a dynamic, async init), puts its canvas into `element`, attaches the scene and starts the render loop. */
   mount(element: HTMLElement): Promise<void>;
+  /** Dev HMR: moves the canvas and the resize observer to a replacement host element, keeping the Application, GL context and loop. Before the Application is ready it only retargets where `mount()` will put the canvas. */
+  rehost(element: HTMLElement): void;
   /** Stops the loop, destroys the scene and the Application. Idempotent. */
   destroy(): void;
 }
@@ -181,11 +183,32 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
   const infos = new WeakMap<Container, TagInfo>();
   const shapeLists = new WeakMap<Graphics, ShapeNode[]>();
   const textParts = new WeakMap<Container, ContentNode[]>();
+  const layouts = new WeakMap<Container, unknown[]>();
+  const layoutParent = new WeakMap<object, Container>();
+  /** Records `node` in `parent`'s order list, before `before` (or last), leaving any earlier place. */
+  const place = (parent: Container, node: unknown, before: unknown): void => {
+    unplace(node);
+    const order = layouts.get(parent) ?? (layouts.set(parent, []), layouts.get(parent)!);
+    const at = before ? order.indexOf(before) : -1;
+    if (at === -1) order.push(node);
+    else order.splice(at, 0, node);
+    layoutParent.set(node as object, parent);
+  };
+  const unplace = (node: unknown): void => {
+    const old = layoutParent.get(node as object);
+    if (!old) return;
+    const order = layouts.get(old);
+    const at = order ? order.indexOf(node) : -1;
+    if (order && at !== -1) order.splice(at, 1);
+    layoutParent.delete(node as object);
+  };
   const dirty = new Set<Graphics>();
   let destroyed = false;
   let app: ApplicationLike | null = null;
   let appReady = false;
   let stopLoop: (() => void) | null = null;
+  let hostElement: HTMLElement | null = null;
+  let moveHost: ((element: HTMLElement) => void) | null = null;
 
   const containerProps = SCENE_TAGS.container.props;
 
@@ -313,6 +336,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     invalidate() {
       touched = true;
     },
+    warnRawTimers: DEV,
     providers: [{ provide: CanvasSize, useValue: size } as Provider, { provide: Frame, useValue: frameService } as Provider,
       { provide: Pointer, useValue: pointer } as Provider,
       { provide: Keyboard, useValue: keyboard } as Provider,
@@ -373,6 +397,9 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     },
     insert(parent, node, before) {
       touched = true;
+      // Every inserted node, ignored whitespace text and shapes included, keeps its place in an order list, because the
+      // core may name one of those as `before` and a Pixi container does not hold them.
+      place(parent, node, before);
       if ((node as unknown) instanceof ShapeNode) {
         const shape = node as unknown as ShapeNode;
         if (!(parent instanceof Graphics)) throw new Error(`<${shape.tag}> can only be a child of <graphics>.`);
@@ -401,16 +428,19 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         writeText(parent);
         return;
       }
-      if (before && before.parent === parent) {
-        node.removeFromParent();
-        parent.addChildAt(node, parent.getChildIndex(before));
-      } else {
-        node.removeFromParent();
-        parent.addChild(node);
+      const order = layouts.get(parent)!;
+      let next: Container | undefined;
+      for (let i = order.indexOf(node) + 1; i < order.length && !next; i++) {
+        const candidate = order[i] as Container;
+        if (candidate.parent === parent) next = candidate;
       }
+      node.removeFromParent();
+      if (next) parent.addChildAt(node, parent.getChildIndex(next));
+      else parent.addChild(node);
     },
     remove(node) {
       touched = true;
+      unplace(node);
       if ((node as unknown) instanceof ShapeNode) {
         const shape = node as unknown as ShapeNode;
         const list = shape.owner ? shapeLists.get(shape.owner) : undefined;
@@ -482,11 +512,12 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       }
 
       if (destroyed) return;
+      hostElement = element;
       const options = typeof given === "function" ? given() : given;
       const created = (options.createApplication ?? (() => new Application() as unknown as ApplicationLike))();
       app = created;
       const ratio = options.resolution ?? (globalThis as { devicePixelRatio?: number }).devicePixelRatio ?? 1;
-      const measure = () => ({ w: element.clientWidth || options.width || 300, h: element.clientHeight || options.height || 150 });
+      const measure = () => ({ w: hostElement!.clientWidth || options.width || 300, h: hostElement!.clientHeight || options.height || 150 });
       const first = measure();
       await created.init({
         width: first.w,
@@ -505,7 +536,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       }
       appReady = true;
       created.canvas.style.display = "block";
-      element.appendChild(created.canvas);
+      hostElement!.appendChild(created.canvas);
       created.stage.addChild(root);
       size.pixelRatio.set(ratio);
       size.width.set(first.w);
@@ -529,7 +560,13 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         size.height.set(h);
       };
       const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(resize);
-      observer?.observe(element);
+      observer?.observe(hostElement!);
+      moveHost = (next) => {
+        observer?.disconnect();
+        next.appendChild(created.canvas);
+        observer?.observe(next);
+        resize();
+      };
 
       // One loop per boundary. Per frame: hooks, then a synchronous effect flush, then one render (ADR 0020).
       const scheduler = options.scheduler ?? defaultScheduler;
@@ -562,6 +599,11 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         observer?.disconnect();
         while (detachInput.length) detachInput.pop()!();
       };
+    },
+    rehost(element) {
+      if (destroyed) return;
+      hostElement = element;
+      moveHost?.(element);
     },
     destroy() {
       if (destroyed) return;
