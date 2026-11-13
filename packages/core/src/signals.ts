@@ -1,7 +1,7 @@
 import { Signal } from "signal-polyfill";
 import { reportError } from "./errors.js";
-import { inReadPhase, readPhase } from "./read-phase.js";
-import { currentScope, createScope, runInScope, type Scope } from "./scope.js";
+import { readPhase, swapReadPhase } from "./read-phase.js";
+import { currentScope, createScope, swapScope, type Scope } from "./scope.js";
 import { DEV, devtools } from "./dev-hooks.js";
 
 // The TC39 polyfill is an implementation detail: it is imported only here and
@@ -185,13 +185,33 @@ interface Bucket {
 }
 
 class EffectNode extends Signal.Computed<void> {
+  /** The scope depth, copied here so ordering a flush reads the node alone. */
+  readonly depth: number;
   constructor(
-    fn: () => void,
+    readonly fn: () => void,
     readonly scope: Scope,
     readonly seq: number,
     readonly bucket: Bucket,
   ) {
-    super(fn);
+    super(runEffect);
+    this.depth = scope.depth;
+  }
+}
+
+/**
+ * The computation of every effect node (the polyfill calls it with the node as `this`), shared so an effect costs no
+ * closure of its own and a run allocates nothing. Effects see the scope they were created in (nested effects own
+ * children), and run in the "effect" read phase unless a phase is already current.
+ */
+function runEffect(this: EffectNode): void {
+  const scope = swapScope(this.scope);
+  const phase = readPhase();
+  if (!phase) swapReadPhase("effect");
+  try {
+    this.fn();
+  } finally {
+    swapReadPhase(phase);
+    swapScope(scope);
   }
 }
 
@@ -236,7 +256,7 @@ export function runAfterFlush(task: () => void, scope: Scope | null = currentSco
 const MAX_FLUSH_ROUNDS = 1000;
 
 function byDepthThenCreation(a: EffectNode, b: EffectNode): number {
-  return a.scope.depth - b.scope.depth || a.seq - b.seq;
+  return a.depth - b.depth || a.seq - b.seq;
 }
 
 function flushNow(): void {
@@ -251,12 +271,21 @@ function flushNow(): void {
     if (dirtyBuckets.length > 0) {
       const buckets = dirtyBuckets;
       dirtyBuckets = [];
+      // Effects usually come out of the buckets already in running order (they are created, and so watched, in that
+      // order), so the order is checked while collecting and the sort is skipped when there is nothing to do.
+      let ordered = true;
+      let last: EffectNode | null = null;
       for (const bucket of buckets) {
         bucket.queued = false;
-        for (const c of bucket.watcher.getPending()) pending.push(c as EffectNode);
+        for (const c of bucket.watcher.getPending()) {
+          const node = c as EffectNode;
+          if (last !== null && (last.depth > node.depth || (last.depth === node.depth && last.seq > node.seq))) ordered = false;
+          last = node;
+          pending.push(node);
+        }
         bucket.watcher.watch(); // re-arm notifications
       }
-      if (pending.length > 1) pending.sort(byDepthThenCreation);
+      if (!ordered) pending.sort(byDepthThenCreation);
     }
     if (pending.length > 0 && ++rounds > MAX_FLUSH_ROUNDS) {
       reportError(new Error(`Effects did not settle after ${MAX_FLUSH_ROUNDS} rounds: an effect loop keeps writing signals the others read.`), "effect", pending[0]!.scope);
@@ -337,15 +366,7 @@ export function effect(fn: () => void): void {
     if (bucket.size === BUCKET_SIZE - 1) openBuckets.pop();
   }
   bucket.size++;
-  const node = new EffectNode(
-    () => {
-      // Effects see the scope they were created in (nested effects own children).
-      runInScope(scope, () => (readPhase() ? fn() : inReadPhase("effect", fn)));
-    },
-    scope,
-    seq++,
-    bucket,
-  );
+  const node = new EffectNode(fn, scope, seq++, bucket);
   if (DEV) devtools.current?.effect(node, scope);
   scope.onDispose(() => {
     bucket.watcher.unwatch(node);

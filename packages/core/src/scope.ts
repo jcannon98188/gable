@@ -75,6 +75,13 @@ export function currentScope(): Scope | null {
   return current;
 }
 
+/** Makes `scope` current and returns the scope it replaced; the caller restores that one, in a `finally`. The hot-path form of {@link runInScope}: no closure. */
+export function swapScope(scope: Scope | null): Scope | null {
+  const previous = current;
+  current = scope;
+  return previous;
+}
+
 /**
  * Runs `fn` with `scope` as the current scope, then restores the previous one, even if `fn` throws.
  *
