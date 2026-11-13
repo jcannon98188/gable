@@ -1,0 +1,32 @@
+name: Canvas browser smoke
+# The real-Chromium smoke suite for the canvas binding (TASK-105.10). It runs only when the canvas packages (or this
+# workflow) change; the main CI job never runs it (the test is opt-in through GABLE_BROWSER_SMOKE).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/renderer-pixi/**"
+      - "packages/core/**"
+      - "packages/renderer-dom/**"
+      - ".github/workflows/canvas-browser.yml"
+  pull_request:
+    paths:
+      - "packages/renderer-pixi/**"
+      - "packages/core/**"
+      - "packages/renderer-dom/**"
+      - ".github/workflows/canvas-browser.yml"
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Google Chrome is preinstalled on ubuntu-latest at /usr/bin/google-chrome; WebGL runs on SwiftShader.
+      - run: npx vitest run packages/renderer-pixi/src/browser-smoke.test.ts
+        env:
+          GABLE_BROWSER_SMOKE: "1"
+          GABLE_BROWSER: /usr/bin/google-chrome
