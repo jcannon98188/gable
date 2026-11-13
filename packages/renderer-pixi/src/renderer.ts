@@ -117,6 +117,18 @@ interface TagInfo {
   readonly tag: string;
   readonly table: Readonly<Record<string, PropSpec>>;
   readonly textContent: boolean;
+  /** How each property name of this tag is written, worked out on its first write (the table never changes). */
+  writes?: Map<string, Write>;
+}
+
+/** The resolved way to write one property name: an axis of a point-like property, a text style field, a point, or a plain assignment. */
+interface Write {
+  /** The point-like property an axis name (`scale.x`) belongs to; empty for a whole property. */
+  readonly of: string;
+  readonly axis: string;
+  /** A text style field, written to `node.style` on nodes that have one. */
+  readonly style: boolean;
+  readonly point: boolean;
 }
 
 const STYLE_FIELDS = new Set([
@@ -145,6 +157,25 @@ function lookup(table: Readonly<Record<string, PropSpec>>, name: string): Resolv
   if (axis !== "x" && axis !== "y") return undefined;
   if (!has(of) || table[of]!.kind !== "point") return undefined;
   return { kind: "number", axis, of };
+}
+
+/** The way to write `name` on a node of this tag; throws for a name the tag does not have. */
+function writeOf(info: TagInfo, name: string): Write {
+  const known = info.writes?.get(name);
+  if (known) return known;
+  const resolved = lookup(info.table, name);
+  if (!resolved) throw unknownProperty(info.tag, name);
+  const dot = name.indexOf(".");
+  const write: Write =
+    dot !== -1
+      ? { of: name.slice(0, dot), axis: name.slice(dot + 1), style: false, point: false }
+      : { of: "", axis: "", style: STYLE_FIELDS.has(name), point: resolved.kind === "point" };
+  (info.writes ??= new Map()).set(name, write);
+  return write;
+}
+
+function unknownProperty(tag: string, name: string): Error {
+  return new Error(`Unknown property "${name}" on <${tag}> in the "pixi" renderer. Scene properties use Pixi's own names; dotted paths address one axis of a point-like property (e.g. [scale.x]).`);
 }
 
 const spec = (r: Resolved): PropSpec => ({ kind: r.kind, ...("type" in r ? { type: r.type } : {}) });
@@ -191,10 +222,6 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
 
   function infoOf(node: Container): TagInfo {
     return infos.get(node) ?? (infos.set(node, hostInfo(node.label)), infos.get(node)!);
-  }
-
-  function unknownProperty(tag: string, name: string): never {
-    throw new Error(`Unknown property "${name}" on <${tag}> in the "pixi" renderer. Scene properties use Pixi's own names; dotted paths address one axis of a point-like property (e.g. [scale.x]).`);
   }
 
   function redraw(g: Graphics) {
@@ -250,26 +277,24 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     touched = true;
     if ((node as unknown) instanceof ShapeNode) {
       const shape = node as unknown as ShapeNode;
-      if (!lookup(SHAPE_TAGS[shape.tag].props, name)) unknownProperty(shape.tag, name);
+      if (!lookup(SHAPE_TAGS[shape.tag].props, name)) throw unknownProperty(shape.tag, name);
       shape.props[name] = value;
       markDirty(shape.owner);
       return;
     }
     const info = infoOf(node);
-    const resolved = lookup(info.table, name);
-    if (!resolved) unknownProperty(info.tag, name);
+    const write = writeOf(info, name);
     const target = node as unknown as Record<string, any>;
     if (name === "texture" && typeof value === "string") value = textureFromCache(value, info.tag);
-    const dot = name.indexOf(".");
-    if (dot !== -1) {
-      target[name.slice(0, dot)][name.slice(dot + 1)] = value;
+    if (write.axis !== "") {
+      target[write.of][write.axis] = value;
       return;
     }
-    if (STYLE_FIELDS.has(name) && "style" in node) {
+    if (write.style && "style" in node) {
       (target.style as Record<string, unknown>)[name] = value;
       return;
     }
-    if (resolved.kind === "point") {
+    if (write.point) {
       const point = target[name] as { set(x: number, y?: number): void };
       if (typeof value === "number") point.set(value);
       else {
@@ -329,7 +354,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       const table = (node as unknown) instanceof ShapeNode ? SHAPE_TAGS[(node as unknown as ShapeNode).tag].props : infoOf(node).table;
       const tag = (node as unknown) instanceof ShapeNode ? (node as unknown as ShapeNode).tag : infoOf(node).tag;
       const resolved = lookup(table, name);
-      if (!resolved) unknownProperty(tag, name);
+      if (!resolved) throw unknownProperty(tag, name);
       if (name === "texture" && !(node as unknown instanceof ShapeNode)) {
         setProperty(node, name, value);
         return;

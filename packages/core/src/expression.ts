@@ -262,6 +262,7 @@ export function parseHandler(source: string): HandlerExpr {
 
 function lookup(env: Env, name: string): unknown {
   for (let e: Env | null = env; e; e = e.parent) {
+    if (e.locals.size === 0) continue;
     const local = e.locals.get(name);
     if (local) return local();
   }
@@ -347,6 +348,13 @@ export function evaluate(expr: Expr, env: Env): unknown {
       return unwrap(expr, object[expr.property]);
     }
     case "call": {
+      if (expr.callee.type === "name") {
+        // A signal read, `count()`: by far the commonest call, resolved here without resolveCallee's result pair.
+        const fn = unwrap(expr.callee, lookup(env, expr.callee.name));
+        if (fn == null && expr.optional) return undefined;
+        if (typeof fn !== "function") throw new TypeError(NOT_A_FUNCTION);
+        return (fn as Fn).call(env.instance);
+      }
       const [fn, self] = resolveCallee(expr.callee, expr.optional, env);
       if (fn === undefined) return undefined;
       return fn.call(self);
@@ -355,6 +363,8 @@ export function evaluate(expr: Expr, env: Env): unknown {
 }
 
 type Fn = (...args: unknown[]) => unknown;
+
+const NOT_A_FUNCTION = "Template expression called something that is not a function";
 
 /** Resolves a callee to `[function, this]`; `[undefined, _]` means an optional call that short-circuits. */
 function resolveCallee(callee: Expr, optionalCall: boolean, env: Env): [Fn | undefined, unknown] {
@@ -370,7 +380,7 @@ function resolveCallee(callee: Expr, optionalCall: boolean, env: Env): [Fn | und
     fn = owner[callee.property];
   } else fn = evaluate(callee, env);
   if (fn == null && optionalCall) return [undefined, undefined];
-  if (typeof fn !== "function") throw new TypeError("Template expression called something that is not a function");
+  if (typeof fn !== "function") throw new TypeError(NOT_A_FUNCTION);
   return [fn as Fn, self];
 }
 

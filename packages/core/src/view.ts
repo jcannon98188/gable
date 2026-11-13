@@ -2,7 +2,7 @@ import { computed, effect, signal, untracked, type WritableSignal } from "./sign
 import type { Renderer } from "./renderer.js";
 import { createEnv, evaluate, readModel, runHandler, writeModel, type Env, type Expr, type HandlerExpr } from "./expression.js";
 import { createScope, currentScope, runInScope, type Scope } from "./scope.js";
-import { FAILED, guard, guarded } from "./errors.js";
+import { FAILED, guard, guarded, reportError } from "./errors.js";
 import { DEV, inBinding } from "./dev-hooks.js";
 import { disposeAndRemove } from "./removal.js";
 import { design, hooks, retireView } from "./dev-hooks.js";
@@ -90,10 +90,21 @@ export function applyBindings<N>(el: N, spec: Bindings, renderer: Renderer<N>, e
   for (const { name, value } of spec.attrs) renderer.setAttribute(el, name, value);
 
   for (const { kind, name, expr } of spec.bindings) {
-    const safe = guard(scope, `${kind}:${name}`);
-    inBinding(el, `${kind}:${name}`, () => effect(() => {
-      const value = safe(() => evaluate(expr, env));
-      if (value === FAILED) return;
+    const detail = `${kind}:${name}`;
+    // The guard of errors.ts written out: this effect runs once per changed binding per flush (thousands of times a
+    // frame in a canvas scene), and here a run allocates nothing. A throw is reported once per failure episode and the
+    // binding keeps its last good value.
+    let failing = false;
+    inBinding(el, detail, () => effect(() => {
+      let value: unknown;
+      try {
+        value = evaluate(expr, env);
+        failing = false;
+      } catch (error) {
+        if (!failing) reportError(error, "binding", scope, detail);
+        failing = true;
+        return;
+      }
       switch (kind) {
         case "prop":
           return renderer.setProperty(el, name, value);
