@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { html } from "@gable/core";
-import { ReducedMotion } from "@gable/renderer-pixi";
 import { createSceneTestRenderer, mountWithScene } from "@gable/renderer-pixi/testing";
 import { Hud, Score } from "./a11y.js";
 
@@ -12,9 +11,9 @@ function mount() {
   class Page {
     static meta = { selector: "app-page", imports: [Canvas], template: html`<game-canvas></game-canvas>` };
   }
-  // The scene test renderer does not provide ReducedMotion (the real boundary does): provide one you can flip.
-  const motion = new ReducedMotion();
-  const fixture = mountWithScene(Page, { scene, providers: [{ provide: ReducedMotion, useValue: motion }] });
+  // The scene test renderer provides ReducedMotion like the real boundary; flip it through `scene.services.reducedMotion`.
+  const motion = scene.services.reducedMotion;
+  const fixture = mountWithScene(Page, { scene });
   return { scene, fixture, motion };
 }
 

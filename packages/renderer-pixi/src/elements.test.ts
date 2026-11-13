@@ -8,6 +8,7 @@ import {
   SHAPE_TAGS,
   isHitTag,
   convertStaticAttribute,
+  propTypeText,
   propertiesOf,
   resolveProperty,
   type SceneEventName,
@@ -117,6 +118,16 @@ describe("static attribute conversion", () => {
     expect(convertStaticAttribute(spec("sprite", "x"), "12.5")).toEqual({ ok: true, value: 12.5 });
     expect(convertStaticAttribute(spec("sprite", "x"), "abc").ok).toBe(false);
     expect(convertStaticAttribute(spec("sprite", "x"), "").ok).toBe(false);
+  });
+
+  it("checks eventMode and cursor against their closed sets and types them as literal unions", () => {
+    expect(convertStaticAttribute(spec("container", "eventMode"), "static")).toEqual({ ok: true, value: "static" });
+    expect(convertStaticAttribute(spec("container", "eventMode"), "statik")).toMatchObject({ ok: false });
+    expect(convertStaticAttribute(spec("container", "cursor"), "pointer").ok).toBe(true);
+    expect(convertStaticAttribute(spec("container", "cursor"), "url(hand.cur) 2 2, auto").ok).toBe(true);
+    expect(convertStaticAttribute(spec("container", "cursor"), "pointr").ok).toBe(false);
+    expect(propTypeText(spec("container", "eventMode"))).toBe('"none" | "passive" | "auto" | "static" | "dynamic"');
+    expect(propTypeText(spec("container", "cursor"))).toMatch(/^"auto" | .* | `url(${string})`$/);
   });
 
   it("keeps string properties as strings, never guessing a number", () => {

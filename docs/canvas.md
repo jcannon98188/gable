@@ -332,7 +332,7 @@ export class Hud {
 }
 ```
 
-Test it as recorded data: `scene.a11y()` returns the mirror's entries (`role`, `label`, bounds, order); `scene.focus(node)`, `scene.tab()` and `scene.press("Enter")` simulate focus movement and activation; `scene.click(node)` activates a node as a screen reader would; `fixture.announcer.messages` records announcements. The scene test renderer does not provide `ReducedMotion` (the real host does), so provide one in the fixture to flip it, as the test does. The opt-in real-browser smoke suite adds an axe-core check on a host with a mirror.
+Test it as recorded data: `scene.a11y()` returns the mirror's entries (`role`, `label`, bounds, order); `scene.focus(node)`, `scene.tab()` and `scene.press("Enter")` simulate focus movement and activation; `scene.click(node)` activates a node as a screen reader would; `fixture.announcer.messages` records announcements. The scene test renderer provides `ReducedMotion` like the real host: flip it with `scene.services.reducedMotion.reduced.set(true)`. The opt-in real-browser smoke suite adds an axe-core check on a host with a mirror.
 
 ## HMR rules
 

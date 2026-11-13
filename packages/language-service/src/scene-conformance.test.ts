@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import ts from "@typescript/typescript6";
-import { buildElementMap, PROP_KIND_TS, SCENE_EVENTS, SCENE_TAGS, SHAPE_TAGS, HIT_TAGS, propertiesOf, type HitTagName, type SceneTagName, type ShapeTagName } from "@gable/renderer-pixi/elements";
+import { buildElementMap, propTypeText, SCENE_EVENTS, SCENE_TAGS, SHAPE_TAGS, HIT_TAGS, propertiesOf, type HitTagName, type SceneTagName, type ShapeTagName } from "@gable/renderer-pixi/elements";
 import { describe, expect, it } from "vitest";
 import { sceneDeclarations, sceneEventNames, scenePropType, scenePropertyNames, sceneTagNames } from "./scene.js";
 
@@ -29,7 +29,7 @@ describe("the element map is the shared table", () => {
     const table = propertiesOf(tag);
     expect(Object.keys(map[tag].props).sort()).toEqual(Object.keys(table).sort());
     for (const [name, spec] of Object.entries(table)) {
-      const expected = spec.kind === "object" ? (spec.type ?? "unknown") : PROP_KIND_TS[spec.kind];
+      const expected = propTypeText(spec);
       expect(map[tag].props[name], `${tag}.${name}`).toBe(expected);
     }
   });
@@ -92,14 +92,15 @@ describe("the emitted map type-checks against Pixi's own types", () => {
     tags.forEach((tag, i) => {
       for (const name of Object.keys(propertiesOf(tag))) {
         if (declared[i]!.has(name)) {
-          const kind = propertiesOf(tag)[name]!.kind;
+          const spec = propertiesOf(tag)[name]!;
+          const kind = spec.kind;
           const id = `${i}_${name}`;
           const key = JSON.stringify(name);
           const node = `declare let __o_${id}: __ScNodes[${JSON.stringify(tag)}];`;
           // A point accepts a bare number as a Gable convention (uniform scale); Pixi's setters take the {x, y} half.
           if (kind === "point") body.push(`${node}\n__o_${id}[${key}] = null as unknown as { x: number; y: number };`);
-          // A string property is looser than Pixi's literal unions (eventMode, cursor): what Pixi holds must fit the map's type.
-          else if (kind === "string") body.push(`${node}\nconst __r_${id}: ${scenePropType(tag, name)} = null as unknown as NonNullable<(typeof __o_${id})[${key}]>;`);
+          // An open string property is looser than Pixi's literal unions: what Pixi holds must fit the map's type. A closed one (eventMode, cursor) is a subset: its values must fit Pixi's.
+          else if (kind === "string" && !spec.values) body.push(`${node}\nconst __r_${id}: ${scenePropType(tag, name)} = null as unknown as NonNullable<(typeof __o_${id})[${key}]>;`);
           else body.push(`${node}\ndeclare const __w_${id}: ${scenePropType(tag, name)};\n__o_${id}[${key}] = __w_${id};`);
         } else if (!GABLE_ONLY.has(name) && !(TEXT_STYLE.has(name) && (tag === "text" || tag === "bitmap-text"))) undeclared.push(`${tag}.${name}`);
       }

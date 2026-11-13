@@ -23,8 +23,19 @@ export const PROP_KIND_TS: Readonly<Record<PropKind, string>> = {
   object: "unknown",
 };
 
+/** The TypeScript type text of a property: what the language service emits and what the conformance test expects. */
+export function propTypeText(spec: PropSpec): string {
+  if (spec.kind === "object") return spec.type ?? "unknown";
+  if (spec.kind === "string" && spec.values) return [...spec.values.map((v) => JSON.stringify(v)), ...(spec.also ? [spec.also.type] : [])].join(" | ");
+  return PROP_KIND_TS[spec.kind];
+}
+
 export interface PropSpec {
   readonly kind: PropKind;
+  /** For `string` properties with a closed set of values: the accepted strings. They become a literal union in the emitted type and are checked in static attributes. */
+  readonly values?: readonly string[];
+  /** For `string` properties: a further accepted shape besides `values`, as a TypeScript template-literal type text and the pattern that checks it in static attributes. */
+  readonly also?: { readonly type: string; readonly pattern: RegExp };
   /** For `object` properties: the Pixi type the value should have (documentation, and the language service's emitted type). */
   readonly type?: string;
 }
@@ -159,7 +170,15 @@ const bool: PropSpec = { kind: "boolean" };
 const str: PropSpec = { kind: "string" };
 const color: PropSpec = { kind: "color" };
 const point: PropSpec = { kind: "point" };
+const oneOf = (values: readonly string[], also?: PropSpec["also"]): PropSpec => ({ kind: "string", values, ...(also ? { also } : {}) });
 const obj = (type: string): PropSpec => ({ kind: "object", type });
+
+/** The CSS cursor keywords Pixi passes to the canvas style for `cursor`; `url(...)` is also accepted. */
+const CURSORS = [
+  "auto", "default", "none", "context-menu", "help", "pointer", "progress", "wait", "cell", "crosshair", "text", "vertical-text", "alias", "copy", "move",
+  "no-drop", "not-allowed", "grab", "grabbing", "all-scroll", "col-resize", "row-resize", "n-resize", "e-resize", "s-resize", "w-resize", "ne-resize",
+  "nw-resize", "se-resize", "sw-resize", "ew-resize", "ns-resize", "nesw-resize", "nwse-resize", "zoom-in", "zoom-out",
+] as const;
 
 const CONTAINER_PROPS = {
   x: num,
@@ -182,8 +201,8 @@ const CONTAINER_PROPS = {
   height: num,
   sortableChildren: bool,
   interactiveChildren: bool,
-  eventMode: str,
-  cursor: str,
+  eventMode: oneOf(["none", "passive", "auto", "static", "dynamic"]),
+  cursor: oneOf(CURSORS, { type: "`url(${string})`", pattern: /^url\(.+\)/ }),
   hitArea: obj("IHitArea"),
   mask: obj("Container"),
   filters: obj("Filter[]"),
@@ -355,6 +374,9 @@ export function convertStaticAttribute(spec: PropSpec, raw: string): StaticConve
       if (raw === "false") return { ok: true, value: false };
       return fail(`expected a boolean ("true" or "false"), got "${raw}"`);
     case "string":
+      if (spec.values && !spec.values.includes(raw) && !spec.also?.pattern.test(raw)) {
+        return fail(`expected one of ${spec.values.map((v) => `"${v}"`).join(", ")}${spec.also ? ` or ${spec.also.type}` : ""}, got "${raw}"`);
+      }
       return { ok: true, value: raw };
     case "color": {
       const t = raw.trim();
@@ -413,6 +435,6 @@ function entry(
   events: Readonly<Record<string, SceneEventType>>,
 ): ElementMapEntry {
   const types: Record<string, string> = {};
-  for (const [name, spec] of Object.entries(props)) types[name] = spec.kind === "object" ? (spec.type ?? "unknown") : PROP_KIND_TS[spec.kind];
+  for (const [name, spec] of Object.entries(props)) types[name] = propTypeText(spec);
   return { tag, node, props: types, events };
 }
