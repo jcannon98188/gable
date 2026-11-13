@@ -34,7 +34,7 @@ jobs:
           cache: npm
       - run: npm ci
       # Google Chrome is preinstalled on ubuntu-latest at /usr/bin/google-chrome; WebGL runs on SwiftShader.
-      - run: npx vitest run packages/renderer-pixi/src/browser-smoke.test.ts
+      - run: npx vitest run packages/renderer-pixi/src/browser-smoke.test.ts packages/renderer-pixi/src/browser-family.test.ts
         env:
           GABLE_BROWSER_SMOKE: "1"
           GABLE_BROWSER: /usr/bin/google-chrome
