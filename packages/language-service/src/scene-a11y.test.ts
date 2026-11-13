@@ -11,7 +11,7 @@ describe("scene-pointer-a11y: pointer-listening scene nodes need [a11y]", () => 
       where("scene-a11y-fail", "<sprite (pointerdown)"),
       where("scene-a11y-fail", "<sprite (click)"),
       where("scene-a11y-fail", "<container (tap)"),
-      where("scene-a11y-fail", "<rect (mousedown)"),
+      where("scene-a11y-fail", "<sprite (mousedown)"),
       where("scene-a11y-fail", "<text (touchstart)"),
       where("scene-a11y-fail", "<sprite (pointerdown)=\"go()\"></sprite>`"),
     ].map((p) => `${p.line}:${p.column + 1}`);

@@ -79,6 +79,33 @@ export function walkMode(tree: readonly TNode[], scene: boolean, isBoundary: (ta
   }
 }
 
+/** The elements and text runs directly under a node list, looking through control flow (`@if`, `@for`, `@switch`, `@defer`). */
+function directChildren(nodes: readonly TNode[], out: Array<ElementNode | Extract<TNode, { type: "text" }>> = []): Array<ElementNode | Extract<TNode, { type: "text" }>> {
+  for (const node of nodes) {
+    switch (node.type) {
+      case "element":
+      case "text":
+        out.push(node);
+        break;
+      case "if":
+        for (const b of node.branches) directChildren(b.children, out);
+        break;
+      case "for":
+        directChildren(node.children, out);
+        if (node.empty) directChildren(node.empty, out);
+        break;
+      case "switch":
+        for (const c of node.cases) directChildren(c.children, out);
+        break;
+      case "defer":
+        directChildren(node.children, out);
+        for (const section of [node.placeholder, node.loading, node.error]) if (section) directChildren(section, out);
+        break;
+    }
+  }
+  return out;
+}
+
 /** Known scene tag (scene or shape), as a name the map and table both use. */
 export const knownSceneTag = (tag: string): tag is SceneTagName | ShapeTagName | HitTagName => isSceneTag(tag) || isShapeTag(tag) || isHitTag(tag);
 
@@ -140,6 +167,18 @@ export function sceneRules(model: TemplateModel, isComponent: (tag: string) => b
       return;
     }
     const tag = el.tag;
+    // scene-structure: the renderers refuse these at runtime ("can only be a child of <graphics>", "Text content is only allowed in <text>").
+    const holdsText = tag === "text" || tag === "bitmap-text";
+    for (const child of directChildren(el.children)) {
+      if (child.type === "element") {
+        if (isShapeTag(child.tag) && tag !== "graphics" && !isComponent(child.tag)) {
+          report(child.tagStart, child.tag.length, "scene-structure", `<${child.tag}> can only be a child of <graphics>, not <${tag}>`);
+        }
+      } else if (!holdsText) {
+        const lead = child.raw.length - child.raw.trimStart().length;
+        report(child.start + lead, child.raw.trim().length, "scene-structure", `Text is only allowed inside <text> and <bitmap-text>, not <${tag}>: bind [text] on a <text> instead`);
+      }
+    }
     for (const e of el.expressions) {
       if (e.kind === "handler") continue;
       if (e.kind === "field") continue;

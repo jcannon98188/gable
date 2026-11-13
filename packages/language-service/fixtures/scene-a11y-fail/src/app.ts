@@ -11,8 +11,8 @@ export class Board {
         <sprite (pointerdown)="go()"></sprite>
         <sprite (click)="go()" (pointerup)="go()"></sprite>
         <container (tap)="go()"></container>
-        <rect (mousedown)="go()"></rect>
-        <rect (mouseover)="go()"></rect>
+        <sprite (mousedown)="go()"></sprite>
+        <sprite (mouseover)="go()"></sprite>
         <sprite (pointerover)="go()" (pointerout)="go()"></sprite>
         <sprite (pointerenter)="go()" (pointerleave)="go()"></sprite>
         <sprite (pointermove)="go()" (globalpointermove)="go()"></sprite>

@@ -50,6 +50,7 @@ export const RULES = {
   "scene-unknown-property": "error",
   "scene-attribute": "error",
   "scene-tag-in-dom": "error",
+  "scene-structure": "error",
   "scene-pointer-a11y": "warn",
 } as const satisfies Record<string, Severity>;
 
