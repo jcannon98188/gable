@@ -17,7 +17,7 @@ export class Scene {
         </graphics>
         <x-ship (picked)="onPick($event)" [x]="px()"></x-ship>
         <bitmap-text text="x"></bitmap-text>
-        <sprite width="10" height="10" (pointertap)="down($event)">
+        <sprite width="10" height="10" eventMode="static">
           <hit-circle x="5" y="5" [radius]="px()"></hit-circle>
           <hit-rect x="-4" width="20" height="20" [y]="px()"></hit-rect>
           <hit-polygon [points]="pts()"></hit-polygon>
