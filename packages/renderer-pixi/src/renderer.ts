@@ -11,6 +11,8 @@ import { flushSync, type Provider } from "@gable/core";
 import type { Renderer } from "@gable/core/renderer";
 import { DEV } from "./dev.js";
 import type { ParticleLike, ParticleOptions } from "./particles.js";
+import type { CanvasDebugOptions } from "./canvas-debug.js";
+import { FrameOverlay, FrameStats, countObjects, registerSceneBoundary, type SceneNodeLike } from "./debug.js";
 import { CanvasSize } from "./canvas-size.js";
 import { Frame } from "./frame.js";
 import { Gamepad, type GetGamepads } from "./gamepad.js";
@@ -76,6 +78,11 @@ export interface PixiRendererOptions {
   getGamepads?: GetGamepads;
   /** Source of the `prefers-reduced-motion` media query for the ReducedMotion service. Default: `window.matchMedia` where it exists. */
   matchMedia?: MatchMedia;
+  /**
+   * Dev only (dropped from a production build): shows the frame overlay (per-phase milliseconds, rolling p50 and p95, dropped
+   * frames, display-object count, bindings re-run in the last frame). `true` or the overlay's options.
+   */
+  debug?: boolean | CanvasDebugOptions;
   /** Extra tags registered before the scene is built. */
   tags?: Readonly<Record<string, TagRegistration>>;
 }
@@ -267,6 +274,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
   let stopLoop: (() => void) | null = null;
   let hostElement: HTMLElement | null = null;
   let moveHost: ((element: HTMLElement) => void) | null = null;
+  let stopDebug: (() => void) | null = null;
 
   const containerProps = SCENE_TAGS.container.props;
 
@@ -624,6 +632,15 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       if (destroyed) return;
       hostElement = element;
       const options = typeof given === "function" ? given() : given;
+      // Dev only: the scene is visible to the devtools (the Scene panel, the Designer) from the moment it mounts.
+      if (DEV) {
+        stopDebug = registerSceneBoundary({
+          label: element.getAttribute("aria-label") || "canvas scene",
+          root,
+          describe: (node) => ({ tag: node === root ? "scene" : (infos.get(node as Container)?.tag ?? "container"), kind: node.constructor?.name ?? "Container" }),
+          host: () => hostElement,
+        });
+      }
       const created = (options.createApplication ?? (() => new Application() as unknown as ApplicationLike))();
       app = created;
       const ratio = options.resolution ?? (globalThis as { devicePixelRatio?: number }).devicePixelRatio ?? 1;
@@ -684,20 +701,31 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       let raf = 0;
       let running = true;
       let last: number | null = null;
+      // Dev only: frame statistics and the overlay. `dbg` is null unless the `debug` option asked for them.
+      const dbg = DEV && options.debug ? debugSession(options.debug === true ? {} : options.debug, element, root) : null;
+      if (dbg) {
+        const stopSession = stopDebug;
+        stopDebug = () => (dbg.overlay.destroy(), stopSession?.());
+      }
       const tick = (time: number) => {
         if (!running) return;
         raf = scheduler.request(tick);
         const seconds = last === null ? 0 : (time - last) / 1000;
         last = time;
         try {
+          const t0 = dbg ? dbg.now() : 0;
           keyboard.beginFrame();
           gamepad.beginFrame();
           frameService.advance(seconds);
-          flushSync(); // apply signal writes to Pixi nodes
-          if (onDemand && !touched) return;
-          touched = false;
-          renderer.frame();
-          created.render();
+          const t1 = dbg ? dbg.now() : 0;
+          const ran = flushSync(); // apply signal writes to Pixi nodes
+          const t2 = dbg ? dbg.now() : 0;
+          if (!(onDemand && !touched)) {
+            touched = false;
+            renderer.frame();
+            created.render();
+          }
+          if (dbg) dbg.frame(time, t1 - t0, t2 - t1, dbg.now() - t2, ran);
         } catch (error) {
           console.error("[gable] error in the canvas frame loop", error);
         }
@@ -718,6 +746,8 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     destroy() {
       if (destroyed) return;
       destroyed = true;
+      stopDebug?.();
+      stopDebug = null;
       stopLoop?.();
       stopLoop = null;
       detachReducedMotion();
@@ -734,6 +764,27 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     },
   };
   return renderer;
+}
+
+/** Dev only: the statistics and overlay of one canvas boundary. */
+function debugSession(options: CanvasDebugOptions, host: HTMLElement, root: SceneNodeLike) {
+  const stats = new FrameStats(options);
+  const overlay = new FrameOverlay(host);
+  const now = options.now ?? (() => performance.now());
+  const every = Math.max(1, options.every ?? 10);
+  let frames = 0;
+  let objects = 0;
+  return {
+    overlay,
+    now,
+    /** Records one frame; the object count and the overlay refresh every `every` frames (and on the first). */
+    frame(at: number, hooks: number, flush: number, render: number, bindings: number) {
+      const refresh = frames++ % every === 0;
+      if (refresh) objects = countObjects(root);
+      stats.record({ at, hooks, flush, render, objects, bindings });
+      if (refresh) overlay.update(stats.snapshot());
+    },
+  };
 }
 
 const defaultScheduler: FrameScheduler = {

@@ -4,6 +4,7 @@
 // drive the shell, and the agent never answers anyone but the window that opened it.
 import type { ComponentDetail, DevtoolsEvent, DevtoolsMethods, HmrEntry, WhyNode } from "@gable/core/devtools";
 import type { DesignNode } from "@gable/core/designer";
+import type { SceneReport } from "./agent/scene.js";
 import type { NetworkMethods } from "./network.js";
 import type { StorageMethods } from "./storage.js";
 
@@ -116,6 +117,11 @@ export interface AgentMethods extends DevtoolsMethods, NetworkMethods, StorageMe
   setPreview: { params: { id: string | null; addClasses: string[]; css: string; mark: boolean; dark: boolean }; result: { elements: number } };
   /** Repeats a user interaction another frame reported (sync between frames); `false` if its element is not on this page. */
   replay: { params: Interaction; result: boolean };
+  /**
+   * The display-object trees of the canvas boundaries on the page (a `<gable-canvas>` scene), nested like a DOM tree, each node with its
+   * owning component, source, template node id (for `selectNode`) and page box. Empty when the page has none. Additive.
+   */
+  sceneTree: { params: void; result: SceneReport[] };
   /** Component mode: what the page mounts. */
   scenes: { params: void; result: SceneInfo | null };
   mountScene: { params: { name: string }; result: true };

@@ -2,7 +2,8 @@
 // the page was opened by the Designer (the shell names the iframe, see `protocol.ts`). It owns no framework logic: it rides
 // on the two dev hooks of @gable/core (devtools for state, designer for template nodes) and adds picking, overlays and the
 // postMessage transport.
-import type { DevtoolsEvent, GableDevtoolsHook } from "@gable/core/devtools";
+import type { BoundaryInfo, BoundaryTree, DevtoolsEvent, GableDevtoolsHook } from "@gable/core/devtools";
+import { pageRectFor, sceneReport } from "./scene.js";
 import type { DesignerHook, DesignNode } from "@gable/core/designer";
 import { RUN_CONTEXT, runOptions, toReport, type AxeLike } from "./a11y.js";
 import { a11yTree, focusOrder, focusOrderOf, nameOf, stepFocus, tabOrder, type NodeRef } from "./a11y-depth.js";
@@ -88,8 +89,15 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     });
   };
 
+  // Elements of the DOM, or display objects of a canvas boundary (no `isConnected`: the boundary says where they sit on the page).
   const rectsOf = (id: string | null): DOMRect[] =>
-    id ? (designer.elementsOf(id) as Element[]).filter((el) => el.isConnected).map((el) => el.getBoundingClientRect()) : [];
+    id
+      ? (designer.elementsOf(id) as unknown[]).flatMap((el) => {
+          if (el instanceof Element) return el.isConnected ? [el.getBoundingClientRect()] : [];
+          const r = devtools?.pageRectOf?.(el);
+          return r ? [pageRectFor(r)] : [];
+        })
+      : [];
 
   function box(key: string, rect: DOMRect, style: string, label?: string, onClick?: () => void): void {
     let el = boxes.get(key);
@@ -607,6 +615,11 @@ function start({ nonce, shellOrigin }: { nonce: string; shellOrigin: string }): 
     dropTarget: (p) => (p ? dropAt(p.x, p.y) : ((drop = null), redraw(), null)),
     setPreview: (p) => ({ elements: setPreview(p) }),
     replay: (interaction) => replay(interaction),
+    sceneTree: () => {
+      if (!devtools?.call) return [];
+      const boundaries = devtools.call("boundaries", undefined as never) as BoundaryInfo[];
+      return sceneReport(boundaries.map((b) => devtools!.call("boundaryTree", { id: b.id } as never) as BoundaryTree | null).filter((t): t is BoundaryTree => t !== null));
+    },
     scenes: () => sceneInfo(),
     pageScenario: () => globalThis.__GABLE_PAGE_SCENARIO__ ?? null,
     httpLog: () => [...(globalThis.__GABLE_DESIGNER_HTTP__ ?? [])],

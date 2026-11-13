@@ -4,7 +4,9 @@
 // loads, the host shows the `placeholder` slot (a quiet empty box by default).
 //
 // Do not import pixi.js, ./renderer.js or ./scene.js statically here: the lazy chunk would stop being lazy.
-import { computed, html, injectHost, input, lazy } from "@gable/core";
+import { computed, html, inject, injectHost, input, lazy } from "@gable/core";
+import { CANVAS_DEBUG } from "./canvas-debug.js";
+import { DEV } from "./dev.js";
 import type { PixiRendererOptions } from "./renderer.js";
 
 export class GableCanvas {
@@ -33,5 +35,21 @@ export class GableCanvas {
   /** `always` (default) renders every frame; `on-demand` renders only after a hook or an effect wrote to the scene. */
   renderMode = input<"always" | "on-demand">("always");
 
-  sceneOptions = computed<PixiRendererOptions>(() => ({ ...this.options(), renderMode: this.renderMode() }));
+  /**
+   * Dev only: the frame overlay for this canvas (`<gable-canvas debug>`, or `[debug]="flag()"`). `provideCanvasDebug()` turns it on for
+   * every canvas. Ignored in a production build.
+   */
+  debug = input<boolean | string>(false);
+
+  #debugProvided = DEV ? inject(CANVAS_DEBUG, { optional: true }) : null;
+
+  sceneOptions = computed<PixiRendererOptions>(() => {
+    const options: PixiRendererOptions = { ...this.options(), renderMode: this.renderMode() };
+    if (!DEV) return options;
+    const attr = this.debug();
+    const on = attr === true || attr === "" || attr === "true" || attr === "debug";
+    // The attribute (or a bound true) turns it on for this canvas; the provider for all of them; the attribute value "false" opts one canvas out of the provider.
+    if (on || (this.#debugProvided && attr !== "false")) options.debug = this.#debugProvided ?? true;
+    return options;
+  });
 }

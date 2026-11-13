@@ -374,6 +374,90 @@ export interface InspectorHandle {
   dispose(): void;
 }
 
+// --- renderer boundaries -----------------------------------------------------
+
+/** A renderer boundary (a canvas scene, say) as a registrar describes it. Nodes are listed parents before their children. */
+export interface BoundaryNodeSpec {
+  /** The renderer node itself (never sent to a client; the hook uses it to find the owning component and the effects that update it). */
+  node: object;
+  /** The node it sits under; `null` for a root. */
+  parent: object | null;
+  /** A display name: the tag it was made from, or its label. */
+  name: string;
+  /** The tag it was made from. */
+  tag: string;
+  /** What the renderer made of it (`Sprite`, `Container`...). */
+  kind: string;
+}
+
+/** What a renderer registers (`registerBoundary`): a label and a way to read its current node tree. */
+export interface BoundarySpec {
+  label: string;
+  /** What sort of boundary: `scene` for a canvas. */
+  kind: string;
+  /** The node tree now, flat, parents before children. Read when a client asks. */
+  snapshot(): BoundaryNodeSpec[];
+  /** The element that hosts the boundary (it has `getBoundingClientRect`); with `rectOf` it places nodes on the page. */
+  host?: unknown;
+  /** A node's box in CSS pixels relative to `host`, or null when it has none (not drawn, or destroyed). */
+  rectOf?(node: object): PageRect | null;
+}
+
+/** A box in CSS pixels. */
+export interface PageRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** One registered boundary, as `boundaries` lists it. */
+export interface BoundaryInfo {
+  id: string;
+  label: string;
+  kind: string;
+}
+
+/** Where a node sits in the template it was written in (1-based line and column inside the template literal). */
+export interface BoundaryTemplatePos {
+  /** The designer id of the template node (`selectNode` takes it). */
+  id: string;
+  line: number;
+  column: number;
+  /** Offsets into the template literal text (`raw`) as written. */
+  start: number;
+  end: number;
+}
+
+/** One node of a boundary's tree, like a row of the component tree: its place, its owner, its source and the effects the last flush ran on it. */
+export interface BoundaryNode {
+  /** An id within this report (`n` and a number). */
+  id: string;
+  parent: string | null;
+  name: string;
+  tag: string;
+  kind: string;
+  /** The nearest component whose host is this node or an ancestor of it. */
+  component: { id: string; name: string } | null;
+  /** Where that component's class was defined. */
+  source: SourceInfo | null;
+  /** The position in the template, when the designer hook is installed and knows the node. */
+  template: BoundaryTemplatePos | null;
+  /** Its box on the page in CSS pixels, when the boundary can say. */
+  rect: PageRect | null;
+  /** The template binding effects of the last flush that updated this node. Pass an effect id to `why`. */
+  effects: EffectRun[];
+}
+
+/** A boundary's node tree with its owner and the flush its effects come from. */
+export interface BoundaryTree extends BoundaryInfo {
+  nodes: BoundaryNode[];
+  /** The sequence number of the last flush that ran effects (the source of every node's `effects`); null when none yet. */
+  flush: number | null;
+  /** Why the snapshot could not be taken, when it could not. */
+  error?: string;
+}
+
 /**
  * An event pushed to `connect` listeners. `tree` and `injectors` say the component or injector tree changed (re-fetch it); the others
  * carry the new record, or for `inspector` the id of the inspector that changed.
@@ -381,6 +465,8 @@ export interface InspectorHandle {
 export type DevtoolsEvent =
   | { type: "tree" }
   | { type: "injectors" }
+  /** A renderer boundary was registered or removed. Additive. */
+  | { type: "boundaries" }
   | { type: "flush"; flush: FlushRecord }
   | { type: "hmr"; entry: HmrEntry }
   | { type: "router"; id: string; event: RouterNavigation }
@@ -426,6 +512,10 @@ export interface DevtoolsMethods {
   /** Puts the app back to its state just after step `seq` (one before the first step: the state before it). */
   travel: { params: { seq: number }; result: TravelResult };
   clearHistory: { params: void; result: true };
+  /** The registered renderer boundaries (canvas scenes). Added after version 1; additive. */
+  boundaries: { params: void; result: BoundaryInfo[] };
+  /** A boundary's node tree now, with source locations and the effects of the last flush. Added after version 1; additive. */
+  boundaryTree: { params: { id: string }; result: BoundaryTree | null };
   /**
    * What a component's effects (its template bindings among them) or one signal depends on, and why each effect last ran: the
    * signal writes that made it run. `id` is a component, signal or effect id. Added after version 1; additive.
@@ -455,6 +545,10 @@ export interface GableDevtoolsHook {
   targetsOf(ids: string[]): unknown[];
   /** Lets a package show its own state and history in the panel. */
   registerInspector(id: string, spec: InspectorSpec): InspectorHandle;
+  /** Lets a renderer show its node tree (a canvas scene) to clients. Returns the way to unregister. Added after version 1; additive. */
+  registerBoundary(id: string, spec: BoundarySpec): { dispose(): void };
+  /** The page box (CSS pixels) of a node of any registered boundary, or null. Lets design tooling draw over a canvas scene. Additive. */
+  pageRectOf(node: unknown): PageRect | null;
 }
 
 declare global {
@@ -704,7 +798,7 @@ export interface DevtoolsInstance {
 }
 
 /** Creates the layer and fills the runtime's `devtools` slot. Prefer `installDevtools`; tests call this directly. */
-export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtoolsHook }): DevtoolsInstance {
+export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtoolsHook; __GABLE_DESIGNER_HOOK__?: unknown }): DevtoolsInstance {
   const byFn = new WeakMap<Function, Rec>();
   const byNode = new WeakMap<object, Rec>();
   const byId = new Map<string, WeakRef<Rec>>();
@@ -718,6 +812,7 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
   const injById = new Map<string, Inj>();
   const routers = new Set<Rtr>();
   const inspectors = new Map<string, Insp>();
+  const boundaries = new Map<string, BoundarySpec>();
   const sources = new WeakMap<Function, string>();
   const listeners = new Set<(event: DevtoolsEvent) => void>();
   const flushes: FlushRecord[] = [];
@@ -932,6 +1027,69 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
     flushes.push(flush);
     if (flushes.length > MAX_FLUSHES) flushes.shift();
     emit({ type: "flush", flush });
+  }
+
+  function pageRect(spec: BoundarySpec, node: object): PageRect | null {
+    try {
+      const local = spec.rectOf?.(node);
+      const host = spec.host as { getBoundingClientRect?: () => { left: number; top: number } } | undefined;
+      if (!local || !host?.getBoundingClientRect) return null;
+      const origin = host.getBoundingClientRect();
+      return { x: origin.left + local.x, y: origin.top + local.y, width: local.width, height: local.height };
+    } catch {
+      return null;
+    }
+  }
+
+  function boundaryTree(id: string, spec: BoundarySpec): BoundaryTree {
+    const base = { id, label: spec.label, kind: spec.kind };
+    let specs: BoundaryNodeSpec[];
+    try {
+      specs = spec.snapshot();
+    } catch (error) {
+      return { ...base, nodes: [], flush: null, error: error instanceof Error ? error.message : String(error) };
+    }
+    // The last flush that ran anything: its runs, by the node each one updated.
+    const last = [...flushes].reverse().find((f) => f.kind === "flush" && f.runs.length > 0) ?? null;
+    const byNode = new Map<object, EffectRun[]>();
+    for (const run of last?.runs ?? []) {
+      const on = lookup(run.id)?.target?.on.deref() as object | undefined;
+      if (on) byNode.set(on, [...(byNode.get(on) ?? []), run]);
+    }
+    const designerHook = ((target ?? globalThis) as { __GABLE_DESIGNER_HOOK__?: { nodeOf(node: unknown): { id: string; raw: string; start: number; end: number } | null } }).__GABLE_DESIGNER_HOOK__;
+    const ids = new Map<object, string>();
+    const ownerOf = new Map<object, string | null>();
+    const nodes = specs.map((n, i): BoundaryNode => {
+      const nid = `n${i + 1}`;
+      ids.set(n.node, nid);
+      // A node with no parent link of its own (a canvas display object) belongs to its parent's component.
+      const cid = hook.componentFor(n.node) ?? (n.parent ? ownerOf.get(n.parent) : null) ?? null;
+      ownerOf.set(n.node, cid);
+      const comp = cid ? compById.get(cid) : undefined;
+      let template: BoundaryTemplatePos | null = null;
+      try {
+        const d = designerHook?.nodeOf(n.node);
+        if (d) {
+          const before = d.raw.slice(0, d.start);
+          template = { id: d.id, line: before.split("\n").length, column: d.start - (before.lastIndexOf("\n") + 1) + 1, start: d.start, end: d.end };
+        }
+      } catch {
+        // an unreadable node has no position
+      }
+      return {
+        id: nid,
+        parent: n.parent ? (ids.get(n.parent) ?? null) : null,
+        name: n.name,
+        tag: n.tag,
+        kind: n.kind,
+        component: comp ? { id: comp.id, name: className(comp.Class) } : null,
+        source: comp ? sourceOf(comp.Class) : null,
+        template,
+        rect: pageRect(spec, n.node),
+        effects: byNode.get(n.node) ?? [],
+      };
+    });
+    return { ...base, nodes, flush: last?.seq ?? null };
   }
 
   function highlight(id: string | null): boolean {
@@ -1347,6 +1505,11 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
     effectLog: () => [...flushes],
     clearEffectLog: () => ((flushes.length = 0), true),
     hmrLog: () => [...hmrLog],
+    boundaries: () => [...boundaries].map(([id, b]) => ({ id, label: b.label, kind: b.kind })),
+    boundaryTree: ({ id }) => {
+      const b = boundaries.get(id);
+      return b ? boundaryTree(id, b) : null;
+    },
     inspectors: () =>
       [...inspectors.values()].map((i) => {
         let snapshot: Preview;
@@ -1399,6 +1562,24 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
         if (on && wanted.has(on)) out.push(idOf(rec));
       }
       return out;
+    },
+    pageRectOf(node) {
+      if (!node || typeof node !== "object") return null;
+      for (const spec of boundaries.values()) {
+        const r = pageRect(spec, node);
+        if (r) return r;
+      }
+      return null;
+    },
+    registerBoundary(id, spec) {
+      boundaries.set(id, spec);
+      emit({ type: "boundaries" });
+      return {
+        dispose() {
+          if (boundaries.get(id) === spec) boundaries.delete(id);
+          emit({ type: "boundaries" });
+        },
+      };
     },
     registerInspector(id, spec) {
       const insp: Insp = { id, spec, log: [] };
