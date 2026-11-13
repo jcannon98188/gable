@@ -3,6 +3,8 @@
 // deterministic frame step and simulated input.
 import { flushSync, type Provider } from "@gable/core";
 import type { Renderer } from "@gable/core/renderer";
+import { A11yMirror, type A11yEntry, type A11yProps } from "../a11y.js";
+import { A11yRecorder, type TabOptions } from "../a11y-testing.js";
 import { CanvasSize } from "../canvas-size.js";
 import {
   SCENE_TAGS,
@@ -64,6 +66,18 @@ export interface SceneTestRenderer {
   readonly gamepad: GamepadSimulator;
   /** The real services of this boundary, for assertions. */
   readonly services: { readonly frame: Frame; readonly pointer: Pointer; readonly keyboard: Keyboard; readonly gamepad: Gamepad; readonly size: CanvasSize };
+  /** The semantic mirror (TASK-105.9): what `[a11y]` nodes would put in the DOM, in tab order, as of the last frame. */
+  a11y(): readonly A11yEntry<SceneNode>[];
+  /** Focuses the node's mirror element (a node, its data, or a selector). False when it has no focusable mirror. */
+  focus(node: SceneNode | SceneNodeData | string): boolean;
+  /** Tab (or Shift+Tab) through the mirror: the new focus (a node, `"host"`, or `null` once focus left the canvas). */
+  tab(options?: TabOptions): SceneNode | "host" | null;
+  /** A key on the focused mirror element; Enter and Space activate it. */
+  press(key: string): boolean;
+  /** Activates the node's mirror element, as a screen reader would: its `pointertap` handler runs with `pointerType: "a11y"`. */
+  click(node: SceneNode | SceneNodeData | string): boolean;
+  /** The focused node, `"host"`, or `null`. */
+  readonly focused: SceneNode | "host" | null;
   /** One deterministic loop step of ADR 0020: keyboard and gamepad snapshot, frame hooks, a synchronous effect flush, then a recorded render. */
   frame(dtMs?: number): void;
   frames(count: number, dtMs?: number): void;
@@ -125,6 +139,9 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
     throw new Error(`Unknown property "${name}" on <${tag}> in the "pixi" renderer. Scene properties use Pixi's own names; dotted paths address one axis of a point-like property (e.g. [scale.x]).`);
   };
 
+  const mirror = new A11yMirror<SceneNode>();
+  const recorder = new A11yRecorder<SceneNode>(mirror);
+
   function writeText(owner: SceneNode) {
     owner.values.text = owner.joinedText();
   }
@@ -135,6 +152,10 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
 
   function setProperty(node: SceneNode, name: string, value: unknown): void {
     touched = true;
+    if (name === "a11y" && node.kind !== "shape" && (lenient || lookup(node.info!.table, name))) {
+      mirror.set(node, value as A11yProps | null | undefined);
+      return;
+    }
     if (node.kind === "shape") {
       if (!lookup(SHAPE_TAGS[node.tag as keyof typeof SHAPE_TAGS].props, name)) unknownProperty(node.tag, name);
       node.values[name] = value;
@@ -216,6 +237,7 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
   }
 
   function destroyNode(node: SceneNode) {
+    mirror.remove(node);
     node.destroyed = true;
     for (const child of node.children) destroyNode(child);
     node.children.length = 0;
@@ -385,6 +407,22 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
 
   const dataOf = (n: SceneNode) => toData(n);
 
+  function worldBounds(n: SceneNode) {
+    const box = input.localBox(n);
+    if (!box) return null;
+    const m = worldMatrix(n);
+    const pts = [apply(m, { x: box.x, y: box.y }), apply(m, { x: box.x + box.width, y: box.y }), apply(m, { x: box.x, y: box.y + box.height }), apply(m, { x: box.x + box.width, y: box.y + box.height })];
+    const xs = pts.map((p) => p.x);
+    const ys = pts.map((p) => p.y);
+    return { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
+  }
+  SceneNode.measure = worldBounds;
+
+  function nodeOf(ref: SceneNode | SceneNodeData | string): SceneNode | null {
+    if (typeof ref === "string") return selectAll(root, ref)[0] ?? null;
+    return ref instanceof SceneNode ? ref : ref.node;
+  }
+
   const scene: SceneTestRenderer = {
     renderer,
     root,
@@ -412,14 +450,21 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
     },
     bounds(selector) {
       const n = selectAll(root, selector)[0];
-      if (!n) return null;
-      const box = input.localBox(n);
-      if (!box) return null;
-      const m = worldMatrix(n);
-      const pts = [apply(m, { x: box.x, y: box.y }), apply(m, { x: box.x + box.width, y: box.y }), apply(m, { x: box.x, y: box.y + box.height }), apply(m, { x: box.x + box.width, y: box.y + box.height })];
-      const xs = pts.map((p) => p.x);
-      const ys = pts.map((p) => p.y);
-      return { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
+      return n ? worldBounds(n) : null;
+    },
+    a11y: () => recorder.a11y(),
+    focus: (node) => {
+      const n = nodeOf(node);
+      return n ? recorder.focus(n) : false;
+    },
+    tab: (opts) => recorder.tab(opts),
+    press: (key) => recorder.press(key),
+    click: (node) => {
+      const n = nodeOf(node);
+      return n ? recorder.click(n) : false;
+    },
+    get focused() {
+      return recorder.focused;
     },
     pointer: input.pointer,
     keyboard: input.keyboard,
@@ -431,6 +476,7 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
       gamepadService.beginFrame();
       frames.advance(dtMs / 1000);
       flushSync();
+      mirror.sync(root);
       if (options.renderMode === "on-demand" && !touched) return;
       touched = false;
       renders++;

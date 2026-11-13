@@ -93,3 +93,62 @@ describe("mountWithScene: DOM and scene in one fixture", () => {
     expect(() => mountWithScene(Page, { scene, assets: provideTestAssets({ bundles: ["x"] }) })).toThrow(/textures: scene\.textures/);
   });
 });
+
+describe("mountWithScene: the accessibility mirror (TASK-105.9)", () => {
+  function a11yApp() {
+    const scene = createSceneTestRenderer();
+    class Menu {
+      static meta = {
+        selector: "game-menu",
+        template: html`<container label="menu"><sprite label="play" width="40" height="20" x="10" y="5" [a11y]="playA11y" (pointertap)="play($event)" /><sprite label="quit" width="40" height="20" y="40" [a11y]="quitA11y" /><sprite label="logo" [a11y]="logoA11y" /></container>`,
+      };
+      state = inject(GameState);
+      playA11y = { role: "button", label: "Play" };
+      quitA11y = { role: "button", label: "Quit" };
+      logoA11y = { role: "img", label: "Logo" };
+      play(event: { pointerType: string }) {
+        if (event.pointerType === "a11y") this.state.hits.update((n) => n + 1);
+      }
+    }
+    class Canvas {
+      static meta = { selector: "game-canvas", imports: [Menu], template: html`<game-menu></game-menu>`, renderer: scene.boundary };
+    }
+    class App {
+      static meta = { selector: "app-root", imports: [Canvas], template: html`<p>{{ state.hits() }} activations</p><game-canvas></game-canvas>` };
+      state = inject(GameState);
+    }
+    return mountWithScene(App, { scene });
+  }
+
+  it("exposes the mirror, focus, tab, press and click on fixture.scene", () => {
+    const fixture = a11yApp();
+    fixture.frame();
+    const entries = fixture.scene.a11y();
+    expect(entries.map((e) => [e.role, e.label, e.focusable])).toEqual([["button", "Play", true], ["button", "Quit", true], ["img", "Logo", false]]);
+    expect(entries[0]!.bounds).toEqual({ x: 10, y: 5, width: 40, height: 20 });
+
+    const play = fixture.scene.find("sprite#play")!;
+    expect(fixture.scene.focus(play)).toBe(true);
+    expect(fixture.scene.focused).toBe(play.node);
+    expect(fixture.scene.press("Enter")).toBe(true);
+    fixture.frame();
+    expect(fixture.text()).toContain("1 activations");
+
+    expect(fixture.scene.tab()).toBe(fixture.scene.find("sprite#quit")!.node);
+    expect(fixture.scene.tab()).toBeNull();
+    expect(fixture.scene.tab({ shift: true })).toBe(fixture.scene.find("sprite#quit")!.node);
+    expect(fixture.scene.focus("sprite#logo")).toBe(false);
+
+    expect(fixture.scene.click("sprite#play")).toBe(true);
+    fixture.frame();
+    expect(fixture.text()).toContain("2 activations");
+  });
+
+  it("leaves out hidden nodes", () => {
+    const fixture = a11yApp();
+    fixture.frame();
+    fixture.scene.find("sprite#quit")!.node.values.visible = false;
+    fixture.frame();
+    expect(fixture.scene.a11y().map((e) => e.label)).toEqual(["Play", "Logo"]);
+  });
+});

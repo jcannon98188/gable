@@ -103,6 +103,18 @@ export class SceneNode {
     this.values = info ? defaultsFor(info) : {};
   }
 
+  /** Measures a node in scene coordinates (set by the renderer; the A11yMirror reads it through `getBounds`). */
+  static measure: ((node: SceneNode) => { x: number; y: number; width: number; height: number } | null) | null = null;
+
+  /** The slice of a display node the A11yMirror reads (TASK-105.9): visibility, and bounds from the author-supplied size. */
+  get visible(): boolean {
+    return this.values.visible !== false;
+  }
+
+  getBounds(): { x: number; y: number; width: number; height: number } {
+    return SceneNode.measure?.(this) ?? { x: 0, y: 0, width: 0, height: 0 };
+  }
+
   get label(): string | null {
     return (this.values.label as string | null | undefined) ?? null;
   }
