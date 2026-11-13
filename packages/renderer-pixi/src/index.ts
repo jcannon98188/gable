@@ -22,3 +22,5 @@ export { ReducedMotion } from "./reduced-motion.js";
 export type { MatchMedia, MediaQueryListLike } from "./reduced-motion.js";
 export { CANVAS_DEBUG, provideCanvasDebug } from "./canvas-debug.js";
 export type { CanvasDebugOptions } from "./canvas-debug.js";
+export { createDrag, createLongPress } from "./gestures.js";
+export type { DragEvent, DragHandle, DragOptions, LongPressEvent, LongPressHandle, LongPressOptions, PressEventLike } from "./gestures.js";
