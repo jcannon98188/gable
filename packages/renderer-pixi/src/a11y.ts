@@ -23,6 +23,8 @@ export interface A11yNode {
   readonly children: readonly A11yNode[];
   getBounds(): { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
   emit(name: string, ...args: any[]): unknown;
+  /** Pixi's EventEmitter method; used so activation fires only handlers the node has. */
+  listenerCount?(name: string): number;
 }
 
 export interface A11yBounds {
@@ -51,9 +53,9 @@ export interface A11ySink<N = A11yNode> {
   destroy(): void;
 }
 
-/** What a mirror activation passes to a node's `pointertap` handler: a minimal federated-event lookalike. */
+/** What a mirror activation passes to a node's `pointertap` (and `pointerup`, `click`, `tap`) handler: a minimal federated-event lookalike. */
 export interface A11yActivationEvent {
-  readonly type: "pointertap";
+  readonly type: "pointerup" | "pointertap" | "click" | "tap";
   readonly target: unknown;
   readonly currentTarget: unknown;
   readonly global: { readonly x: number; readonly y: number };
@@ -158,23 +160,35 @@ export class A11yMirror<N extends A11yNode = A11yNode> {
     this.#sink?.render(this.entries(root));
   }
 
-  /** Dispatches the node's `pointertap`, as if it were tapped at the centre of its bounds. Returns false when the node has no mirror. */
+  /**
+   * Dispatches the node's activation handlers, as if it were tapped at the centre of its bounds: `pointertap` always, and
+   * `pointerup`, `click` and `tap` when the node listens to them (the same set the `scene-pointer-a11y` lint accepts, see
+   * `ACTIVATION_EVENTS`), in the order of a real tap. A node that listens to both `pointertap` and `click` runs both, as under a mouse.
+   * Returns false when the node has no mirror.
+   */
   activate(node: N, originalEvent?: unknown): boolean {
     if (!this.#props.has(node)) return false;
     const b = node.getBounds();
-    const event: A11yActivationEvent = {
-      type: "pointertap",
-      target: node,
-      currentTarget: node,
-      global: { x: b.x + b.width / 2, y: b.y + b.height / 2 },
-      pointerType: "a11y",
-      button: 0,
-      buttons: 0,
-      originalEvent,
-      preventDefault() {},
-      stopPropagation() {},
+    const fire = (type: A11yActivationEvent["type"]) => {
+      const event: A11yActivationEvent = {
+        type,
+        target: node,
+        currentTarget: node,
+        global: { x: b.x + b.width / 2, y: b.y + b.height / 2 },
+        pointerType: "a11y",
+        button: 0,
+        buttons: 0,
+        originalEvent,
+        preventDefault() {},
+        stopPropagation() {},
+      };
+      node.emit(type, event);
     };
-    node.emit("pointertap", event);
+    const listens = (type: string) => (node.listenerCount?.(type) ?? 0) > 0;
+    if (listens("pointerup")) fire("pointerup");
+    fire("pointertap");
+    if (listens("click")) fire("click");
+    if (listens("tap")) fire("tap");
     return true;
   }
 }

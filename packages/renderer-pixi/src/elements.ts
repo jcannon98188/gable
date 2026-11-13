@@ -298,6 +298,17 @@ export function isSceneEvent(name: string): name is SceneEventName {
   return Object.prototype.hasOwnProperty.call(SCENE_EVENTS, name);
 }
 
+/**
+ * The scene events that mean "the user activated this node" (press, release, tap, click). A listener for one of these makes a node
+ * an action target, so it needs `[a11y]` (lint rule `scene-pointer-a11y`) and the mirror's activation (click, Enter, Space) fires
+ * the same events: `pointerup`, `pointertap`, `click` and `tap`. Hover and tracking events (over, out, enter, leave, move) are not activation.
+ */
+export const ACTIVATION_EVENTS: ReadonlySet<string> = new Set([
+  "pointerdown", "pointerup", "pointertap", "click", "tap", "contextmenu",
+  "rightdown", "rightup", "rightclick",
+  "mousedown", "mouseup", "touchstart", "touchend",
+]);
+
 /** Every property a scene tag accepts, by Pixi's own name. */
 export function propertiesOf(tag: SceneTagName | ShapeTagName | HitTagName): Readonly<Record<string, PropSpec>> {
   return isSceneTag(tag) ? SCENE_TAGS[tag].props : isHitTag(tag) ? HIT_TAGS[tag].props : SHAPE_TAGS[tag as ShapeTagName].props;

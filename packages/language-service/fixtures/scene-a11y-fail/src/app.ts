@@ -1,7 +1,7 @@
 import { html, signal } from "@gable/core";
 import { pixiElements } from "@gable/renderer-pixi/elements";
 
-// Scene nodes with a pointer listener and no [a11y]: each flagged one is marked `BAD:` in the template.
+// Scene nodes with an activation listener (down, up, tap, click) and no [a11y]; hover and tracking listeners (over, out, enter, leave, move) are not flagged. Each flagged one is marked `BAD:` in the template.
 export class Board {
   static meta = {
     selector: "x-board",
@@ -11,7 +11,11 @@ export class Board {
         <sprite (pointerdown)="go()"></sprite>
         <sprite (click)="go()" (pointerup)="go()"></sprite>
         <container (tap)="go()"></container>
+        <rect (mousedown)="go()"></rect>
         <rect (mouseover)="go()"></rect>
+        <sprite (pointerover)="go()" (pointerout)="go()"></sprite>
+        <sprite (pointerenter)="go()" (pointerleave)="go()"></sprite>
+        <sprite (pointermove)="go()" (globalpointermove)="go()"></sprite>
         <sprite (pointerdown)="go()" [a11y]="info()"></sprite>
         <sprite (wheel)="go()"></sprite>
         <sprite></sprite>

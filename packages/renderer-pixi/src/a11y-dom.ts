@@ -91,16 +91,22 @@ export class DomA11ySink<N> implements A11ySink<N> {
     s.overflow = "hidden";
     s.boxSizing = "border-box";
     el.addEventListener("click", (event) => this.#activate(entry.node, event));
-    if (!isButton) {
-      // A native button gets Enter and Space as clicks from the browser. Anything else needs them here. Tab, Escape and the rest are left alone.
-      el.addEventListener("keydown", (e) => {
-        const event = e as KeyboardEvent;
-        if (event.key !== "Enter" && event.key !== " " && event.code !== "Space") return;
-        if (event.target !== el) return;
-        event.preventDefault(); // Space would scroll the page
-        this.#activate(entry.node, event);
-      });
-    }
+    // Enter and Space on a mirror element are activation, not game input: keep them (down and up) from the host's Keyboard service.
+    // Tab, Escape and the rest bubble untouched.
+    const isActivationKey = (event: KeyboardEvent) => event.key === "Enter" || event.key === " " || event.code === "Space";
+    el.addEventListener("keyup", (e) => {
+      const event = e as KeyboardEvent;
+      if (event.target === el && isActivationKey(event)) event.stopPropagation();
+    });
+    el.addEventListener("keydown", (e) => {
+      const event = e as KeyboardEvent;
+      if (!isActivationKey(event) || event.target !== el) return;
+      event.stopPropagation();
+      // A native button turns Enter and Space into clicks itself. Anything else needs them here.
+      if (isButton) return;
+      event.preventDefault(); // Space would scroll the page
+      this.#activate(entry.node, event);
+    });
     return { el, desc, role: entry.role, label: "", description: undefined, focusable: null, bounds: null };
   }
 

@@ -11,7 +11,7 @@ describe("scene-pointer-a11y: pointer-listening scene nodes need [a11y]", () => 
       where("scene-a11y-fail", "<sprite (pointerdown)"),
       where("scene-a11y-fail", "<sprite (click)"),
       where("scene-a11y-fail", "<container (tap)"),
-      where("scene-a11y-fail", "<rect (mouseover)"),
+      where("scene-a11y-fail", "<rect (mousedown)"),
       where("scene-a11y-fail", "<text (touchstart)"),
       where("scene-a11y-fail", "<sprite (pointerdown)=\"go()\"></sprite>`"),
     ].map((p) => `${p.line}:${p.column + 1}`);
@@ -25,10 +25,10 @@ describe("scene-pointer-a11y: pointer-listening scene nodes need [a11y]", () => 
     expect(code).toBe(0);
   });
 
-  it("does not flag a node that has [a11y], the wheel event, no listener, or a component tag", async () => {
+  it("does not flag a node that has [a11y], the wheel event, hover and tracking events, no listener, or a component tag", async () => {
     const { diagnostics } = await check("scene-a11y-fail");
     const lines = new Set(diagnostics.filter((d) => d.rule === RULE).map((d) => d.line));
-    for (const snippet of ["[a11y]=", "(wheel)", "<sprite></sprite>", "<x-ship"]) expect(lines.has(where("scene-a11y-fail", snippet).line), snippet).toBe(false);
+    for (const snippet of ["[a11y]=", "(wheel)", "(mouseover)", "(pointerover)", "(pointerenter)", "(pointermove)", "<sprite></sprite>", "<x-ship"]) expect(lines.has(where("scene-a11y-fail", snippet).line), snippet).toBe(false);
   });
 
   it("severity is configurable like other rules", async () => {

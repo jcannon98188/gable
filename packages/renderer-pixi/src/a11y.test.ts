@@ -135,6 +135,19 @@ describe("A11yMirror", () => {
     expect(args[0]).toMatchObject({ type: "pointertap", target: a, currentTarget: a, global: { x: 60, y: 45 }, pointerType: "a11y" });
     expect(mirror.activate(new FakeNode())).toBe(false); // untagged
   });
+
+  it("activating also fires the other activation handlers the node listens to (pointerup, click, tap), after pointertap order of a real tap", () => {
+    const { root, mk } = tree();
+    const a = mk();
+    const listening = new Set(["click", "tap", "pointerup", "pointermove"]);
+    (a as unknown as { listenerCount(name: string): number }).listenerCount = (name) => (listening.has(name) ? 1 : 0);
+    const mirror = new A11yMirror<FakeNode>();
+    mirror.set(a, { role: "button", label: "A" });
+    mirror.sync(root);
+    mirror.activate(a);
+    expect(a.emitted.map((e) => e.name)).toEqual(["pointerup", "pointertap", "click", "tap"]); // never the hover/tracking ones
+    expect(a.emitted.map((e) => (e.args[0] as { type: string }).type)).toEqual(["pointerup", "pointertap", "click", "tap"]);
+  });
 });
 
 describe("A11yRecorder (the scene test renderer's mirror)", () => {
@@ -295,6 +308,21 @@ describe("DomA11ySink", () => {
     // A native button gets Enter and Space as clicks from the browser; the sink must not double-handle keydown on it.
     key(button, "Enter");
     expect(activate).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps the activation keys away from the host Keyboard service (stopPropagation), but lets Tab and Escape through", () => {
+    const sink = new DomA11ySink<FakeNode>(host, vi.fn());
+    sink.render([entry(new FakeNode()), entry(new FakeNode(), { role: "listitem" })]);
+    const seen: string[] = [];
+    host.addEventListener("keydown", (e) => seen.push((e as KeyboardEvent).key));
+    host.addEventListener("keyup", (e) => seen.push("up:" + (e as KeyboardEvent).key));
+    for (const el of [host.querySelector("button")!, host.querySelector<HTMLElement>("[role=listitem]")!]) {
+      for (const [k, code] of [["Enter", "Enter"], [" ", "Space"], ["Tab", "Tab"], ["Escape", "Escape"]] as const) {
+        el.dispatchEvent(new KeyboardEvent("keydown", { key: k, code, bubbles: true, cancelable: true }));
+        if (k === "Enter" || k === " ") el.dispatchEvent(new KeyboardEvent("keyup", { key: k, code, bubbles: true, cancelable: true }));
+      }
+    }
+    expect(seen).toEqual(["Tab", "Escape", "Tab", "Escape"]);
   });
 
   it("reports the number of tab stops and removes its container on destroy", () => {
