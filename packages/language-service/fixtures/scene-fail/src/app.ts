@@ -14,17 +14,19 @@ export class Scene {
       <container [alpha.x]="1"></container>
       <container [scale.x.y]="1"></container>
       <container [style.color]="'red'"></container>
-      <container (pointerdwn)="go()" (pointerdown)="go($event.nope)"></container>
+      <container (pointerdwn)="go()" (pointerdown)="go($event.nope)" [a11y]="info()"></container>
       <sprite anchor="abc"></sprite>
       <container x="abc" visible="maybe"></container>
       <container tnt="#fff"></container>
       <bitmap-txt></bitmap-txt>
+      <container><hit-rect fill="#fff"></hit-rect><hit-cirle></hit-cirle></container>
       <x-ship (cliick)="go()"></x-ship>
       <container [x]="count()" [y]="count()"></container>
     `,
   };
   label = signal("a");
   count = signal(1);
+  info = signal({ role: "button", label: "Go" });
   go(e?: unknown): void {
     void e;
   }

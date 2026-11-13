@@ -1,6 +1,9 @@
 // The panel's state and logic, with no DOM and no `chrome.*`: it talks to a Client and a Host, and the views render
 // its state. Everything the panel does (select, hover, edit, open source, refresh on events) is a method here.
 import type {
+  BoundaryInfo,
+  BoundaryTree,
+  WhyReport,
   ComponentDetail,
   EditResult,
   FlushRecord,
@@ -14,9 +17,10 @@ import type {
 } from "../protocol.js";
 import type { Client } from "./client.js";
 
-export type TabId = "components" | "injectors" | "router" | "effects" | "hmr" | "inspectors";
+export type TabId = "components" | "scene" | "injectors" | "router" | "effects" | "hmr" | "inspectors";
 export const TABS: Array<{ id: TabId; label: string }> = [
   { id: "components", label: "Components" },
+  { id: "scene", label: "Scene" },
   { id: "injectors", label: "Injectors" },
   { id: "router", label: "Router" },
   { id: "effects", label: "Effects" },
@@ -46,6 +50,14 @@ export interface PanelState {
   effects: FlushRecord[];
   hmr: HmrEntry[];
   inspectors: InspectorInfo[];
+  /** Canvas scenes (renderer boundaries) and the one shown in the Scene tab. */
+  boundaries: BoundaryInfo[];
+  boundary: string | null;
+  scene: BoundaryTree | null;
+  sceneSelected: string | null;
+  sceneCollapsed: Set<string>;
+  /** Why the effect picked in the Scene tab last ran: the report of the `why` method. */
+  why: WhyReport | null;
   /** The signal being edited and its draft text. */
   editing: { id: string; text: string } | null;
   /** The last action's outcome, shown until the next. */
@@ -74,6 +86,15 @@ export interface Panel {
   /** Reveals the selected component's element in the Elements panel. */
   revealElement(): Promise<void>;
   selectInjector(id: string): Promise<void>;
+  /** Scene tab: shows another canvas. */
+  selectBoundary(id: string): Promise<void>;
+  /** Scene tab: selects a display object. */
+  selectSceneNode(id: string | null): Promise<void>;
+  toggleScene(id: string): void;
+  /** Scene tab: reports why an effect of the last flush ran (what it depends on and the writes that made it run). */
+  explainEffect(effectId: string): Promise<void>;
+  /** Scene tab: opens the source of the selected node's component in the editor. */
+  openSceneSource(): Promise<void>;
   navigate(routerId: string, url: string): Promise<void>;
   clearEffects(): Promise<void>;
   /** Called on a timer by the page glue; refreshes values that change without an event. */
@@ -100,6 +121,12 @@ export function createPanel(client: Client, host: Host): Panel {
     effects: [],
     hmr: [],
     inspectors: [],
+    boundaries: [],
+    boundary: null,
+    scene: null,
+    sceneSelected: null,
+    sceneCollapsed: new Set(),
+    why: null,
     editing: null,
     message: null,
   };
@@ -139,12 +166,28 @@ export function createPanel(client: Client, host: Host): Panel {
     if (state.focus) state.focus = (await client.request("signal", { id: state.focus.id })) ?? null;
   }
 
+  async function loadScene() {
+    state.boundaries = await client.request("boundaries", undefined);
+    if (state.boundary && !state.boundaries.some((b) => b.id === state.boundary)) state.boundary = null;
+    state.boundary ??= state.boundaries[0]?.id ?? null;
+    state.scene = state.boundary ? await client.request("boundaryTree", { id: state.boundary }) : null;
+    if (state.sceneSelected && !state.scene?.nodes.some((n) => n.id === state.sceneSelected)) {
+      state.sceneSelected = null;
+      state.why = null;
+    }
+    // A node keeps its id only while the scene's order holds; selecting by id is a convenience, not an identity.
+    state.sceneSelected ??= state.scene?.nodes[0]?.id ?? null;
+  }
+
   async function load(tab: TabId) {
     switch (tab) {
       case "components":
         await loadTree();
         // Skip while a value is being typed: a refresh would not lose the draft (it lives here) but needless work.
         await loadDetail();
+        break;
+      case "scene":
+        await loadScene();
         break;
       case "injectors":
         state.injectors = await client.request("injectors", undefined);
@@ -182,6 +225,9 @@ export function createPanel(client: Client, host: Host): Panel {
         return;
       case "injectors":
         if (state.tab === "injectors") void refresh();
+        return;
+      case "boundaries":
+        if (state.tab === "scene") void refresh();
         return;
       case "flush":
         state.effects = [...state.effects, event.flush].slice(-MAX_LOG);
@@ -312,6 +358,43 @@ export function createPanel(client: Client, host: Host): Panel {
       await guard(async () => {
         state.injectorDetail = await client.request("injector", { id });
       });
+    },
+    async selectBoundary(id) {
+      state.boundary = id;
+      state.sceneSelected = null;
+      state.why = null;
+      await guard(loadScene);
+    },
+    async selectSceneNode(id) {
+      state.sceneSelected = id;
+      state.why = null;
+      notify();
+      const first = state.scene?.nodes.find((n) => n.id === id)?.effects[0];
+      if (first) await this.explainEffect(first.id);
+    },
+    toggleScene(id) {
+      if (!state.sceneCollapsed.delete(id)) state.sceneCollapsed.add(id);
+      notify();
+    },
+    async explainEffect(effectId) {
+      await guard(async () => {
+        state.why = (await client.request("why", { id: effectId })) ?? null;
+      });
+    },
+    async openSceneSource() {
+      const node = state.scene?.nodes.find((n) => n.id === state.sceneSelected);
+      if (!node?.component) {
+        state.message = { kind: "info", text: "No component owns this node, so there is no source to open." };
+        notify();
+        return;
+      }
+      try {
+        const result = await client.request("openInEditor", { id: node.component.id });
+        state.message = result.ok ? { kind: "info", text: "Opened in your editor." } : { kind: "error", text: result.error };
+      } catch (error) {
+        fail(error);
+      }
+      notify();
     },
     async navigate(routerId, url) {
       try {

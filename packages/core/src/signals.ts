@@ -243,7 +243,7 @@ function newBucket(): Bucket {
 }
 
 function schedule(): void {
-  scheduled ??= Promise.resolve().then(flushNow);
+  scheduled ??= Promise.resolve().then(() => void flushNow());
 }
 
 const afterFlush: Array<{ task: () => void; scope: Scope | null }> = [];
@@ -260,7 +260,7 @@ function byDepthThenCreation(a: EffectNode, b: EffectNode): number {
   return a.depth - b.depth || a.seq - b.seq;
 }
 
-function flushNow(): void {
+function flushNow(): number {
   const dev = DEV ? devtools.current : null;
   const t0 = dev?.timing ? performance.now() : 0;
   let ran = 0;
@@ -311,11 +311,13 @@ function flushNow(): void {
       } catch (error) {
         reportError(error, "effect", node.scope);
       }
-      if (dev?.timing) (ran++, dev.effectRun(node, performance.now() - t, false));
+      ran++;
+      if (dev?.timing) dev.effectRun(node, performance.now() - t, false);
     }
   }
   scheduled = null;
   if (dev?.timing) dev.flushed(t0, ran, rounds);
+  return ran;
 }
 
 /** Resolves once the pending flush (if any) has completed. */
@@ -330,10 +332,10 @@ export function hasPendingFlush(): boolean {
 
 /**
  * Runs any pending effects synchronously, instead of waiting for the microtask flush. A frame loop calls this after its
- * own writes and before it renders, so a frame's bindings are applied in that frame.
+ * own writes and before it renders, so a frame's bindings are applied in that frame. Returns how many effects ran (zero when none was pending).
  */
-export function flushSync(): void {
-  if (scheduled) flushNow();
+export function flushSync(): number {
+  return scheduled ? flushNow() : 0;
 }
 
 /**

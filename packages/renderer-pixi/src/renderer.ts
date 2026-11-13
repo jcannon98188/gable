@@ -6,22 +6,31 @@
 // Writes are retained-mode: a signal write sets one Pixi property (a dotted path sets one axis). Graphics shapes are
 // lightweight records that mark their graphics dirty; `frame()` redraws each dirty graphics once.
 import "pixi.js/events"; // installs eventMode, cursor, hitArea and interactiveChildren on Container
-import { Application, BitmapText, Cache, Container, Graphics, NineSliceSprite, Rectangle, Sprite, Text, Texture, TilingSprite } from "pixi.js";
+import { Application, BitmapText, Cache, Circle, Container, Ellipse, Graphics, NineSliceSprite, Particle, ParticleContainer, Polygon, Rectangle, RoundedRectangle, Sprite, Text, Texture, TilingSprite } from "pixi.js";
 import { flushSync, type Provider } from "@gable/core";
 import type { Renderer } from "@gable/core/renderer";
 import { DEV } from "./dev.js";
+import type { ParticleLike, ParticleOptions } from "./particles.js";
+import type { CanvasDebugOptions } from "./canvas-debug.js";
+import { FrameOverlay, FrameStats, countObjects, registerSceneBoundary, type SceneNodeLike } from "./debug.js";
 import { CanvasSize } from "./canvas-size.js";
 import { Frame } from "./frame.js";
 import { Gamepad, type GetGamepads } from "./gamepad.js";
 import { Keyboard } from "./keyboard.js";
 import { Pointer } from "./pointer.js";
+import { A11yMirror, type A11yProps } from "./a11y.js";
+import { DomA11ySink } from "./a11y-dom.js";
+import { ReducedMotion, type MatchMedia } from "./reduced-motion.js";
 import {
   SCENE_TAGS,
+  HIT_TAGS,
   SHAPE_TAGS,
   convertStaticAttribute,
+  isHitTag,
   isSceneEvent,
   isSceneTag,
   isShapeTag,
+  type HitTagName,
   type PropSpec,
   type SceneTagName,
   type ShapeTagName,
@@ -67,6 +76,13 @@ export interface PixiRendererOptions {
   keyboard?: "host" | "global";
   /** Source of gamepads, polled once per frame. Default: `navigator.getGamepads` where it exists. */
   getGamepads?: GetGamepads;
+  /** Source of the `prefers-reduced-motion` media query for the ReducedMotion service. Default: `window.matchMedia` where it exists. */
+  matchMedia?: MatchMedia;
+  /**
+   * Dev only (dropped from a production build): shows the frame overlay (per-phase milliseconds, rolling p50 and p95, dropped
+   * frames, display-object count, bindings re-run in the last frame). `true` or the overlay's options.
+   */
+  debug?: boolean | CanvasDebugOptions;
   /** Extra tags registered before the scene is built. */
   tags?: Readonly<Record<string, TagRegistration>>;
 }
@@ -90,12 +106,18 @@ export interface PixiSceneRenderer extends Renderer<Container> {
   readonly pointer: Pointer;
   readonly keyboard: Keyboard;
   readonly gamepad: Gamepad;
+  /** The user's reduced-motion preference; provided to scene components. */
+  readonly reducedMotion: ReducedMotion;
+  /** The semantic mirror of `[a11y]` nodes (TASK-104.11). It renders into the DOM once the renderer is mounted. */
+  readonly a11y: A11yMirror<Container>;
   /** Adds a tag. Registering an existing tag replaces it. */
   registerTag(tag: string, registration: TagRegistration): void;
   /** Redraws every graphics whose shapes changed since the last frame, once each. The loop calls this before each render. */
   frame(): void;
   /** Creates the Application (a dynamic, async init), puts its canvas into `element`, attaches the scene and starts the render loop. */
   mount(element: HTMLElement): Promise<void>;
+  /** Dev HMR: moves the canvas and the resize observer to a replacement host element, keeping the Application, GL context and loop. Before the Application is ready it only retargets where `mount()` will put the canvas. */
+  rehost(element: HTMLElement): void;
   /** Stops the loop, destroys the scene and the Application. Idempotent. */
   destroy(): void;
 }
@@ -105,6 +127,35 @@ class ShapeNode {
   readonly props: Record<string, unknown> = {};
   owner: Graphics | null = null;
   constructor(readonly tag: ShapeTagName) {}
+}
+
+/** A hit-shape child (`<hit-rect>`, `<hit-circle>`, ...): a record that contributes to its parent's `hitArea`, never a display object. */
+class HitNode {
+  readonly props: Record<string, unknown> = {};
+  owner: Container | null = null;
+  constructor(readonly tag: HitTagName) {}
+}
+
+type HitShape = { contains(x: number, y: number): boolean };
+
+/** The Pixi shape a hit child describes, or null while it has no usable geometry (a polygon needs three points). */
+function hitShapeOf(h: HitNode): HitShape | null {
+  const p = h.props;
+  const n = (k: string) => (p[k] as number | undefined) ?? 0;
+  switch (h.tag) {
+    case "hit-rect":
+      return new Rectangle(n("x"), n("y"), n("width"), n("height"));
+    case "hit-rounded-rect":
+      return new RoundedRectangle(n("x"), n("y"), n("width"), n("height"), n("radius"));
+    case "hit-circle":
+      return new Circle(n("x"), n("y"), n("radius"));
+    case "hit-ellipse":
+      return new Ellipse(n("x"), n("y"), n("halfWidth"), n("halfHeight"));
+    case "hit-polygon": {
+      const pts = p.points as number[] | undefined;
+      return pts && pts.length >= 6 ? new Polygon(pts) : null;
+    }
+  }
 }
 
 /** Text under a text tag, or whitespace under any tag. Never a display object. */
@@ -129,6 +180,8 @@ interface Write {
   /** A text style field, written to `node.style` on nodes that have one. */
   readonly style: boolean;
   readonly point: boolean;
+  /** `a11y`, `dynamicProperties` or `hitArea`: handled by the renderer before (or instead of) the write to the node. */
+  readonly special: boolean;
 }
 
 /**
@@ -150,7 +203,29 @@ const CLASSES: Record<string, () => Container> = {
   Graphics: () => new Graphics(),
   TilingSprite: () => new TilingSprite({ texture: Texture.EMPTY }),
   NineSliceSprite: () => new NineSliceSprite({ texture: Texture.EMPTY }),
+  ParticleContainer: () => particleContainer(),
 };
+
+/** A ParticleContainer that also carries the particles() helper protocol (see ./particles.ts). */
+function particleContainer(): Container {
+  const node = new ParticleContainer();
+  Object.defineProperty(node, "newParticle", {
+    value: ({ texture, ...rest }: ParticleOptions): ParticleLike =>
+      new Particle({ ...rest, texture: (texture as Texture | undefined) ?? node.texture ?? Texture.EMPTY }) as unknown as ParticleLike,
+  });
+  return node;
+}
+
+/** `[dynamicProperties]`: Pixi only takes these at construction, so the flags are written onto the container before its first upload. */
+function setDynamicProperties(node: Container, value: Record<string, boolean> | null | undefined): void {
+  const flags = (node as unknown as { _properties?: Record<string, { dynamic: boolean }> })._properties;
+  for (const [name, on] of Object.entries(value ?? {})) {
+    if (!flags || !Object.prototype.hasOwnProperty.call(flags, name)) {
+      throw new Error(`Unknown dynamicProperties key "${name}" on <particle-container>. Keys: ${flags ? Object.keys(flags).join(", ") : "none"}.`);
+    }
+    flags[name]!.dynamic = on === true;
+  }
+}
 
 type Resolved = PropSpec | { readonly kind: "number"; readonly axis: "x" | "y"; readonly of: string };
 
@@ -175,8 +250,8 @@ function writeOf(info: TagInfo, name: string): Write {
   const dot = name.indexOf(".");
   const write: Write =
     dot !== -1
-      ? { of: name.slice(0, dot), axis: name.slice(dot + 1), style: false, point: false }
-      : { of: "", axis: "", style: STYLE_FIELDS.has(name), point: resolved.kind === "point" };
+      ? { of: name.slice(0, dot), axis: name.slice(dot + 1), style: false, point: false, special: false }
+      : { of: "", axis: "", style: STYLE_FIELDS.has(name), point: resolved.kind === "point", special: name === "a11y" || name === "dynamicProperties" || name === "hitArea" };
   (info.writes ??= new Map()).set(name, write);
   return write;
 }
@@ -198,16 +273,47 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
   const pointer = new Pointer();
   const keyboard = new Keyboard();
   const gamepad = new Gamepad();
+  const reducedMotion = new ReducedMotion();
+  const mirror = new A11yMirror<Container>();
+  let hostTabindexManaged = false;
   const detachInput: Array<() => void> = [];
   let touched = true; // the scene changed since the last render; the first frame always draws
+  const detachReducedMotion = reducedMotion.attach(
+    (typeof given === "function" ? undefined : given.matchMedia) ?? (typeof matchMedia === "function" ? (q) => matchMedia(q) : null),
+  );
   const registry = new Map<string, TagRegistration & { info: TagInfo }>();
   const shapeLists = new WeakMap<Graphics, ShapeNode[]>();
   const textParts = new WeakMap<Container, ContentNode[]>();
+  const hitLists = new WeakMap<Container, HitNode[]>();
+  /** The `[hitArea]` an author bound, kept while hit children override it. */
+  const explicitHitArea = new WeakMap<Container, unknown>();
+  const layouts = new WeakMap<Container, unknown[]>();
+  const layoutParent = new WeakMap<object, Container>();
+  /** Records `node` in `parent`'s order list, before `before` (or last), leaving any earlier place. */
+  const place = (parent: Container, node: unknown, before: unknown): void => {
+    unplace(node);
+    const order = layouts.get(parent) ?? (layouts.set(parent, []), layouts.get(parent)!);
+    const at = before ? order.indexOf(before) : -1;
+    if (at === -1) order.push(node);
+    else order.splice(at, 0, node);
+    layoutParent.set(node as object, parent);
+  };
+  const unplace = (node: unknown): void => {
+    const old = layoutParent.get(node as object);
+    if (!old) return;
+    const order = layouts.get(old);
+    const at = order ? order.indexOf(node) : -1;
+    if (order && at !== -1) order.splice(at, 1);
+    layoutParent.delete(node as object);
+  };
   const dirty = new Set<Graphics>();
   let destroyed = false;
   let app: ApplicationLike | null = null;
   let appReady = false;
   let stopLoop: (() => void) | null = null;
+  let hostElement: HTMLElement | null = null;
+  let moveHost: ((element: HTMLElement) => void) | null = null;
+  let stopDebug: (() => void) | null = null;
 
   const containerProps = SCENE_TAGS.container.props;
 
@@ -228,6 +334,14 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
 
   function infoOf(node: Container): TagInfo {
     return ((node as Tagged)[INFO] ??= hostInfo(node.label));
+  }
+
+  /** Sets `owner.hitArea` from its hit children (one shape, or the union of several); with none, back to the bound `[hitArea]`. */
+  function applyHitArea(owner: Container | null) {
+    if (!owner || owner.destroyed) return;
+    const shapes = (hitLists.get(owner) ?? []).map(hitShapeOf).filter((s): s is HitShape => s !== null);
+    if (shapes.length === 0) owner.hitArea = (explicitHitArea.get(owner) ?? null) as Container["hitArea"];
+    else owner.hitArea = shapes.length === 1 ? (shapes[0] as Container["hitArea"]) : { contains: (x: number, y: number) => shapes.some((s) => s.contains(x, y)) };
   }
 
   function redraw(g: Graphics) {
@@ -283,6 +397,13 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     touched = true;
     let info = (node as Tagged)[INFO];
     if (info === undefined) {
+      if ((node as unknown) instanceof HitNode) {
+        const hit = node as unknown as HitNode;
+        if (!lookup(HIT_TAGS[hit.tag].props, name)) throw unknownProperty(hit.tag, name);
+        hit.props[name] = value;
+        applyHitArea(hit.owner);
+        return;
+      }
       if ((node as unknown) instanceof ShapeNode) {
         const shape = node as unknown as ShapeNode;
         if (!lookup(SHAPE_TAGS[shape.tag].props, name)) throw unknownProperty(shape.tag, name);
@@ -293,6 +414,18 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       info = infoOf(node);
     }
     const write = writeOf(info, name);
+    if (write.special) {
+      if (name === "a11y") {
+        mirror.set(node, value as A11yProps | null | undefined);
+        return;
+      }
+      if (name === "dynamicProperties") {
+        setDynamicProperties(node, value as Record<string, boolean> | null | undefined);
+        return;
+      }
+      explicitHitArea.set(node, value);
+      if (hitLists.get(node)?.length) return;
+    }
     const target = node as unknown as Record<string, any>;
     if (name === "texture" && typeof value === "string") value = textureFromCache(value, info.tag);
     if (write.axis !== "") {
@@ -337,23 +470,29 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
 
   const renderer: PixiSceneRenderer = {
     name: "pixi",
+    knowsElement: (tag) => isShapeTag(tag) || isSceneTag(tag) || isHitTag(tag) || registry.has(tag),
     root,
     size,
     frames: frameService,
     pointer,
     keyboard,
     gamepad,
+    reducedMotion,
+    a11y: mirror,
     invalidate() {
       touched = true;
     },
+    warnRawTimers: DEV,
     providers: [{ provide: CanvasSize, useValue: size } as Provider, { provide: Frame, useValue: frameService } as Provider,
       { provide: Pointer, useValue: pointer } as Provider,
       { provide: Keyboard, useValue: keyboard } as Provider,
       { provide: Gamepad, useValue: gamepad } as Provider,
+      { provide: ReducedMotion, useValue: reducedMotion } as Provider,
     ],
     registerTag,
     createElement(tag) {
       if (isShapeTag(tag)) return new ShapeNode(tag) as unknown as Container;
+      if (isHitTag(tag)) return new HitNode(tag) as unknown as Container;
       const custom = registry.get(tag);
       if (custom) {
         const node = custom.create();
@@ -373,18 +512,19 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         (node as Tagged)[INFO] = hostInfo(tag);
         return node;
       }
-      throw new Error(`Unknown scene tag <${tag}> in the "pixi" renderer. Scene tags: ${[...Object.keys(SCENE_TAGS), ...Object.keys(SHAPE_TAGS), ...registry.keys()].join(", ")}. A component is used by its hyphenated selector.`);
+      throw new Error(`Unknown scene tag <${tag}> in the "pixi" renderer. Scene tags: ${[...Object.keys(SCENE_TAGS), ...Object.keys(SHAPE_TAGS), ...Object.keys(HIT_TAGS), ...registry.keys()].join(", ")}. A component is used by its hyphenated selector.`);
     },
     createText: (text) => new ContentNode(text) as unknown as Container,
     createAnchor: () => new Container({ label: "#anchor" }),
     setProperty,
     setAttribute(node, name, value) {
       if (value === null) return;
-      const table = (node as unknown) instanceof ShapeNode ? SHAPE_TAGS[(node as unknown as ShapeNode).tag].props : infoOf(node).table;
-      const tag = (node as unknown) instanceof ShapeNode ? (node as unknown as ShapeNode).tag : infoOf(node).tag;
+      const hitNode = (node as unknown) instanceof HitNode ? (node as unknown as HitNode) : null;
+      const table = hitNode ? HIT_TAGS[hitNode.tag].props : (node as unknown) instanceof ShapeNode ? SHAPE_TAGS[(node as unknown as ShapeNode).tag].props : infoOf(node).table;
+      const tag = hitNode ? hitNode.tag : (node as unknown) instanceof ShapeNode ? (node as unknown as ShapeNode).tag : infoOf(node).tag;
       const resolved = lookup(table, name);
       if (!resolved) throw unknownProperty(tag, name);
-      if (name === "texture" && !(node as unknown instanceof ShapeNode)) {
+      if (name === "texture" && !hitNode && !(node as unknown instanceof ShapeNode)) {
         setProperty(node, name, value);
         return;
       }
@@ -405,6 +545,9 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     },
     insert(parent, node, before) {
       touched = true;
+      // Every inserted node, ignored whitespace text and shapes included, keeps its place in an order list, because the
+      // core may name one of those as `before` and a Pixi container does not hold them.
+      place(parent, node, before);
       if ((node as unknown) instanceof ShapeNode) {
         const shape = node as unknown as ShapeNode;
         if (!(parent instanceof Graphics)) throw new Error(`<${shape.tag}> can only be a child of <graphics>.`);
@@ -417,6 +560,20 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         if (shape.owner && shape.owner !== parent) markDirty(shape.owner);
         shape.owner = parent;
         markDirty(parent);
+        return;
+      }
+      if ((node as unknown) instanceof HitNode) {
+        const hit = node as unknown as HitNode;
+        const list = hitLists.get(parent) ?? (hitLists.set(parent, []), hitLists.get(parent)!);
+        const old = hit.owner ? hitLists.get(hit.owner) : undefined;
+        if (old) old.splice(old.indexOf(hit), 1);
+        const at = before ? list.indexOf(before as unknown as HitNode) : -1;
+        if (at === -1) list.push(hit);
+        else list.splice(at, 0, hit);
+        const previous = hit.owner;
+        hit.owner = parent;
+        if (previous && previous !== parent) applyHitArea(previous);
+        applyHitArea(parent);
         return;
       }
       if ((node as unknown) instanceof ContentNode) {
@@ -433,22 +590,37 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         writeText(parent);
         return;
       }
-      if (before && before.parent === parent) {
-        node.removeFromParent();
-        parent.addChildAt(node, parent.getChildIndex(before));
-      } else {
-        node.removeFromParent();
-        parent.addChild(node);
+      if (parent instanceof ParticleContainer) {
+        throw new Error("<particle-container> takes no child tags: particles are not display objects. Create them with particles(ref) on a #ref to the container.");
       }
+      const order = layouts.get(parent)!;
+      let next: Container | undefined;
+      for (let i = order.indexOf(node) + 1; i < order.length && !next; i++) {
+        const candidate = order[i] as Container;
+        if (candidate.parent === parent) next = candidate;
+      }
+      node.removeFromParent();
+      if (next) parent.addChildAt(node, parent.getChildIndex(next));
+      else parent.addChild(node);
     },
     remove(node) {
       touched = true;
+      unplace(node);
       if ((node as unknown) instanceof ShapeNode) {
         const shape = node as unknown as ShapeNode;
         const list = shape.owner ? shapeLists.get(shape.owner) : undefined;
         if (list) list.splice(list.indexOf(shape), 1);
         markDirty(shape.owner);
         shape.owner = null;
+        return;
+      }
+      if ((node as unknown) instanceof HitNode) {
+        const hit = node as unknown as HitNode;
+        const list = hit.owner ? hitLists.get(hit.owner) : undefined;
+        if (list) list.splice(list.indexOf(hit), 1);
+        const owner = hit.owner;
+        hit.owner = null;
+        applyHitArea(owner);
         return;
       }
       if ((node as unknown) instanceof ContentNode) {
@@ -464,12 +636,13 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       }
       // remove() means gone for good here; a moved node goes through insert().
       node.removeFromParent();
+      mirror.remove(node);
       if (node instanceof Graphics) dirty.delete(node);
       node.destroy({ children: true });
     },
     listen(node, name, handler) {
-      if ((node as unknown) instanceof ShapeNode || (node as unknown) instanceof ContentNode) {
-        throw new Error(`Events can only be listened to on display nodes; ${name} was given to a shape or text content.`);
+      if ((node as unknown) instanceof ShapeNode || (node as unknown) instanceof HitNode || (node as unknown) instanceof ContentNode) {
+        throw new Error(`Events can only be listened to on display nodes; ${name} was given to a shape, a hit shape or text content.`);
       }
       if (!isSceneEvent(name)) throw new Error(`Unknown scene event "${name}" on <${infoOf(node).tag}>.`);
       if (node.eventMode === undefined || node.eventMode === "passive" || node.eventMode === "auto") node.eventMode = "static"; // undefined: no EventSystem yet (the scene is built before the Application)
@@ -483,6 +656,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     frame() {
       for (const g of dirty) if (!g.destroyed) redraw(g);
       dirty.clear();
+      mirror.sync(root);
     },
     async mount(element) {
       function mountInput(created: ApplicationLike, element: HTMLElement, options: PixiRendererOptions, first: { w: number; h: number }) {
@@ -498,7 +672,10 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         if (options.keyboard === "global") {
           detachInput.push(keyboard.attach(window, "global"));
         } else {
-          if (!element.hasAttribute("tabindex")) element.tabIndex = 0;
+          if (!element.hasAttribute("tabindex")) {
+            element.tabIndex = 0;
+            hostTabindexManaged = true;
+          }
           detachInput.push(keyboard.attach(element, "host"));
           const focusHost = () => element.focus({ preventScroll: true });
           created.canvas.addEventListener("pointerdown", focusHost);
@@ -509,11 +686,21 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       }
 
       if (destroyed) return;
+      hostElement = element;
       const options = typeof given === "function" ? given() : given;
+      // Dev only: the scene is visible to the devtools (the Scene panel, the Designer) from the moment it mounts.
+      if (DEV) {
+        stopDebug = registerSceneBoundary({
+          label: element.getAttribute("aria-label") || "canvas scene",
+          root,
+          describe: (node) => ({ tag: node === root ? "scene" : ((node as Tagged)[INFO]?.tag ?? "container"), kind: node.constructor?.name ?? "Container" }),
+          host: () => hostElement,
+        });
+      }
       const created = (options.createApplication ?? (() => new Application() as unknown as ApplicationLike))();
       app = created;
       const ratio = options.resolution ?? (globalThis as { devicePixelRatio?: number }).devicePixelRatio ?? 1;
-      const measure = () => ({ w: element.clientWidth || options.width || 300, h: element.clientHeight || options.height || 150 });
+      const measure = () => ({ w: hostElement!.clientWidth || options.width || 300, h: hostElement!.clientHeight || options.height || 150 });
       const first = measure();
       await created.init({
         width: first.w,
@@ -532,12 +719,19 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       }
       appReady = true;
       created.canvas.style.display = "block";
-      element.appendChild(created.canvas);
+      hostElement!.appendChild(created.canvas);
       created.stage.addChild(root);
       size.pixelRatio.set(ratio);
       size.width.set(first.w);
       size.height.set(first.h);
       mountInput(created, element, options, first);
+      // The mirror elements become the tab stops while there are any; the host is the one stop otherwise.
+      mirror.attach(new DomA11ySink<Container>(element, (node, event) => {
+        if (mirror.activate(node, event)) touched = true;
+      }, (count) => {
+        if (hostTabindexManaged) element.tabIndex = count > 0 ? -1 : 0;
+      }));
+      detachInput.push(() => mirror.detach());
 
       const resize = () => {
         const { w, h } = measure();
@@ -549,7 +743,13 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         size.height.set(h);
       };
       const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(resize);
-      observer?.observe(element);
+      observer?.observe(hostElement!);
+      moveHost = (next) => {
+        observer?.disconnect();
+        next.appendChild(created.canvas);
+        observer?.observe(next);
+        resize();
+      };
 
       // One loop per boundary. Per frame: hooks, then a synchronous effect flush, then one render (ADR 0020).
       const scheduler = options.scheduler ?? defaultScheduler;
@@ -557,20 +757,31 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       let raf = 0;
       let running = true;
       let last: number | null = null;
+      // Dev only: frame statistics and the overlay. `dbg` is null unless the `debug` option asked for them.
+      const dbg = DEV && options.debug ? debugSession(options.debug === true ? {} : options.debug, element, root) : null;
+      if (dbg) {
+        const stopSession = stopDebug;
+        stopDebug = () => (dbg.overlay.destroy(), stopSession?.());
+      }
       const tick = (time: number) => {
         if (!running) return;
         raf = scheduler.request(tick);
         const seconds = last === null ? 0 : (time - last) / 1000;
         last = time;
         try {
+          const t0 = dbg ? dbg.now() : 0;
           keyboard.beginFrame();
           gamepad.beginFrame();
           frameService.advance(seconds);
-          flushSync(); // apply signal writes to Pixi nodes
-          if (onDemand && !touched) return;
-          touched = false;
-          renderer.frame();
-          created.render();
+          const t1 = dbg ? dbg.now() : 0;
+          const ran = flushSync(); // apply signal writes to Pixi nodes
+          const t2 = dbg ? dbg.now() : 0;
+          if (!(onDemand && !touched)) {
+            touched = false;
+            renderer.frame();
+            created.render();
+          }
+          if (dbg) dbg.frame(time, t1 - t0, t2 - t1, dbg.now() - t2, ran);
         } catch (error) {
           console.error("[gable] error in the canvas frame loop", error);
         }
@@ -583,11 +794,20 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         while (detachInput.length) detachInput.pop()!();
       };
     },
+    rehost(element) {
+      if (destroyed) return;
+      hostElement = element;
+      moveHost?.(element);
+    },
     destroy() {
       if (destroyed) return;
       destroyed = true;
+      stopDebug?.();
+      stopDebug = null;
       stopLoop?.();
       stopLoop = null;
+      detachReducedMotion();
+      mirror.detach();
       dirty.clear();
       if (!root.destroyed) root.destroy({ children: true });
       if (app) {
@@ -600,6 +820,27 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     },
   };
   return renderer;
+}
+
+/** Dev only: the statistics and overlay of one canvas boundary. */
+function debugSession(options: CanvasDebugOptions, host: HTMLElement, root: SceneNodeLike) {
+  const stats = new FrameStats(options);
+  const overlay = new FrameOverlay(host);
+  const now = options.now ?? (() => performance.now());
+  const every = Math.max(1, options.every ?? 10);
+  let frames = 0;
+  let objects = 0;
+  return {
+    overlay,
+    now,
+    /** Records one frame; the object count and the overlay refresh every `every` frames (and on the first). */
+    frame(at: number, hooks: number, flush: number, render: number, bindings: number) {
+      const refresh = frames++ % every === 0;
+      if (refresh) objects = countObjects(root);
+      stats.record({ at, hooks, flush, render, objects, bindings });
+      if (refresh) overlay.update(stats.snapshot());
+    },
+  };
 }
 
 const defaultScheduler: FrameScheduler = {

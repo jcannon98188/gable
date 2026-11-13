@@ -2,10 +2,10 @@ import * as PIXI from "pixi.js";
 import "pixi.js/events"; // installs eventMode, cursor, hitArea and interactiveChildren on Container
 import type { AllFederatedEventMap } from "pixi.js";
 import { describe, expect, it } from "vitest";
-import { SCENE_EVENTS, SCENE_TAGS, SHAPE_TAGS, propertiesOf, type SceneEventName, type SceneTagName } from "./elements.js";
+import { HIT_TAGS, SCENE_EVENTS, SCENE_TAGS, SHAPE_TAGS, propertiesOf, type SceneEventName, type SceneTagName } from "./elements.js";
 
 // Properties that are Gable-level conventions rather than fields of a Pixi class.
-const GABLE_ONLY = new Set(["fill", "stroke", "strokeWidth", "text", "context"]);
+const GABLE_ONLY = new Set(["fill", "stroke", "strokeWidth", "text", "context", "a11y", "dynamicProperties"]);
 
 function make(tag: SceneTagName): object {
   switch (tag) {
@@ -23,6 +23,8 @@ function make(tag: SceneTagName): object {
       return new PIXI.TilingSprite({ texture: PIXI.Texture.EMPTY });
     case "nine-slice-sprite":
       return new PIXI.NineSliceSprite({ texture: PIXI.Texture.EMPTY });
+    case "particle-container":
+      return new PIXI.ParticleContainer();
   }
 }
 
@@ -102,6 +104,9 @@ describe("property table conforms to Pixi's own classes", () => {
       for (const name of Object.keys(spec.props)) {
         if (GABLE_ONLY.has(name)) continue;
         expect(name in shape, `${tag}.${name}`).toBe(true);
+      }
+      for (const name of Object.keys(HIT_TAGS[`hit-${tag}` as keyof typeof HIT_TAGS].props)) {
+        expect(name in shape, `hit-${tag}.${name}`).toBe(true);
       }
     }
   });

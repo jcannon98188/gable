@@ -8,11 +8,14 @@ import ts from "@typescript/typescript6";
 import {
   buildElementMap,
   convertStaticAttribute,
+  isHitTag,
   isSceneTag,
+  isSceneEvent,
   isShapeTag,
   propertiesOf,
   resolveProperty,
   SCENE_EVENTS,
+  type HitTagName,
   type SceneTagName,
   type ShapeTagName,
 } from "@gable/renderer-pixi/elements";
@@ -30,7 +33,7 @@ const pixi = (type: string): string => type.replace(/\b[A-Z]\w*/g, (name) => `im
 const DOM_NAMES = new Set(["text", "rect", "circle", "ellipse", "polygon"]);
 
 /** The scene vocabulary that can only be a mistake in a DOM template. */
-export const isSceneOnlyTag = (tag: string): boolean => (isSceneTag(tag) || isShapeTag(tag) || tag === "rounded-rect") && !DOM_NAMES.has(tag);
+export const isSceneOnlyTag = (tag: string): boolean => (isSceneTag(tag) || isShapeTag(tag) || isHitTag(tag) || tag === "rounded-rect") && !DOM_NAMES.has(tag);
 
 /** Whether a component's `static meta` object makes its template a scene template: a boundary or the marker. */
 export function metaIsScene(meta: ts.ObjectLiteralExpression): boolean {
@@ -76,7 +79,7 @@ export function walkMode(tree: readonly TNode[], scene: boolean, isBoundary: (ta
 }
 
 /** Known scene tag (scene or shape), as a name the map and table both use. */
-export const knownSceneTag = (tag: string): tag is SceneTagName | ShapeTagName => isSceneTag(tag) || isShapeTag(tag);
+export const knownSceneTag = (tag: string): tag is SceneTagName | ShapeTagName | HitTagName => isSceneTag(tag) || isShapeTag(tag) || isHitTag(tag);
 
 /** The TypeScript type a binding to `name` on `tag` must have, or undefined when the property is not valid there. */
 export function scenePropType(tag: string, name: string): string | undefined {
@@ -99,7 +102,7 @@ const dottedHint = "dotted paths address one axis of a point-like property: posi
 function unknownProperty(tag: string, name: string): string {
   if (/^(style|attr|class)\./.test(name)) return `Unknown property "${name}" on <${tag}>: Pixi nodes have no CSS styles, attributes or classes; ${name.startsWith("style.") ? "write TextStyle fields flat (fontSize, fill) or bind [style]" : "bind the Pixi property directly"}`;
   if (name.includes(".")) return `Unknown property "${name}" on <${tag}>: ${dottedHint}`;
-  const hint = closest(name, Object.keys(propertiesOf(tag as SceneTagName)));
+  const hint = closest(name, Object.keys(propertiesOf(tag as SceneTagName | ShapeTagName | HitTagName)));
   return `Unknown property "${name}" on <${tag}>${hint ? `. Did you mean "${hint}"?` : ""}`;
 }
 
@@ -124,6 +127,12 @@ export function sceneRules(model: TemplateModel, isComponent: (tag: string) => b
       if (e.kind === "handler") continue;
       if (e.kind === "field") continue;
       if (!resolveProperty(tag, e.name)) report(e.nameStart, e.name.length, "scene-unknown-property", unknownProperty(tag, e.name));
+    }
+    // scene-pointer-a11y: a pointer listener makes the node interactive, so assistive technology needs [a11y] (TASK-104.11).
+    const pointer = el.expressions.find((e) => e.kind === "handler" && isSceneEvent(e.name) && e.name !== "wheel");
+    const hasA11y = el.attrs.some((a) => a.name === "a11y") || el.expressions.some((e) => e.kind === "value" && e.name === "a11y");
+    if (pointer && !hasA11y) {
+      report(el.tagStart, el.tag.length, "scene-pointer-a11y", `<${tag}> listens for pointer events ((${pointer.name})) but has no [a11y]: add [a11y]="{ role, label }" so keyboard and assistive technology users can reach it, or give the action a non-pointer route`);
     }
     for (const a of el.attrs) {
       const spec = resolveProperty(tag, a.name);

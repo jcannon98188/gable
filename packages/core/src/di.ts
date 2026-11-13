@@ -1,5 +1,6 @@
 import { createScope, runInScope, type Scope } from "./scope.js";
 import { DEV, devtools, hooks } from "./dev-hooks.js";
+import { unwatchTimers } from "./timer-watch.js";
 
 /** A class used as a Token. Abstract classes work too. */
 export type Type<T> = abstract new () => T;
@@ -171,10 +172,10 @@ class InjectorImpl implements Injector {
   #construct(Class: Type<unknown>): unknown {
     assertNoConstructor(Class);
     const dev = DEV ? hooks.current?.service(Class, this) : undefined;
-    if (!dev) return this.#inContext(() => new (Class as unknown as new () => unknown)());
+    if (!dev) return this.#inContext(() => unwatchTimers(() => new (Class as unknown as new () => unknown)()));
     // Dev: each instance gets its own scope, so a hot update can dispose just its effects.
     const scope = createScope(this.scope);
-    const instance = this.#inContext(() => runInScope(scope, () => dev.construct()));
+    const instance = this.#inContext(() => runInScope(scope, () => unwatchTimers(() => dev.construct())));
     dev.done({ instance, scope, injector: this });
     return instance;
   }

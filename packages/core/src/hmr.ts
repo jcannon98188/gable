@@ -8,6 +8,7 @@ import type { Renderer } from "./renderer.js";
 import { signal, untracked, type WritableSignal } from "./signals.js";
 import { describe, ownMembers, type Definition } from "./hmr-source.js";
 import { transferState } from "./hmr-transfer.js";
+import { hotUpdate } from "./hot-data.js";
 
 type Cls = Function & Record<string, any>;
 /**
@@ -230,7 +231,7 @@ const impl: DevHooks = {
     const C = canon(Class) as Cls;
     instrument(C);
     let deps = new Set<object>();
-    const old = session?.queues.get(C)?.shift();
+    let old = session?.queues.get(C)?.shift();
     if (session && old && own && old.injector) {
       session.injectorPairs.set(own, old.injector);
       // Services the old component's injector had resolved are re-created now so their state carries over.
@@ -243,6 +244,9 @@ const impl: DevHooks = {
       hot,
       construct: () => construct(C, (d) => (deps = d)),
       done(info) {
+        // The replacement outlives the old instance: letting go of it here keeps each generation from holding the one before.
+        const replaced = old;
+        old = undefined;
         const rec: Rec = {
           kind: "component",
           seq: seq++,
@@ -258,7 +262,7 @@ const impl: DevHooks = {
         records.add(rec);
         byInstance.set(info.instance, rec);
         info.scope.onDispose(() => records.delete(rec));
-        if (old && !session!.noTransfer.has(C)) transferState(old.instance, info.instance, isService);
+        if (replaced && !session!.noTransfer.has(C)) transferState(replaced.instance, info.instance, isService);
       },
     };
   },
@@ -569,8 +573,13 @@ function applyUpdateNow(updates: ModuleUpdate[], failures: unknown[], roots?: ob
     building--;
 
     // Everything built: retire the old, then patch styles in place.
-    for (const s of swaps) s.commit();
-    for (const fn of retire) fn();
+    hotUpdate.retiring = true;
+    try {
+      for (const s of swaps) s.commit();
+      for (const fn of retire) fn();
+    } finally {
+      hotUpdate.retiring = false;
+    }
     for (const s of staged) {
       if (!s.entry.canonical.meta) continue;
       for (const r of records) if (r.kind === "component" && r.Class === s.entry.canonical && r.renderer) registerComponentStyles(r.Class as any, r.renderer);
