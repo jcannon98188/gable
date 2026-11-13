@@ -1,3 +1,4 @@
+import { DEV } from "./dev-hooks.js";
 import { cleanupCalls } from "./timer-watch.js";
 
 /** Ownership tree: disposing a scope disposes its children and runs its cleanups. */
@@ -107,7 +108,7 @@ export function runInScope<T>(scope: Scope | null, fn: () => T): T {
  * @param fn - The cleanup.
  */
 export function onCleanup(fn: () => void): void {
-  cleanupCalls.count++;
+  if (DEV) cleanupCalls.count++;
   if (!current) throw new Error("onCleanup() called outside a scope (a component Setup, effect or block).");
   current.onDispose(fn);
 }

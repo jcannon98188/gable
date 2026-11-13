@@ -80,4 +80,50 @@ describe("dev warning for raw timers", () => {
     await bootRock(Rock, [Spawner]);
     expect(warnings(warn, "setInterval")).toEqual([]);
   });
+
+  it("an unrelated onCleanup (an unrelated cleanup) does not hide a raw timer: the leak is reported when the component is destroyed", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    class Rock {
+      static meta = rockMeta;
+      unrelated = onCleanup(() => {}); // what Frame.onFrame and Assets.load do
+      spawn = track(setInterval(() => {}, 60_000));
+    }
+    const page = await bootRock(Rock);
+    page.ref.destroy();
+    await Promise.resolve();
+    const found = warnings(warn, "setInterval");
+    expect(found.length).toBe(1);
+    expect(found[0]).toContain("Rock");
+  });
+
+  it("stays quiet when the cleanup really clears the timer, even next to unrelated cleanups", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    class Rock {
+      static meta = rockMeta;
+      unrelated = onCleanup(() => {}); // what Frame.onFrame and Assets.load do
+      spawn = (() => {
+        const id = setInterval(() => {}, 60_000);
+        onCleanup(() => clearInterval(id));
+        return id;
+      })();
+    }
+    const page = await bootRock(Rock);
+    page.ref.destroy();
+    await Promise.resolve();
+    expect(warnings(warn, "setInterval")).toEqual([]);
+  });
+
+  it("a one-shot setTimeout that already fired is not a leak", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    class Rock {
+      static meta = rockMeta;
+      unrelated = onCleanup(() => {}); // what Frame.onFrame and Assets.load do
+      once = setTimeout(() => {}, 0);
+    }
+    const page = await bootRock(Rock);
+    await new Promise((r) => setTimeout(r, 10));
+    page.ref.destroy();
+    await Promise.resolve();
+    expect(warnings(warn, "setTimeout")).toEqual([]);
+  });
 });
