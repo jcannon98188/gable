@@ -9,7 +9,7 @@ export class Scene {
     renderer: () => undefined as never,
     template: html`
       <container [x]="px()" y="4" alpha="0.5" visible [scale]="2" [scale.x]="px()" pivot="1, 2" [position]="pos()" #root>
-        <sprite [texture]="tex()" anchor="0.5" [anchor.y]="0.5" tint="#ff0000" (pointerdown)="down($event)" (click)="down($event)"></sprite>
+        <sprite [texture]="tex()" anchor="0.5" [anchor.y]="0.5" tint="#ff0000" (pointerdown)="down($event)" (click)="down($event)" [a11y]="info()"></sprite>
         <text fontSize="24" fill="#fff" text="123">hello {{ px() }}</text>
         <graphics>
           <rect x="0" y="0" width="10" height="10" fill="#00ff00" strokeWidth="2"></rect>
@@ -25,6 +25,7 @@ export class Scene {
       </container>
     `,
   };
+  info = signal({ role: "button", label: "Ship" });
   px = signal(1);
   pts = signal([0, 0, 10, 0, 10, 10]);
   pos = signal({ x: 1, y: 2 });

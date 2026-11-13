@@ -50,6 +50,7 @@ export const RULES = {
   "scene-unknown-property": "error",
   "scene-attribute": "error",
   "scene-tag-in-dom": "error",
+  "scene-pointer-a11y": "warn",
 } as const satisfies Record<string, Severity>;
 
 /** The name of one analyzer rule, for example `"bare-signal"`: a key of {@link RULES}. Used in the `rules` plugin option and on every diagnostic. */
