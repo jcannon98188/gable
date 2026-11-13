@@ -32,7 +32,7 @@ async function bundle(dev: boolean): Promise<string> {
 }
 
 // Strings that only dev-only code contains: the raw-timer watch and its warnings (core), hotData's misuse error, the orphan adoption keyed by canvas-key (scene.ts).
-const DEV_ONLY_MARKERS = ["started a raw", "was not cleared by any onCleanup", "hotData() called outside", "canvas-key"];
+const DEV_ONLY_MARKERS = ["started a raw", "was not cleared by any onCleanup", "hotData() called outside", "canvas-key", "declares a renderer boundary"];
 
 describe("production build", () => {
   it("drops the overlay, the scene boundary and the hook calls when __GABLE_DEV__ is false", async () => {

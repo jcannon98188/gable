@@ -178,6 +178,22 @@ export function injectHost<N = unknown>(): HostRef<N> {
   return hostContext as HostRef<N>;
 }
 
+/**
+ * Dev only. The component that declares a renderer boundary is itself built by the parent renderer: the services of the boundary
+ * renderer (a canvas's Frame, Keyboard, Pointer, Assets) reach the components of its template, not its own Setup. A missing provider
+ * there is almost always that mistake, so the error says so.
+ */
+function withBoundaryHint<T>(name: string, run: () => T): T {
+  try {
+    return run();
+  } catch (error) {
+    if (error instanceof Error && /^No provider for /.test(error.message)) {
+      throw new Error(`${error.message} ${name} declares a renderer boundary (meta.renderer): the services of that renderer are provided to the components in its template, not to ${name}'s own Setup. Inject them in a child component.`, { cause: error });
+    }
+    throw error;
+  }
+}
+
 /** Runs a component's Setup (field initialisers) in its injection context and wires `meta.host`. */
 export function prepare<T extends object, N>(Class: ComponentClass<T>, options: PrepareOptions<N>): PreparedComponent<T, N> {
   const { renderer, host } = options;
@@ -210,7 +226,8 @@ export function prepare<T extends object, N>(Class: ComponentClass<T>, options: 
       try {
         hotSetup.active = true;
         hotSetup.store = dev?.hot;
-        const construct = () => inReadPhase("setup", () => (dev ? (dev.construct() as T) : new Class()));
+        const build = () => inReadPhase("setup", () => (dev ? (dev.construct() as T) : new Class()));
+        const construct = DEV && Class.meta.renderer ? () => withBoundaryHint(Class.name, build) : build;
         if (!DEV || !renderer.warnRawTimers) return construct();
         const before = cleanupCalls.count;
         const watched = watchTimers(construct);

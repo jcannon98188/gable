@@ -196,6 +196,23 @@ describe("mountWithScene: the accessibility mirror (TASK-105.9)", () => {
     expect(run).toThrow(/binding exploded/);
   });
 
+  it("says what is wrong when the host component injects a boundary service in its own Setup", () => {
+    const scene = createSceneTestRenderer();
+    class Host {
+      static meta = { selector: "game-host", template: html`<sprite label="x" />`, renderer: scene.boundary };
+      frame = inject(Frame);
+    }
+    class App {
+      static meta = { selector: "app-root", imports: [Host], template: html`<game-host></game-host>` };
+    }
+    const run = () => {
+      const fixture = mountWithScene(App, { scene });
+      fixture.frame();
+      fixture.destroy();
+    };
+    expect(run).toThrow(/No provider for Frame. Host declares a renderer boundary.*Inject them in a child component/);
+  });
+
   it("provides ReducedMotion like the real host, so a scene component can inject it", () => {
     const scene = createSceneTestRenderer();
     let reduced: boolean | undefined;
