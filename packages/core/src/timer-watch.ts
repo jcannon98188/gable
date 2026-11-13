@@ -76,7 +76,7 @@ export function unwatchTimers<T>(construct: () => T): T {
  * installs it when its scope starts to dispose and calls the returned function a microtask later, so the cleanups in between are seen.
  */
 export function observeClears(timers: WatchedTimer[]): () => void {
-  const g = globalThis as Record<string, Function>;
+  const g = globalThis as unknown as Record<string, Function>;
   const names = ["clearInterval", "clearTimeout"] as const;
   const original = { clearInterval: g.clearInterval, clearTimeout: g.clearTimeout };
   const installed: Record<string, Function> = {};
