@@ -130,6 +130,8 @@ Baseline a3ab114 against the branch head, interleaved:
 | `shared`, 5,000 | 4 | 22.4 ms | 16.2 ms | -27.7% | -24% to -30% |
 | `ref`, 5,000 | 2 | 0.0 ms | 0.0 ms | none | the style has no bindings |
 
+After merging the integration branch (which added `a11y`, `dynamicProperties` and hit children to `setProperty`), the integration tip against the merged head, 4 rounds, `signals` style: 21.8 ms to 15.6 ms, -28.4%.
+
 Other phases: in the `signals` style the hooks did not get slower (13.9 ms before, 12 to 15 ms after depending on load). In the `shared` style the hooks read 9.3 ms against 8.6 ms (worse in 4 of 4 rounds, about 0.14 microseconds per entity) for a reason not found; total JS time for that style still fell 14 percent (33.8 to 29.0 ms).
 
 ## What is left
