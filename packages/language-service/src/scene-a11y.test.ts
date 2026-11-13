@@ -37,4 +37,10 @@ describe("scene-pointer-a11y: pointer-listening scene nodes need [a11y]", () => 
     expect(hit?.severity).toBe("error");
     expect(code).toBe(1);
   });
+
+  it("emits no diagnostic when the rule is set to \"off\"", async () => {
+    const { diagnostics, code } = await check("scene-a11y-disabled");
+    expect(diagnostics.filter((d) => d.rule === RULE)).toEqual([]);
+    expect(code).toBe(0);
+  });
 });
