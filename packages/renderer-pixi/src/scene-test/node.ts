@@ -1,6 +1,6 @@
 // The in-memory scene node of the scene test renderer (TASK-105.8): Pixi's property semantics with no Pixi.
 // Free of any pixi.js import. `toData` turns a node into plain data for assertions.
-import { SCENE_TAGS, type PropSpec, type SceneTagName, type ShapeTagName } from "../elements.js";
+import { SCENE_TAGS, type HitTagName, type PropSpec, type SceneTagName, type ShapeTagName } from "../elements.js";
 
 export interface Point {
   x: number;
@@ -14,7 +14,7 @@ export interface StubTexture {
   height: number;
 }
 
-export type NodeKind = "node" | "anchor" | "text" | "shape";
+export type NodeKind = "node" | "anchor" | "text" | "shape" | "hit";
 
 /** How a tag behaves: its property table, whether text content feeds `text`, and Pixi's default label. */
 export interface TagInfo {
@@ -122,6 +122,8 @@ export class SceneNode {
   parent: SceneNode | null = null;
   readonly children: SceneNode[] = [];
   readonly shapes: SceneNode[] = [];
+  /** Declarative hit-shape children (`<hit-rect>`, ...) in order; with any, they are the node's hit area. */
+  readonly hitShapes: SceneNode[] = [];
   /** Text parts of a text node (a `<text>` or `<bitmap-text>`), or the text of a `text` content node. */
   readonly textParts: SceneNode[] = [];
   owner: SceneNode | null = null;
@@ -265,7 +267,7 @@ export function paintOrder(node: SceneNode): SceneNode[] {
 // --- plain data ----------------------------------------------------------------------------------------------------
 
 export interface ShapeData {
-  tag: ShapeTagName;
+  tag: ShapeTagName | HitTagName;
   [prop: string]: unknown;
 }
 
@@ -300,6 +302,8 @@ export interface SceneNodeData {
   particles?: StubParticle[];
   /** Graphics shapes in order. */
   shapes?: ShapeData[];
+  /** Declarative hit-shape children in order (`hit-rect`, ...); empty when the node has none. */
+  hitShapes: ShapeData[];
   /** Every property of the node by name (the same values as above, plus tag-specific ones such as `anchor` or `fontSize`). */
   props: Record<string, unknown>;
   /** The node itself, for tests that need the handle. */
@@ -342,6 +346,7 @@ export function toData(node: SceneNode): SceneNodeData {
     texture: (node.values.texture as StubTexture | null | undefined) ?? null,
     children: kids.map((k) => kidData.get(k)!),
     drawChildren: paintOrder(node).map((k) => kidData.get(k)!),
+    hitShapes: node.hitShapes.map((s) => ({ tag: s.tag as HitTagName, ...s.values })),
     props,
     node,
   };

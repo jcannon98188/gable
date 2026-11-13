@@ -122,7 +122,7 @@ const union = (a: Rect, b: Rect): Rect => {
 
 function shapeBox(s: SceneNode): Rect | null {
   const n = (k: string) => (s.values[k] as number | undefined) ?? 0;
-  switch (s.tag) {
+  switch (s.tag.replace(/^hit-/, "")) {
     case "rect":
     case "rounded-rect":
       return { x: n("x"), y: n("y"), width: n("width"), height: n("height") };
@@ -144,7 +144,7 @@ function shapeBox(s: SceneNode): Rect | null {
 
 function shapeContains(s: SceneNode, p: Point): boolean {
   const n = (k: string) => (s.values[k] as number | undefined) ?? 0;
-  switch (s.tag) {
+  switch (s.tag.replace(/^hit-/, "")) {
     case "circle":
       return (p.x - n("x")) ** 2 + (p.y - n("y")) ** 2 <= n("radius") ** 2;
     case "ellipse": {
@@ -168,8 +168,9 @@ function shapeContains(s: SceneNode, p: Point): boolean {
   }
 }
 
-/** Whether a point in the node's local space is inside its `hitArea`, its graphics, or its declared size. */
+/** Whether a point in the node's local space is inside its hit shapes, its `hitArea`, its graphics, or its declared size. */
 function contains(node: SceneNode, p: Point): boolean {
+  if (node.hitShapes.length) return node.hitShapes.some((s) => shapeContains(s, p));
   const area = node.values.hitArea as Record<string, any> | null | undefined;
   if (area) {
     if (typeof area.contains === "function") return !!area.contains(p.x, p.y);

@@ -27,6 +27,8 @@ describe("scene templates: typing enforced against the Pixi element map", () => 
     ["scene-attribute", "visible=\"maybe\"", 0],
     ["scene-unknown-property", "tnt", 0],
     ["scene-unknown-tag", "bitmap-txt", 0],
+    ["scene-unknown-property", "fill=\"#fff\"", 0],
+    ["scene-unknown-tag", "hit-cirle", 0],
     ["unknown-event", "cliick", 0],
     ["scene-unknown-property", "nope]", 0],
     ["scene-unknown-tag", "<span>", 1],
