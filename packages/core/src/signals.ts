@@ -222,7 +222,7 @@ function newBucket(): Bucket {
 }
 
 function schedule(): void {
-  scheduled ??= Promise.resolve().then(flushNow);
+  scheduled ??= Promise.resolve().then(() => void flushNow());
 }
 
 const afterFlush: Array<{ task: () => void; scope: Scope | null }> = [];

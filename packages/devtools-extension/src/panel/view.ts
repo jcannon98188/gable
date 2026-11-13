@@ -1,5 +1,5 @@
 // Renders the panel state into the DOM. Plain DOM calls, text only (nothing from the page is ever set as HTML).
-import type { ComponentDetail, Edge, EffectInfo, FlushRecord, InjectorEntry, Preview, RouteNode, SignalInfo, TreeNode } from "../protocol.js";
+import type { BoundaryNode, ComponentDetail, Edge, EffectInfo, FlushRecord, InjectorEntry, Preview, RouteNode, SignalInfo, TreeNode } from "../protocol.js";
 import { TABS, type Panel, type PanelState } from "./model.js";
 
 type Child = Node | string | null | false | undefined;
@@ -174,6 +174,74 @@ function componentsTab(state: PanelState, panel: Panel): HTMLElement {
   );
 }
 
+function sceneRows(state: PanelState, panel: Panel): HTMLElement {
+  const nodes = state.scene?.nodes ?? [];
+  const byParent = new Map<string | null, BoundaryNode[]>();
+  for (const n of nodes) byParent.set(n.parent, [...(byParent.get(n.parent) ?? []), n]);
+  const root = h("div", { class: "tree" });
+  const walk = (parent: string | null, depth: number) => {
+    for (const n of byParent.get(parent) ?? []) {
+      const kids = byParent.get(n.id) ?? [];
+      const collapsed = state.sceneCollapsed.has(n.id);
+      root.append(
+        h(
+          "div",
+          { class: `row${state.sceneSelected === n.id ? " selected" : ""}`, style: `padding-left:${8 + depth * 14}px`, "data-scene-node": n.id, onclick: () => void panel.selectSceneNode(n.id) },
+          kids.length > 0
+            ? h("button", { class: "twisty", onclick: (e: MouseEvent) => (e.stopPropagation(), panel.toggleScene(n.id)) }, collapsed ? "▸" : "▾")
+            : h("span", { class: "twisty" }, " "),
+          h("span", { class: "tag" }, "<"),
+          h("span", { class: "cname" }, n.name),
+          h("span", { class: "tag" }, ">"),
+          h("span", { class: "dim" }, ` ${n.kind}`),
+          n.effects.length > 0 ? h("span", { class: "badge", title: "Effects that ran in the last flush" }, `${n.effects.length} effect${n.effects.length === 1 ? "" : "s"}`) : null,
+        ),
+      );
+      if (!collapsed) walk(n.id, depth + 1);
+    }
+  };
+  walk(null, 0);
+  return root;
+}
+
+function sceneDetail(state: PanelState, panel: Panel): HTMLElement {
+  const node = state.scene?.nodes.find((n) => n.id === state.sceneSelected);
+  if (!node) return h("div", { class: "empty" }, "Select a display object.");
+  const why = state.why?.nodes[0];
+  return h(
+    "div",
+    { class: "detail scene-detail" },
+    h("div", { class: "detail-head" }, h("strong", null, node.name), h("span", { class: "dim" }, node.kind)),
+    h("div", null, h("span", { class: "dim" }, "owner "), node.component ? `${node.component.name}` : "none"),
+    node.source ? h("button", { class: "action", title: node.source.path, onclick: () => void panel.openSceneSource() }, `Open ${node.source.path}`) : null,
+    node.template ? h("div", null, h("span", { class: "dim" }, "template "), `template ${node.template.line}:${node.template.column}`) : null,
+    node.rect ? h("div", null, h("span", { class: "dim" }, "box "), `${Math.round(node.rect.width)} x ${Math.round(node.rect.height)} at ${Math.round(node.rect.x)}, ${Math.round(node.rect.y)}`) : null,
+    h("div", { class: "section-title" }, "Effects of the last flush"),
+    ...(node.effects.length === 0
+      ? [h("div", { class: "dim" }, "None ran on this node in the last flush.")]
+      : node.effects.map((e) =>
+          h("div", { class: "effect" }, h("button", { class: "name", title: "Why did it run?", onclick: () => void panel.explainEffect(e.id) }, e.label), h("span", { class: `dim${e.ms > SLOW_MS ? " slow" : ""}` }, ` ${e.ms} ms`), e.first ? h("span", { class: "badge" }, "first run") : null, ...(e.causes ?? []).map((c) => h("div", { class: "log" }, h("span", { class: "dim" }, "because "), c.signal.name, " ", previewNode(c.before), " → ", previewNode(c.after), c.via.length > 0 ? h("span", { class: "dim" }, ` via ${c.via.map((v) => v.name).join(", ")}`) : null))),
+        )),
+    why ? h("section", null, h("div", { class: "section-title" }, `Why ${why.name} ran`), h("div", null, h("span", { class: "dim" }, "binding "), why.binding ? `${why.binding.what}` : "none"), ...why.dependencies.map((d) => h("div", { class: "log" }, h("span", { class: `badge kind-${d.kind}` }, d.kind), ` ${d.name} `, previewNode(d.value)))) : null,
+  ) as HTMLElement;
+}
+
+function sceneTab(state: PanelState, panel: Panel): HTMLElement {
+  if (state.boundaries.length === 0) {
+    return h("div", { class: "empty" }, "No canvas scene in this app yet. A <gable-canvas> registers its scene here once it mounts (development builds only).");
+  }
+  const picker = state.boundaries.length > 1
+    ? h("div", { class: "toolbar" }, ...state.boundaries.map((b) => h("button", { class: `tab${state.boundary === b.id ? " active" : ""}`, onclick: () => void panel.selectBoundary(b.id) }, b.label)))
+    : null;
+  const t = state.scene;
+  return h(
+    "div",
+    { class: "split" },
+    h("div", { class: "pane tree-pane" }, picker, t?.error ? h("div", { class: "slow" }, t.error) : null, sceneRows(state, panel)),
+    h("div", { class: "pane detail-pane" }, sceneDetail(state, panel)),
+  );
+}
+
 function injectorsTab(state: PanelState, panel: Panel): HTMLElement {
   const byParent = new Map<string | null, typeof state.injectors>();
   for (const i of state.injectors) byParent.set(i.parent, [...(byParent.get(i.parent) ?? []), i]);
@@ -306,7 +374,9 @@ export function render(root: HTMLElement, panel: Panel): void {
       ? h("div", { class: "empty" }, "Waiting for a Gable app. It must be a development build (the Vite dev server); production builds carry no devtools hook.")
       : state.tab === "components"
         ? componentsTab(state, panel)
-        : state.tab === "injectors"
+        : state.tab === "scene"
+          ? sceneTab(state, panel)
+          : state.tab === "injectors"
           ? injectorsTab(state, panel)
           : state.tab === "router"
             ? routerTab(state, panel)

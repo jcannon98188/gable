@@ -1058,10 +1058,13 @@ export function createDevtools(target?: { __GABLE_DEVTOOLS_HOOK__?: GableDevtool
     }
     const designerHook = ((target ?? globalThis) as { __GABLE_DESIGNER_HOOK__?: { nodeOf(node: unknown): { id: string; raw: string; start: number; end: number } | null } }).__GABLE_DESIGNER_HOOK__;
     const ids = new Map<object, string>();
+    const ownerOf = new Map<object, string | null>();
     const nodes = specs.map((n, i): BoundaryNode => {
       const nid = `n${i + 1}`;
       ids.set(n.node, nid);
-      const cid = hook.componentFor(n.node);
+      // A node with no parent link of its own (a canvas display object) belongs to its parent's component.
+      const cid = hook.componentFor(n.node) ?? (n.parent ? ownerOf.get(n.parent) : null) ?? null;
+      ownerOf.set(n.node, cid);
       const comp = cid ? compById.get(cid) : undefined;
       let template: BoundaryTemplatePos | null = null;
       try {
