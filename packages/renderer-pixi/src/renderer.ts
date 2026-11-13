@@ -131,6 +131,13 @@ interface Write {
   readonly point: boolean;
 }
 
+/**
+ * Where a display node carries its tag's {@link TagInfo}: a property on the node itself, because every property write
+ * looks it up and a WeakMap lookup there showed in the flush profile (TASK-105.17).
+ */
+const INFO = Symbol("gable.pixi.info");
+type Tagged = Container & { [INFO]?: TagInfo };
+
 const STYLE_FIELDS = new Set([
   "fontSize", "fontFamily", "fontWeight", "fontStyle", "fill", "stroke", "align", "wordWrap", "wordWrapWidth", "letterSpacing", "lineHeight",
 ]);
@@ -194,7 +201,6 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
   const detachInput: Array<() => void> = [];
   let touched = true; // the scene changed since the last render; the first frame always draws
   const registry = new Map<string, TagRegistration & { info: TagInfo }>();
-  const infos = new WeakMap<Container, TagInfo>();
   const shapeLists = new WeakMap<Graphics, ShapeNode[]>();
   const textParts = new WeakMap<Container, ContentNode[]>();
   const dirty = new Set<Graphics>();
@@ -221,7 +227,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
   }
 
   function infoOf(node: Container): TagInfo {
-    return infos.get(node) ?? (infos.set(node, hostInfo(node.label)), infos.get(node)!);
+    return ((node as Tagged)[INFO] ??= hostInfo(node.label));
   }
 
   function redraw(g: Graphics) {
@@ -275,14 +281,17 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
 
   function setProperty(node: Container, name: string, value: unknown): void {
     touched = true;
-    if ((node as unknown) instanceof ShapeNode) {
-      const shape = node as unknown as ShapeNode;
-      if (!lookup(SHAPE_TAGS[shape.tag].props, name)) throw unknownProperty(shape.tag, name);
-      shape.props[name] = value;
-      markDirty(shape.owner);
-      return;
+    let info = (node as Tagged)[INFO];
+    if (info === undefined) {
+      if ((node as unknown) instanceof ShapeNode) {
+        const shape = node as unknown as ShapeNode;
+        if (!lookup(SHAPE_TAGS[shape.tag].props, name)) throw unknownProperty(shape.tag, name);
+        shape.props[name] = value;
+        markDirty(shape.owner);
+        return;
+      }
+      info = infoOf(node);
     }
-    const info = infoOf(node);
     const write = writeOf(info, name);
     const target = node as unknown as Record<string, any>;
     if (name === "texture" && typeof value === "string") value = textureFromCache(value, info.tag);
@@ -328,20 +337,20 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       const custom = registry.get(tag);
       if (custom) {
         const node = custom.create();
-        infos.set(node, custom.info);
+        (node as Tagged)[INFO] = custom.info;
         node.sortableChildren = true;
         return node;
       }
       if (isSceneTag(tag)) {
         const node = CLASSES[SCENE_TAGS[tag].pixiClass]!();
-        infos.set(node, builtIn.get(tag)!);
+        (node as Tagged)[INFO] = builtIn.get(tag)!;
         node.sortableChildren = true;
         return node;
       }
       if (tag.includes("-")) {
         const node = new Container({ label: tag });
         node.sortableChildren = true;
-        infos.set(node, hostInfo(tag));
+        (node as Tagged)[INFO] = hostInfo(tag);
         return node;
       }
       throw new Error(`Unknown scene tag <${tag}> in the "pixi" renderer. Scene tags: ${[...Object.keys(SCENE_TAGS), ...Object.keys(SHAPE_TAGS), ...registry.keys()].join(", ")}. A component is used by its hyphenated selector.`);
