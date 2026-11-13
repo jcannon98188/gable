@@ -64,6 +64,18 @@ _Avoid_: Game loop, ticker, render loop
 A function a Component registers to run on every frame of its Frame loop with the elapsed time, tied to the Component's lifetime.
 _Avoid_: Update callback, tick handler
 
+**Canvas Frame service**:
+The service a canvas scene injects to read the current frame's elapsed time and to register Frame hooks. Not the Designer's Frame.
+_Avoid_: Clock, ticker
+
+**Boundary tree**:
+The nesting of Components whose Templates are built by a different Renderer than their parent's, such as a canvas scene inside a DOM page. Each boundary has its own Frame loop and teardown.
+_Avoid_: Renderer tree, portal tree
+
+**Hot data**:
+State a Component deliberately keeps across a hot update, so editing its source does not reset it. Anything not marked is rebuilt.
+_Avoid_: Persisted state, HMR state
+
 **Platform services**:
 Capabilities a target platform supplies through injection alongside its Renderer, such as location and history for the router. The core and router depend only on abstract Tokens; each platform provides the implementations.
 _Avoid_: Platform APIs, environment
