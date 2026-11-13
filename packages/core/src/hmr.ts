@@ -242,7 +242,15 @@ const impl: DevHooks = {
     const hot = old?.hot ?? new Map<string, unknown>();
     return {
       hot,
-      construct: () => construct(C, (d) => (deps = d)),
+      construct: () => {
+        try {
+          return construct(C, (d) => (deps = d));
+        } catch (error) {
+          // done() will not run for a Setup that threw: let go of the record this instance was meant to replace.
+          old = undefined;
+          throw error;
+        }
+      },
       done(info) {
         // The replacement outlives the old instance: letting go of it here keeps each generation from holding the one before.
         const replaced = old;

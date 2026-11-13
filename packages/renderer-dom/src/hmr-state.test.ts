@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { bootstrap, html } from "@gable/core";
+import { bootstrap, flushSync, html, signal } from "@gable/core";
 import { applyUpdate } from "@gable/core/hmr";
 import { afterEach } from "vitest";
 import { dom } from "./index.js";
@@ -94,5 +94,38 @@ describe("DOM state across a template rebuild", () => {
     expect(q<HTMLInputElement>(".name")).not.toBe(name);
     expect(q<HTMLInputElement>(".name").value).toBe("kept");
     expect(document.activeElement).toBe(q(".name"));
+  });
+});
+
+describe("a hot update whose Setup throws", () => {
+  it("rolls back, keeps the running instance and lets the next good update transfer its state", () => {
+    const template = html`<b>{{ count() }}</b>`;
+    const Original = class Counter {
+      static meta = { selector: "app-counter", template };
+      count = signal(1);
+    };
+    const Broken = class Counter {
+      static meta = { selector: "app-counter", template };
+      count = signal(1);
+      broken = (() => {
+        throw new Error("bad setup");
+      })();
+    };
+    const Fixed = class Counter {
+      static meta = { selector: "app-counter", template };
+      count = signal(1);
+      fixed = 1;
+    };
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = bootstrap(Original, { renderer: dom(), target: "#app" });
+    apps.push(app);
+    (app.instance as { count: { set(n: number): void } }).count.set(7);
+    flushSync();
+    expect(applyUpdate([{ url: "/counter.js", exports: { Counter: Broken } }], []).status).toBe("rolled-back");
+    flushSync();
+    expect(document.querySelector("b")!.textContent).toBe("7");
+    expect(applyUpdate([{ url: "/counter.js", exports: { Counter: Fixed } }], []).status).toBe("applied");
+    flushSync();
+    expect(document.querySelector("b")!.textContent).toBe("7");
   });
 });
