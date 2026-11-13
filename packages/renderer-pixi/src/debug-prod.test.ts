@@ -22,7 +22,7 @@ async function bundle(dev: boolean): Promise<string> {
       {
         name: "entry",
         resolveId: (id) => (id === entry ? id : undefined),
-        load: (id) => (id === entry ? `import { createPixiRenderer, provideCanvasDebug } from ${JSON.stringify(src("./index.ts"))};\nconsole.log(createPixiRenderer({ debug: true }), provideCanvasDebug());\n` : undefined),
+        load: (id) => (id === entry ? `import { bootstrap, hotData, isHotUpdating } from "@gable/core";\nimport { createPixiRenderer, provideCanvasDebug, GableCanvas } from ${JSON.stringify(src("./index.ts"))};\nconsole.log(createPixiRenderer({ debug: true }), provideCanvasDebug(), bootstrap, GableCanvas, hotData, isHotUpdating);\n` : undefined),
       },
     ],
     build: { write: false, minify: true, rollupOptions: { input: entry, external: ["pixi.js", "pixi.js/events"] }, lib: false },
@@ -31,11 +31,14 @@ async function bundle(dev: boolean): Promise<string> {
   return outputs.map((o) => ("code" in o ? o.code : "")).join("\n");
 }
 
+// Strings that only dev-only code contains: the raw-timer watch and its warnings (core), hotData's misuse error, the orphan adoption keyed by canvas-key (scene.ts).
+const DEV_ONLY_MARKERS = ["started a raw", "was not cleared by any onCleanup", "hotData() called outside", "canvas-key"];
+
 describe("production build", () => {
   it("drops the overlay, the scene boundary and the hook calls when __GABLE_DEV__ is false", async () => {
     const prod = await bundle(false);
     expect(prod.length).toBeGreaterThan(1000); // it really bundled the renderer
-    for (const marker of ["data-gable-canvas-debug", "registerBoundary", "gable:devtools-ready", "__GABLE_DEVTOOLS_HOOK__", "canvas scene"]) {
+    for (const marker of ["data-gable-canvas-debug", "registerBoundary", "gable:devtools-ready", "__GABLE_DEVTOOLS_HOOK__", "canvas scene", ...DEV_ONLY_MARKERS]) {
       expect(prod, marker).not.toContain(marker);
     }
   }, 60000);
@@ -44,6 +47,8 @@ describe("production build", () => {
     const dev = await bundle(true);
     expect(dev).toContain("data-gable-canvas-debug");
     expect(dev).toContain("registerBoundary");
+
+    for (const marker of DEV_ONLY_MARKERS) expect(dev, marker).toContain(marker);
   }, 60000);
 });
 

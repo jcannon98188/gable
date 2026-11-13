@@ -60,7 +60,7 @@ export class GableCanvasScene {
     renderer: (self: GableCanvasScene, parent: { host: unknown }) => {
       const held = self.#held;
       const host = parent.host as HTMLElement;
-      held.key = canvasKeyOf(host);
+      if (DEV) held.key = canvasKeyOf(host);
       if (!held.renderer && DEV) adoptOrphan(held);
       held.options = () => self.options();
       if (held.renderer) held.renderer.rehost(host);
