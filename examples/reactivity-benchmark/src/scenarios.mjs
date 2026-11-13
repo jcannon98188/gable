@@ -1,7 +1,7 @@
 // Scenarios in the style of milomg/js-reactivity-benchmark, run on Gable (`gable`), the raw TC39 polyfill
 // (`polyfill`) and RxJS (`rxjs`) where the comparison is natural. Every run asserts its result, so a broken graph
 // can never produce a timing.
-import { Signal } from "signal-polyfill";
+import { Signal } from "@gable/core/internal";
 import { BehaviorSubject, Subject, combineLatest, map } from "rxjs";
 import { signal, computed, effect } from "@gable/core";
 import { createScope, runInScope, flushSync, whenFlushed } from "@gable/core/internal";

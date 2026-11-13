@@ -9,8 +9,7 @@
   },
   "dependencies": {
     "@gable/core": "file:vendor/gable-core-0.0.0.tgz",
-    "rxjs": "^7.8.2",
-    "signal-polyfill": "0.2.2"
+    "rxjs": "^7.8.2"
   },
   "overrides": {
     "@gable/core": "file:vendor/gable-core-0.0.0.tgz",
