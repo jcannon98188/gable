@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import ts from "@typescript/typescript6";
-import { buildElementMap, PROP_KIND_TS, SCENE_EVENTS, SCENE_TAGS, SHAPE_TAGS, propertiesOf, type SceneTagName, type ShapeTagName } from "@gable/renderer-pixi/elements";
+import { buildElementMap, PROP_KIND_TS, SCENE_EVENTS, SCENE_TAGS, SHAPE_TAGS, HIT_TAGS, propertiesOf, type HitTagName, type SceneTagName, type ShapeTagName } from "@gable/renderer-pixi/elements";
 import { describe, expect, it } from "vitest";
 import { sceneDeclarations, sceneEventNames, scenePropType, scenePropertyNames, sceneTagNames } from "./scene.js";
 
@@ -9,7 +9,7 @@ import { sceneDeclarations, sceneEventNames, scenePropType, scenePropertyNames, 
 // and then type-check the emitted declarations against Pixi's own types, so a table entry that drifts from
 // the map, or a map type Pixi would not accept, fails here.
 
-const tags = [...Object.keys(SCENE_TAGS), ...Object.keys(SHAPE_TAGS)] as Array<SceneTagName | ShapeTagName>;
+const tags = [...Object.keys(SCENE_TAGS), ...Object.keys(SHAPE_TAGS), ...Object.keys(HIT_TAGS)] as Array<SceneTagName | ShapeTagName | HitTagName>;
 const sceneTags = Object.keys(SCENE_TAGS) as SceneTagName[];
 const events = Object.keys(SCENE_EVENTS);
 

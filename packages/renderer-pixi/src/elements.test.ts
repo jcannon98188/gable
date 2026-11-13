@@ -4,7 +4,9 @@ import { describe, expect, it } from "vitest";
 import {
   SCENE_EVENTS,
   SCENE_TAGS,
+  HIT_TAGS,
   SHAPE_TAGS,
+  isHitTag,
   convertStaticAttribute,
   propertiesOf,
   resolveProperty,
@@ -22,6 +24,21 @@ describe("tag table coverage", () => {
     expect(Object.keys(SHAPE_TAGS).sort()).toEqual(["circle", "ellipse", "polygon", "rect", "rounded-rect"]);
     expect(SCENE_TAGS.graphics.children).toEqual(["rect", "rounded-rect", "circle", "ellipse", "polygon"]);
     expect(SCENE_TAGS.sprite.children).toBeUndefined();
+  });
+
+  it("lists the hit-shape children: the shape geometry without painting", () => {
+    expect(Object.keys(HIT_TAGS).sort()).toEqual(["hit-circle", "hit-ellipse", "hit-polygon", "hit-rect", "hit-rounded-rect"]);
+    for (const [tag, spec] of Object.entries(HIT_TAGS)) {
+      const shape = SHAPE_TAGS[spec.shape];
+      expect(spec.pixiShape).toBe(shape.pixiShape);
+      expect(Object.keys(spec.props).sort(), tag).toEqual(Object.keys(shape.props).filter((p) => !["fill", "stroke", "strokeWidth"].includes(p)).sort());
+      expect(propertiesOf(tag as keyof typeof HIT_TAGS)).toBe(spec.props);
+      expect(isHitTag(tag)).toBe(true);
+    }
+    expect(isHitTag("rect")).toBe(false);
+    expect(isHitTag("hasOwnProperty")).toBe(false);
+    expect(resolveProperty("hit-circle", "radius")?.kind).toBe("number");
+    expect(resolveProperty("hit-circle", "fill")).toBeUndefined();
   });
 
   it("gives every tag the shared container properties", () => {

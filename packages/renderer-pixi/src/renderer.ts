@@ -6,7 +6,7 @@
 // Writes are retained-mode: a signal write sets one Pixi property (a dotted path sets one axis). Graphics shapes are
 // lightweight records that mark their graphics dirty; `frame()` redraws each dirty graphics once.
 import "pixi.js/events"; // installs eventMode, cursor, hitArea and interactiveChildren on Container
-import { Application, BitmapText, Cache, Container, Graphics, NineSliceSprite, Rectangle, Sprite, Text, Texture, TilingSprite } from "pixi.js";
+import { Application, BitmapText, Cache, Circle, Container, Ellipse, Graphics, NineSliceSprite, Polygon, Rectangle, RoundedRectangle, Sprite, Text, Texture, TilingSprite } from "pixi.js";
 import { flushSync, type Provider } from "@gable/core";
 import type { Renderer } from "@gable/core/renderer";
 import { DEV } from "./dev.js";
@@ -20,11 +20,14 @@ import { DomA11ySink } from "./a11y-dom.js";
 import { ReducedMotion, type MatchMedia } from "./reduced-motion.js";
 import {
   SCENE_TAGS,
+  HIT_TAGS,
   SHAPE_TAGS,
   convertStaticAttribute,
+  isHitTag,
   isSceneEvent,
   isSceneTag,
   isShapeTag,
+  type HitTagName,
   type PropSpec,
   type SceneTagName,
   type ShapeTagName,
@@ -118,6 +121,35 @@ class ShapeNode {
   constructor(readonly tag: ShapeTagName) {}
 }
 
+/** A hit-shape child (`<hit-rect>`, `<hit-circle>`, ...): a record that contributes to its parent's `hitArea`, never a display object. */
+class HitNode {
+  readonly props: Record<string, unknown> = {};
+  owner: Container | null = null;
+  constructor(readonly tag: HitTagName) {}
+}
+
+type HitShape = { contains(x: number, y: number): boolean };
+
+/** The Pixi shape a hit child describes, or null while it has no usable geometry (a polygon needs three points). */
+function hitShapeOf(h: HitNode): HitShape | null {
+  const p = h.props;
+  const n = (k: string) => (p[k] as number | undefined) ?? 0;
+  switch (h.tag) {
+    case "hit-rect":
+      return new Rectangle(n("x"), n("y"), n("width"), n("height"));
+    case "hit-rounded-rect":
+      return new RoundedRectangle(n("x"), n("y"), n("width"), n("height"), n("radius"));
+    case "hit-circle":
+      return new Circle(n("x"), n("y"), n("radius"));
+    case "hit-ellipse":
+      return new Ellipse(n("x"), n("y"), n("halfWidth"), n("halfHeight"));
+    case "hit-polygon": {
+      const pts = p.points as number[] | undefined;
+      return pts && pts.length >= 6 ? new Polygon(pts) : null;
+    }
+  }
+}
+
 /** Text under a text tag, or whitespace under any tag. Never a display object. */
 class ContentNode {
   owner: Container | null = null;
@@ -183,6 +215,9 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
   const infos = new WeakMap<Container, TagInfo>();
   const shapeLists = new WeakMap<Graphics, ShapeNode[]>();
   const textParts = new WeakMap<Container, ContentNode[]>();
+  const hitLists = new WeakMap<Container, HitNode[]>();
+  /** The `[hitArea]` an author bound, kept while hit children override it. */
+  const explicitHitArea = new WeakMap<Container, unknown>();
   const layouts = new WeakMap<Container, unknown[]>();
   const layoutParent = new WeakMap<object, Container>();
   /** Records `node` in `parent`'s order list, before `before` (or last), leaving any earlier place. */
@@ -233,6 +268,14 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
 
   function unknownProperty(tag: string, name: string): never {
     throw new Error(`Unknown property "${name}" on <${tag}> in the "pixi" renderer. Scene properties use Pixi's own names; dotted paths address one axis of a point-like property (e.g. [scale.x]).`);
+  }
+
+  /** Sets `owner.hitArea` from its hit children (one shape, or the union of several); with none, back to the bound `[hitArea]`. */
+  function applyHitArea(owner: Container | null) {
+    if (!owner || owner.destroyed) return;
+    const shapes = (hitLists.get(owner) ?? []).map(hitShapeOf).filter((s): s is HitShape => s !== null);
+    if (shapes.length === 0) owner.hitArea = (explicitHitArea.get(owner) ?? null) as Container["hitArea"];
+    else owner.hitArea = shapes.length === 1 ? (shapes[0] as Container["hitArea"]) : { contains: (x: number, y: number) => shapes.some((s) => s.contains(x, y)) };
   }
 
   function redraw(g: Graphics) {
@@ -286,6 +329,13 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
 
   function setProperty(node: Container, name: string, value: unknown): void {
     touched = true;
+    if ((node as unknown) instanceof HitNode) {
+      const hit = node as unknown as HitNode;
+      if (!lookup(HIT_TAGS[hit.tag].props, name)) unknownProperty(hit.tag, name);
+      hit.props[name] = value;
+      applyHitArea(hit.owner);
+      return;
+    }
     if ((node as unknown) instanceof ShapeNode) {
       const shape = node as unknown as ShapeNode;
       if (!lookup(SHAPE_TAGS[shape.tag].props, name)) unknownProperty(shape.tag, name);
@@ -299,6 +349,10 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     if (name === "a11y") {
       mirror.set(node, value as A11yProps | null | undefined);
       return;
+    }
+    if (name === "hitArea") {
+      explicitHitArea.set(node, value);
+      if (hitLists.get(node)?.length) return;
     }
     const target = node as unknown as Record<string, any>;
     if (name === "texture" && typeof value === "string") value = textureFromCache(value, info.tag);
@@ -344,8 +398,10 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       { provide: ReducedMotion, useValue: reducedMotion } as Provider,
     ],
     registerTag,
+    isNativeTag: (tag) => isSceneTag(tag) || isShapeTag(tag) || isHitTag(tag) || registry.has(tag),
     createElement(tag) {
       if (isShapeTag(tag)) return new ShapeNode(tag) as unknown as Container;
+      if (isHitTag(tag)) return new HitNode(tag) as unknown as Container;
       const custom = registry.get(tag);
       if (custom) {
         const node = custom.create();
@@ -365,18 +421,19 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         infos.set(node, hostInfo(tag));
         return node;
       }
-      throw new Error(`Unknown scene tag <${tag}> in the "pixi" renderer. Scene tags: ${[...Object.keys(SCENE_TAGS), ...Object.keys(SHAPE_TAGS), ...registry.keys()].join(", ")}. A component is used by its hyphenated selector.`);
+      throw new Error(`Unknown scene tag <${tag}> in the "pixi" renderer. Scene tags: ${[...Object.keys(SCENE_TAGS), ...Object.keys(SHAPE_TAGS), ...Object.keys(HIT_TAGS), ...registry.keys()].join(", ")}. A component is used by its hyphenated selector.`);
     },
     createText: (text) => new ContentNode(text) as unknown as Container,
     createAnchor: () => new Container({ label: "#anchor" }),
     setProperty,
     setAttribute(node, name, value) {
       if (value === null) return;
-      const table = (node as unknown) instanceof ShapeNode ? SHAPE_TAGS[(node as unknown as ShapeNode).tag].props : infoOf(node).table;
-      const tag = (node as unknown) instanceof ShapeNode ? (node as unknown as ShapeNode).tag : infoOf(node).tag;
+      const hitNode = (node as unknown) instanceof HitNode ? (node as unknown as HitNode) : null;
+      const table = hitNode ? HIT_TAGS[hitNode.tag].props : (node as unknown) instanceof ShapeNode ? SHAPE_TAGS[(node as unknown as ShapeNode).tag].props : infoOf(node).table;
+      const tag = hitNode ? hitNode.tag : (node as unknown) instanceof ShapeNode ? (node as unknown as ShapeNode).tag : infoOf(node).tag;
       const resolved = lookup(table, name);
       if (!resolved) unknownProperty(tag, name);
-      if (name === "texture" && !(node as unknown instanceof ShapeNode)) {
+      if (name === "texture" && !hitNode && !(node as unknown instanceof ShapeNode)) {
         setProperty(node, name, value);
         return;
       }
@@ -414,6 +471,20 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         markDirty(parent);
         return;
       }
+      if ((node as unknown) instanceof HitNode) {
+        const hit = node as unknown as HitNode;
+        const list = hitLists.get(parent) ?? (hitLists.set(parent, []), hitLists.get(parent)!);
+        const old = hit.owner ? hitLists.get(hit.owner) : undefined;
+        if (old) old.splice(old.indexOf(hit), 1);
+        const at = before ? list.indexOf(before as unknown as HitNode) : -1;
+        if (at === -1) list.push(hit);
+        else list.splice(at, 0, hit);
+        const previous = hit.owner;
+        hit.owner = parent;
+        if (previous && previous !== parent) applyHitArea(previous);
+        applyHitArea(parent);
+        return;
+      }
       if ((node as unknown) instanceof ContentNode) {
         const content = node as unknown as ContentNode;
         if (!infoOf(parent).textContent) {
@@ -449,6 +520,15 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
         shape.owner = null;
         return;
       }
+      if ((node as unknown) instanceof HitNode) {
+        const hit = node as unknown as HitNode;
+        const list = hit.owner ? hitLists.get(hit.owner) : undefined;
+        if (list) list.splice(list.indexOf(hit), 1);
+        const owner = hit.owner;
+        hit.owner = null;
+        applyHitArea(owner);
+        return;
+      }
       if ((node as unknown) instanceof ContentNode) {
         const content = node as unknown as ContentNode;
         const owner = content.owner;
@@ -467,8 +547,8 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
       node.destroy({ children: true });
     },
     listen(node, name, handler) {
-      if ((node as unknown) instanceof ShapeNode || (node as unknown) instanceof ContentNode) {
-        throw new Error(`Events can only be listened to on display nodes; ${name} was given to a shape or text content.`);
+      if ((node as unknown) instanceof ShapeNode || (node as unknown) instanceof HitNode || (node as unknown) instanceof ContentNode) {
+        throw new Error(`Events can only be listened to on display nodes; ${name} was given to a shape, a hit shape or text content.`);
       }
       if (!isSceneEvent(name)) throw new Error(`Unknown scene event "${name}" on <${infoOf(node).tag}>.`);
       if (node.eventMode === undefined || node.eventMode === "passive" || node.eventMode === "auto") node.eventMode = "static"; // undefined: no EventSystem yet (the scene is built before the Application)

@@ -126,14 +126,25 @@ export type SceneTagName =
 
 export type ShapeTagName = "rect" | "rounded-rect" | "circle" | "ellipse" | "polygon";
 
+/** Declarative hit-shape children (TASK-105.11): the shape tags with a `hit-` prefix. Any scene tag accepts them. */
+export type HitTagName = "hit-rect" | "hit-rounded-rect" | "hit-circle" | "hit-ellipse" | "hit-polygon";
+
 export interface TagSpec {
   /** Pixi class the renderer instantiates (a name, never an import). */
   readonly pixiClass: string;
   readonly props: Readonly<Record<string, PropSpec>>;
-  /** Declarative attachment children this tag accepts (graphics shapes). */
+  /** Declarative attachment children this tag accepts (graphics shapes). Every scene tag also accepts the `hit-*` children. */
   readonly children?: readonly ShapeTagName[];
   /** True when element content / `[text]` supplies the node's text. */
   readonly textContent?: boolean;
+}
+
+export interface HitSpec {
+  /** The Pixi shape class the geometry maps onto (the node's hitArea is built from it). */
+  readonly pixiShape: string;
+  /** The graphics shape tag with the same geometry. */
+  readonly shape: ShapeTagName;
+  readonly props: Readonly<Record<string, PropSpec>>;
 }
 
 export interface ShapeSpec {
@@ -253,6 +264,22 @@ export const SHAPE_TAGS: Readonly<Record<ShapeTagName, ShapeSpec>> = {
   polygon: { pixiShape: "Polygon", props: { points: obj("number[]"), ...PAINT } },
 };
 
+/**
+ * Hit-shape children: the geometry of the matching shape tag, without painting. A node with one or more of them gets
+ * a `hitArea` that is the shape (or the union of the shapes), updating as their properties change. While a node has
+ * hit children they win over a bound `[hitArea]`.
+ */
+export const HIT_TAGS: Readonly<Record<HitTagName, HitSpec>> = Object.fromEntries(
+  (Object.keys(SHAPE_TAGS) as ShapeTagName[]).map((shape) => {
+    const { fill: _fill, stroke: _stroke, strokeWidth: _width, ...geometry } = SHAPE_TAGS[shape].props;
+    return [`hit-${shape}`, { pixiShape: SHAPE_TAGS[shape].pixiShape, shape, props: geometry }];
+  }),
+) as Record<HitTagName, HitSpec>;
+
+export function isHitTag(name: string): name is HitTagName {
+  return Object.prototype.hasOwnProperty.call(HIT_TAGS, name);
+}
+
 export function isSceneTag(name: string): name is SceneTagName {
   return Object.prototype.hasOwnProperty.call(SCENE_TAGS, name);
 }
@@ -266,15 +293,15 @@ export function isSceneEvent(name: string): name is SceneEventName {
 }
 
 /** Every property a scene tag accepts, by Pixi's own name. */
-export function propertiesOf(tag: SceneTagName | ShapeTagName): Readonly<Record<string, PropSpec>> {
-  return isSceneTag(tag) ? SCENE_TAGS[tag].props : SHAPE_TAGS[tag as ShapeTagName].props;
+export function propertiesOf(tag: SceneTagName | ShapeTagName | HitTagName): Readonly<Record<string, PropSpec>> {
+  return isSceneTag(tag) ? SCENE_TAGS[tag].props : isHitTag(tag) ? HIT_TAGS[tag].props : SHAPE_TAGS[tag as ShapeTagName].props;
 }
 
 /**
  * Resolve a property name on a tag: a plain property, or a dotted axis (`scale.x`) of a point-like
  * property. Deep paths, non-point parents and unknown names resolve to undefined.
  */
-export function resolveProperty(tag: SceneTagName | ShapeTagName, name: string): PropSpec | AxisPropSpec | undefined {
+export function resolveProperty(tag: SceneTagName | ShapeTagName | HitTagName, name: string): PropSpec | AxisPropSpec | undefined {
   const props = propertiesOf(tag);
   const dot = name.indexOf(".");
   if (dot === -1) return Object.prototype.hasOwnProperty.call(props, name) ? props[name] : undefined;
@@ -345,7 +372,7 @@ export interface ElementMapEntry {
 }
 
 /** The Pixi element map as plain data: tag to node class, property TS types and event types. */
-export type SceneElementMap = Readonly<Record<SceneTagName | ShapeTagName, ElementMapEntry>>;
+export type SceneElementMap = Readonly<Record<SceneTagName | ShapeTagName | HitTagName, ElementMapEntry>>;
 
 /** Build the element map from the table. Cheap and pure; tooling may call it once. */
 export function buildElementMap(): SceneElementMap {
@@ -355,6 +382,9 @@ export function buildElementMap(): SceneElementMap {
   }
   for (const tag of Object.keys(SHAPE_TAGS) as ShapeTagName[]) {
     out[tag] = entry(tag, SHAPE_TAGS[tag].pixiShape, SHAPE_TAGS[tag].props, {});
+  }
+  for (const tag of Object.keys(HIT_TAGS) as HitTagName[]) {
+    out[tag] = entry(tag, HIT_TAGS[tag].pixiShape, HIT_TAGS[tag].props, {});
   }
   return out as SceneElementMap;
 }

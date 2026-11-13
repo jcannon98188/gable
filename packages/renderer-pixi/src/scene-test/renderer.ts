@@ -8,8 +8,10 @@ import { A11yRecorder, type TabOptions } from "../a11y-testing.js";
 import { CanvasSize } from "../canvas-size.js";
 import {
   SCENE_TAGS,
+  HIT_TAGS,
   SHAPE_TAGS,
   convertStaticAttribute,
+  isHitTag,
   isSceneEvent,
   isSceneTag,
   isShapeTag,
@@ -152,6 +154,11 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
 
   function setProperty(node: SceneNode, name: string, value: unknown): void {
     touched = true;
+    if (node.kind === "hit") {
+      if (!lookup(HIT_TAGS[node.tag as keyof typeof HIT_TAGS].props, name)) unknownProperty(node.tag, name);
+      node.values[name] = value;
+      return;
+    }
     if (name === "a11y" && node.kind !== "shape" && (lenient || lookup(node.info!.table, name))) {
       mirror.set(node, value as A11yProps | null | undefined);
       return;
@@ -253,14 +260,16 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
       { provide: Keyboard, useValue: keyboardService } as Provider,
       { provide: Gamepad, useValue: gamepadService } as Provider,
     ],
+    isNativeTag: (tag) => isSceneTag(tag) || isShapeTag(tag) || isHitTag(tag) || custom.has(tag),
     createElement(tag) {
       if (isShapeTag(tag)) return new SceneNode("shape", tag, null);
+      if (isHitTag(tag)) return new SceneNode("hit", tag, null);
       const extra = custom.get(tag);
       if (extra) return new SceneNode("node", tag, extra);
       if (isSceneTag(tag)) return new SceneNode("node", tag, tagInfoFor(tag));
       if (tag.includes("-")) return new SceneNode("node", tag, hostInfo(tag));
       if (lenient) return new SceneNode("node", tag, { tag, table: containerProps, textContent: false, label: null });
-      throw new Error(`Unknown scene tag <${tag}> in the "pixi" renderer. Scene tags: ${[...Object.keys(SCENE_TAGS), ...Object.keys(SHAPE_TAGS), ...custom.keys()].join(", ")}. A component is used by its hyphenated selector.`);
+      throw new Error(`Unknown scene tag <${tag}> in the "pixi" renderer. Scene tags: ${[...Object.keys(SCENE_TAGS), ...Object.keys(SHAPE_TAGS), ...Object.keys(HIT_TAGS), ...custom.keys()].join(", ")}. A component is used by its hyphenated selector.`);
     },
     createText: (text) => new SceneNode("text", "#text", null, text),
     createAnchor: () => new SceneNode("anchor", "#anchor", null),
@@ -272,10 +281,10 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
         return;
       }
       if (value === null) return;
-      const table = node.kind === "shape" ? SHAPE_TAGS[node.tag as keyof typeof SHAPE_TAGS].props : node.info!.table;
+      const table = node.kind === "hit" ? HIT_TAGS[node.tag as keyof typeof HIT_TAGS].props : node.kind === "shape" ? SHAPE_TAGS[node.tag as keyof typeof SHAPE_TAGS].props : node.info!.table;
       const resolved = lookup(table, name);
       if (!resolved) return unknownProperty(node.tag, name);
-      if (name === "texture" && node.kind !== "shape") return setProperty(node, name, value);
+      if (name === "texture" && node.kind !== "shape" && node.kind !== "hit") return setProperty(node, name, value);
       const converted = convertStaticAttribute({ kind: resolved.kind, ...("type" in resolved ? { type: resolved.type } : {}) }, value);
       if (!converted.ok) throw new Error(`Attribute "${name}" on <${node.tag}>: ${converted.message}`);
       setProperty(node, name, converted.value);
@@ -299,6 +308,15 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
     },
     insert(parent, node, before) {
       touched = true;
+      if (node.kind === "hit") {
+        layOut(parent, node, before);
+        if (node.owner) node.owner.hitShapes.splice(node.owner.hitShapes.indexOf(node), 1);
+        const at = before ? parent.hitShapes.indexOf(before) : -1;
+        if (at === -1) parent.hitShapes.push(node);
+        else parent.hitShapes.splice(at, 0, node);
+        node.owner = parent;
+        return;
+      }
       if (node.kind === "shape") {
         if (parent.tag !== "graphics") throw new Error(`<${node.tag}> can only be a child of <graphics>.`);
         if (node.owner) node.owner.shapes.splice(node.owner.shapes.indexOf(node), 1);
@@ -326,6 +344,11 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
     remove(node) {
       touched = true;
       unlayout(node);
+      if (node.kind === "hit") {
+        node.owner?.hitShapes.splice(node.owner.hitShapes.indexOf(node), 1);
+        node.owner = null;
+        return;
+      }
       if (node.kind === "shape") {
         node.owner?.shapes.splice(node.owner.shapes.indexOf(node), 1);
         node.owner = null;
@@ -342,8 +365,8 @@ export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTe
       destroyNode(node);
     },
     listen(node, name, handler) {
-      if (node.kind === "shape" || node.kind === "text") {
-        throw new Error(`Events can only be listened to on display nodes; ${name} was given to a shape or text content.`);
+      if (node.kind === "shape" || node.kind === "hit" || node.kind === "text") {
+        throw new Error(`Events can only be listened to on display nodes; ${name} was given to a shape, a hit shape or text content.`);
       }
       if (!lenient && !isSceneEvent(name)) throw new Error(`Unknown scene event "${name}" on <${node.tag}>.`);
       const mode = node.values.eventMode;

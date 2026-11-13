@@ -135,7 +135,7 @@ function buildElement<N>(node: ElementNode, renderer: Renderer<N>, env: Env, par
   if (node.tag === "slot") return buildSlot(node, renderer, env, parent, before);
   const view = viewOf(env);
   const matches = (view?.imports ?? []).filter((Class) => matchesNode(parseSelector(Class.meta.selector), node));
-  if (DEV && matches.length === 0 && node.tag.includes("-")) {
+  if (DEV && matches.length === 0 && node.tag.includes("-") && !renderer.isNativeTag?.(node.tag)) {
     throw new Error(
       `Unknown element <${node.tag}>. Add its component to meta.imports of the component whose template uses it` +
         ((view?.lazies.length ?? 0) > 0 ? `; lazy() entries (${view!.lazies.map((l) => l.name).join(", ")}) can only be used inside @defer.` : "."),

@@ -19,6 +19,7 @@ export class Scene {
       <container x="abc" visible="maybe"></container>
       <container tnt="#fff"></container>
       <bitmap-txt></bitmap-txt>
+      <container><hit-rect fill="#fff"></hit-rect><hit-cirle></hit-cirle></container>
       <x-ship (cliick)="go()"></x-ship>
       <container [x]="count()" [y]="count()"></container>
     `,

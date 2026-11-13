@@ -30,6 +30,11 @@ export interface Renderer<N = unknown> {
   /** Dev: warn when a component built by this renderer starts a raw setInterval or setTimeout in its Setup without registering an `onCleanup` (a hot edit or unmount would leak the timer). */
   readonly warnRawTimers?: boolean;
   // Create. `parent` is context only (e.g. SVG/MathML namespace); it does not insert.
+  /**
+   * Tags this renderer owns natively even though they contain a hyphen (a Pixi scene's `tiling-sprite`, `hit-rect`). Without it the core
+   * treats every hyphenated tag as a component host and, in dev, rejects one that no `meta.imports` entry matches.
+   */
+  isNativeTag?(tag: string): boolean;
   createElement(tag: string, parent: N | null): N;
   createText(text: string): N;
   createAnchor(): N;

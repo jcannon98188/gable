@@ -17,10 +17,16 @@ export class Scene {
         </graphics>
         <x-ship (picked)="onPick($event)" [x]="px()"></x-ship>
         <bitmap-text text="x"></bitmap-text>
+        <sprite width="10" height="10" (pointertap)="down($event)">
+          <hit-circle x="5" y="5" [radius]="px()"></hit-circle>
+          <hit-rect x="-4" width="20" height="20" [y]="px()"></hit-rect>
+          <hit-polygon [points]="pts()"></hit-polygon>
+        </sprite>
       </container>
     `,
   };
   px = signal(1);
+  pts = signal([0, 0, 10, 0, 10, 10]);
   pos = signal({ x: 1, y: 2 });
   tex = signal<Texture>(undefined as never);
   down(e: FederatedPointerEvent): void {
