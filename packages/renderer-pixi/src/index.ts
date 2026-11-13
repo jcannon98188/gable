@@ -20,3 +20,5 @@ export { announceOnChange } from "./announce.js";
 export type { AnnounceOptions } from "./announce.js";
 export { ReducedMotion } from "./reduced-motion.js";
 export type { MatchMedia, MediaQueryListLike } from "./reduced-motion.js";
+export { createDrag, createLongPress } from "./gestures.js";
+export type { DragEvent, DragHandle, DragOptions, LongPressEvent, LongPressHandle, LongPressOptions, PressEventLike } from "./gestures.js";
