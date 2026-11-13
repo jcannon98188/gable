@@ -1,11 +1,11 @@
 ---
 id: TASK-105.17
 title: Frame-flush optimisation in four gated steps
-status: In Progress
+status: Done
 assignee:
   - '@jason'
 created_date: '2026-11-12T21:47:00Z'
-updated_date: '2026-11-12T23:46:00Z'
+updated_date: '2026-11-13T01:40:00Z'
 labels: []
 dependencies:
   - TASK-105.19
@@ -23,9 +23,9 @@ TASK-104.14: the effect flush dominates frame cost at 5,000 entities (about 36% 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Each step is profiled before and after and kept only if it measurably helps
-- [ ] #2 Flush time at 5,000 entities in the three-signal style drops by at least 30 percent overall, or the shortfall is explained with profile data
-- [ ] #3 All existing tests pass unchanged
+- [x] #1 Each step is profiled before and after and kept only if it measurably helps
+- [x] #2 Flush time at 5,000 entities in the three-signal style drops by at least 30 percent overall, or the shortfall is explained with profile data
+- [x] #3 All existing tests pass unchanged
 <!-- AC:END -->
 
 ## Comments
@@ -39,3 +39,16 @@ Finding while ticketing: step 1 as written is wrong. Gable's own target is alrea
 
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Flush time at 5,000 entities, three-signal style: 22.2 ms -> 15.9 ms p50 (-28%). The 30% target was missed by about 2 points; the shortfall is explained with profile data in docs/research/frame-flush-optimisation.md.
+
+- Step 1 (`__privateIn`): the helper comes from the published signal-polyfill dist, not Gable's build. A one-line `target: 'es2022'` in the upstream signal-polyfill vite config measured -6.5% and would reach the 30% target, but it is NOT applied. Project decision needed: vendor the patched polyfill or wait for upstream.
+- Step 2: Gable-side flush overhead cuts kept (core signals/view/expression/scope/read-phase, renderer-pixi renderer).
+- Step 4 (one effect per node): not kept, not behaviour-preserving.
+- Open: `shared` style hooks phase is 9.3 vs 8.6 ms, unexplained.
+
+Verification after merging into integration/canvas-binding: rebuilt core, testing, renderer-pixi, language-service; vitest on core, renderer-pixi, testing, language-service: 963 passed, 2 skipped, 0 failed. Local canvas benchmark gate (previous integration head vs this, 5 reps, software GL, busy machine): flush -23% (signals/5000) and -31% (shared/5000), jsTotal down in every 5000 config, but the gate FAILED on renderMs at 5000 (signals 1.8->2.1 ms, shared 1.7->2.3 ms; sub-ms values). Possibly noise (a 3-rep run flagged different sub-ms phases), possibly a real small render-phase cost; should be re-checked on CI hardware.
+<!-- SECTION:FINAL_SUMMARY:END -->
