@@ -58,7 +58,7 @@ Every production build is a release. `gableServiceWorker()` emits `sw-manifest.j
 - **Install.** A release downloads its files into its own cache, `gable-precache:<version>`. It counts as installed only once every file is stored; a failed or interrupted install is never served and fails the worker's install.
 - **First visit.** The first release activates straight away, but the page that registered it is not controlled until its next load. From then on the worker serves the app, offline included.
 - **Update.** The browser finds a new `sw.js` when a page loads, or when the app calls `checkForUpdate()`. The new release installs in the background while the running one keeps serving its own files, then waits. `SwUpdates.updateAvailable` turns true.
-- **Activate.** Only the app decides when the new release takes over, by calling `activateUpdate()`. It resolves once the new release is in charge, and the app reloads into the new code. Activation removes the older releases' caches.
+- **Activate.** Only the app decides when the new release takes over, by calling `activateUpdate()`. It resolves once the new release is in charge, and the app reloads into the new code. Activation removes the older releases' caches, even while other open tabs still run an older release (see [Limits](#limits)), so reload every tab once a release activates.
 
 Updates are app-controlled because a release that took over on its own could replace code under a page that holds unsaved state.
 
@@ -83,7 +83,7 @@ Updates are app-controlled because a release that took over on its own could rep
 - **Patterns** are globs over URL paths: `*` matches within one segment and `**` matches any number of segments, so `/assets/*` covers `/assets/app.js` but not `/assets/img/logo.png`. Core's fetch route patterns (see [Replace the default worker](#replace-the-default-worker)) read `*` differently. Absolute patterns (`https://...`) are allowed in data groups. The query string is not part of the path.
 - **Asset groups** pick files from the build's manifest; a file belongs to the first group that matches it. `prefetch` files (the default) are downloaded while the release installs, and the release is ready only once all of them are stored. `lazy` files are cached the first time they are requested. Both caches belong to the release (`gable-precache:<version>` and `gable-lazy:<version>`) and are removed when a later release activates. A request matches a file only by its exact URL.
 - **Data groups** cache requests at runtime, GET only, in `gable-data:<name>`, which outlives releases. `freshness` goes to the network first and falls back to the cache when the network fails or is slower than `timeoutMs`. `performance` answers from the cache and refreshes it in the background. Activation removes the caches of data groups the config no longer has.
-- **The navigation fallback** answers page navigations (GET, same origin) with the precached shell, so client-side routes load offline. `exclude` lists navigations to leave to the network; it defaults to `["/**/*.*"]`, paths that look like files, and replaces that default when set. The shell must be a file of a prefetch group.
+- **The navigation fallback** answers page navigations (GET, same origin) with the precached shell, so client-side routes load offline. `exclude` lists navigations to leave to the network; it defaults to `["/**/*.*"]`, paths that look like files, and replaces that default when set. With the default, every same-origin navigation to a path without a file extension gets the shell, `/api/report` opened in a tab included, and data groups never see it; add such paths to `exclude`. The shell must be a file of a prefetch group.
 
 Requests are answered by the first match, in this order: extension routes, precached files, lazy files, the navigation fallback, data groups. Anything else goes to the network.
 
@@ -247,7 +247,7 @@ await outbox.register(); // false in a browser without background sync
 
 ## App-side services
 
-`provideServiceWorker({ url })` sets the app up; injecting one of the services registers the worker. Registration happens only in a production build (`@gable/vite` defines `__GABLE_DEV__` as `false` on `vite build`). In development the services do nothing, so the dev server's HMR is never served stale code. Set `enabled` to override that either way. `scope` and `type` pass through to `navigator.serviceWorker.register`; `sw.js` from `gableServiceWorker()` is a classic script, so leave `type` unset for it.
+`provideServiceWorker({ url })` sets the app up; injecting one of the services registers the worker. Registration happens only in a production build (`@gable/vite` defines `__GABLE_DEV__` as `false` on `vite build`). In development the services do nothing, so the dev server's HMR is never served stale code. Set `enabled` to override that either way. A build made without `@gable/vite` must define `__GABLE_DEV__` as `false` itself, or pass `enabled: true`; otherwise the worker never registers. `scope` and `type` pass through to `navigator.serviceWorker.register`; `sw.js` from `gableServiceWorker()` is a classic script, so leave `type` unset for it.
 
 ```ts
 import { provideServiceWorker } from "@gable/service-worker";
