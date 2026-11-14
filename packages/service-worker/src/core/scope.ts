@@ -64,6 +64,8 @@ export interface WorkerEventMap {
 
 /** The global scope a service worker runs in, as far as Gable's worker code uses it. */
 export interface WorkerScope {
+  /** The worker's origin, such as `"https://app.example"`. Path patterns in a fetch router match requests to it. */
+  readonly origin: string;
   /** The origin's Cache storage. */
   readonly caches: CacheStorage;
   /** The origin's clients. */
