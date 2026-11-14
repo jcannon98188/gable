@@ -1,10 +1,10 @@
 ---
 id: TASK-106
 title: Service worker support (@gable/service-worker)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-13T19:55:00Z'
-updated_date: '2026-11-14T09:07:00Z'
+updated_date: '2026-11-14T09:31:00Z'
 labels: []
 dependencies: []
 documentation:
@@ -29,3 +29,9 @@ Gable apps have no way to work offline or receive push. Support ships as one lay
 <!-- SECTION:NOTES:BEGIN -->
 AC evidence (TASK-106.8, 2026-11-14): #1 TASK-106.1 to 106.8 are all Done. #2 packages/create-gable/src/scaffold.test.ts, 'installs, works offline and applies an update through activateUpdate()': the create-gable starter with --service-worker, installed from packed tarballs and built with vite build, installs in headless Chromium (gable-precache:<v1>), loads with the server dropping every request, and after a rebuild takes the new release through the banner's activateUpdate() (v1's cache removed, v2 works offline). It passes in npm test on this machine (Edge) and runs in CI on ubuntu-latest wherever Chrome is found; it is skipped without a Chromium. Status left for the coordinator.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Service worker support shipped as one layered package, @gable/service-worker: core authoring API (routing, caching strategies, versioned precache, lifecycle, typed messages, push and background sync), a default runtime driven by gable.sw.json, app-side services with an update signal, a gableServiceWorker() Vite plugin, a create-gable --service-worker option, docs, and a headless-browser end-to-end test (install, offline, update via activateUpdate()). Decisions in docs/adr/0021. Known gaps recorded in docs/packages/service-worker.md: no push subscription helper, no app-side background sync registration, no precache hash verification, no clients.claim on first activation.
+<!-- SECTION:FINAL_SUMMARY:END -->
