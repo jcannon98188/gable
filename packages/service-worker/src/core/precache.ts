@@ -13,6 +13,18 @@ export interface PrecacheManifest {
   version: string;
   /** The URLs to precache, relative to the worker's origin or absolute. */
   urls: readonly string[];
+  /**
+   * The content hash of each file, by URL as listed in {@link urls}, which `install()` checks every fetched file against:
+   * a file whose bytes do not hash to its entry fails the install. A hash is the first hex digits of the file's
+   * SHA-256 digest, as `@gable/vite` emits them (16 digits), compared without regard to case. Files without an entry
+   * are not verified, and entries for URLs not in {@link urls} are ignored.
+   *
+   * This is what keeps the cache to one release when a deploy lands mid-install: a file the server already answers
+   * from the next release does not match this release's hash, so the install fails and the next worker installs the
+   * new release whole. Verification needs `crypto.subtle`, which service workers have in browsers; where it is
+   * missing (the AgniJS and QuickJS test engines) files are stored unverified.
+   */
+  hashes?: Readonly<Record<string, string>>;
 }
 
 /** Options for {@link createPrecache}. */
@@ -30,7 +42,8 @@ export interface Precache {
   readonly cacheName: string;
   /**
    * Fetches every manifest URL into this version's cache, revalidating with the server. Resolves once the version is
-   * fully installed; rejects, leaving nothing of this version behind, when any URL fails or does not answer 200.
+   * fully installed; rejects, leaving nothing of this version behind, when any URL fails, does not answer 200 or,
+   * where the manifest gives hashes, does not match its hash.
    * A version already installed is not fetched again, and a call made while the same version is installing in the
    * same Cache storage (from this precache or another one for that version) shares that install and its outcome; a
    * call after a failed install starts again. Pass it to the install event's `waitUntil`, so a failed
@@ -62,6 +75,17 @@ const INSTALLED_PATH = "/__gable-precache__/installed";
 const withoutFragment = (url: URL) => url.href.replace(/#.*$/, "");
 
 /**
+ * The SHA-256 digest of `response`'s body in lowercase hex, or `undefined` where `crypto.subtle` is missing. Reads a
+ * clone, so `response` can still be stored.
+ */
+async function sha256Hex(response: Response): Promise<string | undefined> {
+  const subtle = globalThis.crypto?.subtle;
+  if (subtle === undefined) return undefined;
+  const digest = new Uint8Array(await subtle.digest("SHA-256", await response.clone().arrayBuffer()));
+  return Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+/**
  * The installs in flight, by Cache storage and cache name. Concurrent installs of a version share one, since each would
  * otherwise start by deleting the cache the other is filling.
  */
@@ -75,6 +99,11 @@ export function createPrecache(scope: WorkerScope, manifest: PrecacheManifest, o
   const resolve = (url: string | URL | Request) => withoutFragment(new URL(url instanceof Request ? url.url : url, origin));
   const urls = [...new Set(manifest.urls.map(resolve))];
   const known = new Set(urls);
+  const expected = new Map<string, string>();
+  for (const [url, hash] of Object.entries(manifest.hashes ?? {})) {
+    const resolved = resolve(url);
+    if (known.has(resolved)) expected.set(resolved, hash.toLowerCase());
+  }
   const installedKey = new URL(INSTALLED_PATH, origin).href;
   let installed = false;
 
@@ -95,6 +124,16 @@ export function createPrecache(scope: WorkerScope, manifest: PrecacheManifest, o
         urls.map(async (url) => {
           const response = await scope.fetch(url, { cache: "no-cache" });
           if (response.status !== 200) throw new TypeError(`precache ${cacheName}: ${url} answered ${response.status}`);
+          const hash = expected.get(url);
+          if (hash !== undefined) {
+            const digest = await sha256Hex(response);
+            if (digest !== undefined && (hash === "" || !digest.startsWith(hash))) {
+              throw new TypeError(
+                `precache ${cacheName}: ${url} does not match its manifest hash (expected ${hash}, got ${digest.slice(0, Math.max(hash.length, 16))}); ` +
+                  `the server probably serves another release`,
+              );
+            }
+          }
           await cache.put(url, response);
         }),
       );

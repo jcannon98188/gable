@@ -140,7 +140,7 @@ export function defineWorker(options: WorkerDefinitionOptions): WorkerDefinition
       const { version } = manifest;
       const origin = new URL(self.origin).origin;
       const assets = sortAssets(config, manifest);
-      const precache = createPrecache(self, { version, urls: assets.prefetch });
+      const precache = createPrecache(self, { version, urls: assets.prefetch, hashes: manifest.hashes });
       const lazy = new Set(assets.lazy.map((file) => withoutFragment(new URL(file, origin))));
       const lazyCache = LAZY_PREFIX + version;
       const router = createFetchRouter(self);

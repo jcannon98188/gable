@@ -198,6 +198,42 @@ describe("navigation fallback", () => {
   });
 });
 
+describe("manifest hashes", () => {
+  // SHA-256, first 16 hex digits, of what `server()` answers for each path in release v1 (`<path> v1`): the Vite plugin's format.
+  const hashes = { "/index.html": "25cbaf47afc584ea", "/assets/app.1a.js": "93c9ce537640f45d", "/assets/app.1a.css": "ababf3beed416e7d" };
+  const install = async (manifest: AssetManifest, network: Network) => {
+    const scope = createWorkerScope({ network });
+    defineWorker({ config: assets }).start(scope, manifest);
+    await scope.install();
+    return scope;
+  };
+
+  it.skipIf(globalThis.crypto?.subtle === undefined)("are verified when the release installs: a prefetch file that differs fails the install", async () => {
+    const ok = await install({ ...v1, hashes }, server().network);
+    expect(await ok.caches.keys()).toEqual(["gable-precache:v1"]);
+
+    const stale = server({ name: "v1" });
+    const swapped: Network = (request) => (new URL(request.url).pathname === "/assets/app.1a.css" ? new Response("body from release v2") : stale.network(request));
+    const scope = createWorkerScope({ network: swapped });
+    defineWorker({ config: assets }).start(scope, { ...v1, hashes });
+    await expect(scope.install()).rejects.toThrow(/app\.1a\.css does not match its manifest hash/);
+    expect(scope.state).toBe("redundant");
+    expect(await scope.caches.keys()).toEqual([]);
+  });
+
+  it("do not matter for files that are lazy or left to the network", async () => {
+    const lazyHashes = { ...hashes, "/images/logo.png": "0000000000000000", "/robots.txt": "0000000000000000" };
+    const scope = await install({ ...v1, hashes: lazyHashes }, server().network);
+    expect(await scope.caches.keys()).toEqual(["gable-precache:v1"]);
+  });
+
+  it("a manifest without hashes installs without verification", async () => {
+    const swapped: Network = () => new Response("body from release v2");
+    const scope = await install(v1, swapped);
+    expect(await scope.caches.keys()).toEqual(["gable-precache:v1"]);
+  });
+});
+
 describe("the asset manifest", () => {
   it("is checked when the worker starts", () => {
     const start = (manifest: unknown) => () => defineWorker({ config: assets }).start(createWorkerScope(), manifest as AssetManifest);
@@ -211,6 +247,19 @@ describe("the asset manifest", () => {
     );
     expect(start(undefined)).toThrow("the asset manifest is invalid");
     expect(start({ version: "v1" })).toThrow("files: must be an array of paths");
+  });
+
+  it("checks its hashes, when it has them, are non-empty strings", () => {
+    const start = (hashes: unknown) => () => defineWorker({ config: assets }).start(createWorkerScope(), { ...v1, hashes } as AssetManifest);
+    expect(start({ "/index.html": "", "/assets/app.1a.js": 3 })).toThrow(
+      [
+        "the asset manifest is invalid:",
+        `  - hashes["/index.html"]: must be a non-empty hash string, got ""`,
+        `  - hashes["/assets/app.1a.js"]: must be a non-empty hash string, got 3`,
+      ].join("\n"),
+    );
+    expect(start([])).toThrow("hashes: must be an object of hashes by path");
+    expect(start({})).not.toThrow();
   });
 
   it("validateManifest() checks a manifest against a config without starting a worker", () => {
