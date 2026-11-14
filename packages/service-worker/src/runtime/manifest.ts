@@ -20,6 +20,13 @@ export interface AssetManifest {
    * only by exact URL, so list each file the way pages request it.
    */
   readonly files: readonly string[];
+  /**
+   * The content hash of each file in `files`, by path, in the format `@gable/vite` emits: the first 16 hex digits of
+   * the file's SHA-256 digest. When present, the default worker checks every prefetch file it fetches against its
+   * hash while the release installs, and fails the install on a mismatch (the precache's `hashes`).
+   * Optional, so a hand-written manifest without hashes still works, unverified.
+   */
+  readonly hashes?: Readonly<Record<string, string>>;
 }
 
 /** A manifest's files sorted into the config's asset groups. Internal to the runtime. */
@@ -69,6 +76,17 @@ export function validateManifest(config: ServiceWorkerConfig, manifest: unknown)
         issues.push({ path: `files[${index}]`, message: `must be a path starting with "/", got ${JSON.stringify(file) ?? "nothing"}` });
       }
     });
+  }
+  if (value.hashes !== undefined) {
+    if (typeof value.hashes !== "object" || value.hashes === null || Array.isArray(value.hashes)) {
+      issues.push({ path: "hashes", message: "must be an object of hashes by path" });
+    } else {
+      for (const [file, hash] of Object.entries(value.hashes)) {
+        if (typeof hash !== "string" || hash === "") {
+          issues.push({ path: `hashes[${JSON.stringify(file)}]`, message: `must be a non-empty hash string, got ${JSON.stringify(hash) ?? "nothing"}` });
+        }
+      }
+    }
   }
   if (issues.length) throw new ServiceWorkerConfigError(issues, "the asset manifest");
 
