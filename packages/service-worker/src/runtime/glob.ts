@@ -1,8 +1,13 @@
 // The path globs gable.sw.json uses: `*` within one segment, `**` across any number of whole segments.
+// They are not core's fetch route patterns (`FetchRoutePattern`), where `*` crosses slashes and `:name` captures a
+// segment: `/assets/*` matches `/assets/img/logo.png` as a route pattern but not as a glob, which needs `/assets/**`.
 
 const escape = (text: string) => text.replace(/[.+?^${}()|[\]\\/]/g, "\\$&");
 
-/** Compiles a glob to an anchored RegExp over a path, or over `origin + path` for an absolute glob. */
+/**
+ * Compiles a glob to an anchored RegExp over a path, or over `origin + path` for an absolute glob. `*` matches within
+ * one path segment and `**` across segments, unlike `*` in core's fetch route patterns, which also crosses slashes.
+ */
 export function globToRegExp(glob: string): RegExp {
   let source = "";
   for (const [token] of glob.matchAll(/\/\*\*(?=\/|$)|\*\*|\*|\/|[^*/]+/g)) {

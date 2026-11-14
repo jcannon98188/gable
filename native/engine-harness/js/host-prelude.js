@@ -519,6 +519,9 @@ class RequestShim extends BodyShim {
     this.method = (init.method || (input instanceof RequestShim ? input.method : "GET")).toUpperCase();
     this.headers = new g.Headers(init.headers || (input instanceof RequestShim ? input.headers : undefined));
     this.signal = init.signal || (input instanceof RequestShim ? input.signal : new g.AbortController().signal);
+    // The Fetch standard's defaults for a Request made from a URL; one made from a Request keeps that one's.
+    this.cache = init.cache || (input instanceof RequestShim ? input.cache : "default");
+    this.mode = init.mode || (input instanceof RequestShim ? input.mode : "cors");
   }
 }
 define("Request", RequestShim);

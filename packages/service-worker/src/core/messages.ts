@@ -18,6 +18,12 @@ export type SwProtocol = typeof SW_PROTOCOL;
  */
 export type WorkerErrorPhase = "install" | "activate" | "update" | "runtime";
 
+/** Every {@link WorkerErrorPhase}, keyed so the type checker rejects a phase missing here or one the type lacks. */
+const PHASES: Readonly<Record<WorkerErrorPhase, true>> = { install: true, activate: true, update: true, runtime: true };
+
+const isWorkerErrorPhase = (value: unknown): value is WorkerErrorPhase =>
+  typeof value === "string" && Object.prototype.hasOwnProperty.call(PHASES, value);
+
 /** An error as it crosses to the app: its name and message, since an Error object does not survive postMessage intact. */
 export interface WorkerErrorInfo {
   /** The error's name, such as `"TypeError"`, or `"Error"` when the thrown value was not an error. */
@@ -124,11 +130,10 @@ export interface ActivateUpdateRequest {
 /** A message the app sends to the worker. Narrow on `type`. */
 export type AppToWorkerMessage = ActivateUpdateRequest;
 
-const PHASES: readonly string[] = ["install", "activate", "update", "runtime"] satisfies readonly WorkerErrorPhase[];
+/** Whether `value` is a non-null object, arrays included, so its fields can be read. */
+const isNonNullObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
-
-const isProtocolMessage = (value: unknown): value is Record<string, unknown> => isRecord(value) && value.protocol === SW_PROTOCOL;
+const isProtocolMessage = (value: unknown): value is Record<string, unknown> => isNonNullObject(value) && value.protocol === SW_PROTOCOL;
 
 /** Whether `data`, received from `navigator.serviceWorker`, is a well-formed {@link WorkerToAppMessage}. */
 export function isWorkerToAppMessage(data: unknown): data is WorkerToAppMessage {
@@ -139,9 +144,8 @@ export function isWorkerToAppMessage(data: unknown): data is WorkerToAppMessage 
       return true;
     case "error":
       return (
-        typeof data.phase === "string" &&
-        PHASES.includes(data.phase) &&
-        isRecord(data.error) &&
+        isWorkerErrorPhase(data.phase) &&
+        isNonNullObject(data.error) &&
         typeof data.error.name === "string" &&
         typeof data.error.message === "string"
       );
@@ -150,7 +154,7 @@ export function isWorkerToAppMessage(data: unknown): data is WorkerToAppMessage 
     case "notification-click":
       return (
         typeof data.action === "string" &&
-        isRecord(data.notification) &&
+        isNonNullObject(data.notification) &&
         typeof data.notification.title === "string" &&
         typeof data.notification.body === "string" &&
         typeof data.notification.tag === "string"
@@ -167,7 +171,7 @@ export function isAppToWorkerMessage(data: unknown): data is AppToWorkerMessage 
 
 /** Turns a thrown value into the {@link WorkerErrorInfo} that crosses to the app. */
 export function toWorkerErrorInfo(error: unknown): WorkerErrorInfo {
-  if (isRecord(error) && typeof error.name === "string" && typeof error.message === "string") {
+  if (isNonNullObject(error) && typeof error.name === "string" && typeof error.message === "string") {
     return { name: error.name, message: error.message };
   }
   return { name: "Error", message: String(error) };

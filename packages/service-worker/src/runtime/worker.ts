@@ -19,7 +19,7 @@ import {
   type WorkerNotificationOptions,
   type WorkerScope,
 } from "../core/index.js";
-import { validateConfig, type ServiceWorkerConfig } from "./config.js";
+import { isNonArrayObject, validateConfig, type ServiceWorkerConfig } from "./config.js";
 import { urlMatcher } from "./glob.js";
 import { sortAssets, validateManifest, type AssetManifest } from "./manifest.js";
 
@@ -99,19 +99,17 @@ const dataCacheName = (group: string) => DATA_PREFIX + group;
 
 const withoutFragment = (url: URL) => url.href.replace(/#.*$/, "");
 
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
-
 /** The default push handler: a JSON payload's `notification` with a string `title` is shown. */
 const showPayloadNotification: PushHandler = ({ data, showNotification }) => {
-  const notification = isRecord(data) ? data.notification : undefined;
-  if (!isRecord(notification) || typeof notification.title !== "string") return;
+  const notification = isNonArrayObject(data) ? data.notification : undefined;
+  if (!isNonArrayObject(notification) || typeof notification.title !== "string") return;
   const { title, ...options } = notification;
   return showNotification(title, options as WorkerNotificationOptions);
 };
 
 /** The default click handler: a click on the notification itself opens its `data.url`. */
 const openNotificationUrl: NotificationClickHandler = ({ action, notification, openWindow }) => {
-  const url = isRecord(notification.data) ? notification.data.url : undefined;
+  const url = isNonArrayObject(notification.data) ? notification.data.url : undefined;
   if (action === "" && typeof url === "string") return openWindow(url).then(() => {});
 };
 

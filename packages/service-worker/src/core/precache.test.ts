@@ -85,6 +85,28 @@ describe("precache: install", () => {
     expect(await bodies(precache, v2.urls)).toEqual(["/ v1", "/app.js v1", "/app.css v1", "/new.js v1"]);
   });
 
+  it("concurrent installs of a version share one install instead of deleting each other's cache", async () => {
+    const { state, network } = server();
+    const scope = createWorkerScope({ network });
+    const precache = createPrecache(scope, v1);
+    const twin = createPrecache(scope, v1); // a second precache for the same version and Cache storage
+    await Promise.all([precache.install(), precache.install(), twin.install()]);
+    expect([...state.requests].sort()).toEqual(["/", "/app.css", "/app.js"]);
+    expect(await bodies(precache, v1.urls)).toEqual(["/ v1", "/app.js v1", "/app.css v1"]);
+    expect(await bodies(twin, v1.urls)).toEqual(["/ v1", "/app.js v1", "/app.css v1"]);
+  });
+
+  it("a failed install is not shared with a later call, which starts again", async () => {
+    const { state, network } = server();
+    state.fail = "/app.js";
+    const scope = createWorkerScope({ network });
+    const precache = createPrecache(scope, v1);
+    await expect(precache.install()).rejects.toThrow(/app\.js/);
+    state.fail = undefined;
+    await precache.install();
+    expect(await bodies(precache, v1.urls)).toEqual(["/ v1", "/app.js v1", "/app.css v1"]);
+  });
+
   it("an installed version is not fetched again", async () => {
     const { state, network } = server();
     const scope = createWorkerScope({ network });

@@ -7,7 +7,8 @@ import type { WorkerFetchEvent, WorkerScope } from "./scope.js";
  *
  * - A string starting with `/` is a path pattern: it matches requests to the worker's own origin whose whole path
  *   matches. `:name` matches one path segment and captures it as `params.name`; `*` matches any run of characters,
- *   slashes included. The query string is ignored.
+ *   slashes included, so `/assets/*` matches `/assets/img/logo.png`. The query string is ignored. This differs from
+ *   the globs of the default worker's `gable.sw.json`, where `*` stays within one path segment and `**` crosses them.
  * - A string with `://` is an absolute pattern, matched the same way against the URL's origin and path, so
  *   `"https://fonts.example/*"` matches another origin.
  * - A RegExp is tested against the full URL; its named groups become params.
@@ -68,7 +69,8 @@ export interface FetchRouter {
   listen(): () => void;
 }
 
-interface Route {
+/** A fetch route as the router keeps it: its pattern compiled to a matcher, its methods and destinations as sets. */
+interface CompiledFetchRoute {
   readonly match: (url: URL, request: Request) => Record<string, string> | undefined;
   readonly methods: ReadonlySet<string> | "*";
   readonly destinations: ReadonlySet<string> | undefined;
@@ -88,7 +90,7 @@ function compile(pattern: string): RegExp {
 
 const groups = (match: RegExpExecArray | null) => (match ? { ...match.groups } : undefined);
 
-function matcher(pattern: FetchRoutePattern, origin: string): Route["match"] {
+function matcher(pattern: FetchRoutePattern, origin: string): CompiledFetchRoute["match"] {
   if (typeof pattern === "function") return (url, request) => (pattern(url, request) ? {} : undefined);
   if (pattern instanceof RegExp) {
     return (url) => {
@@ -111,7 +113,7 @@ const asList = <T>(value: T | readonly T[]): readonly T[] => (Array.isArray(valu
 
 /** Creates a fetch router for `scope`. Path patterns match requests to `scope.origin`. */
 export function createFetchRouter(scope: WorkerScope): FetchRouter {
-  const routes: Route[] = [];
+  const routes: CompiledFetchRoute[] = [];
   const origin = new URL(scope.origin).origin;
 
   const router: FetchRouter = {

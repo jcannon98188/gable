@@ -31,7 +31,9 @@ export interface Precache {
   /**
    * Fetches every manifest URL into this version's cache, revalidating with the server. Resolves once the version is
    * fully installed; rejects, leaving nothing of this version behind, when any URL fails or does not answer 200.
-   * A version already installed is not fetched again. Pass it to the install event's `waitUntil`, so a failed
+   * A version already installed is not fetched again, and a call made while the same version is installing in the
+   * same Cache storage (from this precache or another one for that version) shares that install and its outcome; a
+   * call after a failed install starts again. Pass it to the install event's `waitUntil`, so a failed
    * precache fails the worker's install and the running version stays in charge.
    */
   install(): Promise<void>;
@@ -59,6 +61,12 @@ const INSTALLED_PATH = "/__gable-precache__/installed";
 
 const withoutFragment = (url: URL) => url.href.replace(/#.*$/, "");
 
+/**
+ * The installs in flight, by Cache storage and cache name. Concurrent installs of a version share one, since each would
+ * otherwise start by deleting the cache the other is filling.
+ */
+const installing = new WeakMap<CacheStorage, Map<string, Promise<void>>>();
+
 /** Creates the precache for one release's `manifest`. */
 export function createPrecache(scope: WorkerScope, manifest: PrecacheManifest, options: PrecacheOptions = {}): Precache {
   const name = options.name ?? "gable-precache";
@@ -77,28 +85,38 @@ export function createPrecache(scope: WorkerScope, manifest: PrecacheManifest, o
     return installed;
   }
 
+  async function installOnce(): Promise<void> {
+    if (await isInstalled()) return;
+    // Whatever is there was left by an install that did not finish: start again from an empty cache.
+    await scope.caches.delete(cacheName);
+    const cache = await scope.caches.open(cacheName);
+    try {
+      await Promise.all(
+        urls.map(async (url) => {
+          const response = await scope.fetch(url, { cache: "no-cache" });
+          if (response.status !== 200) throw new TypeError(`precache ${cacheName}: ${url} answered ${response.status}`);
+          await cache.put(url, response);
+        }),
+      );
+      await cache.put(installedKey, new Response(JSON.stringify({ version: manifest.version, urls })));
+    } catch (error) {
+      await scope.caches.delete(cacheName);
+      throw error;
+    }
+    installed = true;
+  }
+
   const precache: Precache = {
     cacheName,
 
-    async install() {
-      if (await isInstalled()) return;
-      // Whatever is there was left by an install that did not finish: start again from an empty cache.
-      await scope.caches.delete(cacheName);
-      const cache = await scope.caches.open(cacheName);
-      try {
-        await Promise.all(
-          urls.map(async (url) => {
-            const response = await scope.fetch(url, { cache: "no-cache" });
-            if (response.status !== 200) throw new TypeError(`precache ${cacheName}: ${url} answered ${response.status}`);
-            await cache.put(url, response);
-          }),
-        );
-        await cache.put(installedKey, new Response(JSON.stringify({ version: manifest.version, urls })));
-      } catch (error) {
-        await scope.caches.delete(cacheName);
-        throw error;
-      }
-      installed = true;
+    install() {
+      const inFlight = installing.get(scope.caches) ?? new Map<string, Promise<void>>();
+      installing.set(scope.caches, inFlight);
+      const shared = inFlight.get(cacheName);
+      if (shared) return shared;
+      const install = installOnce().finally(() => inFlight.delete(cacheName));
+      inFlight.set(cacheName, install);
+      return install;
     },
 
     async activate() {

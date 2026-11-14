@@ -3,7 +3,7 @@
 // protocol, plus the registration's standard waiting and installing slots, so it works with any worker built on core.
 import { inject, signal, type ReadonlySignal } from "@gable/core";
 import { currentScope } from "@gable/core/internal";
-import { filter, type Observable } from "rxjs";
+import { filter, type Observable, type Subscription } from "rxjs";
 import {
   SW_PROTOCOL,
   type ActivateUpdateRequest,
@@ -23,6 +23,12 @@ const isVersionEvent = (message: WorkerToAppMessage): message is VersionEvent =>
 
 /** An error from the worker as an Error the app can throw: the name and message it reported. */
 const toError = (info: WorkerErrorInfo): Error => Object.assign(new Error(info.message), { name: info.name });
+
+/**
+ * How long {@link SwUpdates.checkForUpdate} waits, once the new version has installed, for its `version-ready` message
+ * before it answers from the registration's waiting slot instead.
+ */
+const VERSION_READY_GRACE_MS = 1000;
 
 /** Calls `listener` on each state change of `worker` until the returned function is called. */
 function onStateChange(worker: ServiceWorkerLike, listener: (state: string) => void): () => void {
@@ -83,24 +89,32 @@ export class SwUpdates {
    */
   readonly versions: Observable<VersionEvent> = this.#sw.messages.pipe(filter(isVersionEvent));
 
-  // Gable classes have no constructors: the service starts watching from a field initialiser.
-  readonly #watching = this.#watch();
+  // Gable classes have no constructors (the injector rejects them), so the service starts watching the worker's
+  // version events from this field initialiser. The field holds the subscription, which ends with the service's scope.
+  readonly #versionWatch: Subscription = this.#watchVersions();
 
-  #watch(): true {
+  /** Keeps {@link SwUpdates.updateAvailable} in step with the worker's version events, until the scope is disposed. */
+  #watchVersions(): Subscription {
     const subscription = this.#sw.messages.subscribe((message) => {
       if (message.type === "version-ready") this.#available.set(this.#sw.controlled);
       else if (message.type === "version-activated") this.#refresh();
     });
-    currentScope()?.onDispose(() => subscription.unsubscribe());
+    currentScope()?.onDispose(() => this.#versionWatch.unsubscribe());
     // A page opened while a version already waits learns of it once registered.
     void this.#sw.ready.then(() => this.#refresh());
-    return true;
+    return subscription;
   }
 
   /**
    * Asks the browser to fetch the worker script and install it if it changed. Resolves with whether a new version is
    * now ready for {@link SwUpdates.activateUpdate}; false when nothing changed, the new version failed to install, or
    * the service does not register (development builds). Rejects when the script cannot be fetched, such as offline.
+   *
+   * It answers as soon as the new version reports `version-ready`, or turns redundant. A version that installs without
+   * sending `version-ready` (a custom worker that does not speak the protocol, or a lost message) is answered for by
+   * the registration about a second after it reaches `installed`: true when it waits and a worker controls this
+   * page, which also raises {@link SwUpdates.updateAvailable}. So the promise always settles once the browser has
+   * finished installing.
    */
   async checkForUpdate(): Promise<boolean> {
     const registration = await this.#sw.ready;
@@ -118,16 +132,24 @@ export class SwUpdates {
         if (message.type === "version-ready") finish(() => resolve(this.#sw.controlled));
       });
       stops.push(() => subscription.unsubscribe());
+      // Once installed, the version's own version-ready message is the answer, but the page may see the state change
+      // first, and a custom worker need not send the message at all: after a short grace the registration decides.
+      let graceStarted = false;
+      const onInstallingState = (state: string) => {
+        // A failed install makes the version redundant, whether or not the worker reported an error.
+        if (state === "redundant") return finish(() => resolve(false));
+        if (state === "installing" || graceStarted) return;
+        graceStarted = true;
+        const timer = setTimeout(() => finish(() => resolve(this.#refresh())), VERSION_READY_GRACE_MS);
+        stops.push(() => clearTimeout(timer));
+      };
       registration.update().then(
         () => {
+          if (settled) return; // version-ready arrived first: nothing left to watch
           const installing = registration.installing;
           if (!installing) return finish(() => resolve(this.#refresh()));
-          // A failed install makes the version redundant, whether or not the worker reported an error.
-          stops.push(
-            onStateChange(installing, (state) => {
-              if (state === "redundant") finish(() => resolve(false));
-            }),
-          );
+          stops.push(onStateChange(installing, onInstallingState));
+          onInstallingState(installing.state);
         },
         (error: unknown) => finish(() => reject(error)),
       );

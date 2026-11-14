@@ -264,6 +264,23 @@ describe("SwUpdates: failures", () => {
     expect(await app.updates.checkForUpdate()).toBe(false);
   });
 
+  it("checkForUpdate() settles when the new version installs without sending version-ready", async () => {
+    const browser = await visited(lifecycleWorker("v1"));
+    const app = openApp(browser);
+    await app.registration.ready;
+    browser.deploy("/sw.js", () => {}); // a custom worker that never speaks the protocol
+    vi.useFakeTimers();
+    try {
+      let outcome: boolean | "pending" = "pending";
+      void app.updates.checkForUpdate().then((ready) => (outcome = ready));
+      await vi.advanceTimersByTimeAsync(5_000);
+      expect(outcome).toBe(true); // the registration's waiting slot holds the new version
+      expect(app.updates.updateAvailable()).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("checkForUpdate() rejects when the worker script cannot be fetched", async () => {
     const browser = await visited(lifecycleWorker("v1"));
     const app = openApp(browser);

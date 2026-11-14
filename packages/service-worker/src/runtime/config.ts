@@ -110,7 +110,9 @@ function show(value: unknown): string {
 const kind = (value: unknown) =>
   value === null ? "null" : Array.isArray(value) ? "an array" : typeof value === "object" ? "an object" : `a ${typeof value}`;
 
-const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+/** Whether `value` is an object other than an array, such as parsed JSON's `{...}`. The runtime's one such guard. */
+export const isNonArrayObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
 
 class Issues {
   readonly list: ServiceWorkerConfigIssue[] = [];
@@ -159,7 +161,7 @@ function checkGroups(issues: Issues, key: string, value: unknown, check: (path: 
   if (!Array.isArray(value)) return issues.add(key, `must be an array of ${key === "assetGroups" ? "asset" : "data"} groups, got ${kind(value)}`);
   value.forEach((group: unknown, index) => {
     const path = `${key}[${index}]`;
-    if (!isObject(group)) return issues.add(path, `must be an object, got ${kind(group)}`);
+    if (!isNonArrayObject(group)) return issues.add(path, `must be an object, got ${kind(group)}`);
     check(path, group);
   });
 }
@@ -172,7 +174,7 @@ function checkGroups(issues: Issues, key: string, value: unknown, check: (path: 
  */
 export function validateConfig(value: unknown): ServiceWorkerConfig {
   const issues = new Issues();
-  if (!isObject(value)) {
+  if (!isNonArrayObject(value)) {
     issues.add("", `must be an object, got ${kind(value)}`);
     throw new ServiceWorkerConfigError(issues.list);
   }
@@ -208,7 +210,7 @@ export function validateConfig(value: unknown): ServiceWorkerConfig {
 
   const fallback = value.navigationFallback;
   if (fallback !== undefined) {
-    if (!isObject(fallback)) issues.add("navigationFallback", `must be an object, got ${kind(fallback)}`);
+    if (!isNonArrayObject(fallback)) issues.add("navigationFallback", `must be an object, got ${kind(fallback)}`);
     else {
       if (typeof fallback.url !== "string" || !fallback.url.startsWith("/")) {
         issues.add("navigationFallback.url", `must be a path starting with "/", got ${show(fallback.url)}`);
