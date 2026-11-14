@@ -249,6 +249,36 @@ describe("in-memory worker scope: fetch events", () => {
     expect(await (await scope.caches.match("/feed"))!.text()).toBe("fresh");
   });
 
+  it("a pending respondWith keeps the event alive, so waitUntil still works after an await", async () => {
+    const scope = await activated({ network: () => new Response("fresh") });
+    scope.addEventListener("fetch", (event) =>
+      event.respondWith(
+        (async () => {
+          const response = await scope.fetch(event.request);
+          event.waitUntil(scope.caches.open("data").then((c) => c.put("/late", new Response("stored"))));
+          return response;
+        })(),
+      ),
+    );
+    expect(await (await scope.dispatchFetch("/x")).text()).toBe("fresh");
+    await scope.idle();
+    expect(await (await scope.caches.match("/late"))!.text()).toBe("stored");
+  });
+
+  it("dispatches requests with a destination, and navigations with mode navigate", async () => {
+    const scope = await activated();
+    const seen: string[] = [];
+    scope.addEventListener("fetch", (event) => {
+      seen.push(`${event.request.mode} ${event.request.destination || "(none)"}`);
+      event.respondWith(new Response("ok"));
+    });
+    await scope.dispatchFetch("/logo.png", { destination: "image" });
+    await scope.dispatchFetch("/about", { mode: "navigate" });
+    await scope.dispatchFetch("/frame", { mode: "navigate", destination: "iframe" });
+    await scope.dispatchFetch("/data.json");
+    expect(seen).toEqual(["cors image", "navigate document", "navigate iframe", "cors (none)"]);
+  });
+
   it("runs a whole cache-first worker: precache on install, serve offline", async () => {
     const scope = createWorkerScope({ network: (request) => new Response(`network ${new URL(request.url).pathname}`) });
     scope.addEventListener("install", (event) => event.waitUntil(scope.caches.open("v1").then((c) => c.addAll(["/", "/app.js"]))));

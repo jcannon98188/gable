@@ -68,6 +68,13 @@ export interface WorkerScopeOptions {
 export interface FetchEventInit extends RequestInit {
   /** The id of the client making the request. Defaults to `""`, a navigation with no client yet. */
   clientId?: string;
+  /**
+   * `"navigate"` makes the request a navigation, which Node's Request cannot be built as: the request reports
+   * `mode` `"navigate"` and, unless {@link destination} says otherwise, `destination` `"document"`.
+   */
+  mode?: RequestMode;
+  /** What the request is for, as `Request.destination` reports it (`"image"`, `"script"`, ...). Defaults to `""`. */
+  destination?: RequestDestination;
 }
 
 /** Options for {@link InMemoryWorkerScope.dispatchMessage}. */
@@ -170,8 +177,15 @@ export class InMemoryWorkerScope implements WorkerScope {
    */
   async dispatchFetch(input: RequestInfo | URL, init: FetchEventInit = {}): Promise<Response> {
     if (this.#state !== "activated") throw invalidState(`a ${this.#state} worker does not receive fetch events`);
-    const { clientId = "", ...requestInit } = init;
+    const { clientId = "", destination, ...requestInit } = init;
+    const navigate = requestInit.mode === "navigate";
+    if (navigate) delete requestInit.mode;
     const request = this.#toRequest(input, Object.keys(requestInit).length ? requestInit : undefined);
+    // Request has no settable mode "navigate" or destination, so they are shadowed on the instance.
+    if (navigate) Object.defineProperty(request, "mode", { value: "navigate" });
+    if (navigate || destination !== undefined) {
+      Object.defineProperty(request, "destination", { value: destination ?? "document" });
+    }
     const extension = new Extension();
     let dispatching = true;
     let answer: Promise<Response> | undefined;
@@ -184,6 +198,11 @@ export class InMemoryWorkerScope implements WorkerScope {
         if (!dispatching) throw invalidState("respondWith called after the fetch event was dispatched");
         if (answer) throw invalidState("respondWith already called for this fetch event");
         answer = Promise.resolve(response);
+        // As in the browser, the pending response extends the event, so waitUntil stays callable until it settles.
+        extension.waitUntil(answer.then(
+          () => {},
+          () => {},
+        ));
       },
     };
     try {
