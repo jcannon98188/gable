@@ -66,6 +66,12 @@ export interface WorkerScopeOptions {
   network?: Network;
   /** Whether the browser has background sync. Defaults to `true`; `false` leaves `registration.sync` undefined. */
   backgroundSync?: boolean;
+  /**
+   * Cache storage to share, such as another scope's: successive worker versions of one origin share Cache storage
+   * in the browser. Defaults to new, empty storage. Shared storage's `Cache.add` uses the network of the scope that
+   * created it.
+   */
+  caches?: InMemoryCacheStorage;
 }
 
 /** Options for {@link InMemoryWorkerScope.dispatchNotificationClick}. */
@@ -125,7 +131,7 @@ export class InMemoryWorkerScope implements WorkerScope {
   constructor(options: WorkerScopeOptions = {}) {
     this.origin = new URL(options.origin ?? "https://app.test").origin;
     this.network = options.network ?? offline;
-    this.caches = new InMemoryCacheStorage(this.#toRequest, (request) => this.fetch(request));
+    this.caches = options.caches ?? new InMemoryCacheStorage(this.#toRequest, (request) => this.fetch(request));
     this.clients = new InMemoryClients(
       () => this.#state === "activating" || this.#state === "activated",
       () => this.#state === "activated",

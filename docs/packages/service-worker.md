@@ -125,6 +125,67 @@ await outbox.register(); // false in a browser without background sync
 - `register()` resolves `true` once the browser has the tag. It resolves `false` where background sync is missing (at the time of writing, everywhere but Chromium-based browsers), and the worker then has to retry by other means. `supported` and `isRegistered()` report the same state.
 - The handler runs only for its own tag, with `lastChance`. A rejected attempt fails the sync event so the browser retries it later. Only a failed last chance is reported to the app, as an `error` message with phase `runtime`.
 
+### The default worker
+
+`@gable/service-worker/runtime` is a worker built from configuration. `gable.sw.json` says what to cache:
+
+```json
+{
+  "assetGroups": [
+    { "name": "app", "installMode": "prefetch", "files": ["/index.html", "/assets/**"] },
+    { "name": "images", "installMode": "lazy", "files": ["/images/**"] }
+  ],
+  "dataGroups": [
+    { "name": "api", "urls": ["/api/**"], "strategy": "freshness", "timeoutMs": 3000 },
+    { "name": "avatars", "urls": ["https://cdn.example/avatars/**"], "strategy": "performance" }
+  ],
+  "navigationFallback": { "url": "/index.html", "exclude": ["/api/**", "/**/*.*"] }
+}
+```
+
+The worker file starts it with its `self` and the build's asset manifest. `@gable/vite` will generate that file and the manifest:
+
+```ts
+import { defineWorker } from "@gable/service-worker/runtime";
+import config from "./gable.sw.json";
+
+defineWorker({ config }).start(self, manifest); // manifest: { version, files }, emitted by the build
+```
+
+- Patterns are globs over URL paths: `*` matches within one segment and `**` matches any number of segments. Absolute patterns (`https://...`) are allowed in data groups. The query string is not part of the path.
+- Asset groups pick files from the manifest; a file belongs to the first group that matches it. `prefetch` files (the default) are fetched while the release installs, using core's atomic precache, so the release is ready only once all of them are stored. `lazy` files are cached the first time they are requested. Both caches belong to the release (`gable-precache:<version>` and `gable-lazy:<version>`) and are removed when a later release activates. A request matches a file only by its exact URL.
+- Data groups cache requests at runtime, GET only, in `gable-data:<name>`, which outlives releases. `freshness` goes to the network first and falls back to the cache when the network fails or is slower than `timeoutMs`. `performance` answers from the cache and refreshes it in the background. Activation removes the caches of data groups the config no longer has.
+- The navigation fallback answers page navigations (GET, same origin) with the precached shell, so client-side routes load offline. `exclude` lists navigations to leave to the network; it defaults to `["/**/*.*"]`, paths that look like files, and replaces that default when set. The shell must be a file of a prefetch group.
+- Updates are app-controlled through core's `lifecycle()`, so `SwUpdates` works with it unchanged. Pushes and notification clicks are forwarded to `SwPush`. A push whose JSON payload has a `notification` object with a `title` is shown, its other fields used as notification options; a click on a notification whose `data.url` is a string opens that URL.
+- Requests are answered by the first match, in this order: extension routes, precached files, lazy files, the navigation fallback, data groups. Anything else goes to the network.
+
+`validateConfig` checks a config and throws a `ServiceWorkerConfigError` that lists every problem with its JSON path; unknown settings are errors. `defineWorker` calls it, so a bad config fails when the worker script runs. `validateManifest(config, manifest)` checks a manifest and that the shell is prefetched; `start()` calls it.
+
+The asset manifest, `AssetManifest`, is `{ version, files }`. `version` identifies the release, and any change makes a new release that waits for `activateUpdate()`. `files` lists every emitted file as a path from the origin's root.
+
+`extend` adds to the declarative behaviour:
+
+```ts
+import { backgroundSync, networkOnly } from "@gable/service-worker/core";
+import { defineWorker } from "@gable/service-worker/runtime";
+
+defineWorker({
+  config,
+  extend: ({ self, version, router }) => {
+    router.route("/api/live/*", networkOnly()); // tried before the declarative routes
+    backgroundSync(self, { tag: "outbox", version, sync: () => sendQueuedMessages() });
+    return {
+      install: () => migrateDatabase(), // runs after the precache, before the app hears version-ready
+      push: ({ data, showNotification }) => showNotification(`New: ${(data as { title: string }).title}`),
+    };
+  },
+}).start(self, manifest);
+```
+
+The extension gets the scope, version, config, manifest, router and precache. It can return `install`, `activate` and `update` hooks, which run after the worker's own work in the same lifecycle step, and `push` and `notificationClick` handlers, which replace the defaults. Forwarding to the app stays either way.
+
+Not supported yet: maximum age and size for data caches, `urls` for asset groups on other origins (a `performance` data group covers them), and carrying unchanged files over to a new release instead of fetching them again.
+
 ### App-side services
 
 `provideServiceWorker({ url })` sets the app up; injecting one of the services registers the worker. Registration happens only in a production build (`@gable/vite` defines `__GABLE_DEV__` as `false` on `vite build`). In development the services do nothing, so the dev server's HMR is never served stale code. Set `enabled` to override that either way.
@@ -153,4 +214,4 @@ The services read workers only through the protocol, plus the registration's sta
 
 ### Testing
 
-The package's own unit tests run workers on an in-memory worker scope. It dispatches install, activate, fetch, message, push, notification-click and sync events, keeps Cache storage and shown notifications in memory, and has connected clients and a network that tests can replace. An in-memory browser on top of it plays `navigator.serviceWorker` for any number of pages, so the app-side services are tested against real worker code. Both are internal for now.
+The package's own unit tests run workers on an in-memory worker scope. It dispatches install, activate, fetch, message, push, notification-click and sync events, keeps Cache storage and shown notifications in memory, and has connected clients and a network that tests can replace. An in-memory browser on top of it plays `navigator.serviceWorker` for any number of pages, so the app-side services are tested against real worker code, the default worker included. Its worker versions share the origin's Cache storage, as in a browser. Both are internal for now.

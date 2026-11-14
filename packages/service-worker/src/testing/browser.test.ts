@@ -100,4 +100,19 @@ describe("in-memory browser", () => {
     expect(installing?.state).toBe("redundant");
     expect(browser.versions(SW)).toEqual({ installing: null, waiting: null, active: "activated" });
   });
+
+  it("every worker version of the origin shares its Cache storage", async () => {
+    const storing = (name: string) => (self: WorkerScope) => {
+      self.addEventListener("install", (event) => event.waitUntil(self.caches.open(name)));
+    };
+    const browser = createBrowser();
+    browser.deploy("/sw.js", storing("v1"));
+    const page = browser.openPage("/");
+    await page.container.register("/sw.js");
+    await browser.settled();
+    browser.deploy("/sw.js", storing("v2"));
+    await (await page.container.register("/sw.js")).update();
+    await browser.settled();
+    expect(await browser.activeScope(SW)!.caches.keys()).toEqual(["v1", "v2"]);
+  });
 });

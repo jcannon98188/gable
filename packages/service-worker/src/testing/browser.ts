@@ -11,6 +11,7 @@ import type {
   ServiceWorkerMessageEventLike,
   ServiceWorkerRegistrationLike,
 } from "../app/container.js";
+import type { InMemoryCacheStorage } from "./caches.js";
 import type { InMemoryClient } from "./clients.js";
 import { createWorkerScope, type InMemoryWorkerScope, type Network } from "./worker-scope.js";
 
@@ -62,6 +63,7 @@ export class InMemoryBrowser {
   readonly #registrations = new Map<string, Registration>();
   readonly #pages = new Set<InMemoryPage>();
   readonly #pending = new Set<Promise<unknown>>();
+  #caches: InMemoryCacheStorage | undefined;
 
   constructor(options: InMemoryBrowserOptions = {}) {
     this.origin = new URL(options.origin ?? "https://app.test").origin;
@@ -157,7 +159,10 @@ export class InMemoryBrowser {
     if (!script) throw new TypeError(`Failed to update a ServiceWorker: ${registration.scriptURL} returned 404`);
     const newest = registration.installing ?? registration.waiting ?? registration.active;
     if (newest?.script === script) return;
-    const version = new WorkerVersion(script, createWorkerScope({ origin: this.origin, network: this.#network }));
+    // Every version of the origin shares its Cache storage, so a new version sees what the old one stored.
+    const scope = createWorkerScope({ origin: this.origin, network: this.#network, caches: this.#caches });
+    this.#caches ??= scope.caches;
+    const version = new WorkerVersion(script, scope);
     for (const page of this.#pages) this.#connect(page, version, false);
     script(version.scope);
     if (registration.installing) registration.installing.setState("redundant");
