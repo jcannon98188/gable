@@ -6,7 +6,7 @@
 
 /** An install or activate event: the worker extends its lifetime until the promises passed to `waitUntil` settle. */
 export interface WorkerExtendableEvent {
-  /** `"install"` or `"activate"` for a lifecycle event, `"fetch"` for a fetch event. */
+  /** `"install"` or `"activate"` for a lifecycle event, `"fetch"` for a fetch event, `"message"` for a message event. */
   readonly type: string;
   /** Keeps the event, and the worker, alive until `promise` settles. A rejected install or activate promise fails that step. */
   waitUntil(promise: Promise<unknown>): void;
@@ -60,6 +60,16 @@ export interface WorkerEventMap {
   activate: WorkerExtendableEvent;
   /** A controlled page made a request. */
   fetch: WorkerFetchEvent;
+  /** A page posted a message to the worker. */
+  message: WorkerMessageEvent;
+}
+
+/** A message a page posted to the worker, an ExtendableMessageEvent in the browser. */
+export interface WorkerMessageEvent extends WorkerExtendableEvent {
+  /** A structured clone of the posted message. */
+  readonly data: unknown;
+  /** The client that posted it, or `null` when it did not come from a client. */
+  readonly source: WorkerClient | null;
 }
 
 /** The global scope a service worker runs in, as far as Gable's worker code uses it. */

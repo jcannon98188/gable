@@ -14,4 +14,49 @@ This package is being built. The entry points exist, and the pieces arrive with 
 
 Core exports `WorkerScope` and the event, client and cache types that worker code runs against. They describe a real worker's `self`, and Gable can compile against them with the DOM lib, which cannot be combined with the WebWorker lib.
 
-The package's own unit tests run workers on an in-memory worker scope. It dispatches install, activate and fetch events, keeps Cache storage in memory, and has connected clients and a network that tests can replace. It is internal for now.
+### Lifecycle hooks
+
+`lifecycle(self, { version, install, activate, update })` runs typed hooks at a version's lifecycle steps and keeps the app informed:
+
+```ts
+import { lifecycle } from "@gable/service-worker/core";
+
+lifecycle(self, {
+  version: "3f9c2a",
+  install: async () => {
+    // all install work, precaching included: the app is told the version is ready only after this settles
+  },
+  activate: async () => {
+    // clean up what earlier versions left
+  },
+  update: async ({ requestedBy }) => {
+    // the app called activateUpdate(); runs before this waiting version takes over
+  },
+});
+```
+
+Updates are app-controlled. `lifecycle` never skips waiting on install, so a version that replaces another waits. It skips waiting only when the app sends the `activate-update` request. A hook that throws or rejects fails its step and sends the app an `error` message for that phase; a failed update hook leaves the version waiting.
+
+### The worker-app message protocol
+
+The messages between a worker and the app are public API. The app-side services rely on them, so they work with the default worker and with a custom worker built on `lifecycle` or on `createAppChannel`. Every message is a plain object whose `protocol` field is `SW_PROTOCOL` (`"gable-sw@1"`). A change to a message's shape is a breaking change and moves the protocol to `@2`; new message types and new optional fields are additive.
+
+From the worker to every window client, controlled or not:
+
+| `type` | Fields | Sent when |
+| --- | --- | --- |
+| `version-ready` | `version` | A version finished installing. If it replaces an earlier version it now waits for `activate-update`; a first version activates straight away. |
+| `version-activated` | `version` | A version finished activating and controls the origin's pages. |
+| `error` | `version`, `phase` (`install`, `activate`, `update` or `runtime`), `error: { name, message }` | A lifecycle hook failed, or worker code reported an error with `reportError`. |
+
+From the app to a waiting worker:
+
+| `type` | Fields | Effect |
+| --- | --- | --- |
+| `activate-update` | none | The worker runs its update hook, skips waiting, and sends `version-activated` once active. |
+
+`isWorkerToAppMessage` and `isAppToWorkerMessage` check that a received value is a well-formed protocol message. `createAppChannel(self)` gives worker code the typed sending side (`broadcast`, `reportError`) and the app's requests (`onRequest`).
+
+### Testing
+
+The package's own unit tests run workers on an in-memory worker scope. It dispatches install, activate, fetch and message events, keeps Cache storage in memory, and has connected clients and a network that tests can replace. It is internal for now.

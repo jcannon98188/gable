@@ -6,6 +6,7 @@
 // It runs under vitest in Node and inside the engine-suites harness, so it uses only Request, Response and Headers
 // basics (no Request.clone, no Node built-ins).
 import type { WorkerEventMap, WorkerExtendableEvent, WorkerFetchEvent, WorkerScope } from "../core/index.js";
+import type { WorkerClient, WorkerMessageEvent } from "../core/index.js";
 import { InMemoryCacheStorage, type ToRequest } from "./caches.js";
 import { type ConnectClientOptions, type InMemoryClient, InMemoryClients } from "./clients.js";
 
@@ -67,6 +68,12 @@ export interface WorkerScopeOptions {
 export interface FetchEventInit extends RequestInit {
   /** The id of the client making the request. Defaults to `""`, a navigation with no client yet. */
   clientId?: string;
+}
+
+/** Options for {@link InMemoryWorkerScope.dispatchMessage}. */
+export interface DispatchMessageOptions {
+  /** The client posting the message. Defaults to none: the event's `source` is `null`. */
+  source?: WorkerClient;
 }
 
 /** A network that is down: every request rejects with a TypeError, as `fetch` does offline. */
@@ -212,6 +219,28 @@ export class InMemoryWorkerScope implements WorkerScope {
     }
     if (firstError) throw firstError.error;
     if (this.#extensions.size) await this.idle();
+  }
+
+  /**
+   * Dispatches a message event carrying a structured clone of `data`, as a page's `postMessage` to this worker would,
+   * and resolves once the event's extensions settle. Rejects when an extension rejects or a listener throws. A
+   * waiting (installed) worker receives messages; a redundant one does not.
+   */
+  async dispatchMessage(data: unknown, options: DispatchMessageOptions = {}): Promise<void> {
+    if (this.#state === "redundant") throw invalidState("a redundant worker does not receive messages");
+    const extension = new Extension();
+    const event: WorkerMessageEvent = {
+      type: "message",
+      data: structuredClone(data),
+      source: options.source ?? null,
+      waitUntil: (p) => extension.waitUntil(p),
+    };
+    try {
+      for (const listener of [...(this.#listeners.get("message") ?? [])]) (listener as (e: WorkerMessageEvent) => void)(event);
+    } finally {
+      extension.dispatched();
+    }
+    await extension.settled();
   }
 
   async #step(from: WorkerState, during: WorkerState, to: WorkerState, type: "install" | "activate"): Promise<void> {
