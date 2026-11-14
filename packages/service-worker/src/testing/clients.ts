@@ -12,6 +12,14 @@ export interface ConnectClientOptions {
   onMessage?: (message: unknown) => void;
 }
 
+/** How {@link InMemoryClients.openWindow} behaves. */
+export interface WindowOptions {
+  /** The origin relative URLs resolve against; windows on other origins are not visible to the worker. */
+  readonly origin: string;
+  /** Whether opening a window is allowed now. */
+  readonly allowed: () => boolean;
+}
+
 /** A connected client. */
 export class InMemoryClient implements WorkerClient {
   readonly id: string;
@@ -57,15 +65,20 @@ export class InMemoryClients implements WorkerClients {
   readonly #clients = new Map<string, InMemoryClient>();
   readonly #isActive: () => boolean;
   readonly #isActivated: () => boolean;
+  readonly #window: WindowOptions | undefined;
   #nextId = 1;
+  /** The URLs of the windows the worker opened with {@link openWindow}, oldest first, other origins included. */
+  readonly openedWindows: string[] = [];
 
   /**
    * @param isActive whether the worker may claim clients (activating or activated)
    * @param isActivated whether new clients are controlled by default
+   * @param window how openWindow resolves URLs and when it is allowed; without it openWindow always rejects
    */
-  constructor(isActive: () => boolean, isActivated: () => boolean) {
+  constructor(isActive: () => boolean, isActivated: () => boolean, window?: WindowOptions) {
     this.#isActive = isActive;
     this.#isActivated = isActivated;
+    this.#window = window;
   }
 
   /** Connects a client at the absolute `url`. */
@@ -88,6 +101,20 @@ export class InMemoryClients implements WorkerClients {
     return [...this.#clients.values()].filter(
       (client) => (options.includeUncontrolled || client.controlled) && (type === "all" || client.type === type),
     );
+  }
+
+  /**
+   * Opens a window at `url`, resolved against the origin, and connects it as a window client. As in the browser it is
+   * allowed only while the worker handles a notification click, and a window on another origin resolves with `null`.
+   */
+  async openWindow(url: string | URL): Promise<InMemoryClient | null> {
+    if (!this.#window?.allowed()) {
+      throw new DOMException("openWindow is only allowed while handling a notification click", "InvalidAccessError");
+    }
+    const href = new URL(String(url), this.#window.origin).href;
+    this.openedWindows.push(href);
+    if (new URL(href).origin !== this.#window.origin) return null;
+    return this.connect(href);
   }
 
   async claim(): Promise<void> {

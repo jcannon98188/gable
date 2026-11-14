@@ -82,6 +82,49 @@ From the app to a waiting worker:
 
 `isWorkerToAppMessage` and `isAppToWorkerMessage` check that a received value is a well-formed protocol message. `createAppChannel(self)` gives worker code the typed sending side (`broadcast`, `reportError`) and the app's requests (`onRequest`).
 
+### Push and notification clicks
+
+`onPush` and `onNotificationClick` handle the worker's push and notification-click events with typed handlers. Each also forwards its event to the app's open pages with the protocol's `push` or `notification-click` message, which `SwPush` exposes:
+
+```ts
+import { onNotificationClick, onPush } from "@gable/service-worker/core";
+
+onPush(self, {
+  version: "3f9c2a",
+  handle: ({ data, showNotification }) => {
+    const mail = data as { id: number; subject: string };
+    return showNotification("New mail", { body: mail.subject, tag: "mail", data: { id: mail.id } });
+  },
+});
+
+onNotificationClick(self, {
+  version: "3f9c2a",
+  handle: ({ action, notification, openWindow }) => {
+    if (action === "") return openWindow(`/mail/${(notification.data as { id: number }).id}`);
+  },
+});
+```
+
+- The push handler gets the payload decoded as the `push` message carries it: parsed JSON, else text, else `null`. The raw payload is there as `message`. A notification shown through the context's `showNotification` keeps the push event alive until it is shown. Chromium shows its own notice when a push shows no notification.
+- A click closes the notification unless `keepOpen` is set, since not every platform closes it by itself. The handler gets the clicked `action` (`""` for the notification itself) and `openWindow`, which browsers allow only while a click is being handled.
+- `forward: false` keeps an event from the app. A handler that throws or rejects fails its event and sends the app an `error` message with phase `runtime`. Each function returns a disposer.
+
+### Background sync
+
+`backgroundSync(self, { tag, version, sync })` registers one tag and handles its sync events:
+
+```ts
+import { backgroundSync } from "@gable/service-worker/core";
+
+const outbox = backgroundSync(self, { tag: "outbox", version: "3f9c2a", sync: () => sendQueuedMessages() });
+
+// after a send failed offline:
+await outbox.register(); // false in a browser without background sync
+```
+
+- `register()` resolves `true` once the browser has the tag. It resolves `false` where background sync is missing (at the time of writing, everywhere but Chromium-based browsers), and the worker then has to retry by other means. `supported` and `isRegistered()` report the same state.
+- The handler runs only for its own tag, with `lastChance`. A rejected attempt fails the sync event so the browser retries it later. Only a failed last chance is reported to the app, as an `error` message with phase `runtime`.
+
 ### App-side services
 
 `provideServiceWorker({ url })` sets the app up; injecting one of the services registers the worker. Registration happens only in a production build (`@gable/vite` defines `__GABLE_DEV__` as `false` on `vite build`). In development the services do nothing, so the dev server's HMR is never served stale code. Set `enabled` to override that either way.
@@ -110,4 +153,4 @@ The services read workers only through the protocol, plus the registration's sta
 
 ### Testing
 
-The package's own unit tests run workers on an in-memory worker scope. It dispatches install, activate, fetch and message events, keeps Cache storage in memory, and has connected clients and a network that tests can replace. An in-memory browser on top of it plays `navigator.serviceWorker` for any number of pages, so the app-side services are tested against real worker code. Both are internal for now.
+The package's own unit tests run workers on an in-memory worker scope. It dispatches install, activate, fetch, message, push, notification-click and sync events, keeps Cache storage and shown notifications in memory, and has connected clients and a network that tests can replace. An in-memory browser on top of it plays `navigator.serviceWorker` for any number of pages, so the app-side services are tested against real worker code. Both are internal for now.

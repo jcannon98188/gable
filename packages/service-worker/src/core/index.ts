@@ -10,6 +10,19 @@ export type {
   WorkerScope,
 } from "./scope.js";
 export type { WorkerMessageEvent } from "./scope.js";
+export type {
+  WorkerNotification,
+  WorkerNotificationAction,
+  WorkerNotificationEvent,
+  WorkerNotificationOptions,
+  WorkerPushEvent,
+  WorkerPushMessageData,
+  WorkerRegistration,
+  WorkerSyncEvent,
+  WorkerSyncManager,
+} from "./scope.js";
+export * from "./push.js";
+export * from "./sync.js";
 export * from "./messages.js";
 export * from "./lifecycle.js";
 export * from "./router.js";

@@ -7,6 +7,8 @@
 // basics (no Request.clone, no Node built-ins).
 import type { WorkerEventMap, WorkerExtendableEvent, WorkerFetchEvent, WorkerScope } from "../core/index.js";
 import type { WorkerClient, WorkerMessageEvent } from "../core/index.js";
+import type { WorkerNotification, WorkerNotificationEvent, WorkerPushEvent, WorkerPushMessageData, WorkerSyncEvent } from "../core/index.js";
+import { InMemoryRegistration } from "./registration.js";
 import { InMemoryCacheStorage, type ToRequest } from "./caches.js";
 import { type ConnectClientOptions, type InMemoryClient, InMemoryClients } from "./clients.js";
 
@@ -62,6 +64,20 @@ export interface WorkerScopeOptions {
   origin?: string;
   /** The network. Defaults to {@link offline}. */
   network?: Network;
+  /** Whether the browser has background sync. Defaults to `true`; `false` leaves `registration.sync` undefined. */
+  backgroundSync?: boolean;
+}
+
+/** Options for {@link InMemoryWorkerScope.dispatchNotificationClick}. */
+export interface NotificationClickInit {
+  /** The action button clicked. Defaults to `""`, a click on the notification itself. */
+  action?: string;
+}
+
+/** Options for {@link InMemoryWorkerScope.dispatchSync}. */
+export interface SyncInit {
+  /** Whether the browser gives up on the tag if this attempt fails. Defaults to `false`. */
+  lastChance?: boolean;
 }
 
 /** The request a {@link InMemoryWorkerScope.dispatchFetch} makes, plus the fetch event's fields. */
@@ -101,7 +117,10 @@ export class InMemoryWorkerScope implements WorkerScope {
   readonly caches: InMemoryCacheStorage;
   /** The origin's clients. Connect one with {@link connectClient}. */
   readonly clients: InMemoryClients;
+  /** The worker's registration: the notifications it shows and its background sync tags. */
+  readonly registration: InMemoryRegistration;
   #skippedWaiting = false;
+  #handlingClicks = 0;
 
   constructor(options: WorkerScopeOptions = {}) {
     this.origin = new URL(options.origin ?? "https://app.test").origin;
@@ -110,7 +129,9 @@ export class InMemoryWorkerScope implements WorkerScope {
     this.clients = new InMemoryClients(
       () => this.#state === "activating" || this.#state === "activated",
       () => this.#state === "activated",
+      { origin: this.origin, allowed: () => this.#handlingClicks > 0 },
     );
+    this.registration = new InMemoryRegistration({ backgroundSync: options.backgroundSync });
   }
 
   /** Whether the worker called `skipWaiting()`. */
@@ -262,6 +283,58 @@ export class InMemoryWorkerScope implements WorkerScope {
     await extension.settled();
   }
 
+  /**
+   * Dispatches a push event, as the push service delivering `data` would (`null` for a push without a payload), and
+   * resolves once the event's extensions settle. Rejects when an extension rejects or a listener throws. Only an
+   * activated worker receives push events.
+   */
+  async dispatchPush(data: string | ArrayBuffer | null = null): Promise<void> {
+    this.#assertActivated("push events");
+    const fields: Pick<WorkerPushEvent, "data"> = { data: data === null ? null : pushData(data) };
+    await this.#dispatchExtendable("push", fields);
+  }
+
+  /**
+   * Dispatches a click on `notification`, which the worker showed, and resolves once the event's extensions settle.
+   * While the event is being handled the worker may call `clients.openWindow`, as a browser allows after a click.
+   * Rejects when an extension rejects or a listener throws.
+   */
+  async dispatchNotificationClick(notification: WorkerNotification, init: NotificationClickInit = {}): Promise<void> {
+    this.#assertActivated("notification clicks");
+    const fields: Pick<WorkerNotificationEvent, "notification" | "action"> = { notification, action: init.action ?? "" };
+    this.#handlingClicks++;
+    try {
+      await this.#dispatchExtendable("notificationclick", fields);
+    } finally {
+      this.#handlingClicks--;
+    }
+  }
+
+  /**
+   * Dispatches the sync event for the registered `tag`, as the browser does once the device is online, and resolves
+   * once the event's extensions settle. A successful sync, or a failed last chance, drops the tag; a failed attempt
+   * keeps it for the browser to retry. Rejects with the failure.
+   */
+  async dispatchSync(tag: string, init: SyncInit = {}): Promise<void> {
+    this.#assertActivated("sync events");
+    const sync = this.registration.sync;
+    if (!sync) throw invalidState("this browser has no background sync");
+    if (!sync.has(tag)) throw invalidState(`no background sync is registered for "${tag}"`);
+    const lastChance = init.lastChance ?? false;
+    const fields: Pick<WorkerSyncEvent, "tag" | "lastChance"> = { tag, lastChance };
+    try {
+      await this.#dispatchExtendable("sync", fields);
+    } catch (error) {
+      if (lastChance) sync.done(tag);
+      throw error;
+    }
+    sync.done(tag);
+  }
+
+  #assertActivated(what: string): void {
+    if (this.#state !== "activated") throw invalidState(`a ${this.#state} worker does not receive ${what}`);
+  }
+
   async #step(from: WorkerState, during: WorkerState, to: WorkerState, type: "install" | "activate"): Promise<void> {
     if (this.#state !== from) throw invalidState(`cannot ${type} a worker that is ${this.#state} (expected ${from})`);
     this.#state = during;
@@ -274,9 +347,9 @@ export class InMemoryWorkerScope implements WorkerScope {
     this.#state = to;
   }
 
-  async #dispatchExtendable(type: "install" | "activate"): Promise<void> {
+  async #dispatchExtendable(type: "install" | "activate" | "push" | "notificationclick" | "sync", fields: object = {}): Promise<void> {
     const extension = new Extension();
-    const event: WorkerExtendableEvent = { type, waitUntil: (p) => extension.waitUntil(p) };
+    const event: WorkerExtendableEvent = { ...fields, type, waitUntil: (p) => extension.waitUntil(p) };
     try {
       for (const listener of [...(this.#listeners.get(type) ?? [])]) (listener as (e: WorkerExtendableEvent) => void)(event);
     } finally {
@@ -284,6 +357,17 @@ export class InMemoryWorkerScope implements WorkerScope {
     }
     await extension.settled();
   }
+}
+
+/** A push payload: `text()`, `json()` and `arrayBuffer()` over its bytes. */
+function pushData(data: string | ArrayBuffer): WorkerPushMessageData {
+  const bytes = typeof data === "string" ? new TextEncoder().encode(data) : new Uint8Array(data.slice(0));
+  const text = () => new TextDecoder().decode(bytes);
+  return {
+    text,
+    json: () => JSON.parse(text()),
+    arrayBuffer: () => bytes.slice().buffer,
+  };
 }
 
 /** Creates an in-memory worker scope. */

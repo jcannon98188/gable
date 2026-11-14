@@ -105,6 +105,14 @@ export class InMemoryBrowser {
     return { installing: state(registration?.installing), waiting: state(registration?.waiting), active: state(registration?.active) };
   }
 
+  /**
+   * The scope of the active version of the registration for `url`, or `null` when none is active: where the push
+   * service delivers pushes and where notification clicks and background syncs are dispatched.
+   */
+  activeScope(url: string): InMemoryWorkerScope | null {
+    return this.#registrations.get(new URL(url, this.origin).href)?.active?.scope ?? null;
+  }
+
   /** @internal */
   closed(page: InMemoryPage): void {
     this.#pages.delete(page);
