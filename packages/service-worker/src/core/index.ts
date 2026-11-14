@@ -9,6 +9,9 @@ export type {
   WorkerFetchEvent,
   WorkerScope,
 } from "./scope.js";
+export type { WorkerMessageEvent } from "./scope.js";
+export * from "./messages.js";
+export * from "./lifecycle.js";
 export * from "./router.js";
 export * from "./strategies.js";
 export * from "./precache.js";
