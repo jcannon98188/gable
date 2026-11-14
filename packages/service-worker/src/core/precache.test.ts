@@ -332,3 +332,40 @@ describe("precache: where crypto.subtle is unavailable", () => {
     expect(await bodies(precache, v1.urls)).toEqual(["/ v1", "/app.js v1", "/app.css v1"]);
   });
 });
+
+describe("hasEarlierRelease", () => {
+  it("is false for the first release, before and after it installs", async () => {
+    const { network } = server();
+    const scope = createWorkerScope({ network });
+    const precache = worker(scope, v1);
+    expect(await precache.hasEarlierRelease()).toBe(false);
+    await scope.install();
+    expect(await precache.hasEarlierRelease()).toBe(false);
+  });
+
+  it("is true once another release installed into the same Cache storage, and false after activation removed it", async () => {
+    const { network } = server();
+    const old = createWorkerScope({ network });
+    worker(old, v1);
+    await old.install();
+    const next = createWorkerScope({ network, caches: old.caches });
+    const precache = worker(next, v2);
+    expect(await precache.hasEarlierRelease()).toBe(true); // already while it installs
+    await next.install();
+    expect(await precache.hasEarlierRelease()).toBe(true);
+    await next.activate();
+    expect(await precache.hasEarlierRelease()).toBe(false);
+  });
+
+  it("ignores caches of other names and a release that never finished installing", async () => {
+    const { network, state } = server();
+    const scope = createWorkerScope({ network });
+    await scope.caches.open("gable-lazy:v0");
+    await scope.caches.open("gable-precache:v0"); // an install that was interrupted: no completion record
+    state.fail = "/app.js";
+    worker(scope, v1);
+    await expect(scope.install()).rejects.toThrow();
+    const next = createWorkerScope({ network, caches: scope.caches });
+    expect(await worker(next, v2).hasEarlierRelease()).toBe(false);
+  });
+});

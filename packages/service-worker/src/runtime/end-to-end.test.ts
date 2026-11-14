@@ -99,6 +99,53 @@ describe("the default worker with the app-side services", () => {
     expect(await load(browser, "/assets/app.v1.js")).toBe("/assets/app.v1.js v1");
   });
 
+  it("controls the registering page as soon as the first release is active, with no update offered along the way", async () => {
+    const { state, network } = server();
+    const browser = createBrowser({ network });
+    browser.deploy("/sw.js", workerFile(release("v1")));
+    const app = openApp(browser);
+    const offered: boolean[] = [];
+    const sample = () => offered.push(app.updates.updateAvailable());
+    app.updates.versions.subscribe(sample);
+    app.page.container.addEventListener("controllerchange", sample);
+    let controllerChanges = 0;
+    app.page.container.addEventListener("controllerchange", () => void controllerChanges++);
+
+    await app.registration.ready;
+    expect(app.registration.controlled).toBe(false); // the worker is still installing
+    await browser.settled();
+
+    expect(app.registration.controlled).toBe(true);
+    expect(app.page.container.controller?.state).toBe("activated");
+    expect(controllerChanges).toBe(1);
+    expect(offered.length).toBeGreaterThanOrEqual(3); // both version events and the controller change
+    expect(offered.every((available) => !available)).toBe(true);
+    expect(app.updates.updateAvailable()).toBe(false);
+    expect(await app.updates.checkForUpdate()).toBe(false);
+    expect(await browser.activeScope(SW)!.clients.matchAll()).toHaveLength(1);
+
+    state.online = false; // offline, on the first visit's page, with no reload
+    expect(await load(browser, "/inbox/42", { mode: "navigate" })).toBe("/index.html v1");
+  });
+
+  it("does not claim for an update: a page of the running release changes controller once, on activateUpdate()", async () => {
+    const { browser, state } = await visitedV1();
+    const app = openApp(browser);
+    await app.registration.ready;
+    let controllerChanges = 0;
+    app.page.container.addEventListener("controllerchange", () => void controllerChanges++);
+    state.release = "v2";
+    browser.deploy("/sw.js", workerFile(release("v2")));
+    expect(await app.updates.checkForUpdate()).toBe(true);
+    await browser.settled();
+    expect(controllerChanges).toBe(0); // v2 installed and waits: nothing took over
+    expect(app.updates.updateAvailable()).toBe(true);
+    expect(await app.updates.activateUpdate()).toBe(true);
+    await browser.settled();
+    expect(controllerChanges).toBe(1);
+    expect(app.updates.updateAvailable()).toBe(false);
+  });
+
   it("a new release is offered through updateAvailable while the running one keeps serving its own files", async () => {
     const { browser, state } = await visitedV1();
     const app = openApp(browser);

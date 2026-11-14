@@ -55,6 +55,16 @@ export interface Precache {
    * by then the old worker no longer serves from them. Caches with other names are left alone.
    */
   activate(): Promise<void>;
+  /**
+   * Whether another release of this precache is installed in the same Cache storage: a version, other than this one,
+   * whose cache carries the completion record. Caches of other names, and those a failed or interrupted install left
+   * without the record, do not count. Until a newer release's {@link Precache.activate} removes it, an installed
+   * release is the one in charge or the one a later release replaces, so this tells a first release (`false`) from an
+   * update (`true`) even in a worker that was stopped and restarted between install and activate. Ask it before
+   * {@link Precache.activate} runs, which removes the earlier releases. The default worker uses it to claim the
+   * registering page on a first release only (`clients.claim()`), never when an update activates.
+   */
+  hasEarlierRelease(): Promise<boolean>;
   /** Whether `url`, resolved against the worker's origin and ignoring any fragment, is in the manifest. */
   has(url: string | URL | Request): boolean;
   /**
@@ -162,6 +172,15 @@ export function createPrecache(scope: WorkerScope, manifest: PrecacheManifest, o
       const prefix = `${name}:`;
       const stale = (await scope.caches.keys()).filter((key) => key.startsWith(prefix) && key !== cacheName);
       await Promise.all(stale.map((key) => scope.caches.delete(key)));
+    },
+
+    async hasEarlierRelease() {
+      const prefix = `${name}:`;
+      for (const key of await scope.caches.keys()) {
+        if (!key.startsWith(prefix) || key === cacheName) continue;
+        if ((await (await scope.caches.open(key)).match(installedKey)) !== undefined) return true;
+      }
+      return false;
     },
 
     has: (url) => known.has(resolve(url)),

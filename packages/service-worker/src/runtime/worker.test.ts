@@ -144,6 +144,63 @@ describe("releases", () => {
   });
 });
 
+describe("claiming clients on activation", () => {
+  const v2: AssetManifest = { version: "v2", files: ["/index.html", "/assets/app.2b.js", "/images/logo.png"] };
+  const page = "https://app.test/inbox";
+
+  it("the first release claims the pages that registered it, so they are controlled without a reload", async () => {
+    const scope = createWorkerScope({ network: server().network });
+    defineWorker({ config: assets }).start(scope, v1);
+    const registering = scope.connectClient(page);
+    expect(registering.controlled).toBe(false);
+    await scope.install();
+    expect(registering.controlled).toBe(false); // installing does not claim: activation does
+    await scope.activate();
+    expect(registering.controlled).toBe(true);
+    expect(await scope.clients.matchAll()).toEqual([registering]);
+  });
+
+  it("claims before the extension's activate hook runs, so the hook sees the claimed pages", async () => {
+    const scope = createWorkerScope({ network: server().network });
+    let seen = -1;
+    defineWorker({
+      config: assets,
+      extend: ({ self }) => ({
+        activate: async () => {
+          seen = (await self.clients.matchAll()).length;
+        },
+      }),
+    }).start(scope, v1);
+    scope.connectClient(page);
+    await scope.install();
+    await scope.activate();
+    expect(seen).toBe(1);
+  });
+
+  it("a release that replaces another never claims clients on activation", async () => {
+    const { network } = server();
+    const old = await installed(assets, v1, network);
+    const next = nextRelease(old, assets, v2, network);
+    const stray = next.connectClient(page, { controlled: false }); // a page the old release does not control
+    await next.install();
+    await next.activate();
+    expect(stray.controlled).toBe(false);
+    expect(await next.clients.matchAll()).toEqual([]);
+  });
+
+  it("a release whose predecessor never finished installing is a first release and claims", async () => {
+    const { network } = server();
+    const failing = createWorkerScope({ network: () => new Response("nope", { status: 500 }) });
+    defineWorker({ config: assets }).start(failing, v1);
+    await expect(failing.install()).rejects.toThrow();
+    const next = nextRelease(failing, assets, v2, network);
+    const client = next.connectClient(page);
+    await next.install();
+    await next.activate();
+    expect(client.controlled).toBe(true);
+  });
+});
+
 describe("navigation fallback", () => {
   const shell: ServiceWorkerConfig = { ...assets, navigationFallback: { url: "/index.html" } };
   const navigate = { mode: "navigate" } as const;

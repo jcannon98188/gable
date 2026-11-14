@@ -214,6 +214,7 @@ export class InMemoryBrowser {
     const scope = createWorkerScope({ origin: this.origin, network: this.#network, caches: this.#caches });
     this.#caches ??= scope.caches;
     const version = new WorkerVersion(script, scope);
+    scope.clients.onClaim = () => this.#claimed(version);
     for (const page of this.#pages) this.#connect(page, version, false);
     script(version.scope);
     if (registration.installing) registration.installing.setState("redundant");
@@ -238,6 +239,15 @@ export class InMemoryBrowser {
       if ([registration.installing, registration.waiting, registration.active].includes(version)) return registration;
     }
     return undefined;
+  }
+
+  /** `clients.claim()` of `version`: every open page switches to it, firing controllerchange on those it did not control. */
+  #claimed(version: WorkerVersion): void {
+    for (const page of this.#pages) {
+      if (page.controllerVersion === version) continue;
+      page.controllerVersion = version;
+      page.controllerChanged();
+    }
   }
 
   #connect(page: InMemoryPage, version: WorkerVersion, controlled: boolean): void {

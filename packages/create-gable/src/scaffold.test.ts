@@ -127,16 +127,19 @@ describe("the scaffolded starter with --service-worker", () => {
       const heading = () => p.eval<string>(`document.querySelector("h1").textContent`);
       const cacheNames = () => p.eval<string[]>("caches.keys()");
 
-      // First visit: the worker installs the release and activates; the page itself is not controlled yet.
+      // First visit: the worker installs the release, activates and claims the page that registered it, so this very
+      // page is controlled without a reload, and the app update banner stays away (the page runs the newest code).
       await load(`${origin}/`);
       await until(p, `navigator.serviceWorker.getRegistration().then((r) => r?.active?.state === "activated")`);
+      await until(p, `navigator.serviceWorker.controller !== null`);
       expect(await cacheNames()).toContain(`gable-precache:${v1}`);
-      await load(`${origin}/`);
-      expect(await p.eval("navigator.serviceWorker.controller !== null")).toBe(true);
+      expect(await p.eval(`document.querySelector("p.update")`)).toBe(null);
 
-      // Offline: the server drops every request, and the app still loads, client-side routes included.
+      // Offline: the server drops every request. The first-visit page, never reloaded, is served from the cache.
       server.offline = true;
       expect(await p.eval(`fetch("/sw-manifest.json").then(() => "online", () => "offline")`)).toBe("offline");
+      expect(await p.eval(`fetch("/index.html").then((r) => r.ok, () => "failed")`)).toBe(true);
+      // Reloading offline serves the app too, client-side routes included.
       await load(`${origin}/`);
       expect(await heading()).toBe("Hello, Gable");
       await load(`${origin}/some/client/route`);

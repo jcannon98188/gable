@@ -66,6 +66,8 @@ export class InMemoryClients implements WorkerClients {
   readonly #isActive: () => boolean;
   readonly #isActivated: () => boolean;
   readonly #window: WindowOptions | undefined;
+  /** Called after {@link claim} controls the clients: the in-memory browser switches its pages to the claiming version. */
+  onClaim: (() => void) | undefined;
   #nextId = 1;
   /** The URLs of the windows the worker opened with {@link openWindow}, oldest first, other origins included. */
   readonly openedWindows: string[] = [];
@@ -120,5 +122,6 @@ export class InMemoryClients implements WorkerClients {
   async claim(): Promise<void> {
     if (!this.#isActive()) throw new DOMException("only an active worker can claim clients", "InvalidStateError");
     for (const client of this.#clients.values()) client.controlled = true;
+    this.onClaim?.();
   }
 }

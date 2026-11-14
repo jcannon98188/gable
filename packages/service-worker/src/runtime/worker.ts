@@ -122,7 +122,9 @@ const openNotificationUrl: NotificationClickHandler = ({ action, notification, o
  *   Their caches outlive releases; activation removes those of groups the config no longer has.
  * - The navigation fallback answers page navigations with the precached shell.
  * - Updates are app-controlled through core's `lifecycle()`: a release installs, tells the app it is ready, and
- *   takes over when the app calls `activateUpdate()`.
+ *   takes over when the app calls `activateUpdate()`. The one exception is a first release, with no earlier one
+ *   installed (see {@link Precache.hasEarlierRelease}): it claims the page that registered it, so the app is
+ *   controlled, and offline-ready, without a reload. An update never claims.
  * - Pushes and notification clicks are forwarded to the app. By default a push whose JSON payload has a
  *   `notification` object with a `title` shows it (its other fields are notification options), and a click on a
  *   notification whose `data.url` is a string opens that URL.
@@ -153,12 +155,18 @@ export function defineWorker(options: WorkerDefinitionOptions): WorkerDefinition
           await extension.install?.(context);
         },
         activate: async (context) => {
+          // A first release has no earlier one to protect, so it takes over the page that registered it: without this
+          // the app is not offline-ready until its next load. An update never claims; it waits for the app (ADR 0021).
+          // The earlier release is told by its precache, which survives the worker being stopped between install and
+          // activate; precache.activate() removes it, so ask first.
+          const firstRelease = !(await precache.hasEarlierRelease());
           await precache.activate();
           const data = new Set((config.dataGroups ?? []).map((group) => dataCacheName(group.name)));
           const stale = (await self.caches.keys()).filter(
             (key) => (key.startsWith(LAZY_PREFIX) && key !== lazyCache) || (key.startsWith(DATA_PREFIX) && !data.has(key)),
           );
           await Promise.all(stale.map((key) => self.caches.delete(key)));
+          if (firstRelease) await self.clients.claim();
           await extension.activate?.(context);
         },
         update: (context) => extension.update?.(context),

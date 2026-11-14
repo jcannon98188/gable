@@ -116,3 +116,37 @@ describe("in-memory browser", () => {
     expect(await browser.activeScope(SW)!.caches.keys()).toEqual(["v1", "v2"]);
   });
 });
+
+describe("in-memory browser: clients.claim()", () => {
+  const claiming = (name: string) => (self: WorkerScope) => {
+    worker(name)(self);
+    self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+  };
+
+  it("switches the pages that are open to the claiming version and fires controllerchange on each, once", async () => {
+    const browser = createBrowser();
+    browser.deploy("/sw.js", claiming("v1"));
+    const registering = browser.openPage("/");
+    const other = browser.openPage("/other");
+    const changes: string[] = [];
+    registering.container.addEventListener("controllerchange", () => changes.push("registering"));
+    other.container.addEventListener("controllerchange", () => changes.push("other"));
+    const registration = await registering.container.register("/sw.js");
+    expect(registering.container.controller).toBeNull();
+    await browser.settled();
+
+    expect(registering.container.controller).toBe(registration.active);
+    expect(other.container.controller?.state).toBe("activated");
+    expect(changes).toEqual(["registering", "other"]);
+    expect((await browser.activeScope(SW)!.clients.matchAll()).length).toBe(2);
+  });
+
+  it("a worker that does not claim leaves open pages uncontrolled, as before", async () => {
+    const browser = createBrowser();
+    browser.deploy("/sw.js", worker("v1"));
+    const page = browser.openPage("/");
+    await page.container.register("/sw.js");
+    await browser.settled();
+    expect(page.container.controller).toBeNull();
+  });
+});
