@@ -77,7 +77,7 @@ State a Component deliberately keeps across a hot update, so editing its source 
 _Avoid_: Persisted state, HMR state
 
 **Platform services**:
-Capabilities a target platform supplies through injection alongside its Renderer, such as location and history for the router. The core and router depend only on abstract Tokens; each platform provides the implementations.
+Capabilities a target platform supplies through injection alongside its Renderer, such as location and history for the router, and geometry, frame scheduling and media queries for anything that must measure or react to size. The core and router depend only on abstract Tokens; each platform provides the implementations.
 _Avoid_: Platform APIs, environment
 
 **Test renderer**:
@@ -194,3 +194,17 @@ _Avoid_: Viewport, device, artboard
 **Tailwind mode**:
 The Designer's class editing for projects that use Tailwind v4. Its scales, class names, variants and breakpoints come from the project's own design system (the `@theme` block is the project's design tokens), and it only ever changes static class tokens in source.
 _Avoid_: Style editor, CSS panel
+
+## Native
+
+**Host runtime**:
+The prebuilt, per-platform program that runs a native Gable app: it owns the window, painting, layout, text, accessibility and the JavaScript engine, and loads the app's bundle. The native Renderer is its face to the app.
+_Avoid_: Shell, VM, player
+
+**Engine interface**:
+The boundary between the Host runtime and a JavaScript engine (the `agnijs-engine-api` crate), satisfied by both the AgniJS engine and any adopted interim engine.
+_Avoid_: Engine adapter, binding layer
+
+**AgniJS engine**:
+The JavaScript engine Gable adopts, written in Rust and kept in its own repository (agnijs-rs/agnijs, ADR 0018), which replaces the adopted interim engine now that it has passed its conformance gate. Called the Gable engine until TASK-100.12.
+_Avoid_: Custom VM, runtime

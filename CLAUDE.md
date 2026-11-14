@@ -23,6 +23,10 @@ Do not edit Backlog task, draft, document, decision, or milestone markdown files
 </CRITICAL_INSTRUCTION>
 <!-- BACKLOG.MD GUIDELINES END -->
 
+## The JavaScript engine lives elsewhere
+
+The JavaScript engine (AgniJS, formerly the Gable engine) lives in the agnijs repository, https://github.com/agnijs-rs/agnijs: engine code, engine tickets (TASK-100.x to TASK-103.x), the spec and the engine ADRs are there, not here. Gable depends on it by pinned git revision (ADR 0018) and keeps only `native/engine-harness` and the switch-over report.
+
 ## Agent skills
 
 ### Issue tracker
