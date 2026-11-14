@@ -1,0 +1,31 @@
+{
+  "name": "@gable/service-worker",
+  "version": "0.0.0",
+  "license": "MIT",
+  "type": "module",
+  "description": "Service worker support for Gable apps: a worker authoring API (core), a default declarative worker (runtime) and app-side services.",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0"
+  }
+}
