@@ -3,7 +3,8 @@
 import { inject, signal, type ReadonlySignal } from "@gable/core";
 import { filter, map, type Observable } from "rxjs";
 import type { NotificationClickMessage, NotificationInfo, PushMessage, WorkerToAppMessage } from "../core/messages.js";
-import type { PushSubscriptionLike, ServiceWorkerRegistrationLike } from "./container.js";
+import { whenActive } from "./active.js";
+import type { PushSubscriptionLike } from "./container.js";
 import { SERVICE_WORKER_NOTIFICATIONS, SwRegistration } from "./registration.js";
 
 /** A click on a notification the worker showed. */
@@ -182,20 +183,4 @@ export class SwPush {
     this.#permission.set(permission);
     return permission;
   }
-}
-
-/** Resolves once the registration has an active worker, which `pushManager.subscribe` requires, or its worker failed. */
-async function whenActive(registration: ServiceWorkerRegistrationLike): Promise<void> {
-  if (registration.active) return;
-  const worker = registration.installing ?? registration.waiting;
-  if (!worker) return;
-  await new Promise<void>((resolve) => {
-    const check = () => {
-      if (!registration.active && worker.state !== "redundant") return;
-      worker.removeEventListener("statechange", check);
-      resolve();
-    };
-    worker.addEventListener("statechange", check);
-    check();
-  });
 }

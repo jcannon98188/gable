@@ -103,9 +103,10 @@ import config from "../gable.sw.json";
 
 export default defineWorker({
   config,
+  sync: { outbox: () => sendQueuedMessages() }, // background sync handlers, by tag (see Background sync)
   extend: ({ self, version, router }) => {
     router.route("/api/live/*", networkOnly()); // tried before the declarative routes
-    backgroundSync(self, { tag: "outbox", version, sync: () => sendQueuedMessages() });
+    backgroundSync(self, { tag: "refresh", version, sync: () => refreshFeed() }); // or use core directly
     return {
       install: () => migrateDatabase(), // runs after the precache, before the app hears version-ready
       push: ({ data, showNotification }) => showNotification(`New: ${(data as { title: string }).title}`),
@@ -114,7 +115,7 @@ export default defineWorker({
 });
 ```
 
-The extension gets the scope, version, config, manifest, router and precache. Its routes are tried before the declarative ones, and it can use any core handler. It can return `install`, `activate` and `update` hooks, which run after the worker's own work in the same lifecycle step, and `push` and `notificationClick` handlers, which replace the defaults. Forwarding to the app stays either way. A hook that fails is reported to the app as `lifecycle()` reports it.
+The `sync` option maps a tag to its handler and is wired through core's `backgroundSync()`; see [Background sync](#background-sync). The extension gets the scope, version, config, manifest, router and precache. Its routes are tried before the declarative ones, and it can use any core handler. It can return `install`, `activate` and `update` hooks, which run after the worker's own work in the same lifecycle step, and `push` and `notificationClick` handlers, which replace the defaults. Forwarding to the app stays either way. A hook that fails is reported to the app as `lifecycle()` reports it.
 
 ## Replace the default worker
 
@@ -245,6 +246,27 @@ await outbox.register(); // false in a browser without background sync
 - `register()` resolves `true` once the browser has the tag. It resolves `false` where background sync is missing (at the time of writing, everywhere but Chromium-based browsers), and the worker then has to retry by other means. `supported` and `isRegistered()` report the same state.
 - The handler runs only for its own tag, with `lastChance`. A rejected attempt fails the sync event so the browser retries it later. Only a failed last chance is reported to the app, as an `error` message with phase `runtime`.
 
+#### In the default worker, and from the app
+
+`defineWorker({ config, sync })` takes the handlers keyed by tag, each wired through `backgroundSync()` with the release's version, so a failed last chance reaches the app as above. A handler that is not a function, or an empty tag, is a `ServiceWorkerConfigError` when `defineWorker` is called. The app asks for a sync with `SwSync`:
+
+```ts
+const sync = inject(SwSync);
+
+async function send(message: Message) {
+  try {
+    await post(message);
+  } catch {
+    await queue(message);
+    if (!(await sync.register("outbox"))) retryWhenOnline(); // false: no Background Sync here
+  }
+}
+```
+
+- `register(tag)` waits for the worker to be active and resolves `true` once the browser has the tag; registering a pending tag again is `true` and changes nothing. The browser then runs the worker's handler for the tag when the device is online, retrying a failed attempt, and the tag is gone once it has synced. A tag with no handler in the worker is dropped without doing anything.
+- Without Background Sync (Firefox, Safari), or without a registered worker (development, a failed registration, no service workers), `register(tag)` resolves `false`, `isSupported()` resolves `false` and `getTags()` resolves `[]`. Nothing throws, a browser that refuses the registration resolves `false` too, and the worker's handlers never run, so the app has to retry by its own means: when the page loads, on the `online` event, or with a timer.
+- `getTags()` lists the tags registered and not yet synced. Use `isSupported()` to decide whether to show an "offline, will send later" message or retry yourself.
+
 ## App-side services
 
 `provideServiceWorker({ url })` sets the app up; injecting one of the services registers the worker. Registration happens only in a production build (`@gable/vite` defines `__GABLE_DEV__` as `false` on `vite build`). In development the services do nothing, so the dev server's HMR is never served stale code. Set `enabled` to override that either way. A build made without `@gable/vite` must define `__GABLE_DEV__` as `false` itself, or pass `enabled: true`; otherwise the worker never registers. `scope` and `type` pass through to `navigator.serviceWorker.register`; `sw.js` from `gableServiceWorker()` is a classic script, so leave `type` unset for it.
@@ -257,6 +279,7 @@ bootstrap(Root, { renderer: dom(), target: "#app", providers: provideServiceWork
 
 - `SwUpdates`: `updateAvailable` is a signal that turns true when a new version has installed and waits. `checkForUpdate()` asks the browser to look for a new worker script and resolves with whether a version is now waiting; it rejects when the script cannot be fetched, such as offline. It answers when the new version sends `version-ready` or fails to install; a version that installs without sending `version-ready` (a custom worker that does not speak the protocol) is answered for by the registration's `waiting` slot about a second after it has installed. `activateUpdate()` has the waiting version take over and resolves with `true` once it has, so the app can reload. It rejects with the worker's error when the worker's update hook fails. `versions` is an Observable of `version-ready` and `version-activated` events. A page that no worker controls (a first visit) never sees `updateAvailable` turn true, because it already runs the newest code.
 - `SwPush`: `messages` emits each push payload, and `notificationClicks` emits `{ action, notification }` for each click. The worker forwards both with the `push` and `notification-click` messages. It also subscribes the app to push: `permission` (a signal), `requestPermission()`, `subscribe(options)`, `getSubscription()` and `unsubscribe()`; see [Push subscription](#push-subscription).
+- `SwSync`: asks the browser for background syncs of the worker's tags: `isSupported()`, `register(tag)` (which resolves `false` where Background Sync is missing) and `getTags()`; see [Background sync](#background-sync).
 - `SwRegistration`: the registration itself (`registration`, a signal, and `ready`, a promise) and the raw stream of protocol messages. A failed registration goes to the app's `ErrorHandler`.
 
 The create-gable starter's banner:
@@ -320,7 +343,7 @@ Its options are `config` (default `"gable.sw.json"`), `entry` (a custom worker m
 
 ## Testing
 
-The package's unit tests run workers on an in-memory worker scope. It dispatches install, activate, fetch, message, push, notification-click and sync events, keeps Cache storage and shown notifications in memory, and has connected clients and a network that tests can replace. An in-memory browser on top of it plays `navigator.serviceWorker` for any number of pages, so the app-side services are tested against real worker code, the default worker included. The browser also models the notification permission and its prompt (the test sets what the user answers), a push manager per registration, and the push service, which delivers a push to a subscription's worker. Both are internal for now.
+The package's unit tests run workers on an in-memory worker scope. It dispatches install, activate, fetch, message, push, notification-click and sync events, keeps Cache storage and shown notifications in memory, and has connected clients and a network that tests can replace. An in-memory browser on top of it plays `navigator.serviceWorker` for any number of pages, so the app-side services are tested against real worker code, the default worker included. The browser also models the notification permission and its prompt (the test sets what the user answers), a push manager per registration, and the push service, which delivers a push to a subscription's worker. It models Background Sync too: a sync manager per registration that the worker's versions share, which needs an active worker to register, and `backgroundSync: false` for a browser without it; a test then dispatches the sync event on the worker's scope. Both are internal for now.
 
 The create-gable starter with `--service-worker` is also tested end to end in headless Chromium: a production build installs, keeps working with the server down, and takes a new release through the banner's `activateUpdate()`.
 
@@ -336,7 +359,7 @@ What v1 does not do, as of this release:
 - **No carry-over between releases.** Each release downloads all its prefetch and lazy files again, even unchanged ones; the runtime uses the manifest's per-file hashes only to verify prefetch files, not to skip downloads, and lazy files are not verified.
 - **Caching.** No maximum age or size for data caches. Asset groups cannot list files on other origins (a `performance` data group covers them). Precached files match by exact URL, with no ignore-search or directory-index matching beyond the navigation fallback. The precache does not reject redirected responses, so serve build files directly.
 - **Push.** `notificationclose` and periodic background sync are not handled, and a notification click opens a new window rather than focusing an open one.
-- **Background sync** works only where the browser has it (Chromium-based browsers); elsewhere `register()` resolves `false` and there is no built-in fallback.
+- **Background sync** works only where the browser has it (Chromium-based browsers); elsewhere `register()` resolves `false` and there is no built-in fallback or retry.
 - **Versions.** The app learns versions from `version-ready` and `version-activated` events; there is no request for the running version on page load.
 - **Vite plugin.** `base` must be an absolute path (no CDN or relative `base`). `gableI18n()`'s baked per-locale outputs are not covered; the worker describes the top-level build only. Your own Vite plugins are not applied to the worker bundle; it inherits only `resolve.alias`, `define`, `mode`, `minify` and the build `target`.
 - **Config.** There is no JSON schema for `gable.sw.json` yet; a `$schema` key is accepted and ignored.
