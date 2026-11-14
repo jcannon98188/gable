@@ -8,7 +8,7 @@ This package is being built. The entry points exist, and the pieces arrive with 
 
 - `@gable/service-worker/core` is the authoring API for writing a worker: routing, caching strategies, a versioned precache, lifecycle hooks, a typed message channel to the app, push and background sync.
 - `@gable/service-worker/runtime` is the default worker. It is driven by `gable.sw.json` and built on core's public exports only. A test fails if it imports anything else from the package.
-- `@gable/service-worker` is the app side: services for registration, an update-available signal and `activateUpdate()`. It registers only in production builds, so it never interferes with HMR.
+- `@gable/service-worker` is the app side: services for registration, an update-available signal, `checkForUpdate()` and `activateUpdate()`, and Observables for version, push and notification-click events. It registers only in production builds, so it never interferes with HMR.
 
 ## Available now
 
@@ -48,6 +48,8 @@ From the worker to every window client, controlled or not:
 | `version-ready` | `version` | A version finished installing. If it replaces an earlier version it now waits for `activate-update`; a first version activates straight away. |
 | `version-activated` | `version` | A version finished activating and controls the origin's pages. |
 | `error` | `version`, `phase` (`install`, `activate`, `update` or `runtime`), `error: { name, message }` | A lifecycle hook failed, or worker code reported an error with `reportError`. |
+| `push` | `version`, `data` (parsed JSON, text, or `null`) | The worker received a push message. |
+| `notification-click` | `version`, `action` (`""` for the notification itself), `notification: { title, body, tag, data }` | The user clicked a notification the worker showed. |
 
 From the app to a waiting worker:
 
@@ -57,6 +59,32 @@ From the app to a waiting worker:
 
 `isWorkerToAppMessage` and `isAppToWorkerMessage` check that a received value is a well-formed protocol message. `createAppChannel(self)` gives worker code the typed sending side (`broadcast`, `reportError`) and the app's requests (`onRequest`).
 
+### App-side services
+
+`provideServiceWorker({ url })` sets the app up; injecting one of the services registers the worker. Registration happens only in a production build (`@gable/vite` defines `__GABLE_DEV__` as `false` on `vite build`). In development the services do nothing, so the dev server's HMR is never served stale code. Set `enabled` to override that either way.
+
+```ts
+import { provideServiceWorker } from "@gable/service-worker";
+
+bootstrap(Root, { renderer: dom(), providers: provideServiceWorker({ url: "/sw.js" }) });
+```
+
+- `SwUpdates`: `updateAvailable` is a signal that turns true when a new version has installed and waits. `checkForUpdate()` asks the browser to look for a new worker script and resolves with whether a version is now waiting. `activateUpdate()` has the waiting version take over and resolves with `true` once it has, so the app can reload. It rejects with the worker's error when the worker's update hook fails. `versions` is an Observable of `version-ready` and `version-activated` events. A page that no worker controls (a first visit) never sees `updateAvailable` turn true, because it already runs the newest code.
+- `SwPush`: `messages` emits each push payload, and `notificationClicks` emits `{ action, notification }` for each click. The worker forwards both with the `push` and `notification-click` messages.
+- `SwRegistration`: the registration itself (`registration`, a signal, and `ready`, a promise) and the raw stream of protocol messages. A failed registration goes to the app's `ErrorHandler`.
+
+```ts
+export class UpdateBanner {
+  updates = inject(SwUpdates);
+
+  async apply() {
+    if (await this.updates.activateUpdate()) location.reload();
+  }
+}
+```
+
+The services read workers only through the protocol, plus the registration's standard `installing` and `waiting` slots. So they work with the default worker, with a worker built on `lifecycle`, and with one built on `createAppChannel` alone. A custom worker has to send `version-ready` after it installs and `version-activated` after it activates. It must also answer `activate-update` by calling `skipWaiting()`.
+
 ### Testing
 
-The package's own unit tests run workers on an in-memory worker scope. It dispatches install, activate, fetch and message events, keeps Cache storage in memory, and has connected clients and a network that tests can replace. It is internal for now.
+The package's own unit tests run workers on an in-memory worker scope. It dispatches install, activate, fetch and message events, keeps Cache storage in memory, and has connected clients and a network that tests can replace. An in-memory browser on top of it plays `navigator.serviceWorker` for any number of pages, so the app-side services are tested against real worker code. Both are internal for now.

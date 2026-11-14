@@ -64,8 +64,51 @@ export interface WorkerErrorMessage {
   readonly error: WorkerErrorInfo;
 }
 
+/** Sent to every window client when the worker receives a push message, so open pages can react to it. */
+export interface PushMessage {
+  /** The protocol marker, {@link SW_PROTOCOL}. */
+  readonly protocol: SwProtocol;
+  /** The message type. */
+  readonly type: "push";
+  /** The version of the worker that received the push. */
+  readonly version: string;
+  /** The push payload: parsed JSON when it is JSON, otherwise its text, or `null` when the push carried none. */
+  readonly data: unknown;
+}
+
+/** The parts of a clicked notification that cross to the app. */
+export interface NotificationInfo {
+  /** The notification's title. */
+  readonly title: string;
+  /** The notification's body text, `""` when it has none. */
+  readonly body: string;
+  /** The notification's tag, `""` when it has none. */
+  readonly tag: string;
+  /** The data the notification was shown with, `null` when it has none. */
+  readonly data: unknown;
+}
+
+/** Sent to every window client when the user clicks a notification the worker showed. */
+export interface NotificationClickMessage {
+  /** The protocol marker, {@link SW_PROTOCOL}. */
+  readonly protocol: SwProtocol;
+  /** The message type. */
+  readonly type: "notification-click";
+  /** The version of the worker that handled the click. */
+  readonly version: string;
+  /** The action button that was clicked, or `""` for a click on the notification itself. */
+  readonly action: string;
+  /** The notification that was clicked. */
+  readonly notification: NotificationInfo;
+}
+
 /** A message the worker sends to the app. Narrow on `type`. */
-export type WorkerToAppMessage = VersionReadyMessage | VersionActivatedMessage | WorkerErrorMessage;
+export type WorkerToAppMessage =
+  | VersionReadyMessage
+  | VersionActivatedMessage
+  | WorkerErrorMessage
+  | PushMessage
+  | NotificationClickMessage;
 
 /**
  * Sent by the app to a waiting worker to have it take over, which is how `activateUpdate()` applies an update. The
@@ -101,6 +144,16 @@ export function isWorkerToAppMessage(data: unknown): data is WorkerToAppMessage 
         isRecord(data.error) &&
         typeof data.error.name === "string" &&
         typeof data.error.message === "string"
+      );
+    case "push":
+      return true;
+    case "notification-click":
+      return (
+        typeof data.action === "string" &&
+        isRecord(data.notification) &&
+        typeof data.notification.title === "string" &&
+        typeof data.notification.body === "string" &&
+        typeof data.notification.tag === "string"
       );
     default:
       return false;

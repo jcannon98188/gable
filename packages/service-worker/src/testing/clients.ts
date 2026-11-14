@@ -8,6 +8,8 @@ export interface ConnectClientOptions {
   type?: WorkerClient["type"];
   /** Whether the worker controls it. Defaults to whether the worker is activated when the client connects. */
   controlled?: boolean;
+  /** Called with each message the worker posts to the client, after it is recorded, as the page would receive it. */
+  onMessage?: (message: unknown) => void;
 }
 
 /** A connected client. */
@@ -20,17 +22,28 @@ export class InMemoryClient implements WorkerClient {
   /** Copies of the messages the worker posted to this client, oldest first. */
   readonly messages: unknown[] = [];
   readonly #close: (client: InMemoryClient) => void;
+  readonly #onMessage: ((message: unknown) => void) | undefined;
 
-  constructor(id: string, url: string, type: WorkerClient["type"], controlled: boolean, close: (client: InMemoryClient) => void) {
+  constructor(
+    id: string,
+    url: string,
+    type: WorkerClient["type"],
+    controlled: boolean,
+    close: (client: InMemoryClient) => void,
+    onMessage?: (message: unknown) => void,
+  ) {
     this.id = id;
     this.url = url;
     this.type = type;
     this.controlled = controlled;
     this.#close = close;
+    this.#onMessage = onMessage;
   }
 
   postMessage(message: unknown): void {
-    this.messages.push(structuredClone(message));
+    const copy = structuredClone(message);
+    this.messages.push(copy);
+    this.#onMessage?.(copy);
   }
 
   /** Closes the client, as closing its tab would. */
@@ -60,6 +73,7 @@ export class InMemoryClients implements WorkerClients {
     const id = `client-${this.#nextId++}`;
     const client = new InMemoryClient(id, url, options.type ?? "window", options.controlled ?? this.#isActivated(), (c) =>
       this.#clients.delete(c.id),
+      options.onMessage,
     );
     this.#clients.set(id, client);
     return client;
