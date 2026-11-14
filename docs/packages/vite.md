@@ -1,6 +1,6 @@
 # @gable/vite
 
-The Vite plugins for Gable. `gable()` sets up the build and dev server for Gable's native-class-field components, and `gableI18n()` extracts translation messages and can bake one build per locale. Vite 8 or newer is required, and `@gable/core` is a peer dependency.
+The Vite plugins for Gable. `gable()` sets up the build and dev server for Gable's native-class-field components, `gableI18n()` extracts translation messages and can bake one build per locale, and `gableServiceWorker()` emits the service worker and its asset manifest. Vite 8 or newer is required, and `@gable/core` is a peer dependency.
 
 ## Install
 
@@ -66,6 +66,32 @@ The `bake` options:
 | `htmlLang` | `true` | Set the `lang` attribute of `<html>` in each locale's `index.html`. |
 
 The [i18n guide](../i18n.md) covers the markers, the catalog format, how extraction and baking work, and their limits.
+
+## `gableServiceWorker()`
+
+Builds the service worker for [`@gable/service-worker`](./service-worker.md) (install it too). It runs in `vite build` only.
+
+```ts
+// vite.config.ts
+import { defineConfig } from "vite";
+import { gable, gableServiceWorker } from "@gable/vite";
+
+export default defineConfig({ plugins: [gable(), gableServiceWorker()] });
+```
+
+A production build then emits two more files into the output directory:
+
+- `sw-manifest.json`, the asset manifest: `files` lists every emitted file, the public directory's included and source maps left out, as a path from the origin's root (`base` included). `hashes` gives each file's content hash (SHA-256, the first 16 hex digits). `version` hashes the worker's code and every file hash, so a change to any file, to `gable.sw.json` or to the worker's code makes a new release.
+- `sw.js`, the worker: one classic script with the manifest built in, at a fixed URL so the browser sees each release as an update. Register it with `provideServiceWorker({ url: "/sw.js" })` (with `base` prefixed if it is not `/`).
+
+| Option | Default | |
+| --- | --- | --- |
+| `config` | `"gable.sw.json"` | The default worker's config, relative to the project root. The build checks it, and that its navigation fallback is a prefetched file, and fails listing every problem. |
+| `entry` | none | A custom worker module in place of the default worker. Its default export is `(self, manifest) => void` or a `defineWorker()` result, which the worker file calls with the manifest. |
+| `fileName` | `"sw.js"` | The worker file's name. |
+| `manifestFileName` | `"sw-manifest.json"` | The manifest's file name. |
+
+The dev server gets neither file, and the app side registers only in a production build, so HMR is unaffected. `base` must be an absolute path. Not supported yet: a CDN or relative `base`, and `gableI18n()`'s baked per-locale outputs (the worker covers the top-level build only).
 
 ### Programmatic helpers
 

@@ -143,13 +143,27 @@ await outbox.register(); // false in a browser without background sync
 }
 ```
 
-The worker file starts it with its `self` and the build's asset manifest. `@gable/vite` will generate that file and the manifest:
+The worker file starts it with its `self` and the build's asset manifest. `gableServiceWorker()` from `@gable/vite` generates that file, `sw.js`, and the manifest at production build ([`gableServiceWorker()`](./vite.md#gableserviceworker)). The generated worker amounts to:
 
 ```ts
 import { defineWorker } from "@gable/service-worker/runtime";
 import config from "./gable.sw.json";
 
-defineWorker({ config }).start(self, manifest); // manifest: { version, files }, emitted by the build
+defineWorker({ config }).start(self, manifest); // manifest: { version, files, hashes }, built into sw.js
+```
+
+A custom worker is a module whose default export is `(self, manifest) => void` or a `defineWorker()` result; `gableServiceWorker({ entry })` bundles it and calls it with the same manifest, so a worker on core alone gets atomic versioned updates too:
+
+```ts
+// src/sw.ts
+import { createFetchRouter, createPrecache, lifecycle, type WorkerScope } from "@gable/service-worker/core";
+import type { AssetManifest } from "@gable/service-worker/runtime";
+
+export default function worker(self: WorkerScope, manifest: AssetManifest): void {
+  const precache = createPrecache(self, { version: manifest.version, urls: manifest.files });
+  lifecycle(self, { version: manifest.version, install: () => precache.install(), activate: () => precache.activate() });
+  createFetchRouter(self).route((url) => precache.has(url), precache.handler).listen();
+}
 ```
 
 - Patterns are globs over URL paths: `*` matches within one segment and `**` matches any number of segments. Absolute patterns (`https://...`) are allowed in data groups. The query string is not part of the path.

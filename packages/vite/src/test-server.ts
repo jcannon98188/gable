@@ -12,6 +12,9 @@ export const sourceAliases = [
   { find: /^@gable\/core\/renderer$/, replacement: here("../../core/src/renderer.ts") },
   { find: /^@gable\/core\/hmr$/, replacement: here("../../core/src/hmr.ts") },
   { find: /^@gable\/renderer-dom$/, replacement: here("../../renderer-dom/src/index.ts") },
+  { find: /^@gable\/service-worker$/, replacement: here("../../service-worker/src/index.ts") },
+  { find: /^@gable\/service-worker\/core$/, replacement: here("../../service-worker/src/core/index.ts") },
+  { find: /^@gable\/service-worker\/runtime$/, replacement: here("../../service-worker/src/runtime/index.ts") },
 ];
 
 /** A scratch copy of the sample app (so tests can edit files), and the Vite config that serves or builds it. */

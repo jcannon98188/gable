@@ -28,6 +28,6 @@ Letting a new version activate on next load. It is simpler but gives the app no 
 
 Dev mode has no worker, so HMR is unaffected. Worker behaviour is tested in production builds and with an in-memory worker scope in unit tests.
 
-`@gable/vite` gains a build-time step to emit the manifest and worker file. It still needs no compiler awareness of Gable's templates.
+`@gable/vite` gains a build-time step to emit the manifest and worker file. It still needs no compiler awareness of Gable's templates. The step is a separate plugin, `gableServiceWorker()`, so apps without a worker are unaffected, and `@gable/service-worker` is only an optional peer of `@gable/vite`. The manifest is built into the worker file, so every release is a new worker script for the browser to install. A custom worker is a module whose default export is `(self, manifest) => void` or a `defineWorker()` result, and the plugin calls it with the manifest; that default export is part of the plugin's contract.
 
 Devtools support for worker version and cache state is deferred.

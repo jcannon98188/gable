@@ -77,3 +77,4 @@ export { gableI18n, type GableI18nOptions, type OnMissing } from "./i18n/plugin.
 export { extractFromSource, extractProject } from "./i18n/extract.js";
 export { bakeSource, bakeHtml, type BakeOptions } from "./i18n/bake.js";
 export { writeCatalogs, readCatalogFile, type LocaleReport } from "./i18n/catalogs.js";
+export { gableServiceWorker, type GableServiceWorkerOptions, type EmittedAssetManifest } from "./service-worker.js";
