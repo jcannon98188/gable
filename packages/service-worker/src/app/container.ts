@@ -17,8 +17,49 @@ export interface ServiceWorkerLike {
   removeEventListener(type: "statechange", listener: () => void): void;
 }
 
+/** A push subscription: a `PushSubscription` in the browser. Send {@link PushSubscriptionLike.toJSON} to your server. */
+export interface PushSubscriptionLike {
+  /** The push service URL the server sends this subscription's pushes to. */
+  readonly endpoint: string;
+  /** When the subscription expires, as a time in milliseconds since the epoch, or `null` when it does not. */
+  readonly expirationTime: number | null;
+  /** The subscription as plain data for the server: the `endpoint`, the `expirationTime` and the encryption `keys`. */
+  toJSON(): { endpoint?: string; expirationTime?: number | null; keys?: Record<string, string> };
+  /** Cancels the subscription. Resolves with whether it was cancelled. */
+  unsubscribe(): Promise<boolean>;
+}
+
+/** What {@link PushManagerLike.subscribe} is given: a `PushSubscriptionOptionsInit` in the browser. */
+export interface PushSubscribeInit {
+  /** Whether every push shows a notification. Chromium-based browsers accept only `true`. */
+  userVisibleOnly?: boolean;
+  /** The server's VAPID public key, as a base64url string or its bytes. */
+  applicationServerKey?: BufferSource | string | null;
+}
+
+/** The registration's push API: a `PushManager` in the browser. */
+export interface PushManagerLike {
+  /** Subscribes to push, or returns the existing subscription. Needs an active worker and the notification permission. */
+  subscribe(options?: PushSubscribeInit): Promise<PushSubscriptionLike>;
+  /** The current subscription, or `null` when there is none. */
+  getSubscription(): Promise<PushSubscriptionLike | null>;
+}
+
+/**
+ * The page's notification permission API: the global `Notification` in the browser. {@link provideServiceWorker}
+ * provides it, or `null` where the browser has no notifications (push is then unsupported).
+ */
+export interface NotificationsLike {
+  /** The permission the user gave: `"default"` (not asked or dismissed), `"granted"` or `"denied"`. */
+  readonly permission: string;
+  /** Asks the user, unless they already answered, and resolves with the permission. */
+  requestPermission(): Promise<string>;
+}
+
 /** A service worker registration as the page sees it: a `ServiceWorkerRegistration` in the browser. */
 export interface ServiceWorkerRegistrationLike {
+  /** The registration's push API. Left out by a browser without push, such as Safari outside an installed web app. */
+  readonly pushManager?: PushManagerLike;
   /** The version being installed, if any. */
   readonly installing: ServiceWorkerLike | null;
   /** The version that installed and waits to take over, if any. */

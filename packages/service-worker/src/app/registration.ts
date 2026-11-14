@@ -4,7 +4,12 @@ import { inject, InjectionToken, signal, type Provider, type ReadonlySignal } fr
 import { currentScope, reportError } from "@gable/core/internal";
 import { Subject, type Observable } from "rxjs";
 import { isWorkerToAppMessage, type WorkerToAppMessage } from "../core/messages.js";
-import type { ServiceWorkerContainerLike, ServiceWorkerMessageEventLike, ServiceWorkerRegistrationLike } from "./container.js";
+import type {
+  NotificationsLike,
+  ServiceWorkerContainerLike,
+  ServiceWorkerMessageEventLike,
+  ServiceWorkerRegistrationLike,
+} from "./container.js";
 
 /** Production builds define this as `false` (`@gable/vite` does on `vite build`), the same flag `@gable/core` uses. */
 declare const __GABLE_DEV__: boolean | undefined;
@@ -35,6 +40,12 @@ export const SERVICE_WORKER_OPTIONS = new InjectionToken<ServiceWorkerOptions>("
 export const SERVICE_WORKER_CONTAINER = new InjectionToken<ServiceWorkerContainerLike | null>("ServiceWorkerContainer");
 
 /**
+ * The page's notification permission API that {@link SwPush} uses. {@link provideServiceWorker} provides the global
+ * `Notification`, or `null` where the browser has none. Tests provide a fake after it.
+ */
+export const SERVICE_WORKER_NOTIFICATIONS = new InjectionToken<NotificationsLike | null>("ServiceWorkerNotifications");
+
+/**
  * Providers that set up the app's service worker. Inject {@link SwUpdates} (or {@link SwRegistration}) once, in the
  * root component, to register it.
  *
@@ -47,11 +58,14 @@ export function provideServiceWorker(options: ServiceWorkerOptions): Provider[] 
   return [
     { provide: SERVICE_WORKER_OPTIONS, useValue: options },
     { provide: SERVICE_WORKER_CONTAINER, useFactory: defaultContainer },
+    { provide: SERVICE_WORKER_NOTIFICATIONS, useFactory: defaultNotifications },
   ];
 }
 
 const defaultContainer = (): ServiceWorkerContainerLike | null =>
   typeof navigator !== "undefined" && "serviceWorker" in navigator ? navigator.serviceWorker : null;
+
+const defaultNotifications = (): NotificationsLike | null => (typeof Notification !== "undefined" ? Notification : null);
 
 /**
  * Registers the app's service worker when the service is created, in production builds only, and carries the

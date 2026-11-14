@@ -6,6 +6,7 @@
 // post to the pages' message listeners. What the worker tells the app is up to the worker script.
 import type { WorkerScope } from "../core/index.js";
 import type {
+  NotificationsLike,
   ServiceWorkerContainerLike,
   ServiceWorkerLike,
   ServiceWorkerMessageEventLike,
@@ -13,6 +14,7 @@ import type {
 } from "../app/container.js";
 import type { InMemoryCacheStorage } from "./caches.js";
 import type { InMemoryClient } from "./clients.js";
+import { InMemoryPermission, InMemoryPushManager, type NotificationPermissionState } from "./push.js";
 import { createWorkerScope, type InMemoryWorkerScope, type Network } from "./worker-scope.js";
 
 /** A worker script: what the worker file runs against its `self`. */
@@ -27,6 +29,12 @@ export interface InMemoryBrowserOptions {
   origin?: string;
   /** The network worker scopes use. Defaults to offline. */
   network?: Network;
+  /** The origin's notification permission at the start. Defaults to `"default"`: the user was not asked. */
+  notificationPermission?: NotificationPermissionState;
+  /** What the user answers the permission prompt: `"granted"` (the default), `"denied"`, or `"default"` to dismiss it. */
+  permissionAnswer?: NotificationPermissionState;
+  /** Whether registrations have a push manager. Defaults to `true`; `false` models a browser without push. */
+  push?: boolean;
 }
 
 /** One worker version: a script running on its own scope. */
@@ -48,6 +56,7 @@ class WorkerVersion {
 
 interface Registration {
   readonly scriptURL: string;
+  readonly push: InMemoryPushManager;
   installing: WorkerVersion | null;
   waiting: WorkerVersion | null;
   active: WorkerVersion | null;
@@ -59,7 +68,11 @@ export class InMemoryBrowser {
   readonly origin: string;
   /** The worker script served at each absolute URL. Set a new one to deploy a new version; delete it to serve a 404. */
   readonly scripts = new Map<string, WorkerScript>();
+  /** The origin's notification permission, and the answer the user gives when asked. Change it to model settings. */
+  readonly permission: InMemoryPermission;
   readonly #network: Network | undefined;
+  readonly #pushSupported: boolean;
+  #endpoints = 0;
   readonly #registrations = new Map<string, Registration>();
   readonly #pages = new Set<InMemoryPage>();
   readonly #pending = new Set<Promise<unknown>>();
@@ -68,6 +81,34 @@ export class InMemoryBrowser {
   constructor(options: InMemoryBrowserOptions = {}) {
     this.origin = new URL(options.origin ?? "https://app.test").origin;
     this.#network = options.network;
+    this.#pushSupported = options.push ?? true;
+    this.permission = new InMemoryPermission(options.notificationPermission, options.permissionAnswer);
+  }
+
+  /** @internal Whether registrations have a push manager. */
+  get pushSupported(): boolean {
+    return this.#pushSupported;
+  }
+
+  /** The endpoints of the push subscriptions of the registration for `url`: none, or one. */
+  pushSubscriptions(url: string): string[] {
+    const endpoint = this.#registrations.get(new URL(url, this.origin).href)?.push.endpoint;
+    return endpoint ? [endpoint] : [];
+  }
+
+  /**
+   * Plays the push service: delivers `payload` to the worker of the subscription with `endpoint`, as a push event.
+   * Resolves `false` when no subscription has that endpoint, or the permission is no longer granted (the push is
+   * dropped, as a browser does); `true` once the worker handled it. Rejects when the worker's push handler fails.
+   */
+  async deliverPush(endpoint: string, payload: string | ArrayBuffer | null = null): Promise<boolean> {
+    for (const registration of this.#registrations.values()) {
+      if (registration.push.endpoint !== endpoint) continue;
+      if (this.permission.permission !== "granted" || !registration.active) return false;
+      await registration.active.scope.dispatchPush(payload);
+      return true;
+    }
+    return false;
   }
 
   /** Serves `script` at `url`, resolved against the origin. */
@@ -142,7 +183,17 @@ export class InMemoryBrowser {
     const scriptURL = new URL(url, page.url).href;
     const existing = this.#registrations.get(scriptURL);
     if (existing) return existing;
-    const registration: Registration = { scriptURL, installing: null, waiting: null, active: null };
+    const registration: Registration = {
+      scriptURL,
+      push: new InMemoryPushManager({
+        permission: this.permission,
+        hasActiveWorker: () => registration.active !== null,
+        newEndpoint: () => `https://push.test/endpoint/${++this.#endpoints}`,
+      }),
+      installing: null,
+      waiting: null,
+      active: null,
+    };
     this.#registrations.set(scriptURL, registration);
     try {
       await this.update(registration);
@@ -248,6 +299,8 @@ type MessageListener = (event: ServiceWorkerMessageEventLike) => void;
 export class InMemoryPage {
   /** The page's `navigator.serviceWorker`. */
   readonly container: ServiceWorkerContainerLike;
+  /** The page's `Notification`: the origin's permission, and the prompt that changes it. */
+  readonly notifications: NotificationsLike;
   /** @internal */ controllerVersion: WorkerVersion | null = null;
   readonly #browser: InMemoryBrowser;
   readonly #messageListeners = new Set<MessageListener>();
@@ -260,6 +313,7 @@ export class InMemoryPage {
     readonly url: string,
   ) {
     this.#browser = browser;
+    this.notifications = browser.permission;
     const page = this;
     this.container = {
       get controller() {
@@ -332,6 +386,7 @@ export class InMemoryPage {
       const page = this;
       const browser = this.#browser;
       view = {
+        ...(browser.pushSupported ? { pushManager: registration.push } : {}),
         get installing() {
           return registration.installing ? page.#worker(registration.installing) : null;
         },

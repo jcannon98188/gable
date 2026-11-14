@@ -256,7 +256,7 @@ bootstrap(Root, { renderer: dom(), target: "#app", providers: provideServiceWork
 ```
 
 - `SwUpdates`: `updateAvailable` is a signal that turns true when a new version has installed and waits. `checkForUpdate()` asks the browser to look for a new worker script and resolves with whether a version is now waiting; it rejects when the script cannot be fetched, such as offline. It answers when the new version sends `version-ready` or fails to install; a version that installs without sending `version-ready` (a custom worker that does not speak the protocol) is answered for by the registration's `waiting` slot about a second after it has installed. `activateUpdate()` has the waiting version take over and resolves with `true` once it has, so the app can reload. It rejects with the worker's error when the worker's update hook fails. `versions` is an Observable of `version-ready` and `version-activated` events. A page that no worker controls (a first visit) never sees `updateAvailable` turn true, because it already runs the newest code.
-- `SwPush`: `messages` emits each push payload, and `notificationClicks` emits `{ action, notification }` for each click. The worker forwards both with the `push` and `notification-click` messages.
+- `SwPush`: `messages` emits each push payload, and `notificationClicks` emits `{ action, notification }` for each click. The worker forwards both with the `push` and `notification-click` messages. It also subscribes the app to push: `permission` (a signal), `requestPermission()`, `subscribe(options)`, `getSubscription()` and `unsubscribe()`; see [Push subscription](#push-subscription).
 - `SwRegistration`: the registration itself (`registration`, a signal, and `ready`, a promise) and the raw stream of protocol messages. A failed registration goes to the app's `ErrorHandler`.
 
 The create-gable starter's banner:
@@ -283,6 +283,32 @@ export class UpdateBanner {
 
 The services read workers only through the protocol, plus the registration's standard `installing` and `waiting` slots.
 
+### Push subscription
+
+An app gets pushes in three steps: subscribe from a user gesture, send the subscription to the app's server, and have the server push to it (the worker side is [Push and notification clicks](#push-and-notification-clicks)).
+
+```ts
+export class NotifyButton {
+  static meta = { selector: "app-notify", template: html`<button (click)="enable()">Notify me</button>` };
+
+  push = inject(SwPush);
+  permission = this.push.permission; // "default" | "granted" | "denied" | "unsupported"
+
+  async enable() {
+    const result = await this.push.subscribe({ applicationServerKey: VAPID_PUBLIC_KEY });
+    if (result.status === "subscribed") {
+      await fetch("/api/push", { method: "POST", body: JSON.stringify(result.subscription.toJSON()) });
+    }
+  }
+}
+```
+
+- `subscribe({ applicationServerKey, userVisibleOnly })` asks for the notification permission unless the user already answered, waits for the worker to be active, and subscribes. `applicationServerKey` is the server's VAPID public key, as a base64url string or bytes. `userVisibleOnly` defaults to `true`, the only value Chromium-based browsers accept. An existing subscription made with the same key is returned as it is; a different key fails until you `unsubscribe()`.
+- It never throws. It resolves with `{ status }`: `"subscribed"` (with the `subscription`), `"unsupported"` (no service workers, notifications or push), `"unavailable"` (no registered worker, as in development), `"denied"` (the permission is denied; the app cannot ask again, and the user has to change it in the browser's settings), `"dismissed"` (the prompt was closed without an answer; the app may ask again) or `"failed"` (with the browser's `error`, such as an unreachable push service or an invalid key).
+- `getSubscription()` resolves with the current subscription or `null`, and does not ask for the permission. Use it on load to show whether push is on. `unsubscribe()` cancels the subscription and resolves with whether it did; tell the server too.
+- `permission` is a signal. It is read when the service is created and re-read by `subscribe()`, `requestPermission()` and `getSubscription()`; the browser has no event for a change made in its settings, so the signal catches up on the next of those calls. `requestPermission()` asks earlier than `subscribe()`, for an app that wants to show its own explanation first.
+- Browsers ask for the permission only after a user gesture, so call these from a click handler. iOS Safari supports push only in a web app added to the home screen; elsewhere `subscribe()` reports `"unsupported"`.
+
 ## The Vite plugin
 
 [`gableServiceWorker()`](./vite.md#gableserviceworker) from `@gable/vite` runs in `vite build` only and emits two files into the output directory:
@@ -294,7 +320,7 @@ Its options are `config` (default `"gable.sw.json"`), `entry` (a custom worker m
 
 ## Testing
 
-The package's unit tests run workers on an in-memory worker scope. It dispatches install, activate, fetch, message, push, notification-click and sync events, keeps Cache storage and shown notifications in memory, and has connected clients and a network that tests can replace. An in-memory browser on top of it plays `navigator.serviceWorker` for any number of pages, so the app-side services are tested against real worker code, the default worker included. Both are internal for now.
+The package's unit tests run workers on an in-memory worker scope. It dispatches install, activate, fetch, message, push, notification-click and sync events, keeps Cache storage and shown notifications in memory, and has connected clients and a network that tests can replace. An in-memory browser on top of it plays `navigator.serviceWorker` for any number of pages, so the app-side services are tested against real worker code, the default worker included. The browser also models the notification permission and its prompt (the test sets what the user answers), a push manager per registration, and the push service, which delivers a push to a subscription's worker. Both are internal for now.
 
 The create-gable starter with `--service-worker` is also tested end to end in headless Chromium: a production build installs, keeps working with the server down, and takes a new release through the banner's `activateUpdate()`.
 
@@ -310,7 +336,7 @@ What v1 does not do, as of this release:
 - **First visit.** The worker does not claim the page that first registers it (`clients.claim()`), so it serves the app from that page's next load.
 - **No carry-over between releases.** Each release downloads all its prefetch and lazy files again, even unchanged ones; the manifest has per-file hashes, but the runtime does not use them yet.
 - **Caching.** No maximum age or size for data caches. Asset groups cannot list files on other origins (a `performance` data group covers them). Precached files match by exact URL, with no ignore-search or directory-index matching beyond the navigation fallback. The precache does not reject redirected responses, so serve build files directly.
-- **Push.** Push subscription (`pushManager.subscribe`) is not wrapped, `notificationclose` and periodic background sync are not handled, and a notification click opens a new window rather than focusing an open one.
+- **Push.** `notificationclose` and periodic background sync are not handled, and a notification click opens a new window rather than focusing an open one.
 - **Background sync** works only where the browser has it (Chromium-based browsers); elsewhere `register()` resolves `false` and there is no built-in fallback.
 - **Versions.** The app learns versions from `version-ready` and `version-activated` events; there is no request for the running version on page load.
 - **Vite plugin.** `base` must be an absolute path (no CDN or relative `base`). `gableI18n()`'s baked per-locale outputs are not covered; the worker describes the top-level build only. Your own Vite plugins are not applied to the worker bundle; it inherits only `resolve.alias`, `define`, `mode`, `minify` and the build `target`.
