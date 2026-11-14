@@ -10,6 +10,7 @@ export type {
   ServiceWorkerLike,
   ServiceWorkerMessageEventLike,
   ServiceWorkerRegistrationLike,
+  SyncManagerLike,
 } from "./app/container.js";
 export {
   provideServiceWorker,
@@ -22,6 +23,7 @@ export type { ServiceWorkerOptions } from "./app/registration.js";
 export { SwUpdates } from "./app/updates.js";
 export type { VersionEvent } from "./app/updates.js";
 export { SwPush } from "./app/push.js";
+export { SwSync } from "./app/sync.js";
 export type { NotificationClick, PushPermission, PushSubscribeOptions, PushSubscribeResult } from "./app/push.js";
 export type {
   NotificationInfo,

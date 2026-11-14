@@ -59,6 +59,8 @@ export class InMemorySyncManager implements WorkerSyncManager {
 export interface InMemoryRegistrationOptions {
   /** Whether the browser has background sync. Defaults to `true`; `false` leaves `sync` undefined, as Firefox and Safari do. */
   backgroundSync?: boolean;
+  /** The sync manager to use, such as one shared by every version of a registration. Ignored when `backgroundSync` is `false`. */
+  syncManager?: InMemorySyncManager;
 }
 
 /** The in-memory scope's registration. */
@@ -68,7 +70,7 @@ export class InMemoryRegistration implements WorkerRegistration {
   readonly sync: InMemorySyncManager | undefined;
 
   constructor(options: InMemoryRegistrationOptions = {}) {
-    this.sync = options.backgroundSync === false ? undefined : new InMemorySyncManager();
+    this.sync = options.backgroundSync === false ? undefined : (options.syncManager ?? new InMemorySyncManager());
   }
 
   /** Shows a notification once a timer task has passed, as a browser does it asynchronously. */

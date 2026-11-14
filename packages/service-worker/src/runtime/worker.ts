@@ -1,5 +1,6 @@
 // defineWorker: the default worker, built from a gable.sw.json config on core's public API, plus app extensions.
 import {
+  backgroundSync,
   cacheFirst,
   createFetchRouter,
   createPrecache,
@@ -15,11 +16,12 @@ import {
   type NotificationClickHandler,
   type Precache,
   type PushHandler,
+  type SyncHandler,
   type UpdateContext,
   type WorkerNotificationOptions,
   type WorkerScope,
 } from "../core/index.js";
-import { isNonArrayObject, validateConfig, type ServiceWorkerConfig } from "./config.js";
+import { isNonArrayObject, ServiceWorkerConfigError, validateConfig, type ServiceWorkerConfig } from "./config.js";
 import { urlMatcher } from "./glob.js";
 import { sortAssets, validateManifest, type AssetManifest } from "./manifest.js";
 
@@ -74,6 +76,13 @@ export interface WorkerDefinitionOptions {
    * and the hooks and handlers it returns.
    */
   readonly extend?: (context: WorkerExtendContext) => WorkerExtension | void;
+  /**
+   * Background sync handlers, keyed by the tag the app registers with `SwSync.register(tag)`. Each runs for the sync
+   * events of its tag, through core's `backgroundSync()`: a handler that rejects fails the event so the browser
+   * retries later, and the app hears of a failed last chance as a `runtime` error. Syncs of other tags are left to
+   * other listeners. Browsers without Background Sync never run them.
+   */
+  readonly sync?: Readonly<Record<string, SyncHandler>>;
 }
 
 /** A worker built by {@link defineWorker}. The worker file starts it with its `self` and the build's asset manifest. */
@@ -113,6 +122,21 @@ const openNotificationUrl: NotificationClickHandler = ({ action, notification, o
   if (action === "" && typeof url === "string") return openWindow(url).then(() => {});
 };
 
+/** The `sync` option's handlers as [tag, handler] pairs; every problem is reported at once. */
+function validateSyncHandlers(sync: WorkerDefinitionOptions["sync"]): [string, SyncHandler][] {
+  if (sync === undefined) return [];
+  if (!isNonArrayObject(sync)) throw new ServiceWorkerConfigError([{ path: "sync", message: "expected an object of handlers keyed by tag" }], "defineWorker options");
+  const issues: { path: string; message: string }[] = [];
+  const pairs: [string, SyncHandler][] = [];
+  for (const [tag, handler] of Object.entries(sync)) {
+    if (tag === "") issues.push({ path: 'sync[""]', message: "a tag must not be empty" });
+    else if (typeof handler !== "function") issues.push({ path: `sync.${tag}`, message: "expected a handler function" });
+    else pairs.push([tag, handler]);
+  }
+  if (issues.length) throw new ServiceWorkerConfigError(issues, "defineWorker options");
+  return pairs;
+}
+
 /**
  * Defines the default worker: the declarative behaviour `config` describes, plus what `extend` adds.
  *
@@ -123,6 +147,8 @@ const openNotificationUrl: NotificationClickHandler = ({ action, notification, o
  * - The navigation fallback answers page navigations with the precached shell.
  * - Updates are app-controlled through core's `lifecycle()`: a release installs, tells the app it is ready, and
  *   takes over when the app calls `activateUpdate()`.
+ * - Background sync: each handler of the `sync` option runs for the sync events of its tag, which the app registers
+ *   with `SwSync`.
  * - Pushes and notification clicks are forwarded to the app. By default a push whose JSON payload has a
  *   `notification` object with a `title` shows it (its other fields are notification options), and a click on a
  *   notification whose `data.url` is a string opens that URL.
@@ -133,6 +159,7 @@ const openNotificationUrl: NotificationClickHandler = ({ action, notification, o
  */
 export function defineWorker(options: WorkerDefinitionOptions): WorkerDefinition {
   const config = validateConfig(options.config);
+  const syncHandlers = validateSyncHandlers(options.sync);
   return {
     config,
     start(self, input) {
@@ -184,12 +211,14 @@ export function defineWorker(options: WorkerDefinitionOptions): WorkerDefinition
           group.strategy === "freshness" ? networkFirst({ cacheName, networkTimeoutMs: group.timeoutMs }) : staleWhileRevalidate({ cacheName });
         router.route(urlMatcher(group.urls, origin), handler);
       }
+      const syncs = syncHandlers.map(([tag, sync]) => backgroundSync(self, { tag, version, sync }));
       const stopRouter = router.listen();
 
       return () => {
         stopLifecycle();
         stopPush();
         stopClicks();
+        for (const sync of syncs) sync.dispose();
         stopRouter();
       };
     },

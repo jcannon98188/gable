@@ -11,10 +11,12 @@ import type {
   ServiceWorkerLike,
   ServiceWorkerMessageEventLike,
   ServiceWorkerRegistrationLike,
+  SyncManagerLike,
 } from "../app/container.js";
 import type { InMemoryCacheStorage } from "./caches.js";
 import type { InMemoryClient } from "./clients.js";
 import { InMemoryPermission, InMemoryPushManager, type NotificationPermissionState } from "./push.js";
+import { InMemorySyncManager } from "./registration.js";
 import { createWorkerScope, type InMemoryWorkerScope, type Network } from "./worker-scope.js";
 
 /** A worker script: what the worker file runs against its `self`. */
@@ -35,6 +37,11 @@ export interface InMemoryBrowserOptions {
   permissionAnswer?: NotificationPermissionState;
   /** Whether registrations have a push manager. Defaults to `true`; `false` models a browser without push. */
   push?: boolean;
+  /**
+   * Whether registrations have Background Sync (a sync manager on the page and in the worker). Defaults to `true`;
+   * `false` models Firefox and Safari. Tags are kept per registration, so they outlive worker versions.
+   */
+  backgroundSync?: boolean;
 }
 
 /** One worker version: a script running on its own scope. */
@@ -57,6 +64,7 @@ class WorkerVersion {
 interface Registration {
   readonly scriptURL: string;
   readonly push: InMemoryPushManager;
+  readonly sync: InMemorySyncManager | undefined;
   installing: WorkerVersion | null;
   waiting: WorkerVersion | null;
   active: WorkerVersion | null;
@@ -72,6 +80,7 @@ export class InMemoryBrowser {
   readonly permission: InMemoryPermission;
   readonly #network: Network | undefined;
   readonly #pushSupported: boolean;
+  readonly #backgroundSync: boolean;
   #endpoints = 0;
   readonly #registrations = new Map<string, Registration>();
   readonly #pages = new Set<InMemoryPage>();
@@ -82,6 +91,7 @@ export class InMemoryBrowser {
     this.origin = new URL(options.origin ?? "https://app.test").origin;
     this.#network = options.network;
     this.#pushSupported = options.push ?? true;
+    this.#backgroundSync = options.backgroundSync ?? true;
     this.permission = new InMemoryPermission(options.notificationPermission, options.permissionAnswer);
   }
 
@@ -190,6 +200,7 @@ export class InMemoryBrowser {
         hasActiveWorker: () => registration.active !== null,
         newEndpoint: () => `https://push.test/endpoint/${++this.#endpoints}`,
       }),
+      sync: this.#backgroundSync ? new InMemorySyncManager() : undefined,
       installing: null,
       waiting: null,
       active: null,
@@ -211,7 +222,13 @@ export class InMemoryBrowser {
     const newest = registration.installing ?? registration.waiting ?? registration.active;
     if (newest?.script === script) return;
     // Every version of the origin shares its Cache storage, so a new version sees what the old one stored.
-    const scope = createWorkerScope({ origin: this.origin, network: this.#network, caches: this.#caches });
+    const scope = createWorkerScope({
+      origin: this.origin,
+      network: this.#network,
+      caches: this.#caches,
+      backgroundSync: registration.sync !== undefined,
+      syncManager: registration.sync,
+    });
     this.#caches ??= scope.caches;
     const version = new WorkerVersion(script, scope);
     for (const page of this.#pages) this.#connect(page, version, false);
@@ -387,6 +404,7 @@ export class InMemoryPage {
       const browser = this.#browser;
       view = {
         ...(browser.pushSupported ? { pushManager: registration.push } : {}),
+        ...(registration.sync ? { sync: pageSyncManager(registration, registration.sync) } : {}),
         get installing() {
           return registration.installing ? page.#worker(registration.installing) : null;
         },
@@ -407,4 +425,19 @@ export class InMemoryPage {
 /** Creates an in-memory browser. */
 export function createBrowser(options?: InMemoryBrowserOptions): InMemoryBrowser {
   return new InMemoryBrowser(options);
+}
+
+/** The page's view of a registration's sync manager: registering needs an active worker, as in Chromium. */
+function pageSyncManager(registration: Registration, manager: InMemorySyncManager): SyncManagerLike {
+  return {
+    async register(tag) {
+      if (!registration.active) {
+        throw Object.assign(new Error("Failed to execute 'register' on 'SyncManager': Registration failed - no active Service Worker"), {
+          name: "InvalidStateError",
+        });
+      }
+      await manager.register(tag);
+    },
+    getTags: () => manager.getTags(),
+  };
 }

@@ -56,10 +56,20 @@ export interface NotificationsLike {
   requestPermission(): Promise<string>;
 }
 
+/** The registration's background sync registrations: a `SyncManager` in the browser, which only Chromium-based browsers have. */
+export interface SyncManagerLike {
+  /** Asks for a `sync` event with `tag` once the device is online. Needs an active worker. Registering a pending tag again does nothing. */
+  register(tag: string): Promise<void>;
+  /** The tags registered and not yet synced. */
+  getTags(): Promise<string[]>;
+}
+
 /** A service worker registration as the page sees it: a `ServiceWorkerRegistration` in the browser. */
 export interface ServiceWorkerRegistrationLike {
   /** The registration's push API. Left out by a browser without push, such as Safari outside an installed web app. */
   readonly pushManager?: PushManagerLike;
+  /** The registration's background sync API. Left out by a browser without Background Sync, such as Firefox and Safari. */
+  readonly sync?: SyncManagerLike;
   /** The version being installed, if any. */
   readonly installing: ServiceWorkerLike | null;
   /** The version that installed and waits to take over, if any. */

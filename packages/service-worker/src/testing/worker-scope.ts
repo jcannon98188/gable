@@ -8,7 +8,7 @@
 import type { WorkerEventMap, WorkerExtendableEvent, WorkerFetchEvent, WorkerScope } from "../core/index.js";
 import type { WorkerClient, WorkerMessageEvent } from "../core/index.js";
 import type { WorkerNotification, WorkerNotificationEvent, WorkerPushEvent, WorkerPushMessageData, WorkerSyncEvent } from "../core/index.js";
-import { InMemoryRegistration } from "./registration.js";
+import { InMemoryRegistration, type InMemorySyncManager } from "./registration.js";
 import { InMemoryCacheStorage, type ToRequest } from "./caches.js";
 import { type ConnectClientOptions, type InMemoryClient, InMemoryClients } from "./clients.js";
 
@@ -66,6 +66,8 @@ export interface WorkerScopeOptions {
   network?: Network;
   /** Whether the browser has background sync. Defaults to `true`; `false` leaves `registration.sync` undefined. */
   backgroundSync?: boolean;
+  /** The sync manager to use, such as one shared by every version of a registration. Defaults to a new one. */
+  syncManager?: InMemorySyncManager;
   /**
    * Cache storage to share, such as another scope's: successive worker versions of one origin share Cache storage
    * in the browser. Defaults to new, empty storage. Shared storage's `Cache.add` uses the network of the scope that
@@ -137,7 +139,7 @@ export class InMemoryWorkerScope implements WorkerScope {
       () => this.#state === "activated",
       { origin: this.origin, allowed: () => this.#handlingClicks > 0 },
     );
-    this.registration = new InMemoryRegistration({ backgroundSync: options.backgroundSync });
+    this.registration = new InMemoryRegistration({ backgroundSync: options.backgroundSync, syncManager: options.syncManager });
   }
 
   /** Whether the worker called `skipWaiting()`. */
