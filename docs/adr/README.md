@@ -12,6 +12,7 @@ Numbers are shared with the [agnijs repository](https://github.com/agnijs-rs/agn
 - [A component can build its template with a different renderer](0019-a-component-can-build-its-template-with-a-different-renderer.md)
 - [Gable owns the canvas frame loop and renders after an effect flush](0020-gable-owns-the-canvas-frame-loop-and-renders-after-an-effect-flush.md)
 - [Core surface added for renderer boundaries and hot data](0021-core-surface-added-for-renderer-boundaries-and-hot-data.md)
+- [21. Service worker support is one layered package and is web-only](0021-service-worker-support-is-one-layered-package-and-web-only.md)
 
 ## Moved to the agnijs repository
 
