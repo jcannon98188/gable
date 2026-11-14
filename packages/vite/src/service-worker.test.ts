@@ -172,7 +172,7 @@ import { createFetchRouter, createPrecache, lifecycle, type WorkerScope } from "
 import type { AssetManifest } from "@gable/service-worker/runtime";
 
 export default function worker(self: WorkerScope, manifest: AssetManifest): void {
-  const precache = createPrecache(self, { version: manifest.version, urls: manifest.files });
+  const precache = createPrecache(self, { version: manifest.version, urls: manifest.files, hashes: manifest.hashes });
   lifecycle(self, { version: manifest.version, install: () => precache.install(), activate: () => precache.activate() });
   createFetchRouter(self).route((url) => precache.has(url), precache.handler).listen();
 }
@@ -269,6 +269,24 @@ describe("the emitted default worker", () => {
     workerScript(files)(scope);
     await scope.install();
     expect(await scope.caches.keys()).toEqual([`gable-precache:${manifest.version}`]);
+  });
+
+  it("verifies the files it precaches against the emitted hashes: a file from another build fails the install", { timeout: 90_000 }, async () => {
+    const sample = app();
+    const files = await buildWith(sample);
+    const script = [...files.keys()].find((name) => /^assets\/.*\.js$/.test(name))!;
+
+    // The hashes the plugin emits are the format the worker verifies: the build served as built installs.
+    const scope = createWorkerScope({ network: serve({ files }) });
+    workerScript(files)(scope);
+    await scope.install();
+
+    // A deploy lands mid-install: the server already answers the bundle from the next build, so it differs from the hash.
+    const next = new Map(files).set(script, `${text(files, script)}\n/* the next release */`);
+    const mixed = createWorkerScope({ network: serve({ files: next }) });
+    workerScript(files)(mixed);
+    await expect(mixed.install()).rejects.toThrow(new RegExp(`${script.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} does not match its manifest hash`));
+    expect(await mixed.caches.keys()).toEqual([]);
   });
 
   it("precaches the build's files on install and serves the app offline from them", { timeout: 60_000 }, async () => {

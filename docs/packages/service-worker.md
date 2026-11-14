@@ -55,7 +55,7 @@ The runtime is built on core's public exports only; a test fails if it imports a
 
 Every production build is a release. `gableServiceWorker()` emits `sw-manifest.json`, which lists every file the build emitted with its content hash, and builds the manifest into `sw.js`. Its `version` hashes the worker's code and every file hash, so a change to any file, to `gable.sw.json` or to the worker makes a new release, and a build with no change keeps its version.
 
-- **Install.** A release downloads its files into its own cache, `gable-precache:<version>`. It counts as installed only once every file is stored; a failed or interrupted install is never served and fails the worker's install.
+- **Install.** A release downloads its files into its own cache, `gable-precache:<version>`. It counts as installed only once every file is stored; a failed or interrupted install is never served and fails the worker's install. Each prefetch file is also checked against its manifest hash, so a deploy that lands mid-install, which would leave files of two releases under one version, fails the install instead; the next worker then installs the new release whole.
 - **First visit.** The first release activates straight away, but the page that registered it is not controlled until its next load. From then on the worker serves the app, offline included.
 - **Update.** The browser finds a new `sw.js` when a page loads, or when the app calls `checkForUpdate()`. The new release installs in the background while the running one keeps serving its own files, then waits. `SwUpdates.updateAvailable` turns true.
 - **Activate.** Only the app decides when the new release takes over, by calling `activateUpdate()`. It resolves once the new release is in charge, and the app reloads into the new code. Activation removes the older releases' caches, even while other open tabs still run an older release (see [Limits](#limits)), so reload every tab once a release activates.
@@ -127,7 +127,7 @@ import { createFetchRouter, createPrecache, lifecycle, type WorkerScope } from "
 import type { AssetManifest } from "@gable/service-worker/runtime";
 
 export default function worker(self: WorkerScope, manifest: AssetManifest): void {
-  const precache = createPrecache(self, { version: manifest.version, urls: manifest.files });
+  const precache = createPrecache(self, { version: manifest.version, urls: manifest.files, hashes: manifest.hashes });
   lifecycle(self, { version: manifest.version, install: () => precache.install(), activate: () => precache.activate() });
   createFetchRouter(self).route((url) => precache.has(url), precache.handler).listen();
 }
@@ -156,7 +156,7 @@ createFetchRouter(self)
 
 - A fetch router tries routes in order and the first match answers. A route matches by URL pattern (a same-origin path such as `/users/:id` or `/assets/*`, an absolute URL pattern for another origin, a RegExp or a predicate), by method (GET unless given) and by request destination. Unmatched requests go to the network. A handler that throws is a network error, not a fall-through. In a path pattern `:name` captures one segment and `*` matches any run of characters, slashes included, so `/assets/*` also matches `/assets/img/logo.png`. That is not how `gable.sw.json`'s globs read it: there `*` stays within one segment and `**` crosses segments.
 - The strategies are `cacheFirst`, `networkFirst` (with an optional network timeout), `staleWhileRevalidate` and `networkOnly`. The caching ones read and write one named cache and store only status 200 responses unless `cacheable` says otherwise; writes happen through the fetch event's `waitUntil`, so the page does not wait for them.
-- A precache installs one release into its own cache, `gable-precache:<version>`. The version counts as installed only once every file is stored, so a failed or interrupted install is never served, and the running version keeps serving its own files while a new one installs. Its requests revalidate with the server (`cache: "no-cache"`), so the HTTP cache cannot hand it an older release's file. Activation removes the caches of other versions.
+- A precache installs one release into its own cache, `gable-precache:<version>`. The version counts as installed only once every file is stored, so a failed or interrupted install is never served, and the running version keeps serving its own files while a new one installs. Its requests revalidate with the server (`cache: "no-cache"`), so the HTTP cache cannot hand it an older release's file. Activation removes the caches of other versions. A manifest can also give `hashes`, a content hash by URL (the first 16 hex digits of the file's SHA-256, as `@gable/vite` emits them): each fetched file is checked against its hash, and a mismatch fails the install atomically like any other failed file. Files without an entry are not verified. Verification needs `crypto.subtle`, which service workers have in browsers; where it is missing, as in the AgniJS and QuickJS engine test suites, files are stored unverified.
 
 ### Lifecycle hooks
 
@@ -357,7 +357,7 @@ What v1 does not do, as of this release:
 - **Navigation fallback.** With the default `exclude` (`["/**/*.*"]`), the fallback answers every same-origin navigation whose path has no file extension, including paths such as `/api/report` opened in a tab. Data groups never see the navigations it answers, so list such paths in `exclude` to leave them to the network and to data groups.
 - **Builds without the Vite plugin.** `@gable/vite` defines `__GABLE_DEV__` as `false` in production builds. Another bundler must define it as `false` too, or the app must pass `enabled: true` to `provideServiceWorker()`; otherwise the worker never registers.
 - **First visit.** The worker does not claim the page that first registers it (`clients.claim()`), so it serves the app from that page's next load.
-- **No carry-over between releases.** Each release downloads all its prefetch and lazy files again, even unchanged ones; the manifest has per-file hashes, but the runtime does not use them yet.
+- **No carry-over between releases.** Each release downloads all its prefetch and lazy files again, even unchanged ones; the runtime uses the manifest's per-file hashes only to verify prefetch files, not to skip downloads, and lazy files are not verified.
 - **Caching.** No maximum age or size for data caches. Asset groups cannot list files on other origins (a `performance` data group covers them). Precached files match by exact URL, with no ignore-search or directory-index matching beyond the navigation fallback. The precache does not reject redirected responses, so serve build files directly.
 - **Push.** `notificationclose` and periodic background sync are not handled, and a notification click opens a new window rather than focusing an open one.
 - **Background sync** works only where the browser has it (Chromium-based browsers); elsewhere `register()` resolves `false` and there is no built-in fallback or retry.
