@@ -12,6 +12,7 @@ export class Packages {
 <div class="grid4">
 <div class="card p"><h3 style="font-size: 18px">&#64;gable/core</h3><p class="mut">Signals, components, DI, templates. Router, forms, HTTP and RxJS entry points.</p></div>
 <div class="card p"><h3 style="font-size: 18px">&#64;gable/store</h3><p class="mut">Application state on top of signals.</p></div>
+<div class="card p"><h3 style="font-size: 18px">&#64;gable/service-worker</h3><p class="mut">Offline caching and app-controlled updates, push and background sync.</p></div>
 <div class="card p"><h3 style="font-size: 18px">DevTools</h3><p class="mut">A browser extension to inspect components, signals and injectors.</p></div>
 <div class="card p"><h3 style="font-size: 18px">&#64;gable/vite</h3><p class="mut">Dev-only HMR wiring and tsconfig checks.</p></div>
 <div class="card p"><h3 style="font-size: 18px">gable-ui</h3><p class="mut">Components you own.</p></div>

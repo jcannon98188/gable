@@ -51,11 +51,40 @@ describe("create-gable", () => {
     expect(existsSync(join(cwd, "asked-app", "src", "main.ts"))).toBe(true);
   });
 
-  it("has no options beyond --help and --local", async () => {
+  it("has no options beyond --help, --local and --service-worker", async () => {
     expect((await run(["--help"])).out).toContain("Usage:");
     const bad = await run(["--typescript", "x"]);
     expect(bad.code).toBe(2);
     expect(bad.err).toContain("unknown option");
+  });
+
+  describe("--service-worker", () => {
+    it("adds the service worker: the package, the Vite plugin, its config and the update banner", async () => {
+      expect((await run(["my-app", "--service-worker"])).code).toBe(0);
+      const pkg = JSON.parse(read("my-app", "package.json"));
+      const own = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
+      expect(pkg.dependencies["@gable/service-worker"]).toBe(`~${own}`);
+      expect(Object.keys(pkg.dependencies)).toEqual([...Object.keys(pkg.dependencies)].sort());
+      expect(read("my-app", "vite.config.ts")).toContain("gableServiceWorker()");
+      expect(read("my-app", "src", "main.ts")).toContain('provideServiceWorker({ url: "/sw.js" })');
+      expect(read("my-app", "src", "root.ts")).toContain("<app-update-banner>");
+      expect(read("my-app", "src", "update-banner.ts")).toContain("activateUpdate()");
+      expect(JSON.parse(read("my-app", "gable.sw.json")).navigationFallback).toEqual({ url: "/index.html" });
+    });
+
+    it("leaves the starter without any of it when the option is off", async () => {
+      expect((await run(["my-app"])).code).toBe(0);
+      expect(read("my-app", "package.json")).not.toContain("service-worker");
+      expect(read("my-app", "vite.config.ts")).not.toContain("gableServiceWorker");
+      expect(read("my-app", "src", "main.ts")).not.toContain("provideServiceWorker");
+      expect(read("my-app", "src", "root.ts")).not.toContain("update-banner");
+      expect(existsSync(join(cwd, "my-app", "gable.sw.json"))).toBe(false);
+      expect(existsSync(join(cwd, "my-app", "src", "update-banner.ts"))).toBe(false);
+    });
+
+    it("is listed in the usage", async () => {
+      expect((await run(["--help"])).out).toContain("--service-worker");
+    });
   });
 
   it("refuses a non-empty target directory and an invalid name", async () => {
@@ -89,6 +118,16 @@ describe("create-gable", () => {
         ["core", "language-service", "prettier-plugin", "renderer-dom", "template-format", "testing", "vite"].map((n) => `@gable/${n}`),
       );
       expect(pkg.overrides["@gable/template-format"]).toBe(spec("template-format"));
+    });
+
+    it("needs the @gable/service-worker tarball with --service-worker", async () => {
+      const dir = fake(...all);
+      const missing = await run(["--local", dir, "--service-worker", "my-app"]);
+      expect(missing.code).toBe(1);
+      expect(missing.err).toContain("no tarball for @gable/service-worker");
+      writeFileSync(join(dir, "gable-service-worker-1.2.3.tgz"), "");
+      expect((await run(["--local", dir, "--service-worker", "my-app"])).code).toBe(0);
+      expect(JSON.parse(read("my-app", "package.json")).dependencies["@gable/service-worker"]).toMatch(/gable-service-worker-1.2.3.tgz$/);
     });
 
     it("accepts --local=<dir> and a relative directory", async () => {

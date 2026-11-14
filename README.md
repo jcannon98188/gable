@@ -77,6 +77,7 @@ All packages share one version number and are released together.
 | `@gable/renderer-dom` | The DOM renderer |
 | `@gable/vite` | Vite plugin: dev-only HMR wiring and tsconfig checks |
 | `@gable/testing` | Test harness with an in-memory renderer (`mount`) |
+| `@gable/service-worker` | Service worker support: a default worker driven by `gable.sw.json`, a worker authoring API and app-side update and push services |
 | `@gable/language-service` | Template type-checking: tsserver plugin and the `gable-check` CLI |
 | `@gable/template-format`, `@gable/prettier-plugin` | Template formatter and its Prettier plugin |
 | `gable-vscode` | VS Code extension: diagnostics, completions and highlighting for templates |

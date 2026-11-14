@@ -18,6 +18,8 @@ export function commandsFor(pm: PackageManager): { install: string; run: string 
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 const templateDir = join(here, "..", "template");
+/** The service worker option's files: added to the starter, or put in place of the starter's own. */
+const serviceWorkerDir = join(here, "..", "template-service-worker");
 const ownVersion = (): string => JSON.parse(readFileSync(join(here, "..", "package.json"), "utf8")).version;
 
 /** Dotfiles that npm would drop or rename when packing are stored under another name. */
@@ -31,6 +33,12 @@ export interface ScaffoldOptions {
   targetDir: string;
   /** Package manager whose commands the README shows. Default npm. */
   packageManager?: PackageManager;
+  /**
+   * Adds a service worker (`@gable/service-worker`): the dependency, the `gableServiceWorker()` Vite plugin, a
+   * `gable.sw.json`, the registration in `src/main.ts` and an update banner. Default false, and the starter then has
+   * none of it.
+   */
+  serviceWorker?: boolean;
   /** A directory of `@gable/*` tarballs (see `npm run pack:local`): the starter then installs from them instead of the registry. */
   localDir?: string;
 }
@@ -64,6 +72,14 @@ function localizeManifest(text: string, dir: string): string {
   return JSON.stringify(manifest, null, 2) + "\n";
 }
 
+/** Adds `name@range` to the manifest text's dependencies, keeping them sorted by name. */
+function withDependency(text: string, name: string, range: string): string {
+  const manifest = JSON.parse(text);
+  const dependencies: Record<string, string> = { ...manifest.dependencies, [name]: range };
+  manifest.dependencies = Object.fromEntries(Object.entries(dependencies).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
+  return JSON.stringify(manifest, null, 2) + "\n";
+}
+
 const VALID_NAME = /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
 
 /** Copies the starter template into `targetDir`, substituting the name, the lockstep version and the commands. Returns the files written, relative to `targetDir`. */
@@ -72,8 +88,11 @@ export function scaffold(options: ScaffoldOptions): string[] {
   if (existsSync(options.targetDir) && readdirSync(options.targetDir).length > 0) throw new Error(`${options.targetDir} is not empty.`);
   const values: Record<string, string> = { name: options.name, version: ownVersion(), ...commandsFor(options.packageManager ?? "npm") };
   const localDir = options.localDir ? resolve(options.localDir) : undefined;
-  if (localDir) localizeManifest(readFileSync(join(templateDir, "package.json"), "utf8"), localDir); // fail before writing anything
-  const written: string[] = [];
+  const fill = (text: string) => text.replace(/\{\{(\w+)\}\}/g, (match, key: string) => values[key] ?? match);
+  let manifest = fill(readFileSync(join(templateDir, "package.json"), "utf8"));
+  if (options.serviceWorker) manifest = withDependency(manifest, "@gable/service-worker", `~${values.version}`);
+  if (localDir) manifest = localizeManifest(manifest, localDir); // fails before anything is written
+  const written = new Set<string>();
   const copy = (from: string, to: string, rel: string) => {
     mkdirSync(to, { recursive: true });
     for (const entry of readdirSync(from)) {
@@ -81,15 +100,14 @@ export function scaffold(options: ScaffoldOptions): string[] {
       const relative = rel ? `${rel}/${RENAMED[entry] ?? entry}` : (RENAMED[entry] ?? entry);
       if (statSync(source).isDirectory()) copy(source, join(to, entry), relative);
       else {
-        let text = readFileSync(source, "utf8").replace(/\{\{(\w+)\}\}/g, (match, key: string) => values[key] ?? match);
-        if (localDir && relative === "package.json") text = localizeManifest(text, localDir);
-        writeFileSync(join(to, RENAMED[entry] ?? entry), text);
-        written.push(relative);
+        writeFileSync(join(to, RENAMED[entry] ?? entry), relative === "package.json" ? manifest : fill(readFileSync(source, "utf8")));
+        written.add(relative);
       }
     }
   };
   copy(templateDir, options.targetDir, "");
-  return written;
+  if (options.serviceWorker) copy(serviceWorkerDir, options.targetDir, "");
+  return [...written];
 }
 
 /** The terminal seam of {@link main}: pass real stdio in the bin, fakes in tests, so the CLI never touches `process` directly. */
@@ -106,8 +124,10 @@ Copies the Gable starter into a new directory. Asks for a project name when none
 is given.
 
 Options:
-  --local <dir>   Install @gable/* from the tarballs in <dir> (made by "npm run pack:local"
-                  in the Gable repository) instead of the registry. For unpublished builds.
+  --service-worker  Add a service worker (@gable/service-worker): offline caching of the
+                    production build and an update banner that applies new versions.
+  --local <dir>     Install @gable/* from the tarballs in <dir> (made by "npm run pack:local"
+                    in the Gable repository) instead of the registry. For unpublished builds.
 `;
 
 /** Runs create-gable and returns the exit code. */
@@ -117,10 +137,12 @@ export async function main(argv: string[], env: Record<string, string | undefine
     return 0;
   }
   let localDir: string | undefined;
+  let serviceWorker = false;
   const positional: string[] = [];
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]!;
-    if (arg !== "--local" && !arg.startsWith("--local=")) positional.push(arg);
+    if (arg === "--service-worker") serviceWorker = true;
+    else if (arg !== "--local" && !arg.startsWith("--local=")) positional.push(arg);
     else {
       localDir = arg === "--local" ? argv[++i] : arg.slice("--local=".length);
       if (!localDir || localDir.startsWith("-")) {
@@ -139,7 +161,7 @@ export async function main(argv: string[], env: Record<string, string | undefine
   const targetDir = resolve(cwd, name);
   const pm = detectPackageManager(env.npm_config_user_agent);
   try {
-    scaffold({ name: basename(targetDir), targetDir, packageManager: pm, localDir: localDir && resolve(cwd, localDir) });
+    scaffold({ name: basename(targetDir), targetDir, packageManager: pm, serviceWorker, localDir: localDir && resolve(cwd, localDir) });
   } catch (error) {
     io.stderr(`create-gable: ${(error as Error).message}\n`);
     return 1;

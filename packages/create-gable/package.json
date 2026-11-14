@@ -16,7 +16,8 @@
   },
   "files": [
     "dist",
-    "template"
+    "template",
+    "template-service-worker"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

@@ -1,0 +1,7 @@
+{
+  "assetGroups": [
+    { "name": "app", "installMode": "prefetch", "files": ["/index.html", "/assets/**"] },
+    { "name": "public", "installMode": "lazy", "files": ["/**"] }
+  ],
+  "navigationFallback": { "url": "/index.html" }
+}

@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-`create-gable` asks only for a project name (or takes it as the argument) and has no other options. It detects the package manager that ran it (`npm`, `pnpm`, `yarn` or `bun`) and prints the matching commands. The template ships no lockfile; your first install creates one. The `@gable/*` packages are pinned with `~` to the `create-gable` release that made the project, so they stay in lockstep.
+`create-gable` asks only for a project name (or takes it as the argument). Its one feature option, `--service-worker`, adds offline support ([below](#offline-and-updates-the-service-worker-option)). It detects the package manager that ran it (`npm`, `pnpm`, `yarn` or `bun`) and prints the matching commands. The template ships no lockfile; your first install creates one. The `@gable/*` packages are pinned with `~` to the `create-gable` release that made the project, so they stay in lockstep.
 
 Open the URL the dev server prints. You should see "Hello, Gable" and a counter.
 
@@ -314,6 +314,120 @@ npm run preview
 ```
 
 The production bundle contains no HMR code.
+
+## Offline and updates: the service worker option
+
+```
+npm create gable@latest my-app -- --service-worker
+```
+
+With `--service-worker` the starter also gets [`@gable/service-worker`](./packages/service-worker.md): the production build works offline, and a new release installs in the background and waits until the user takes it from a banner. Without the option the starter has none of these files, no `@gable/service-worker` dependency and no worker code in its bundle. The option adds `gable.sw.json` and `src/update-banner.ts`, puts its own `vite.config.ts`, `src/main.ts` and `src/root.ts` in place of the ones above, and adds `@gable/service-worker` to `dependencies`.
+
+The worker exists only in a production build, so try it with `npm run build` and `npm run preview`; the dev server has no worker and its HMR works as before. Load the page once to install the worker, stop the preview server and reload: the app still loads. Then change a file, build and preview again, and reload. The browser looks for a new worker when a page loads, and once the new release has installed the banner offers it; call `checkForUpdate()` from `SwUpdates` to look sooner or on a timer.
+
+### gable.sw.json
+
+What the default worker caches. The `app` group (the shell and Vite's `assets/` output) is downloaded when a release installs, and the release is ready only once all of it is stored. Anything else the build emits, such as files from `public/`, is cached the first time it is requested. The navigation fallback answers every page navigation with the cached `index.html`, so client-side routes load offline too.
+
+<!-- template: ../template-service-worker/gable.sw.json -->
+```json
+{
+  "assetGroups": [
+    { "name": "app", "installMode": "prefetch", "files": ["/index.html", "/assets/**"] },
+    { "name": "public", "installMode": "lazy", "files": ["/**"] }
+  ],
+  "navigationFallback": { "url": "/index.html" }
+}
+```
+
+### vite.config.ts (with the service worker)
+
+`gableServiceWorker()` makes `vite build` emit `sw.js`, the worker, and `sw-manifest.json`, the list of the build's files with their content hashes.
+
+<!-- template: ../template-service-worker/vite.config.ts -->
+```ts
+import tailwindcss from "@tailwindcss/vite";
+import { gable, gableServiceWorker } from "@gable/vite";
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  plugins: [tailwindcss(), gable(), gableServiceWorker()],
+  test: { include: ["src/**/*.test.ts"] },
+});
+```
+
+### src/main.ts (with the service worker)
+
+<!-- template: ../template-service-worker/src/main.ts -->
+```ts
+import { bootstrap } from "@gable/core";
+import { dom } from "@gable/renderer-dom";
+import { provideServiceWorker } from "@gable/service-worker";
+import "./global.css";
+import { Root } from "./root.js";
+
+bootstrap(Root, {
+  renderer: dom(),
+  target: "#app",
+  providers: provideServiceWorker({ url: "/sw.js" }),
+});
+```
+
+### src/root.ts (with the service worker)
+
+<!-- template: ../template-service-worker/src/root.ts -->
+```ts
+import { html } from "@gable/core";
+import { Counter } from "./counter.js";
+import { UpdateBanner } from "./update-banner.js";
+
+export class Root {
+  static meta = {
+    selector: "app-root",
+    imports: [Counter, UpdateBanner],
+    template: html`
+      <main class="mx-auto max-w-md p-8">
+        <h1 class="text-2xl font-bold">Hello, Gable</h1>
+        <app-counter></app-counter>
+        <app-update-banner></app-update-banner>
+      </main>
+    `,
+  };
+}
+```
+
+### src/update-banner.ts
+
+Injecting `SwUpdates` registers the worker, in a production build only. `updateAvailable` turns true once a new release has installed and waits, and `activateUpdate()` has it take over; the page then reloads into the new code. Until then the page keeps running the release it loaded.
+
+<!-- template: ../template-service-worker/src/update-banner.ts -->
+```ts
+import { html, inject } from "@gable/core";
+import { SwUpdates } from "@gable/service-worker";
+
+export class UpdateBanner {
+  static meta = {
+    selector: "app-update-banner",
+    template: html`
+      @if (available()) {
+        <p class="update mt-4 rounded border p-3">
+          A new version is ready.
+          <button class="rounded bg-sky-600 px-3 py-1 text-white" (click)="update()">Reload</button>
+        </p>
+      }
+    `,
+  };
+
+  updates = inject(SwUpdates);
+  available = this.updates.updateAvailable;
+
+  async update() {
+    if (await this.updates.activateUpdate()) location.reload();
+  }
+}
+```
+
+See the [`@gable/service-worker` guide](./packages/service-worker.md) for what else `gable.sw.json` can say, runtime caching of API calls, push notifications, and writing your own worker.
 
 ## Routing
 
