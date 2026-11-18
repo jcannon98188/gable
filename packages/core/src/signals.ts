@@ -1,4 +1,4 @@
-import { Signal } from "./vendor/signal-polyfill/index.js";
+import { Signal } from "signal-polyfill";
 import { reportError } from "./errors.js";
 import { readPhase, swapReadPhase } from "./read-phase.js";
 import { currentScope, createScope, swapScope, type Scope } from "./scope.js";

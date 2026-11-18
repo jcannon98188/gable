@@ -2,7 +2,7 @@
 // Not part of the public API; may change without notice.
 export { ownerOf } from "./scope.js";
 // The vendored TC39 polyfill, for benchmarks that compare Gable against the raw polyfill it runs on (never re-exported from "@gable/core").
-export { Signal } from "./vendor/signal-polyfill/index.js";
+export { Signal } from "signal-polyfill";
 export { createScope, runInScope, currentScope } from "./scope.js";
 export type { Scope } from "./scope.js";
 export { DEFER_BLOCKS } from "./defer.js";

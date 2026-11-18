@@ -16,8 +16,8 @@ describe("public API", () => {
     execFileSync(process.execPath, [tsc, "-p", join(pkg, "tsconfig.build.json"), "--outDir", out, "--tsBuildInfoFile", join(out, "x.tsbuildinfo")]);
     const dts = readdirSync(out, { recursive: true, encoding: "utf8" }).filter((f) => f.endsWith(".d.ts"));
     expect(dts).toContain("index.d.ts");
-    // The polyfill is vendored under vendor/signal-polyfill; only the internal seam (benchmarks) may point at it.
-    for (const f of dts.filter((f) => !/^vendor[\\/]/.test(f) && f !== "internal.d.ts")) {
+    // Only the internal seam (benchmarks) may point at the polyfill.
+    for (const f of dts.filter((f) => f !== "internal.d.ts")) {
       expect(readFileSync(join(out, f), "utf8"), f).not.toMatch(/signal-polyfill|Signal\.(State|Computed|subtle)/);
     }
   }, 60_000);
