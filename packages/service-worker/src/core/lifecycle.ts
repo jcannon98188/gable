@@ -1,6 +1,6 @@
 // Typed install, activate and update hooks for a worker version, which also speak the app protocol (messages.ts):
 // version-ready after install, version-activated after activate, an error event when a hook fails, and
-// app-controlled activation through the activate-update request (ADR 0021).
+// app-controlled activation through the activate-update request (ADR 0022).
 import { createAppChannel, SW_PROTOCOL, type WorkerErrorPhase } from "./messages.js";
 import type { WorkerClient, WorkerExtendableEvent, WorkerScope } from "./scope.js";
 

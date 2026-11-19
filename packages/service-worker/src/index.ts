@@ -1,4 +1,4 @@
-// @gable/service-worker: the app side, injectable services for registration and updates (ADR 0021).
+// @gable/service-worker: the app side, injectable services for registration and updates (ADR 0022).
 // It reads workers through the message protocol only, so it works with the default worker and a custom one. It must
 // not import from the runtime.
 export type {

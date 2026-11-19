@@ -1,4 +1,4 @@
-// Push for the app (ADR 0021): the push messages and notification clicks the worker forwards to open pages, as
+// Push for the app (ADR 0022): the push messages and notification clicks the worker forwards to open pages, as
 // Observables, and the push subscription helper (permission, subscribe, getSubscription, unsubscribe).
 import { inject, signal, type ReadonlySignal } from "@gable/core";
 import { filter, map, type Observable } from "rxjs";

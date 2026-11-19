@@ -1,4 +1,4 @@
-// @gable/service-worker/runtime: the default declarative worker driven by gable.sw.json (ADR 0021).
+// @gable/service-worker/runtime: the default declarative worker driven by gable.sw.json (ADR 0022).
 // It is built on @gable/service-worker/core's public exports only; runtime-boundary.test.ts enforces that.
 export {
   ServiceWorkerConfigError,

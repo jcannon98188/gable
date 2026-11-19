@@ -1,4 +1,4 @@
-// The message protocol between a Gable service worker and the app it serves (ADR 0021). It is public API: the
+// The message protocol between a Gable service worker and the app it serves (ADR 0022). It is public API: the
 // app-side services read these messages from the default worker and from custom workers alike, so a change to a
 // message's shape is a breaking change. New message types and new optional fields are additive.
 import type { WorkerMessageEvent, WorkerScope } from "./scope.js";

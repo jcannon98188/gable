@@ -1,4 +1,4 @@
-// gableServiceWorker(): at production build, emits the asset manifest and the service worker file (ADR 0021).
+// gableServiceWorker(): at production build, emits the asset manifest and the service worker file (ADR 0022).
 //
 // The plugin never imports @gable/service-worker itself: the worker it bundles does, from the app's dependencies, and
 // the default worker's config is checked through a dynamic import at build time. Apps without the plugin pay nothing.
@@ -127,7 +127,7 @@ async function bundleWorker(config: ResolvedConfig, worker: string, defaultWorke
 }
 
 /**
- * Service worker support for production builds (`@gable/service-worker`, ADR 0021). `vite build` emits two files
+ * Service worker support for production builds (`@gable/service-worker`, ADR 0022). `vite build` emits two files
  * into the output directory:
  *
  * - the asset manifest, `sw-manifest.json` ({@link EmittedAssetManifest}): every emitted file with its content hash,

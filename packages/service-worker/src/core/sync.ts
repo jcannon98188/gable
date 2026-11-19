@@ -1,4 +1,4 @@
-// Typed background sync (ADR 0021): one handle per tag that registers the sync and handles its sync events. A failed
+// Typed background sync (ADR 0022): one handle per tag that registers the sync and handles its sync events. A failed
 // attempt fails the sync event so the browser retries it later; only a failed last chance is reported to the app,
 // as a runtime error, since earlier failures are what background sync exists to absorb.
 import { createAppChannel } from "./messages.js";

@@ -1,4 +1,4 @@
-// Registration of the app's service worker, and the stream of protocol messages its workers send (ADR 0021).
+// Registration of the app's service worker, and the stream of protocol messages its workers send (ADR 0022).
 // It registers only in production builds, so a dev server's HMR never competes with a worker.
 import { inject, InjectionToken, signal, type Provider, type ReadonlySignal } from "@gable/core";
 import { currentScope, reportError } from "@gable/core/internal";

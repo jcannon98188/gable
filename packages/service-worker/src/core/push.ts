@@ -1,4 +1,4 @@
-// Typed push and notification-click handlers (ADR 0021). Besides running the worker's own handler, each forwards its
+// Typed push and notification-click handlers (ADR 0022). Besides running the worker's own handler, each forwards its
 // event to the app's open pages with the protocol's push and notification-click messages (messages.ts), which the
 // app side's SwPush exposes as Observables.
 import { type AppChannel, createAppChannel, SW_PROTOCOL, type NotificationInfo } from "./messages.js";

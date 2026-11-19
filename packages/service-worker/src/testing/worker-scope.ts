@@ -1,4 +1,4 @@
-// An in-memory service worker scope for unit tests (ADR 0021: worker behaviour is tested in production builds and
+// An in-memory service worker scope for unit tests (ADR 0022: worker behaviour is tested in production builds and
 // with an in-memory worker scope in unit tests). It implements core's WorkerScope, so worker code written against core
 // runs on it unchanged, and adds the driver side a test needs: dispatching lifecycle and fetch events, a pluggable
 // network, and connected clients whose messages are recorded.

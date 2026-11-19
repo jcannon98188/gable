@@ -1,4 +1,4 @@
-// The runtime import boundary (ADR 0021): the default worker is built on core's public surface only.
+// The runtime import boundary (ADR 0022): the default worker is built on core's public surface only.
 //
 // A runtime module may import other runtime modules, core's public entry (`@gable/service-worker/core`, or
 // `core/index` by relative path), and packages other than @gable/service-worker. Anything else, such as a core

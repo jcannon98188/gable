@@ -1,4 +1,4 @@
-// ADR 0021: the runtime (the default worker) uses only core's public surface, so a primitive the runtime needs that
+// ADR 0022: the runtime (the default worker) uses only core's public surface, so a primitive the runtime needs that
 // core does not export is a gap in core. This test enforces it on every non-test source file under src/runtime.
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";

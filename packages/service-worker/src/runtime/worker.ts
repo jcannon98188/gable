@@ -183,7 +183,7 @@ export function defineWorker(options: WorkerDefinitionOptions): WorkerDefinition
         },
         activate: async (context) => {
           // A first release has no earlier one to protect, so it takes over the page that registered it: without this
-          // the app is not offline-ready until its next load. An update never claims; it waits for the app (ADR 0021).
+          // the app is not offline-ready until its next load. An update never claims; it waits for the app (ADR 0022).
           // The earlier release is told by its precache, which survives the worker being stopped between install and
           // activate; precache.activate() removes it, so ask first.
           const firstRelease = !(await precache.hasEarlierRelease());

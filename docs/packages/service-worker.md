@@ -1,6 +1,6 @@
 # @gable/service-worker
 
-Service worker support for Gable apps: offline caching, app-controlled updates, push and background sync. It is web-only, because a service worker is a browser feature. The design is in [ADR 0021](../adr/0021-service-worker-support-is-one-layered-package-and-web-only.md).
+Service worker support for Gable apps: offline caching, app-controlled updates, push and background sync. It is web-only, because a service worker is a browser feature. The design is in [ADR 0022](../adr/0021-service-worker-support-is-one-layered-package-and-web-only.md).
 
 Most apps never write worker code. They describe what to cache in `gable.sw.json`, add one Vite plugin, and use two services in the app. Apps that need more can extend the default worker, or replace it with one written against the authoring API.
 
