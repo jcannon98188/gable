@@ -1,4 +1,4 @@
-// The MCP tools for signal time travel (TASK-56.18): get_signal_history, travel_signal_history, clear_signal_history and
+// The MCP tools for signal time travel (designer/74): get_signal_history, travel_signal_history, clear_signal_history and
 // record_signal_history, over an in-memory MCP client with a fake Designer window answering the shell bridge's `history`.
 import { cpSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";

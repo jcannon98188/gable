@@ -1,4 +1,4 @@
-// Accessibility beyond the checker (TASK-56.26): the keyboard focus order of the page, the accessibility tree (what assistive
+// Accessibility beyond the checker (designer/82): the keyboard focus order of the page, the accessibility tree (what assistive
 // technology is given: role, name, state), and stepping focus through the page. All of it reads the real DOM as rendered; the
 // functions here take the document and a template-node lookup, so they run under jsdom in tests as well as in the Preview agent.
 // Names and roles follow the HTML-AAM and accname rules for the cases apps use; shadow DOM, CSS-generated content and

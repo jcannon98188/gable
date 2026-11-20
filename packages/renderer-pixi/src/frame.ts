@@ -1,4 +1,4 @@
-// The Frame service (TASK-104.6, ADR 0020): the per-frame hooks of a canvas boundary. The boundary's loop calls
+// The Frame service (canvas/111, ADR 0020): the per-frame hooks of a canvas boundary. The boundary's loop calls
 // `advance(dt)` once per animation frame; scenes register with `inject(Frame).onFrame(dt => ...)` or `onFixedStep(hz, cb)`.
 // Kept free of any pixi.js import so injecting it never loads Pixi.
 import { onCleanup } from "@gable/core";

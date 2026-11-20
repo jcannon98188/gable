@@ -1,4 +1,4 @@
-// Driven check of the drawer's Changes tab (source control, TASK-56.25) and its MCP tools.
+// Driven check of the drawer's Changes tab (source control, designer/81) and its MCP tools.
 //
 //   npm run build -w packages/designer && node packages/designer/e2e/git-check.mjs [--browser <path>] [--shot <file>]
 //   node packages/designer/e2e/git-check.mjs --port <cdp port> --shell 127.0.0.1:<designer port> --project <dir> --mcp <url> --token <token>   # or drives ones you started

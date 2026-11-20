@@ -7,7 +7,7 @@ import { build } from "vite";
 import { describe, expect, it } from "vitest";
 import { compareImages, decodePng, DEFAULT_TOLERANCE, encodePng, type Image } from "./golden-image.js";
 
-// The golden-image suite (TASK-105.14): a few shape scenes rendered in a real headless Chromium on software GL
+// The golden-image suite (canvas/133): a few shape scenes rendered in a real headless Chromium on software GL
 // (SwiftShader) and compared against stored PNGs in packages/renderer-pixi/golden/. See golden/README.md for the
 // stability conditions, the tolerance and how goldens are (re)generated.
 //

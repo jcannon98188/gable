@@ -1,4 +1,4 @@
-// The Designer's MCP control plane (TASK-56.13): the tools an agent drives the Designer with. It is a thin layer over what
+// The Designer's MCP control plane (designer/69): the tools an agent drives the Designer with. It is a thin layer over what
 // the UI already uses. Project facts (components, scenes, routes, problems, history, Tailwind) come from backend state.
 // UI state (mode, target, frames, selection, route, scenario) and the running app (tree, signals, HMR) belong to the shell,
 // so those tools send a command over the shell bridge and the shell does what a click would: the human sees the same

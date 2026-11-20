@@ -1,4 +1,4 @@
-// The ReducedMotion service (TASK-104.11): the user's `prefers-reduced-motion` setting as a signal. The framework has no
+// The ReducedMotion service (canvas/116): the user's `prefers-reduced-motion` setting as a signal. The framework has no
 // motion of its own to respect; scenes read this to tone down their own (shake, parallax, particles). Free of any pixi.js import.
 import { signal, type WritableSignal } from "@gable/core";
 

@@ -1,4 +1,4 @@
-// Signal state editing (TASK-56.17): the Inspector's Edit and Pin, the Poked state section, and "Save as Scenario". The
+// Signal state editing (designer/73): the Inspector's Edit and Pin, the Poked state section, and "Save as Scenario". The
 // Preview agent does the checked writes and keeps the pins (`src/agent/signal-state.ts`); this service asks it and shows what
 // it says. Saving writes a Scene through the edit service like the New Scenario dialog, so it is one undoable change.
 import { effect, inject, signal, untracked } from "@gable/core";

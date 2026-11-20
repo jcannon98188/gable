@@ -1,4 +1,4 @@
-// The signal state fixture (TASK-56.17/18): an input, plain-data signals to poke and pin, a signal that is not plain data,
+// The signal state fixture (designer/73/18): an input, plain-data signals to poke and pin, a signal that is not plain data,
 // a child's signal (which a Scene of TodoBoard cannot hold), and a button that makes the app fight a pin.
 import { computed, html, input, signal } from "@gable/core";
 

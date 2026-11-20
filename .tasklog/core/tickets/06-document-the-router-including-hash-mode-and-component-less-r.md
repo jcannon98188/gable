@@ -1,0 +1,42 @@
+---
+kind: ticket
+title: Document the router, including hash mode and component-less routes
+status: resolved
+tags:
+  - docs
+  - priority-medium
+created: 2026-11-06
+updated: 2026-11-06
+imported_from: backlog/tasks/task-6 - Document-the-router-including-hash-mode-and-component-less-routes.md
+assignee:
+  - '@claude'
+priority: medium
+ordinal: 47000
+---
+
+## Question
+
+There is no router documentation. Building TodoMVC required reading source to learn that dom({ mode: 'hash' }) exists, that route data is exposed as Router.data(), and that routes without a component are accepted. Users need a guide covering this.
+
+## Acceptance criteria
+
+- [x] #1 A docs page covers provideRouter, Route fields, params, data, guards and RouterOutlet/RouterLink
+- [x] #2 It documents dom({ mode: 'hash' }) and the filter-from-route-data pattern
+- [x] #3 It states whether component-less routes are supported, and tests cover that decision
+- [x] #4 Linked from README and getting-started
+
+## Implementation plan
+
+1. Read router source/tests/todomvc
+2. Add component-less route test if missing
+3. Write docs/router.md
+4. Link from README and getting-started
+5. Run router tests
+
+## Implementation notes
+
+Added test for data-only leaf routes (no component/children); router.test.ts 31/31 pass. Decision: component-less routes are supported (grouping, redirectTo, data-only leaf). Docs: docs/router.md, linked from README and getting-started.
+
+## Answer
+
+Wrote docs/router.md (provideRouter, Route fields, params, data, guards, lazy, links, hash mode, filter-from-route-data, testing), linked from README and getting-started. Component-less routes documented as supported; new test covers data-only leaf routes. Verified: npx vitest run packages/testing/src/router.test.ts passes (31 tests).

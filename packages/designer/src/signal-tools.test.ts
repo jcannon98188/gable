@@ -1,4 +1,4 @@
-// The MCP tools for signal state editing (TASK-56.17): set_signal, pin_signal, get_scene_state and save_scenario, over an
+// The MCP tools for signal state editing (designer/73): set_signal, pin_signal, get_scene_state and save_scenario, over an
 // in-memory MCP client with a fake Designer window answering the shell bridge, against a copy of the `mcp-app` fixture.
 import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";

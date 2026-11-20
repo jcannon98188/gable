@@ -1,4 +1,4 @@
-// Production builds carry none of the canvas devtools (TASK-105.20, TASK-104.14).
+// Production builds carry none of the canvas devtools (canvas/139, canvas/119).
 import { fileURLToPath } from "node:url";
 import { build } from "vite";
 import { describe, expect, it } from "vitest";

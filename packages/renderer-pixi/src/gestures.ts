@@ -1,4 +1,4 @@
-// Drag and long-press helpers (TASK-105.12, TASK-104.8): gestures composed from a scene `pointerdown` and the Pointer
+// Drag and long-press helpers (canvas/131, canvas/113): gestures composed from a scene `pointerdown` and the Pointer
 // service, not template syntax. Call them in a component's setup (they inject Pointer and Frame) and forward the
 // event from the template: `<sprite (pointerdown)="drag.down($event)" />`. Everything they start is tied to the
 // component's scope: when it is destroyed a drag in flight ends cancelled and a pending long-press never fires.

@@ -1,4 +1,4 @@
-// Source control (TASK-56.25): the pure helpers, and GitService against throwaway repositories in the temp directory (the
+// Source control (designer/81): the pure helpers, and GitService against throwaway repositories in the temp directory (the
 // real repository is never touched). The project folder is a subfolder of the repository, as examples/ are.
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";

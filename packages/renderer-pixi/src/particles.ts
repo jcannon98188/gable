@@ -1,4 +1,4 @@
-// The particle tier (TASK-104.14): the ref helper for <particle-container>. Pixi particles are plain records, not
+// The particle tier (canvas/119): the ref helper for <particle-container>. Pixi particles are plain records, not
 // display objects, so they cannot be child tags; a scene creates and updates them through this helper on a `#ref`.
 //
 //   <particle-container #sparks [texture]="'spark'" [dynamicProperties]="{ rotation: true }" />

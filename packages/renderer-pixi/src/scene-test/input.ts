@@ -1,4 +1,4 @@
-// Simulated input for the scene test renderer (TASK-105.8). The real Pointer, Keyboard and Gamepad services are attached
+// Simulated input for the scene test renderer (canvas/127). The real Pointer, Keyboard and Gamepad services are attached
 // exactly as the Pixi renderer attaches them (a stage with federated pointer events, a focused host element, a
 // `getGamepads` source), so a test exercises the production code path; only the event source is simulated.
 import type { Gamepad, GamepadSource } from "../gamepad.js";

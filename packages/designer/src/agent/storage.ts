@@ -1,4 +1,4 @@
-// The Preview agent's side of the Storage panel (TASK-56.21): reads and edits the frame's localStorage, sessionStorage and
+// The Preview agent's side of the Storage panel (designer/77): reads and edits the frame's localStorage, sessionStorage and
 // the cookies the page can see, and tells the shell when the page changes them (its own writes through the Storage API and
 // document.cookie, another tab of the same origin, and cookie changes the browser reports), so the panel stays live.
 // The Designer's own keys (its session, the network condition and recording) are left out and never cleared.

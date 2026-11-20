@@ -1,4 +1,4 @@
-// The Designer reports a canvas boundary's scene like a DOM tree (TASK-105.20): nested nodes with their owner, source, template
+// The Designer reports a canvas boundary's scene like a DOM tree (canvas/139): nested nodes with their owner, source, template
 // position and page box, built from the devtools hook's boundary trees.
 import { describe, expect, it } from "vitest";
 import { createDevtools, type BoundaryInfo, type BoundaryNode, type BoundaryTree } from "@gable/core/devtools";

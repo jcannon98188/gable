@@ -4,7 +4,7 @@ import { form, minLength, required } from "@gable/core/forms";
 import { RouterOutlet, type Route } from "@gable/core/router";
 import { mount, mountApp } from "@gable/testing";
 
-// TASK-2.15: Form state, router state and route injectors survive hot updates.
+// gable-v0/36: Form state, router state and route injectors survive hot updates.
 
 describe("form state across a re-setup", () => {
   const v1 = () =>

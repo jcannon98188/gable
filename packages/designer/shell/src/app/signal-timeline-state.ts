@@ -1,4 +1,4 @@
-// The State timeline (TASK-56.18): the selected frame's recorded state history, and travel through it. The devtools hook
+// The State timeline (designer/74): the selected frame's recorded state history, and travel through it. The devtools hook
 // records the app's writes to its state signals (steps, bounded; `@gable/core` signal-history.ts) once the Preview agent turns
 // recording on; this service fetches the steps when a new one is recorded and asks the frame to travel to one. Replay travels
 // forward one step at a time. Nothing here is simulated: an empty history says so.

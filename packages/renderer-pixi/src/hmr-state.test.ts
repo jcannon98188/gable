@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// TASK-105.16: what survives a hot edit of a canvas game. Scene components live in the host page's template and inject
+// canvas/135: what survives a hot edit of a canvas game. Scene components live in the host page's template and inject
 // page-level services (boundary services such as Frame are not injectable from projected content, ADR 0019).
 import { Sprite, type Container } from "pixi.js";
 import { afterEach, describe, expect, it, vi } from "vitest";

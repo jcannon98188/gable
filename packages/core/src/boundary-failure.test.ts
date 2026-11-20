@@ -1,4 +1,4 @@
-// A component that fails while it is being set up must not leak (TASK-105 review, item 18): a boundary renderer factory that
+// A component that fails while it is being set up must not leak (canvas/105 review, item 18): a boundary renderer factory that
 // throws disposes the instance scope, and a hot update whose Setup throws leaves the running app and the next update intact.
 import { describe, expect, it } from "vitest";
 import { html, onCleanup } from "@gable/core";

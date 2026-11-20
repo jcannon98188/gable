@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// The Node microbench (TASK-104.14): the frame-cost model with no browser and no GPU. It builds the same entity scenes as
+// The Node microbench (canvas/119): the frame-cost model with no browser and no GPU. It builds the same entity scenes as
 // the browser benchmark against a fake Application, drives the real boundary loop with a manual scheduler, and times the
 // three JS-side phases per frame. It runs on every PR. It asserts the model's structure (every entity's hook ran, every
 // frame was recorded), never absolute times: those belong to the same-runner gate in scripts/compare.mjs.

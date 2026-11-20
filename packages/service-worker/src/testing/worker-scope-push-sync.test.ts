@@ -1,4 +1,4 @@
-// The in-memory worker scope's push, notification and background sync events (TASK-106.4): the browser rules the
+// The in-memory worker scope's push, notification and background sync events (service-worker/111): the browser rules the
 // core handlers' tests rely on.
 import { describe, expect, it } from "vitest";
 import { createWorkerScope } from "./worker-scope.js";

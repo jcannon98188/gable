@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { check, where } from "../test-support/check.js";
 
 // Scene templates (a renderer boundary, a component marked with `elements: pixiElements`, and the
-// children projected into a boundary) are type-checked against the Pixi element map (TASK-104.7).
+// children projected into a boundary) are type-checked against the Pixi element map (canvas/112).
 
 describe("scene templates: typing enforced against the Pixi element map", () => {
   it("passes valid scene templates, projected children and DOM/SVG templates", async () => {

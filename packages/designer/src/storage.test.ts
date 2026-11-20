@@ -1,4 +1,4 @@
-// The Storage panel (TASK-56.21): cookie strings, the agent's reads and writes of a page's storage with its live hooks,
+// The Storage panel (designer/77): cookie strings, the agent's reads and writes of a page's storage with its live hooks,
 // the panel's rows, the get_storage view, and the Network log's filters.
 import { describe, expect, it } from "vitest";
 import { StorageAccess, startStorage, type StorageTarget } from "./agent/storage.js";

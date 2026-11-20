@@ -1,4 +1,4 @@
-// Driven check of the source writers (TASK-56.10): New Scenario and Extract component, end to end in a real browser.
+// Driven check of the source writers (designer/66): New Scenario and Extract component, end to end in a real browser.
 // Self-contained: starts the built Designer on examples/todomvc and a headless Edge/Chromium with a debugging port, drives the
 // dialogs through CDP, undoes both edits, and stops only the two process trees it started. The project's files are snapshot
 // first and put back afterwards whatever happens.

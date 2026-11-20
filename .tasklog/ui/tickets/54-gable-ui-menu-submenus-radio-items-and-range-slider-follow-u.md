@@ -1,0 +1,35 @@
+---
+kind: ticket
+title: "gable-ui: Menu submenus, radio items and range slider follow-ups"
+status: claimed
+claimed_by: "@claude"
+tags:
+  - ui
+  - in-progress
+created: 2026-11-07
+updated: 2026-11-07
+imported_from: backlog/tasks/task-54 - gable-ui-Menu-submenus-radio-items-and-range-slider-follow-ups.md
+assignee:
+  - '@claude'
+ordinal: 95000
+---
+
+## Question
+
+ui/28 shipped Dropdown Menu and Context Menu with items, checkbox items, labels and separators, a single-thumb Slider and a single-select Combobox. These variations were left out: submenus and radio-group items in menus, a multi-thumb range slider, and a multi-select combobox.
+
+## Acceptance criteria
+
+- [x] #1 Menus support submenus and radio-group items
+- [x] #2 Slider supports two or more thumbs
+- [ ] #3 Shown in examples/ui-gallery
+
+## Implementation plan
+
+1. Menus: add radio-group and submenu entries to MenuEntry; submenus are a recursive ui-menu-sub component with its own Zag menu machine linked via setChild/setParent. 2. Slider: new ui-range-slider with a number[] model. 3. Tests (jsdom, axe) for both; registry-meta exports. 4. Gallery: separate menus.html demo page.
+
+## Implementation notes
+
+Implemented in packages/ui (dropdown-menu.ts: UiMenuSub, radio-group/submenu entries, radioChange output; context-menu.ts same; slider.ts: UiRangeSlider). Tests: menu-submenu.dom.test.ts (11, incl. axe with submenu open), range-slider.dom.test.ts (5, incl. axe); npx vitest run packages/ui packages/ui-primitives: 341 passed. Gallery page examples/ui-gallery/menus.html + src/menus-demo.ts; its jsdom test passes only when run against package sources (the gallery resolves vendored tarballs of @gable/ui that predate these exports, so it needs a rebuild/repack to run in the gallery). AC3 left unchecked: not run in a real browser or via the gallery's own build. Not done: multi-select combobox (in the description, not in the ACs); disabled submenu triggers.
+
+Second pass: disabled submenu entries (disabled: true; rendered as a disabled menuitem that is skipped by keys and never opens). Row markup deduplicated into one internal component, UiMenuRows, used by UiDropdownMenu, UiContextMenu and UiMenuSub; UiMenuRows and UiMenuSub reference each other, so UiMenuSub is pushed onto UiMenuRows.meta.imports after both classes are defined. Multi-select combobox shipped as UiMultiCombobox (combobox.ts): value is string[] (works with [field]), removable chips, Backspace in the empty input removes the last chip, uses the combobox machine with multiple. Tests: multi-combobox.dom.test.ts (5, incl. axe), disabled submenu test in menu-submenu.dom.test.ts. Gallery demo for multi-combobox and browser check deferred to core/62.

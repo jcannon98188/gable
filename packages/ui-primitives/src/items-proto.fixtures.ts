@@ -1,4 +1,4 @@
-// Throwaway prototypes for TASK-24 (items for Select/Combobox/Menu). Not exported from the package index.
+// Throwaway prototypes for ui/24 (items for Select/Combobox/Menu). Not exported from the package index.
 import type { Provider } from "@gable/core";
 import { provideTestDom } from "./test-dom.js";
 import { inject, input } from "@gable/core";

@@ -1,4 +1,4 @@
-// provideTestAssets (TASK-105.8): replaces the asset system under the real Assets service, so bundle handles, scope
+// provideTestAssets (canvas/127): replaces the asset system under the real Assets service, so bundle handles, scope
 // release counting and `@if (bundle.ready())` run exactly as in production. Bundles are ready at once by default with
 // stub textures; a test can hold a load, report progress, finish it or fail it, and assert that a bundle was released.
 import type { Provider } from "@gable/core";

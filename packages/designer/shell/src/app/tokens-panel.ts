@@ -1,4 +1,4 @@
-// The Tokens tab (TASK-56.23): the project's design tokens (CSS custom properties) with their light and dark values, each
+// The Tokens tab (designer/79): the project's design tokens (CSS custom properties) with their light and dark values, each
 // editable in place as one minimal patch with undo; how many places use a token, with the list of them and a jump to the
 // element; and every definition with its context, read-only ones (a package's theme.css) marked as overridden on edit.
 // `ElementTokens` is the Style tab's (and this tab's) list of the tokens the selected element reads.

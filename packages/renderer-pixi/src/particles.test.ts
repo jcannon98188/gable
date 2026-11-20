@@ -1,4 +1,4 @@
-// The particle tier (TASK-105.18): the <particle-container> tag and the particles() ref helper, on the real Pixi
+// The particle tier (canvas/137): the <particle-container> tag and the particles() ref helper, on the real Pixi
 // renderer and on the scene test renderer, which must agree.
 import { ParticleContainer, Texture } from "pixi.js";
 import { describe, expect, it } from "vitest";

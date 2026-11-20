@@ -1,4 +1,4 @@
-// The HTTP endpoints behind the Source control view (TASK-56.25): `/api/git/status`, `/api/git/diff?path=`, and POSTs for
+// The HTTP endpoints behind the Source control view (designer/81): `/api/git/status`, `/api/git/diff?path=`, and POSTs for
 // `commit`, `revert` and `undo-revert`. Token and Host are already checked by the backend; every write tells the shell
 // through `changed` (the `git` event on the existing event stream) so other windows and the MCP tools stay in step.
 import type { IncomingMessage, ServerResponse } from "node:http";

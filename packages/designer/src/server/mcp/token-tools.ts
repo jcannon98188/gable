@@ -1,4 +1,4 @@
-// MCP tools for design tokens (TASK-56.23): list the project's CSS custom properties with their light and dark values,
+// MCP tools for design tokens (designer/79): list the project's CSS custom properties with their light and dark values,
 // find where one is used, and edit one. Reads come from the token index (tokens/model.ts); the edit is the `setToken` op of
 // the edit service, so it is the same minimal patch, on the same undo history, as an edit in the Tokens tab.
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";

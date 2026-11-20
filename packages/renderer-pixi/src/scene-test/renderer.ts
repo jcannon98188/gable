@@ -1,4 +1,4 @@
-// createSceneTestRenderer (TASK-105.8): an in-memory scene with the real scene tags and Pixi's property semantics, no
+// createSceneTestRenderer (canvas/127): an in-memory scene with the real scene tags and Pixi's property semantics, no
 // Pixi and no WebGL. The real Frame, Pointer, Keyboard, Gamepad and CanvasSize services run on top of it, driven by a
 // deterministic frame step and simulated input.
 import { flushSync, type Provider } from "@gable/core";
@@ -69,7 +69,7 @@ export interface SceneTestRenderer {
   readonly gamepad: GamepadSimulator;
   /** The real services of this boundary, for assertions. */
   readonly services: { readonly frame: Frame; readonly pointer: Pointer; readonly keyboard: Keyboard; readonly gamepad: Gamepad; readonly size: CanvasSize; readonly reducedMotion: ReducedMotion };
-  /** The semantic mirror (TASK-105.9): what `[a11y]` nodes would put in the DOM, in tab order, as of the last frame. */
+  /** The semantic mirror (canvas/128): what `[a11y]` nodes would put in the DOM, in tab order, as of the last frame. */
   a11y(): readonly A11yEntry<SceneNode>[];
   /** Focuses the node's mirror element (a node, its data, or a selector). False when it has no focusable mirror. */
   focus(node: SceneNode | SceneNodeData | string): boolean;

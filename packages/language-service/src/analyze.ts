@@ -359,7 +359,7 @@ function findTemplates(sf: ts.SourceFile, tag: string, onError: OnError): Templa
   return models;
 }
 
-/** `${}` holes are not part of Gable templates (TASK-30): each one is reported, and the template is not scanned further. */
+/** `${}` holes are not part of Gable templates (core/30): each one is reported, and the template is not scanned further. */
 function scanLiteral(sf: ts.SourceFile, classNode: ts.ClassDeclaration, placement: { insertAt: number; indent: string; scene: boolean }, literal: ts.TemplateLiteral, onError: OnError): TemplateModel | undefined {
   const bodyStart = literal.getStart(sf) + 1;
   const holes: Src[] = [];

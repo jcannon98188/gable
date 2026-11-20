@@ -1,4 +1,4 @@
-// The project's uncommitted changes, for the drawer's Changes tab (TASK-56.25). Git runs in the backend (src/server/git.ts);
+// The project's uncommitted changes, for the drawer's Changes tab (designer/81). Git runs in the backend (src/server/git.ts);
 // this reads its status and the selected file's diff, commits the chosen files and reverts a file or a hunk. It keeps no
 // copy of anything: the working tree is the truth (ADR 0001), and every answer is re-read after a write. Refreshes ride the
 // event stream the shell already has (`files` and `git` events bump `DesignerState.changesTick`); the count in the tab's badge follows, the selected diff is read only while the tab is shown.

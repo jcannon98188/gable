@@ -1,4 +1,4 @@
-// Scene templates (TASK-104.7, TASK-105.7). A template is typed against the Pixi element map
+// Scene templates (canvas/112, canvas/126). A template is typed against the Pixi element map
 // when it is a renderer boundary's own template (`meta.renderer`), when it carries the marker
 // (`meta.elements: pixiElements`) or when it is projected into a boundary component. Everything
 // else keeps the DOM map. The map itself is `buildElementMap()` from `@gable/renderer-pixi/elements`:
@@ -184,7 +184,7 @@ export function sceneRules(model: TemplateModel, isComponent: (tag: string) => b
       if (e.kind === "field") continue;
       if (!resolveProperty(tag, e.name)) report(e.nameStart, e.name.length, "scene-unknown-property", unknownProperty(tag, e.name));
     }
-    // scene-pointer-a11y: an activation listener (down, up, tap, click; not hover or tracking) makes the node an action target, so assistive technology needs [a11y] (TASK-104.11).
+    // scene-pointer-a11y: an activation listener (down, up, tap, click; not hover or tracking) makes the node an action target, so assistive technology needs [a11y] (canvas/116).
     const pointer = el.expressions.find((e) => e.kind === "handler" && ACTIVATION_EVENTS.has(e.name));
     const hasA11y = el.attrs.some((a) => a.name === "a11y") || el.expressions.some((e) => e.kind === "value" && e.name === "a11y");
     if (pointer && !hasA11y) {

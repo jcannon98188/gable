@@ -131,7 +131,7 @@ describe("baking", () => {
   });
 });
 
-describe("character references (TASK-92)", () => {
+describe("character references (core/92)", () => {
   const src = [
     "export const t = html`",
     '  <p i18n="d">if a &lt; b &amp;&amp; {{ x }}</p>',

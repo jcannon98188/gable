@@ -1,4 +1,4 @@
-// TASK-56.12: the template outline, Problems quick fixes, and the pure helpers behind the canvas polish
+// designer/68: the template outline, Problems quick fixes, and the pure helpers behind the canvas polish
 // (route history, drop placement, text scale).
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

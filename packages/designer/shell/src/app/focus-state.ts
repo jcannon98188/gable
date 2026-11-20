@@ -1,4 +1,4 @@
-// Keyboard focus order and the accessibility tree of the selected frame (TASK-56.26). The Preview agent reads them from the
+// Keyboard focus order and the accessibility tree of the selected frame (designer/82). The Preview agent reads them from the
 // page as rendered (agent/a11y-depth.ts); this keeps the latest reports for the Focus & tree panel, and holds the canvas
 // view: the numbered focus order overlay and keyboard-only mode, which the agent forgets when the page reloads, so they are
 // sent again whenever the frame connects. Reports are only refreshed while the panel (or the overlay) is showing; MCP reads

@@ -1,5 +1,5 @@
 // The push and notification-click messages: what a worker forwards to open pages so the app side's SwPush service
-// can expose them (TASK-106.6). The worker side that sends them is TASK-106.4's push handler.
+// can expose them (service-worker/113). The worker side that sends them is service-worker/111's push handler.
 import { describe, expect, it } from "vitest";
 import { isWorkerToAppMessage, SW_PROTOCOL } from "./index.js";
 

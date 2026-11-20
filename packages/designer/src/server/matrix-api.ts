@@ -1,4 +1,4 @@
-// The HTTP endpoint behind the matrix panel and its MCP tools (TASK-56.22): `POST /api/matrix` with a `MatrixCommand`.
+// The HTTP endpoint behind the matrix panel and its MCP tools (designer/78): `POST /api/matrix` with a `MatrixCommand`.
 // Routed from backend.ts (token and Host are already checked by then). The render is slow (a headless browser per run), so
 // the answer is one JSON body when it is done; the pictures come as data URLs.
 import type { IncomingMessage, ServerResponse } from "node:http";

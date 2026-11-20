@@ -66,7 +66,7 @@ export class DesignerState {
   analysis = signal<Analysis | null>(null);
   placement = signal<{ placed: number; unplaced: number }>({ placed: 0, unplaced: 0 });
   flushes = signal(0);
-  /** The selected frame's last state history step (TASK-56.18; 0 when cleared): the State timeline refetches on it. */
+  /** The selected frame's last state history step (designer/74; 0 when cleared): the State timeline refetches on it. */
   historySeq = signal(0);
   /** Templates that do not compile as saved (the backend checks every save; the full analysis follows in seconds). */
   compileErrors = signal<CompileError[]>([]);

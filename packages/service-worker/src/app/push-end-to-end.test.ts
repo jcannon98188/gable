@@ -1,4 +1,4 @@
-// The worker's push and notification-click handlers (core, TASK-106.4) paired with the app's SwPush (TASK-106.6):
+// The worker's push and notification-click handlers (core, service-worker/111) paired with the app's SwPush (service-worker/113):
 // a worker built on onPush and onNotificationClick runs on the in-memory browser, and an app page's SwPush
 // Observables receive what the handlers forward, through the message protocol alone.
 import { afterEach, describe, expect, it } from "vitest";

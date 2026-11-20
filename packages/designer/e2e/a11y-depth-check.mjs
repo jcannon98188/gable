@@ -1,4 +1,4 @@
-// Driven check of the drawer's Focus & tree tab and the keyboard tools (TASK-56.26): the real Tab order of the fixture page
+// Driven check of the drawer's Focus & tree tab and the keyboard tools (designer/82): the real Tab order of the fixture page
 // (a positive tabindex first, a div that is only a role listed as unreachable, an unnamed field), the numbered order drawn on
 // the canvas, stepping focus (and finding the button that hides its focus ring), the accessibility tree with its warnings,
 // keyboard-only mode (a real mouse click is ignored, Enter on the focused button still works) and the MCP tools doing the same.

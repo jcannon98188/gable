@@ -30,7 +30,7 @@ describe("scheduler", () => {
     expect(runs).toBe(1);
   });
 
-  // Guard for the toSignal fan-in benchmark scenario (TASK-19): many toSignals feeding one
+  // Guard for the toSignal fan-in benchmark scenario (core/19): many toSignals feeding one
   // computed must cost one effect run per flush, however many sources emitted.
   it("runs one effect once per flush for a 1,000-toSignal fan-in", async () => {
     const subjects = Array.from({ length: 1000 }, () => new Subject<number>());

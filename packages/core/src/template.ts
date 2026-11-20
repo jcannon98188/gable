@@ -107,7 +107,7 @@ const cache = new WeakMap<TemplateStringsArray, TemplateNode[]>();
 export function parseTemplate(result: TemplateResult): TemplateNode[] {
   let parsed = cache.get(result.strings);
   if (!parsed) {
-    if (result.values.length > 0) throw new Error("html`` does not support ${} holes: templates are static strings. Use a small component for reusable markup (TASK-30)");
+    if (result.values.length > 0) throw new Error("html`` does not support ${} holes: templates are static strings. Use a small component for reusable markup (core/30)");
     parsed = new Parser(result.strings[0]!, DEV ? result.strings : undefined).parseChildren("root");
     cache.set(result.strings, parsed);
   }

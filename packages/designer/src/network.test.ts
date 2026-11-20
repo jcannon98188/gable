@@ -1,4 +1,4 @@
-// Recorded mocks and network conditions (TASK-56.20): the scenes-file writer (minimal patches through the EditService, undone
+// Recorded mocks and network conditions (designer/76): the scenes-file writer (minimal patches through the EditService, undone
 // by the reverse patch), the literal reader, and the shared condition and recording helpers.
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

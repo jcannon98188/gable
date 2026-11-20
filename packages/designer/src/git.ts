@@ -1,4 +1,4 @@
-// The Source control view's shared types and pure helpers (TASK-56.25). Git runs in the backend (src/server/git.ts); the
+// The Source control view's shared types and pure helpers (designer/81). Git runs in the backend (src/server/git.ts); the
 // shell, the HTTP API and the MCP tools all speak these shapes. Nothing here keeps a model of the design: the working tree
 // is the truth (ADR 0001), and this is only a view of what changed in it.
 

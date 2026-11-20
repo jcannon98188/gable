@@ -1,4 +1,4 @@
-// mountWithScene (TASK-105.8): one `mountApp` fixture for a DOM page with a canvas in it. `fixture.root` and the usual
+// mountWithScene (canvas/127): one `mountApp` fixture for a DOM page with a canvas in it. `fixture.root` and the usual
 // queries look at the DOM tree (the in-memory test renderer), `fixture.scene` at the scene (the scene test renderer),
 // and the two are joined the way production joins them: services and signals shared through DI.
 import type { ComponentClass } from "@gable/core";

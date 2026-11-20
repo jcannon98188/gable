@@ -103,7 +103,7 @@
 /* /gable-ui:theme-neutral */
 
 /*
- * Designer chrome (TASK-56.8). Everything below is the shell's own: the design's palette, mapped onto gable-ui's variables so
+ * Designer chrome (designer/64). Everything below is the shell's own: the design's palette, mapped onto gable-ui's variables so
  * gable-ui components pick it up, plus the tokens gable-ui has no name for (--sel, ok/warn/err and their tints, the canvas dot
  * grid). This stylesheet only loads in the shell, so previewed apps never see it. Webview-safe CSS only: flex, grid, variables
  * and transforms; no backdrop-filter, container queries or view transitions. Kept outside the gable-ui marker block on purpose.
@@ -1182,7 +1182,7 @@ ui-virtual-table {
 .net-filter {
   width: 180px;
 }
-/* The Changes tab (TASK-56.25): files on the left, the selected file's hunks (gable-ui code blocks) on the right. */
+/* The Changes tab (designer/81): files on the left, the selected file's hunks (gable-ui code blocks) on the right. */
 .chg {
   display: grid;
   grid-template-columns: minmax(240px, 2fr) minmax(0, 3fr);
@@ -1420,7 +1420,7 @@ ui-virtual-table {
   max-height: 50vh;
   min-height: 160px;
 }
-/* Focus & tree tab (TASK-56.26): a row per Tab stop, and the accessibility tree as an indented outline. */
+/* Focus & tree tab (designer/82): a row per Tab stop, and the accessibility tree as an indented outline. */
 .focus-row {
   grid-template-columns: 34px 92px minmax(0, 1fr) minmax(0, max-content);
   cursor: pointer;

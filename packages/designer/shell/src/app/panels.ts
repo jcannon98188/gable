@@ -105,7 +105,7 @@ export class ComponentTree {
 }
 
 /**
- * The selected element's template as an outline (TASK-56.12): elements with their classes, bindings and `{{ }}` text, and the
+ * The selected element's template as an outline (designer/68): elements with their classes, bindings and `{{ }}` text, and the
  * control-flow blocks, which are read-only (what they render is decided at runtime). Rows not rendered right now are dimmed.
  * Clicking a row selects its element on the canvas; hovering highlights it.
  */

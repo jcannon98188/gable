@@ -18,7 +18,7 @@ import {
 } from '@gable/ui';
 
 /**
- * Compact density, Field layouts and the clearable input (TASK-76, TASK-78, TASK-83): the same controls at the default
+ * Compact density, Field layouts and the clearable input (ui/76, ui/78, ui/83): the same controls at the default
  * size and at `compact` (26px controls, 12px text, 24px menu rows), a horizontal Field wrapping an input and a select, a
  * `ui-input-clear` bound to a signal and to a form field, and the 10.5px uppercase section header.
  */

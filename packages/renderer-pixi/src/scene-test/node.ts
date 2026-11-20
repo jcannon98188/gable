@@ -1,4 +1,4 @@
-// The in-memory scene node of the scene test renderer (TASK-105.8): Pixi's property semantics with no Pixi.
+// The in-memory scene node of the scene test renderer (canvas/127): Pixi's property semantics with no Pixi.
 // Free of any pixi.js import. `toData` turns a node into plain data for assertions.
 import { SCENE_TAGS, type HitTagName, type PropSpec, type SceneTagName, type ShapeTagName } from "../elements.js";
 
@@ -151,7 +151,7 @@ export class SceneNode {
   /** Measures a node in scene coordinates (set by the renderer; the A11yMirror reads it through `getBounds`). */
   static measure: ((node: SceneNode) => { x: number; y: number; width: number; height: number } | null) | null = null;
 
-  /** The slice of a display node the A11yMirror reads (TASK-105.9): visibility, and bounds from the author-supplied size. */
+  /** The slice of a display node the A11yMirror reads (canvas/128): visibility, and bounds from the author-supplied size. */
   get visible(): boolean {
     return this.values.visible !== false;
   }

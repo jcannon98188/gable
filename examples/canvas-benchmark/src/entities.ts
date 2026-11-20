@@ -1,4 +1,4 @@
-// Benchmark entities. Every entity is a component with its own frame hook ("entities are components", TASK-104.14).
+// Benchmark entities. Every entity is a component with its own frame hook ("entities are components", canvas/119).
 // Every style moves x, y and rotation of one sprite on every frame, with the same deterministic motion:
 //   signals:  3 signals per entity, 3 bindings                       (<rock-signals>)
 //   shared:   1 signal per entity holding a fresh pose object, 3 bindings reading it (<rock-shared>)

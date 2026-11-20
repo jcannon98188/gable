@@ -1,4 +1,4 @@
-// The drawer's Matrix tab (TASK-56.22): every Scenario (each scene of each *.scenes.ts file) at each breakpoint as a grid of
+// The drawer's Matrix tab (designer/78): every Scenario (each scene of each *.scenes.ts file) at each breakpoint as a grid of
 // real renders, with Save baseline and a diff against the saved one. The renders are made by the backend in a headless
 // browser against the project's own dev server (see src/server/matrix.ts); nothing is simulated, and nothing is written into
 // the project. Opening a cell shows the current picture, the baseline, the pixel diff, and the rendered markup's diff with

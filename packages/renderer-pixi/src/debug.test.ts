@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Canvas devtools (TASK-105.20): the frame overlay, the scene boundary the devtools hook reports, and the production build.
+// Canvas devtools (canvas/139): the frame overlay, the scene boundary the devtools hook reports, and the production build.
 import { Container } from "pixi.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { bootstrap, flushSync, html, inject, signal } from "@gable/core";

@@ -1,4 +1,4 @@
-// Driven check of "why did this update" (TASK-56.19): select an element in the preview, the Why tab lists its bindings with the
+// Driven check of "why did this update" (designer/75): select an element in the preview, the Why tab lists its bindings with the
 // signals they depend on (through a computed) and, after a write, the signal behind each run; Highlight updates outlines the
 // element on the canvas; the same over MCP: why_did_update and highlight_updates.
 //

@@ -1,4 +1,4 @@
-// MCP tools for signal state editing (TASK-56.17): set or pin a signal of the running app in the selected frame, read what a
+// MCP tools for signal state editing (designer/73): set or pin a signal of the running app in the selected frame, read what a
 // Scene could hold, and save it as a new Scenario. Writes to the app go through the shell (the Inspector's service, so the
 // window shows them); the Scenario is a source edit through the EditService, so it answers with its diff and undo takes it back.
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";

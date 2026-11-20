@@ -10,7 +10,7 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 describe("(a) ${} template values as item bodies", () => {
-  it("html`` holes are dropped from the design (TASK-30), so a per-item template value cannot be rendered", () => {
+  it("html`` holes are dropped from the design (core/30), so a per-item template value cannot be rendered", () => {
     class Row {
       static meta = { selector: "app-root", template: html`<li>${html`<b>x</b>`}</li>` };
     }

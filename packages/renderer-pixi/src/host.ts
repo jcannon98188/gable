@@ -24,7 +24,7 @@ export class GableCanvas {
     encapsulation: "none" as const,
   };
 
-  // Name the canvas with aria-label or aria-labelledby on the host (TASK-104.11). The role defaults to group; an author role wins.
+  // Name the canvas with aria-label or aria-labelledby on the host (canvas/116). The role defaults to group; an author role wins.
   #role = (() => {
     const { host } = injectHost<HTMLElement>();
     if (!host.hasAttribute("role")) host.setAttribute("role", "group");

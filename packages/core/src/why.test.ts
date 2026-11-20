@@ -1,4 +1,4 @@
-// "Why did this update" in the devtools layer (TASK-56.19): the dependency tree of a component's effects (its template
+// "Why did this update" in the devtools layer (designer/75): the dependency tree of a component's effects (its template
 // bindings among them), the signal writes behind each effect run, and the binding-to-node attribution.
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { computed, html, signal } from "@gable/core";

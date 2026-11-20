@@ -1,4 +1,4 @@
-// Driven check of the drawer's Performance tab (TASK-56.16): the Preview agent's metrics are listed with ratings, the LCP
+// Driven check of the drawer's Performance tab (designer/72): the Preview agent's metrics are listed with ratings, the LCP
 // and layout-shift elements select their element, Re-run reloads the frame and measures the fresh load, CPU throttling goes
 // through CDP and really slows the frame, a hot update measures again, and MCP get_performance returns the same report.
 //

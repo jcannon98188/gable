@@ -1,32 +1,48 @@
-# Issue tracker: Backlog.md
+# Issue tracker: tasklog
 
-Issues and PRDs for this repo are Backlog.md tasks in `backlog/`. Use the `backlog` CLI, never edit task files directly. Run `backlog instructions task-creation` before creating tasks and `backlog <command> --help` for unfamiliar flags.
+Issues and PRDs for this repo are tasklog tickets in `.tasklog/`. Use the tasklog MCP tools (the `tasklog` CLI starts the daemon, `tasklog doctor` checks the install); do not edit ticket files by hand.
+
+A ticket's id is `<effort>/<NN>`, for example `canvas/141`. An effort is a body of work in its own directory: `.tasklog/<effort>/map.md` and `spec.md` when it has them, and `tickets/NN-slug.md`. Current efforts:
+
+| Effort | Holds |
+| --- | --- |
+| `gable-v0` | The v0 design map and framework spec, and their children |
+| `core` | Core framework, store, router, i18n, testing and tooling tasks |
+| `ui` | gable-ui and ui-primitives components and the ui-gallery |
+| `designer` | The visual editor |
+| `editor` | The collaborative rich text editor |
+| `native` | The Gable Native design map |
+| `canvas` | The canvas design map and the `@gable/renderer-pixi` build |
+| `service-worker` | `@gable/service-worker` and its follow-ups |
+| `site` | The marketing site and docs |
+
+The tickets were imported from Backlog.md. Each keeps its old path in `imported_from`, and its old `TASK-n` id appears in older commit messages and in `imported_from`. Tickets that were Backlog.md epics (for example the former TASK-105) are ordinary tickets in their effort; their children carry a `parent-<n>` tag. Imported tickets keep their old labels as tags.
 
 ## Conventions
 
-- **Create an issue**: `backlog task create "Title" -d "body" --ac "criterion" -l needs-triage`
-- **Read an issue**: `backlog task view TASK-123 --plain`
-- **List / search**: `backlog task list --labels <label> --plain`, `backlog search "query" --plain`
-- **Comment**: `backlog task edit TASK-123 --comment "text"`
-- **Apply / remove labels**: `backlog task edit TASK-123 --add-label <label>` / `--remove-label <label>`
-- **Close**: `backlog task edit TASK-123 -s Done` (add `--final-summary` for the outcome). For `wontfix`, apply the label and comment with the reason before closing.
-- **Sub-issues / blockers**: `--parent TASK-1`, `--depends-on TASK-2`
+- **Create an issue**: `create_item` with `effort`, `title` and `question`; `add_ac` for each acceptance criterion; `triage` with state `needs-triage`. Start a new body of work with `create_effort`.
+- **Read an issue**: `get_item` (`sections` for part of it, `meta_only` for the hash and frontmatter).
+- **List / search**: `list_items` (filters `effort`, `status`, `tags_all`, `text`) and `frontier` for what is ready.
+- **Comment**: `append_to_section` with heading `Comments`.
+- **Apply / remove labels**: tags, through `triage` for the triage vocabulary and `set_fields` (`tags` replaces the list) for the rest.
+- **Close**: `resolve` writes the answer (the former final summary) and, given a `gist`, adds the line to the map's Decisions so far. `close` rules a ticket out; `triage` with `wontfix` closes it with the reason.
+- **Blockers**: `blocked_by` on `create_item` or `set_fields` (`effort/NN` across efforts).
 
-Statuses are `To Do`, `In Progress`, `Done`. Triage state lives in labels, not statuses.
+Statuses are `open`, `claimed`, `resolved` and `closed`. Triage state lives in tags, not statuses.
 
 ## When a skill says "publish to the issue tracker"
 
-Create a Backlog.md task.
+Create a tasklog ticket.
 
 ## When a skill says "fetch the relevant ticket"
 
-Run `backlog task view <id> --plain`.
+Call `get_item` with its id.
 
 ## Wayfinding operations
 
-- **Map**: one task labelled `wayfinder:map` (currently `TASK-1`). Its description is the map body.
-- **Tickets**: child tasks of the map (`-p TASK-1`, ids like `TASK-1.4`), each labelled `wayfinder:<research|prototype|grilling|task>`. No other labels.
-- **Blocking**: `--dep TASK-1.x,...` (native Backlog.md dependencies). Set at creation; change with `backlog task edit <id> --dep ...` (replaces the list).
-- **Frontier**: open children whose dependencies are all `Done` and that are unassigned. List with `backlog task list --parent TASK-1 --plain` and inspect with `backlog task view <id> --plain`.
-- **Claim**: assign first, before any work: `backlog task edit <id> -a @<dev>`.
-- **Resolve**: post the answer with `backlog task edit <id> --comment "..."`, then `-s Done`; append a one-line gist plus the ticket link to the map's "Decisions so far" via `backlog task edit TASK-1 -d "<full replacement body>"`.
+- **Map**: the effort's `map.md` (id `<effort>/map`). Its Destination, Notes, Decisions so far, Not yet specified and Out of scope sections are the map body. The v0, native and canvas maps were imported as ordinary tickets (`gable-v0/01`, `native/99`, `canvas/104`) and have no `map.md` yet.
+- **Tickets**: tickets of the effort, with `type` `research`, `prototype`, `grilling` or `task`.
+- **Blocking**: `blocked_by`, set at creation or with `set_fields` (replaces the list).
+- **Frontier**: `frontier` for the effort lists open tickets whose blockers are resolved, plus claimed and blocked ones.
+- **Claim**: `claim` first, before any work.
+- **Resolve**: `resolve` with the answer and a `gist`, which appends the one-line entry and link to the map's Decisions so far.

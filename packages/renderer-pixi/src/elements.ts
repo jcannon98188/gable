@@ -1,4 +1,4 @@
-// The shared tag and property table for Gable's Pixi scene (TASK-104.7, TASK-104.8).
+// The shared tag and property table for Gable's Pixi scene (canvas/112, canvas/113).
 // One source of truth for the Pixi renderer, the scene test renderer and the language-service
 // element map. This module must stay free of any pixi.js import (runtime or type), so tooling can
 // load it without pulling Pixi in. Pixi class and event names appear as strings only.
@@ -138,7 +138,7 @@ export type SceneTagName =
 
 export type ShapeTagName = "rect" | "rounded-rect" | "circle" | "ellipse" | "polygon";
 
-/** Declarative hit-shape children (TASK-105.11): the shape tags with a `hit-` prefix. Any scene tag accepts them. */
+/** Declarative hit-shape children (canvas/130): the shape tags with a `hit-` prefix. Any scene tag accepts them. */
 export type HitTagName = "hit-rect" | "hit-rounded-rect" | "hit-circle" | "hit-ellipse" | "hit-polygon";
 
 export interface TagSpec {
@@ -195,7 +195,7 @@ const CONTAINER_PROPS = {
   tint: color,
   zIndex: num,
   label: str,
-  // Gable-level: the opt-in accessibility mirror (TASK-104.11). The type text names no Pixi class: tooling qualifies every capitalised word as a Pixi export.
+  // Gable-level: the opt-in accessibility mirror (canvas/116). The type text names no Pixi class: tooling qualifies every capitalised word as a Pixi export.
   a11y: obj("{ role: string; label: string; description?: string; focusable?: boolean; order?: number }"),
   width: num,
   height: num,
@@ -208,7 +208,7 @@ const CONTAINER_PROPS = {
   filters: obj("Filter[]"),
 } as const satisfies Record<string, PropSpec>;
 
-/** Flat Pixi TextStyle fields, written directly on `text` and `bitmap-text` (TASK-104.7 item 7). */
+/** Flat Pixi TextStyle fields, written directly on `text` and `bitmap-text` (canvas/112 item 7). */
 const TEXT_PROPS = {
   text: str,
   style: obj("TextStyle"),
@@ -264,7 +264,7 @@ export const SCENE_TAGS: Readonly<Record<SceneTagName, TagSpec>> = {
       roundPixels: bool,
     },
   },
-  // The high-count tier (TASK-104.14). Particles are not display objects: no child tags, they are made through the particles() ref helper.
+  // The high-count tier (canvas/119). Particles are not display objects: no child tags, they are made through the particles() ref helper.
   "particle-container": {
     pixiClass: "ParticleContainer",
     props: { ...CONTAINER_PROPS, texture: obj("Texture"), dynamicProperties: obj("ParticleProperties"), roundPixels: bool },

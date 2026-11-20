@@ -1,4 +1,4 @@
-// Driven check of the canvas and panel polish (TASK-56.12). Start the Designer backend and a Chromium (headless Edge, or the
+// Driven check of the canvas and panel polish (designer/68). Start the Designer backend and a Chromium (headless Edge, or the
 // Tauri/WebView2 window) with a debugging port, then:
 //
 //   node e2e/polish-check.mjs --port 9444 --shell 127.0.0.1:5190 --project <dir> [--tailwind <file>] [--shot dir]
@@ -147,7 +147,7 @@ try {
     await until(async () => /h1/.test(await overlayText(await first())) && !/🔒/.test(await overlayText(await first())), "the hatch gone");
     check(true, "with the class list plain text again the element is editable, no hatch");
 
-    // --- TASK-56.14: a template that does not compile -----------------------------------------------------------------------
+    // --- designer/70: a template that does not compile -----------------------------------------------------------------------
     await compileError(tailwind, '<h1 class="text-2xl font-semibold tracking-tight p-8">', '<h1 class="text-2xl {{ dialogOpen() }}">', "main h1");
   } else {
     const appFile = join(project, "src/components/todo-app.ts");
@@ -275,7 +275,7 @@ try {
     await until(async () => (await text()).includes("Undo"), "undo offered");
     await sleep(1500);
 
-    // --- TASK-56.14: a template that does not compile -----------------------------------------------------------------------
+    // --- designer/70: a template that does not compile -----------------------------------------------------------------------
     await compileError(appFile, "<h1>todos</h1>", '<h1 class="x {{ draft() }}">todos</h1>', "h1");
   }
 } catch (e) {

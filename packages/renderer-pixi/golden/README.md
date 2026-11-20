@@ -1,4 +1,4 @@
-# Golden images (TASK-105.14)
+# Golden images (canvas/133)
 
 A small set of scenes (`shapes`, `transforms`, `polygons`; see `browser-page/golden.ts`) is rendered in a real
 headless Chromium and compared pixel by pixel with the PNGs in this directory. The test is

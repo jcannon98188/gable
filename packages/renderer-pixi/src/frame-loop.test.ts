@@ -99,7 +99,7 @@ function sceneWith(register: (frame: Frame) => void, selector = "scene-actor") {
 }
 
 describe("frame loop", () => {
-  // TASK-105.10 follow-up: before the first render no node has a world transform, so a hit test would miss every node and the stage would take the event.
+  // canvas/129 follow-up: before the first render no node has a world transform, so a hit test would miss every node and the stage would take the event.
   it("takes no pointer input until the first frame has been rendered", async () => {
     const h = harness();
     await mountScene(h, html`<container></container>`);

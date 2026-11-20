@@ -1,4 +1,4 @@
-// "Why did this update" in the Preview agent (TASK-56.19): the reactive dependencies of one template node, and the canvas flash
+// "Why did this update" in the Preview agent (designer/75): the reactive dependencies of one template node, and the canvas flash
 // of the elements whose bindings re-ran. Everything comes from the devtools hook of @gable/core (`why`, `effectsOf`,
 // `targetsOf`): the hook finds the signal writes behind each effect run while a client is connected, nothing here guesses.
 import type { DesignerHook } from "@gable/core/designer";

@@ -1,4 +1,4 @@
-// The shell's end of the MCP command channel (TASK-56.13, see `src/control-protocol.ts`). An agent changes UI state only
+// The shell's end of the MCP command channel (designer/69, see `src/control-protocol.ts`). An agent changes UI state only
 // through here, by calling the same methods the toolbar, the device bar, the Routes tab and a click on the canvas call,
 // so the human sees every change and this window stays the one source of UI state. The backend sends commands on
 // `/api/shell/channel` (SSE); each is answered with a POST to `/api/shell/reply`.

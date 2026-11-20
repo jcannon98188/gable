@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Release-gate soak for canvas HMR (TASK-104.13 item 6, TASK-105.16): hundreds of hot edits of a running <gable-canvas>
+// Release-gate soak for canvas HMR (canvas/118 item 6, canvas/135): hundreds of hot edits of a running <gable-canvas>
 // game with a forced GC at every checkpoint, recording heap growth and Pixi resource growth.
 //
 // Run it with `npm run soak -w packages/renderer-pixi` (needs `--expose-gc`, which that script sets). It writes

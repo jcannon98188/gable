@@ -1,4 +1,4 @@
-// Push and notification-click handlers (TASK-106.4), driven through the in-memory worker scope.
+// Push and notification-click handlers (service-worker/111), driven through the in-memory worker scope.
 import { describe, expect, it } from "vitest";
 import { createWorkerScope } from "../testing/worker-scope.js";
 import { onNotificationClick, onPush } from "./index.js";

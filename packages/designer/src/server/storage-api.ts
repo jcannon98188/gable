@@ -1,4 +1,4 @@
-// The HTTP endpoint behind the Storage panel's cookies over CDP (TASK-56.21): HttpOnly cookies and cookie attributes are
+// The HTTP endpoint behind the Storage panel's cookies over CDP (designer/77): HttpOnly cookies and cookie attributes are
 // invisible to the page, so the backend reads and writes them on the frame's target (WebView2 or a browser with a
 // debugging port). Without CDP it answers `{ ok: false, error: COOKIES_NEED_CDP }` and the panel shows the page's view.
 // Routed from network-api.ts (token and Host are already checked by then).

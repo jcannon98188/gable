@@ -1,4 +1,4 @@
-// announceOnChange (TASK-104.11): wires a signal to the app's LiveAnnouncer, throttled so a per-frame signal cannot flood
+// announceOnChange (canvas/116): wires a signal to the app's LiveAnnouncer, throttled so a per-frame signal cannot flood
 // a screen reader. The canvas package has no announcer of its own; this is the same one the router uses.
 import { effect, inject, onCleanup, untracked } from "@gable/core";
 import { LiveAnnouncer, type Politeness } from "@gable/core/renderer";

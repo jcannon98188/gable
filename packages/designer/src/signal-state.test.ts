@@ -1,4 +1,4 @@
-// Signal state editing (TASK-56.17): the value checks, the TypeScript literal printer, and "Save as Scenario"'s writer
+// Signal state editing (designer/73): the value checks, the TypeScript literal printer, and "Save as Scenario"'s writer
 // (`addScene` with `inputs` and `state`).
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

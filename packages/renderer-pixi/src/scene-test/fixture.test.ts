@@ -94,7 +94,7 @@ describe("mountWithScene: DOM and scene in one fixture", () => {
   });
 });
 
-describe("mountWithScene: the accessibility mirror (TASK-105.9)", () => {
+describe("mountWithScene: the accessibility mirror (canvas/128)", () => {
   function a11yApp() {
     const scene = createSceneTestRenderer();
     class Menu {
@@ -152,7 +152,7 @@ describe("mountWithScene: the accessibility mirror (TASK-105.9)", () => {
     expect(fixture.scene.a11y().map((e) => e.label)).toEqual(["Play", "Logo"]);
   });
 
-  // TASK-105.22: a scene component that fails must fail the test, not quietly vanish from the scene.
+  // canvas/140: a scene component that fails must fail the test, not quietly vanish from the scene.
   function failing(Scene: ComponentClass<any>) {
     const scene = createSceneTestRenderer();
     class Canvas {

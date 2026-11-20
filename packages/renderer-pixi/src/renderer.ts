@@ -1,4 +1,4 @@
-// A Gable Renderer over Pixi 8 display objects (TASK-104.7). Nodes are plain Pixi objects, so a scene can be built
+// A Gable Renderer over Pixi 8 display objects (canvas/112). Nodes are plain Pixi objects, so a scene can be built
 // synchronously before the (async) Application exists; `mount()` later attaches the scene root to an Application.
 //
 // Tags are the shared table in ./elements.ts. The tag registry is extensible with `registerTag`. An unregistered
@@ -108,7 +108,7 @@ export interface PixiSceneRenderer extends Renderer<Container> {
   readonly gamepad: Gamepad;
   /** The user's reduced-motion preference; provided to scene components. */
   readonly reducedMotion: ReducedMotion;
-  /** The semantic mirror of `[a11y]` nodes (TASK-104.11). It renders into the DOM once the renderer is mounted. */
+  /** The semantic mirror of `[a11y]` nodes (canvas/116). It renders into the DOM once the renderer is mounted. */
   readonly a11y: A11yMirror<Container>;
   /** Adds a tag. Registering an existing tag replaces it. */
   registerTag(tag: string, registration: TagRegistration): void;
@@ -186,7 +186,7 @@ interface Write {
 
 /**
  * Where a display node carries its tag's {@link TagInfo}: a property on the node itself, because every property write
- * looks it up and a WeakMap lookup there showed in the flush profile (TASK-105.17).
+ * looks it up and a WeakMap lookup there showed in the flush profile (canvas/136).
  */
 const INFO = Symbol("gable.pixi.info");
 type Tagged = Container & { [INFO]?: TagInfo };
@@ -395,7 +395,7 @@ export function createPixiRenderer(given: PixiRendererOptions | (() => PixiRende
     (parent as Text).text = (textParts.get(parent) ?? []).map((c) => c.text).join("");
   }
 
-  /** A string `[texture]` is looked up synchronously in Pixi's asset cache; it never starts a load (TASK-104.9). */
+  /** A string `[texture]` is looked up synchronously in Pixi's asset cache; it never starts a load (canvas/114). */
   function textureFromCache(alias: string, tag: string): Texture {
     const found: unknown = Cache.has(alias) ? Cache.get(alias) : undefined;
     if (found instanceof Texture) return found;

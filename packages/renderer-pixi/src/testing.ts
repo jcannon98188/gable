@@ -1,4 +1,4 @@
-// Entry point for the scene test renderer, test doubles and parity suite (TASK-105.8): `@gable/renderer-pixi/testing`.
+// Entry point for the scene test renderer, test doubles and parity suite (canvas/127): `@gable/renderer-pixi/testing`.
 export { createSceneTestRenderer } from "./scene-test/renderer.js";
 export type { SceneTestOptions, SceneTestRenderer, StubTextures } from "./scene-test/renderer.js";
 export { SceneNode } from "./scene-test/node.js";

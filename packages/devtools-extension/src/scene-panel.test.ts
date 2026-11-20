@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// The Scene panel (TASK-105.20): the display-object tree of a canvas boundary with source locations and the last flush's effects,
+// The Scene panel (canvas/139): the display-object tree of a canvas boundary with source locations and the last flush's effects,
 // read through the same devtools hook methods the other tabs use.
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { flushSync, html, signal } from "@gable/core";

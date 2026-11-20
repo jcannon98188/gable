@@ -119,7 +119,7 @@ Machines that read the DOM at connect time (checkbox, switch, menus, combobox, a
 
 `@zag-js/dismissable`, `focus-trap`, `remove-scroll`, `aria-hidden` (layers), `@floating-ui/dom` (positioning), plus the machines `dialog`, `tabs`, `popover`, `tooltip`, `select`, `combobox`, `menu` and `@zag-js/vanilla`, `@zag-js/core`.
 
-## Drag and drop (TASK-43)
+## Drag and drop (core/43)
 
 Pointer-event based (not HTML5 drag and drop), with a keyboard alternative and screen-reader announcements. DOM renderer only (it uses pointer events, `getBoundingClientRect` and `getComputedStyle`). Files: `dnd-manager.ts` (the session engine, one per document), `dnd.ts` (`uiDraggable`, `uiDragHandle`, `uiDropZone`), `dnd-sortable.ts` (`uiSortable`, `uiSortableItem`, `applySortableMove`), `dnd-announce.ts` (live region and messages). gable-ui adds `<ui-sortable>` (`packages/ui/src/components/sortable.ts`).
 
@@ -155,7 +155,7 @@ Pointer-event based (not HTML5 drag and drop), with a keyboard alternative and s
 
 **Try it.** `npm run pack:local examples/ui-gallery`, then in that folder `npm install` and `npm run dev`, and open `/dnd.html` (a second page of the gallery, dev server only): a sortable playlist with grips, a three-column kanban and a draggable with a drop zone. Tests: `dnd.dom.test.ts` (primitives), `sortable.dom.test.ts` (ui) and `src/dnd-examples.test.ts` (gallery), all jsdom with mocked layout.
 
-## Toast (TASK-47)
+## Toast (ui/47)
 
 `ToastService` (root scoped) is the API and `<ui-toaster>` the region, both in `packages/ui/src/components/toast.ts`. Zag's toast machine was not used: it needs a store plus a region and adds a dependency for what is a list signal, a few timers and `[uiPresence]`.
 
@@ -178,7 +178,7 @@ this.toast.dismiss(id); // or dismiss() for all
 - Items use `[uiPresence]` with `data-state` animations (`animate-in`/`animate-out`, off under `motion-reduce`), so a dismissed toast stays mounted until its exit has played.
 - Status icons use the `--success`, `--info` and `--warning` theme tokens (`text-success` etc., defined in `theme.css` for light and dark; `error` uses `--destructive`).
 - A toast can be swiped toward the nearest side edge (`uiDrawerDrag` on each item, so the drawer's pointer engine, slop and fling rules apply); `hotkey` (default `alt+t`, `""` disables) focuses the region from anywhere, which pauses the timers.
-- Stacking (TASK-60, `stack`, default on): collapsed, the newest toast is in front and up to two older ones peek out behind it (scaled by 5% and offset 10px per step, toward the screen centre; `data-stack="front|back"`). The back toasts are `inert`, so only the front one is in the tab order. Hovering the region or moving focus into it (Alt+T, Tab) expands it into the plain list (`data-expanded` on the region) and the timers stay paused while it is open. `limit` still caps what is shown; older toasts beyond it stay queued and a "+N more" line (`data-toaster-more`) counts them. Transitions are off under `motion-reduce`. `[stack]="false"` keeps the old list. Announcements are unchanged (still `LiveAnnouncer`). Not animated: the switch between the stacked and list layouts is instant.
+- Stacking (ui/60, `stack`, default on): collapsed, the newest toast is in front and up to two older ones peek out behind it (scaled by 5% and offset 10px per step, toward the screen centre; `data-stack="front|back"`). The back toasts are `inert`, so only the front one is in the tab order. Hovering the region or moving focus into it (Alt+T, Tab) expands it into the plain list (`data-expanded` on the region) and the timers stay paused while it is open. `limit` still caps what is shown; older toasts beyond it stay queued and a "+N more" line (`data-toaster-more`) counts them. Transitions are off under `motion-reduce`. `[stack]="false"` keeps the old list. Announcements are unchanged (still `LiveAnnouncer`). Not animated: the switch between the stacked and list layouts is instant.
 
 ## Carousel: `useCarousel`
 
@@ -189,7 +189,7 @@ Behaviour for a CSS scroll-snap carousel (`<ui-carousel>` is built on it; Zag's 
 - Autoplay (`autoplay` is a delay in ms) pauses while the pointer is over the host or keyboard focus (`:focus-visible`) is inside it, when the document is hidden, and never runs under `prefers-reduced-motion` (scrolling is then not smooth). `toggle()` is the user's play/pause (WCAG 2.2.2). `autoplaying` is true only while a timer is really advancing; the component uses it to set `aria-live` to `off` and otherwise `polite`.
 - DOM only: under the in-memory renderer it tracks `index` and `playing` and touches nothing.
 
-## Drawer drag: `useDrawerDrag` / `uiDrawerDrag` (TASK-48)
+## Drawer drag: `useDrawerDrag` / `uiDrawerDrag` (ui/48)
 
 Drag-to-dismiss and snap points for an edge panel (`drawer-drag.ts`). `<ui-drawer>` in gable-ui is a Dialog (focus trap, scroll lock, Escape, backdrop and `usePresence` animation all come from the dialog machine and layer) with this on its panel.
 
@@ -204,19 +204,19 @@ Drag-to-dismiss and snap points for an edge panel (`drawer-drag.ts`). `<ui-drawe
 - Closing without a drag (Escape, a button) from a snap point below full calls `handle.exit()`: the panel slides out from where it rests (`data-dragged` drops the CSS exit). At full height the CSS exit runs as before. Changing the active snap while open animates (`setSnap(fraction, true)`), and the `progress` output (`{ value, dragging }`, the visible fraction) drives `<ui-drawer>`'s backdrop opacity.
 - Limits: no nested-drawer scaling.
 
-## Command, date picker and OTP additions (TASK-46, 50, 52)
+## Command, date picker and OTP additions (ui/46, 50, 52)
 
 - **Command:** `filter` (on `ui-command` and `ui-command-dialog`) takes `(items, query) => items`. The default `substringFilter` is the original rule (every word a substring of label, group or keywords, items keep their order); `fuzzyFilter` matches subsequences (every word still has to match) and ranks prefix, word-start and contiguous matches first, a label above keywords above the group, with a stable sort.
 - **Calendar:** `captionLayout="dropdown"` (or `dropdown-months` / `dropdown-years`) adds native month and year selects (years from `min` to `max`, else 100 back and 10 ahead; picking clamps to `min`/`max`); the text heading stays, visually hidden, as the grid's name. `locale` also takes a function returning a date-fns `Locale`, read inside computeds, for a lazily loaded locale.
-- **Calendar and date picker locale (TASK-61):** with no `locale` input the calendar follows `I18n.locale` (the service works with no provider: `"en"`). Month and weekday names come from `Intl` for that locale and re-render on `setLocale`; English keeps the date-fns output. `previousLabel`, `nextLabel`, `monthLabel` and `yearLabel` (and the date picker's `placeholder`) are unset by default and then translate through I18n with explicit ids `ui.calendar.previous`, `ui.calendar.next`, `ui.calendar.month`, `ui.calendar.year`, `ui.datePicker.placeholder`, `ui.datePicker.chooseDate`, `ui.datePicker.chooseDates`, `ui.datePicker.date`; add them to your catalog, or set the input to override. `locale` (a date-fns `Locale`) remains an override for names and week start. date-fns itself (the picker's `displayFormat`, typed parsing, the first day of the week) needs a date-fns locale: pass `[localeLoader]="load"` with `load = (name) => import("date-fns/locale").then((m) => m[name])`, which is called with the candidates for the current locale, most specific first (`dateFnsLocaleNames("pt-BR")` is `["ptBR", "pt"]`, `"zh-Hant"` is `["zhTW", "zh"]`, `"en"` is `["enUS"]`) until one resolves; it reloads when the locale changes. Without a loader the week start comes from `Intl.Locale` weekInfo when the runtime has it.
+- **Calendar and date picker locale (ui/61):** with no `locale` input the calendar follows `I18n.locale` (the service works with no provider: `"en"`). Month and weekday names come from `Intl` for that locale and re-render on `setLocale`; English keeps the date-fns output. `previousLabel`, `nextLabel`, `monthLabel` and `yearLabel` (and the date picker's `placeholder`) are unset by default and then translate through I18n with explicit ids `ui.calendar.previous`, `ui.calendar.next`, `ui.calendar.month`, `ui.calendar.year`, `ui.datePicker.placeholder`, `ui.datePicker.chooseDate`, `ui.datePicker.chooseDates`, `ui.datePicker.date`; add them to your catalog, or set the input to override. `locale` (a date-fns `Locale`) remains an override for names and week start. date-fns itself (the picker's `displayFormat`, typed parsing, the first day of the week) needs a date-fns locale: pass `[localeLoader]="load"` with `load = (name) => import("date-fns/locale").then((m) => m[name])`, which is called with the candidates for the current locale, most specific first (`dateFnsLocaleNames("pt-BR")` is `["ptBR", "pt"]`, `"zh-Hant"` is `["zhTW", "zh"]`, `"en"` is `["enUS"]`) until one resolves; it reloads when the locale changes. Without a loader the week start comes from `Intl.Locale` weekInfo when the runtime has it.
 - **Date picker:** `[typeable]="true"` (single mode) adds a text input; the date is parsed with date-fns using `displayFormat` on Enter, change or blur, and must pass `min`, `max` and `isDisabled`, otherwise the input is `aria-invalid` and the value is unchanged. An empty box clears. `captionLayout` goes to the calendar.
 - **Input OTP:** `dir` (`auto` follows the nearest `dir` attribute) swaps ArrowLeft and ArrowRight under `rtl`.
 
-## Resizable panels: `ResizeEngine` (TASK-53)
+## Resizable panels: `ResizeEngine` (ui/53)
 
 `ResizeEngine` (`resize.ts`) is the logic of a resizable panel group with no DOM: panel sizes as percentages that always total 100 (`sizes()` signal), `configure(panels, savedLayout?)`, pointer drags (`startDrag(handle, pos, containerPx)`, `dragTo(pos)`, `endDrag()`) and keys (`key(handle, "ArrowRight" | "Home" | "End" | "Enter")`). A handle moves its two neighbours only, inside each panel's `minSize`/`maxSize`; a `collapsible` panel dragged past halfway below its minimum snaps to `collapsedSize` and back out the same way, and remembers its size for `expand`. `handleState(i)` gives the `aria-valuenow/min/max` of the panel before the handle (the ARIA window splitter pattern; Enter toggles a collapsible neighbour, arrows never leave a panel between collapsed and minimum). Test it with plain calls, no pointer events needed; `ui-resizable-panel-group`, `ui-resizable-panel` and `ui-resizable-handle` in gable-ui wire it to pointer events (the group's pixel size is read at pointer-down), `[(layout)]` and an optional `autoSaveId` (localStorage, guarded). Limits: a handle never cascades into panels beyond its neighbours, and panels are matched to handles by creation order.
 
-## Button group and the split-button recipe (TASK-73)
+## Button group and the split-button recipe (ui/73)
 
 `ui-button-group` (`packages/ui/src/components/button-group.ts`) is a flex row (or column) of joined buttons: one `role="group"`, named by `label` (becomes `aria-label`; give it one whenever the group holds more than one control). `orientation` is `horizontal` (default) or `vertical`. As in shadcn's ButtonGroup, joined borders and radii come from child selectors on the group (`[&>*:not(:first-child)]:rounded-l-none` and so on), so children keep their own variant; a focused child is raised so its ring is not clipped. `[uiButtonGroupText]` is a non-interactive addon (a prefix, a unit); `[uiSeparator]` works between children. The `class` input merges last.
 
@@ -238,7 +238,7 @@ shadcn has no split button; it is a Button joined to a Dropdown Menu trigger ins
 
 Tests: `button-group.test.ts` (in-memory: attributes and classes) and `button-group.dom.test.ts` (jsdom: the recipe, menu semantics, axe via `@gable/testing/a11y`). The runnable example is `examples/ui-gallery/button-group.html` (after `npm run pack:local examples/ui-gallery`).
 
-## Tree view and JSON viewer (TASK-71, TASK-72)
+## Tree view and JSON viewer (ui/71, ui/72)
 
 `ui-tree` (`packages/ui/src/components/tree.ts`) is a file-explorer / inspector tree. It is native, not `@zag-js/tree-view` (not installed; Zag's parts are nested and recursive, while a flattened list of visible nodes is what lets the tree virtualise and render with a plain `@for`, and what makes per-level `aria-setsize` / `aria-posinset` cheap). Nodes are data: `{ id, label, children?, lazy?, disabled?, icon?, description?, descriptionClass?, actions? }`; `expanded` and `selected` are two-way arrays of ids; `selectionMode` is `none | single | multiple`.
 
@@ -258,13 +258,13 @@ Tests: `button-group.test.ts` (in-memory: attributes and classes) and `button-gr
 
 Gallery: `examples/ui-gallery/tree.html` (`src/tree-demo.ts`); run `npm run pack:local examples/ui-gallery` once so the gallery sees the new components.
 
-## Chart additions (TASK-63)
+## Chart additions (ui/63)
 
 - **Secondary axis:** `{ key, axis: "right" }` on a series plots it against its own round scale with ticks on the right edge (no grid lines for it). Stacking is per side. It needs at least one visible left series, otherwise the series uses the left axis.
 - **Zoom:** `[zoomable]="true"` on cartesian charts: drag across the plot, Ctrl/Cmd + wheel (a trackpad pinch arrives that way), `+` / `-` on a focused point, or the Zoom in / Zoom out / Reset zoom buttons above the chart. `[(zoom)]` (`{ from, to }`, indices into `data`) is a model. The y scale, keyboard points and data table follow the visible range, a polite status line says "Showing X to Y", and the plain wheel is left alone so the page still scrolls. Button labels are inputs (`zoomInLabel`, `zoomOutLabel`, `zoomResetLabel`).
 - **Pie and donut legends** are `aria-pressed` toggle buttons like cartesian ones: a hidden slice leaves the pie and the donut total, percentages are recomputed, keyboard navigation skips it, and one slice always stays.
 
-## Code block (TASK-94)
+## Code block (ui/94)
 
 `ui-code-block` (`packages/ui/src/components/code-block.ts`, registry dependency `button`) shows source with syntax colours: `<ui-code-block language="ts" [code]="source" [lineNumbers]="true" highlightLines="2,4-6" [wrap]="false"></ui-code-block>`. The tokenizer is `tokenize(code, language)` in `lib/highlight.ts`: pure, dependency-free, linear time, never throws, and lossless (the token texts of a line concatenate to that line of the source; block comments and template literals carry over lines). Languages: ts, tsx, js, jsx, json, html (Gable templates: `[prop]` / `(event)` attributes, `{{ }}`, `@for` blocks, inline script and style), css, bash; anything else is plain. Token kinds: keyword, string, number, comment, punctuation, function, type, tag, attr, property, plain, coloured with palette classes that have `dark:` variants. It renders `<pre><code>` through `@for` over lines and tokens (spans, never innerHTML, so code cannot inject markup). The copy button writes through `navigator.clipboard` (guarded), flips its aria-label to "Copied" and announces in a live region; `copied` emits `{ text, ok }`. Pass `highlighter` (`(code, language) => Token[][]`) to plug in Shiki or similar; a throwing highlighter falls back to the built-in one.
 

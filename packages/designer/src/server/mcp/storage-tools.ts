@@ -1,4 +1,4 @@
-// The MCP tools behind the Storage panel (TASK-56.21): a frame's localStorage, sessionStorage and cookies, read and edited
+// The MCP tools behind the Storage panel (designer/77): a frame's localStorage, sessionStorage and cookies, read and edited
 // through the shell (the panel does the same thing, so the human sees it). Cookies go over CDP where the backend has it
 // (every cookie, HttpOnly ones and attributes included), otherwise through the page, and the answer says which.
 import { z } from "zod";

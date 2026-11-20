@@ -1,4 +1,4 @@
-// An app that only calls provideAssets (or reads Frame, Pointer...) must not statically import pixi.js (TASK-105.3 #3, TASK-104.12).
+// An app that only calls provideAssets (or reads Frame, Pointer...) must not statically import pixi.js (canvas/122 #3, canvas/117).
 import { fileURLToPath } from "node:url";
 import { build } from "vite";
 import { describe, expect, it } from "vitest";

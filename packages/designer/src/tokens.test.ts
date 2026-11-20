@@ -1,4 +1,4 @@
-// Design tokens (TASK-56.23): the CSS scanner, the token patch, the context classification, the token index on the
+// Design tokens (designer/79): the CSS scanner, the token patch, the context classification, the token index on the
 // `tokens-app` fixture (its own tokens next to gable-ui's theme.css), the `setToken` edit with undo, and the MCP tools.
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

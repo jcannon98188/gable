@@ -1,4 +1,4 @@
-// The Source control MCP tools (TASK-56.25), through a real MCP client over a throwaway git repository, and the same
+// The Source control MCP tools (designer/81), through a real MCP client over a throwaway git repository, and the same
 // operations over the backend's HTTP API (token checked). The real repository is never touched.
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";

@@ -1,4 +1,4 @@
-// The Scenario by breakpoint matrix (TASK-56.22): the PNG codec and pixel diff, the markup printer, the store (renders through
+// The Scenario by breakpoint matrix (designer/78): the PNG codec and pixel diff, the markup printer, the store (renders through
 // a fake renderer, baselines on disk, statuses, detail), the panel's helpers, and the MCP tools over an in-memory client with a
 // fake Designer window. The real headless render is covered by e2e/matrix-check.mjs.
 import { mkdtempSync, rmSync, existsSync, readdirSync } from "node:fs";

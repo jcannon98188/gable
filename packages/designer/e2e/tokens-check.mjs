@@ -1,4 +1,4 @@
-// Driven check of design tokens (TASK-56.23): the Tokens tab lists the project's CSS custom properties with light and dark
+// Driven check of design tokens (designer/79): the Tokens tab lists the project's CSS custom properties with light and dark
 // values (its own and gable-ui's theme.css), an edit there is one changed line in the stylesheet that the frame picks up and
 // Undo takes back, a token's uses are counted and listed and each one selects its element, the Style tab names the tokens
 // of the selected element, a package token is edited as an override in the project's stylesheet, and MCP list_tokens /

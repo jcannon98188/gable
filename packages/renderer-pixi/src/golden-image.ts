@@ -1,4 +1,4 @@
-// Minimal PNG codec and image comparison for the golden-image suite (TASK-105.14). Dependency-free on purpose
+// Minimal PNG codec and image comparison for the golden-image suite (canvas/133). Dependency-free on purpose
 // (node:zlib only): goldens are 8-bit RGBA, non-interlaced, which is all the suite writes and reads.
 import { deflateSync, inflateSync } from "node:zlib";
 

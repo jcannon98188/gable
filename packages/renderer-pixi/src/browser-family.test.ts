@@ -8,7 +8,7 @@ import { build } from "vite";
 import { describe, expect, it } from "vitest";
 import { gableAssetFamilies } from "../../vite/src/asset-families.js";
 
-// Opt-in real-browser check of `?family` (TASK-105.13): a production build of a spritesheet and a bitmap font imported with `?family`
+// Opt-in real-browser check of `?family` (canvas/132): a production build of a spritesheet and a bitmap font imported with `?family`
 // is served over HTTP and loaded by Pixi's own `Assets` in headless Chromium, so the hashed sibling rewrite is proven by the real loader,
 // not by reading the emitted JSON. Same opt-in as the smoke suite: GABLE_BROWSER_SMOKE=1 (GABLE_BROWSER points at a Chromium).
 const candidates = [

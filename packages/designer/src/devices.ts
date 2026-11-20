@@ -125,7 +125,7 @@ export function fitScale(sizes: ReadonlyArray<{ width: number; height: number }>
   return clamp(Math.min(1, available.width / totalWidth, available.height / tallest), 0.1, 1);
 }
 
-/** Tailwind v4's default breakpoints (the `--breakpoint-*` theme values); TASK-56.6 replaces them with the project's own. */
+/** Tailwind v4's default breakpoints (the `--breakpoint-*` theme values); designer/62 replaces them with the project's own. */
 export const TAILWIND_BREAKPOINTS: ReadonlyArray<{ name: string; min: number }> = [
   { name: "sm", min: 640 },
   { name: "md", min: 768 },

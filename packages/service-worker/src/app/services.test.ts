@@ -1,4 +1,4 @@
-// The app-side services (TASK-106.6), driven through the package's root entry and DI, against pages of an in-memory
+// The app-side services (service-worker/113), driven through the package's root entry and DI, against pages of an in-memory
 // browser whose workers run on the in-memory worker scope. Workers are built two ways: on core's lifecycle(), as the
 // default worker is, and as a custom worker on createAppChannel() alone, which proves the services rely on the
 // message protocol and nothing else.
@@ -313,7 +313,7 @@ describe("SwUpdates: failures", () => {
 });
 
 describe("SwPush: push and notification-click events", () => {
-  /** A worker that keeps its scope, so the test can forward push events from it as TASK-106.4's handler will. */
+  /** A worker that keeps its scope, so the test can forward push events from it as service-worker/111's handler will. */
   function pushWorker(scopes: WorkerScope[]): WorkerScript {
     return (self) => {
       scopes.push(self);

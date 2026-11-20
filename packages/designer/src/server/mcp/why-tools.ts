@@ -1,4 +1,4 @@
-// MCP tools for "why did this update" (TASK-56.19): for the selected element (or a component, signal or effect by id) what its
+// MCP tools for "why did this update" (designer/75): for the selected element (or a component, signal or effect by id) what its
 // bindings depend on and which signal writes caused their last runs, and the canvas's "Highlight updates". Both go through the
 // shell (the Why tab's service), so the drawer shows what the agent asked. The causes are the devtools hook's own record.
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";

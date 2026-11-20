@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { sceneDeclarations, sceneEventNames, scenePropType, scenePropertyNames, sceneTagNames } from "./scene.js";
 
 // The element map the language service types scene templates against comes from one place: the shared
-// tag and property table of @gable/renderer-pixi/elements (TASK-104.7). These tests tie the two together
+// tag and property table of @gable/renderer-pixi/elements (canvas/112). These tests tie the two together
 // and then type-check the emitted declarations against Pixi's own types, so a table entry that drifts from
 // the map, or a map type Pixi would not accept, fails here.
 

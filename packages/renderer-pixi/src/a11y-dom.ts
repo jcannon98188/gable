@@ -1,4 +1,4 @@
-// The DOM sink of the semantic mirror (TASK-104.11): a visually hidden subtree inside the canvas host, one real element
+// The DOM sink of the semantic mirror (canvas/116): a visually hidden subtree inside the canvas host, one real element
 // per tagged node. The elements are transparent rather than hidden, so they keep their place in the accessibility tree
 // and a focused one shows an ordinary DOM focus ring at the node's bounds (which honours forced colours). They never
 // intercept the pointer. Tab and Escape are never handled here.

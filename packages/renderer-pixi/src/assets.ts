@@ -1,4 +1,4 @@
-// The app-level Assets service (TASK-104.9): explicit loading through bundle handles over Pixi's global `Assets`.
+// The app-level Assets service (canvas/114): explicit loading through bundle handles over Pixi's global `Assets`.
 // Templates never start a load; they read the handle's signals. Textures resolve from Pixi's cache (see renderer.ts).
 import { InjectionToken, computed, inject, onCleanup, signal, type Provider, type ReadonlySignal } from "@gable/core";
 
@@ -7,7 +7,7 @@ export type BundleEntries = ReadonlyArray<Record<string, unknown>> | Readonly<Re
 
 /**
  * What the service needs from the asset system. The default is Pixi's global `Assets`; tests and test doubles
- * (TASK-105.8) pass their own through {@link AssetsOptions.backend}.
+ * (canvas/127) pass their own through {@link AssetsOptions.backend}.
  */
 export interface AssetsBackend {
   addBundle(name: string, entries: BundleEntries): void;
@@ -17,7 +17,7 @@ export interface AssetsBackend {
 
 /**
  * The default backend over Pixi's global `Assets`. Pixi is loaded by dynamic import on the first load or unload, so an app
- * that only provides the service never downloads it (TASK-105.3 #3). Bundles are recorded at once and registered with Pixi
+ * that only provides the service never downloads it (canvas/122 #3). Bundles are recorded at once and registered with Pixi
  * just before their first load.
  */
 function createPixiBackend(): AssetsBackend {

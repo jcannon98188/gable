@@ -1,4 +1,4 @@
-// The Inspector's signal editing (TASK-56.17): an Edit/Pin control on each writable signal or input row, and the "Poked
+// The Inspector's signal editing (designer/73): an Edit/Pin control on each writable signal or input row, and the "Poked
 // state" section that saves what was set as a new Scenario. The writes, checks and pins happen in the Preview agent (see
 // signal-edits.ts); these components only collect text and show the answers.
 import { computed, html, inject, input, signal, type WritableSignal } from "@gable/core";

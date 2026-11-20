@@ -1,4 +1,4 @@
-// The shared words and the MCP tools of "why did this update" (TASK-56.19), over an in-memory MCP client with a fake Designer window.
+// The shared words and the MCP tools of "why did this update" (designer/75), over an in-memory MCP client with a fake Designer window.
 import { cpSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

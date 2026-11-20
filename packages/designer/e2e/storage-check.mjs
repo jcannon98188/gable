@@ -1,4 +1,4 @@
-// Driven check of the drawer's Storage panel and the Network log's filters (TASK-56.21): the selected frame's
+// Driven check of the drawer's Storage panel and the Network log's filters (designer/77): the selected frame's
 // localStorage, sessionStorage and cookies are listed live as the app changes them; items are added, edited, renamed,
 // deleted and cleared from the panel (the Designer's own keys are left out and kept); cookies are listed with their
 // attributes, HttpOnly ones included, over CDP (without CDP the page's cookies only, saying so), and set and deleted; the

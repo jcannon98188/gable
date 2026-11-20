@@ -1,7 +1,7 @@
 import { html, signal } from '@gable/core';
 import { MenuTrigger, UiButton, UiButtonGroup, UiButtonGroupText, UiDropdownMenu, UiIcon, UiToggleGroup, type MenuEntry, type ToggleGroupItem } from '@gable/ui';
 
-/** Button group (TASK-73): horizontal and vertical groups, a text addon and the split-button recipe. */
+/** Button group (ui/73): horizontal and vertical groups, a text addon and the split-button recipe. */
 export class ButtonGroupDemo {
   static meta = {
     selector: 'app-root',

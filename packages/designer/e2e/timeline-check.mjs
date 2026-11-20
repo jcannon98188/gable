@@ -1,4 +1,4 @@
-// Driven check of signal time travel (TASK-56.18): the State timeline in the drawer lists the frame's recorded steps (the
+// Driven check of signal time travel (designer/74): the State timeline in the drawer lists the frame's recorded steps (the
 // app's own writes and the Designer's), the start row, the slider and a row put the app back to an earlier state and the frame
 // shows it, Replay steps forward and stops, Live returns, Pause stops recording, Clear forgets. Then the same over MCP:
 // get_signal_history, travel_signal_history, record_signal_history and clear_signal_history.

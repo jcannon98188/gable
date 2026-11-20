@@ -1,4 +1,4 @@
-// Refactors from the canvas (TASK-56.24): find uses, rename a component across the project, and extract with props. All of them
+// Refactors from the canvas (designer/80): find uses, rename a component across the project, and extract with props. All of them
 // are minimal text patches through the EditService; a rename touches several files and undoes as one step.
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

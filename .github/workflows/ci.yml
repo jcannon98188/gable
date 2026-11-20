@@ -16,7 +16,7 @@ jobs:
       - run: npm run build
       - run: npm run typecheck:tests
       - run: npm test
-      # The canvas benchmark's Node microbench: the frame-cost model with no browser, on every PR (TASK-105.19).
+      # The canvas benchmark's Node microbench: the frame-cost model with no browser, on every PR (canvas/138).
       - run: npm run bench:canvas:micro
       - run: npm run test:canvas-bench-gate
 

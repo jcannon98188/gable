@@ -1,4 +1,4 @@
-// The MCP tools behind the Accessibility and Focus & tree tabs (TASK-56.26): the checker's report, the page's keyboard focus
+// The MCP tools behind the Accessibility and Focus & tree tabs (designer/82): the checker's report, the page's keyboard focus
 // order, its accessibility tree, stepping focus through it as Tab would, and the canvas view (the numbered focus order and
 // keyboard-only mode). They go through the shell, so the window shows what the agent does; none of them writes to source.
 import { z } from "zod";

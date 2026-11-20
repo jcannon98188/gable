@@ -1,4 +1,4 @@
-// The drawer's Storage panel (TASK-56.21): the selected frame's localStorage, sessionStorage and cookies, live as the page
+// The drawer's Storage panel (designer/77): the selected frame's localStorage, sessionStorage and cookies, live as the page
 // changes them, with add, edit, delete and clear. Everything shown is read from the page (and, for cookies, over CDP when
 // the backend has it: HttpOnly cookies and attributes); nothing is kept by the Designer. Its own keys in the frame's
 // storage are left out and counted.

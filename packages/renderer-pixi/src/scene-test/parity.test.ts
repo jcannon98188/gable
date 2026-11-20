@@ -1,4 +1,4 @@
-// Parity suite (TASK-104.10 item 2c): the same templates are built with the real Pixi renderer in Node and with the scene
+// Parity suite (canvas/115 item 2c): the same templates are built with the real Pixi renderer in Node and with the scene
 // test renderer, and every property and the child order must agree, so the double cannot drift from Pixi. Excluded: Text
 // (it measures through a canvas, which Node lacks) and rendering itself.
 import "pixi.js/events";

@@ -1,4 +1,4 @@
-// The Scenario writer and Extract component (TASK-56.10): both are minimal text patches through the EditService, and undo is
+// The Scenario writer and Extract component (designer/66): both are minimal text patches through the EditService, and undo is
 // the reverse patch (for extract, over two files, one of them created).
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

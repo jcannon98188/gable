@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { installPlugin, Server } from "../test-support/tsserver.js";
 
 // Completions for scene tags, properties (dotted axes included) and events in scene templates,
-// through a real tsserver with the plugin loaded (TASK-105.7).
+// through a real tsserver with the plugin loaded (canvas/126).
 
 const fixtureDir = fileURLToPath(new URL("../fixtures/scene-editor", import.meta.url));
 const file = path.join(fixtureDir, "src", "scene.ts").replace(/\\/g, "/");

@@ -1,4 +1,4 @@
-// The command channel between the backend and the shell (TASK-56.13). The shell is the single source of UI state (mode,
+// The command channel between the backend and the shell (designer/69). The shell is the single source of UI state (mode,
 // target, frames, selection, route, scenario): an agent driving the Designer over MCP does not keep a copy of it, it asks
 // the shell, and the shell does what a click would do. The backend sends commands down a dedicated SSE stream
 // (`/api/shell/channel`) and the shell answers each with a POST to `/api/shell/reply`, both token-checked like the rest of
@@ -99,11 +99,11 @@ export interface ControlCommands {
   storage: { params: StorageCommand; result: StorageCommandResult };
   /** The Scenario by breakpoint matrix: render every Scenario at the breakpoints, save baselines, diff against them (the drawer's Matrix tab). */
   matrix: { params: MatrixCommand; result: MatrixCommandResult };
-  /** The Why tab (TASK-56.19): what the selection's bindings depend on and why they last updated; `id` explains one component, signal or effect instead. */
+  /** The Why tab (designer/75): what the selection's bindings depend on and why they last updated; `id` explains one component, signal or effect instead. */
   why: { params: WhyAction; result: WhyResult };
   /** The Why tab's "Highlight updates": the canvas outlines the elements whose bindings re-run. */
   highlightUpdates: { params: { on: boolean }; result: { on: boolean; error: string } };
-  /** Accessibility of the selected frame (TASK-56.26): the checker report, focus order, accessibility tree, stepping focus and the canvas view. */
+  /** Accessibility of the selected frame (designer/82): the checker report, focus order, accessibility tree, stepping focus and the canvas view. */
   a11y: { params: A11yCommand; result: A11yCommandResult };
 }
 

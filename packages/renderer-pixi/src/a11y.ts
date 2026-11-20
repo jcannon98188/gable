@@ -1,4 +1,4 @@
-// The semantic mirror (TASK-104.11): scene nodes tagged with the opt-in `[a11y]` property get a visually hidden DOM
+// The semantic mirror (canvas/116): scene nodes tagged with the opt-in `[a11y]` property get a visually hidden DOM
 // element, kept by Gable (never Pixi's accessibility plugin). This module is the mirror's logic: it tracks tagged nodes,
 // orders and positions them, and hands the result to a sink (the DOM in the browser, a recorder in the scene test
 // renderer). It is free of any pixi.js import and works on any node that has the structural shape below.

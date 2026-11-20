@@ -1,4 +1,4 @@
-// Error handling of element bindings (TASK-105.17 inlined the guard of errors.ts into applyBindings; this pins that nothing changed):
+// Error handling of element bindings (canvas/136 inlined the guard of errors.ts into applyBindings; this pins that nothing changed):
 // a throwing expression is reported once per failure episode and keeps the last good value, (the renderer.setProperty case is pinned in renderer-dom/src/binding-errors.test.ts).
 import { describe, expect, it } from "vitest";
 import { html, signal } from "@gable/core";

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Input (TASK-104.8): federated events on scene tags and the Pointer, Keyboard and Gamepad services, driven through
+// Input (canvas/113): federated events on scene tags and the Pointer, Keyboard and Gamepad services, driven through
 // the same manual-scheduler application double the frame loop tests use.
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -340,7 +340,7 @@ describe("DOM and scene separation", () => {
   });
 });
 
-// TASK-104.8 asks to verify three behaviours against Pixi 8 at build time; these tests pin what was found (docs/research/pixi-input-verification.md).
+// canvas/113 asks to verify three behaviours against Pixi 8 at build time; these tests pin what was found (docs/research/pixi-input-verification.md).
 describe("Pixi 8 behaviour the input model relies on", () => {
   it("registers wheel as a passive listener, so a wheel handler cannot preventDefault the page scroll", () => {
     const canvas = document.createElement("canvas");

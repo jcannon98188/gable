@@ -1,4 +1,4 @@
-// Character references in template text and static attribute values (TASK-92).
+// Character references in template text and static attribute values (core/92).
 // Only `&lt; &gt; &amp; &quot; &apos; &nbsp;` and numeric `&#N;` / `&#xH;` are known. Anything else (a lone `&`, `&&`,
 // `a & b`, an unknown name, an out-of-range number) stays exactly as written.
 const NAMED: Record<string, string> = { lt: "<", gt: ">", amp: "&", quot: '"', apos: "'", nbsp: " " };

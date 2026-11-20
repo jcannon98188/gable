@@ -1,4 +1,4 @@
-// Source control through the git CLI (TASK-56.25). The backend runs git in the project folder (which may sit inside a larger
+// Source control through the git CLI (designer/81). The backend runs git in the project folder (which may sit inside a larger
 // repository: only the project's files are listed). The Designer keeps no model of the design (ADR 0001): the changes are
 // whatever git says differs from HEAD, and committing or reverting is git doing it.
 //

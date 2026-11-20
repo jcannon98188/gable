@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// HMR for the canvas (TASK-104.13, TASK-105.16): the Application and GL context survive host and provider edits.
+// HMR for the canvas (canvas/118, canvas/135): the Application and GL context survive host and provider edits.
 // The scene is projected from a host component with its own template; projected scene components cannot inject boundary
 // services (ADR 0019), so services under test are provided by that host.
 import { afterEach, describe, expect, it, vi } from "vitest";

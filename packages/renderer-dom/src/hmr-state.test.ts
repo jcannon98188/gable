@@ -5,7 +5,7 @@ import { applyUpdate } from "@gable/core/hmr";
 import { afterEach } from "vitest";
 import { dom } from "./index.js";
 
-// TASK-2.15: focus, selection, scroll and control values survive a template rebuild where the structure matches.
+// gable-v0/36: focus, selection, scroll and control values survive a template rebuild where the structure matches.
 
 
 const makePage = () =>

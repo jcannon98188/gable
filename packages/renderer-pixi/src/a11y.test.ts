@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Accessibility (TASK-104.11): the [a11y] mirror, its recorded twin for the scene test renderer, announceOnChange and
+// Accessibility (canvas/116): the [a11y] mirror, its recorded twin for the scene test renderer, announceOnChange and
 // ReducedMotion. The mirror logic is tested on plain fake nodes; the DOM sink on jsdom; the integration through the real
 // renderer on the same manual-scheduler application double the input tests use.
 import { Container } from "pixi.js";

@@ -1,4 +1,4 @@
-// MCP tools for signal time travel (TASK-56.18): read the selected frame's recorded state history, travel the app to a past
+// MCP tools for signal time travel (designer/74): read the selected frame's recorded state history, travel the app to a past
 // step and back, clear it, pause or resume recording. All of it goes through the shell (the State timeline's service), so the
 // drawer shows what the agent did. The history is the devtools hook's own record of the app's writes: nothing is made up.
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";

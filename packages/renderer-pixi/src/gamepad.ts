@@ -1,4 +1,4 @@
-// The Gamepad service (TASK-104.8): the connected pads as a per-frame snapshot, polled once per frame in the Gable-owned
+// The Gamepad service (canvas/113): the connected pads as a per-frame snapshot, polled once per frame in the Gable-owned
 // loop, plus connect and disconnect signals. No remapping layer. Free of any pixi.js import.
 import { signal, type WritableSignal } from "@gable/core";
 

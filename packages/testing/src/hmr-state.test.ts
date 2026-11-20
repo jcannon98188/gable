@@ -4,7 +4,7 @@ import { mount } from "@gable/testing";
 import { patchState, signalStore, withHotState, withMethods, withState } from "@gable/store";
 import { createTestRenderer } from "@gable/testing/renderer";
 
-// The nine scenarios of the HMR prototype (TASK-1.9), replayed through fixture.hotReplace.
+// The nine scenarios of the HMR prototype (gable-v0/11), replayed through fixture.hotReplace.
 // A "new version" of a module is a fresh class with the same name, as a re-evaluated module would produce.
 
 let log: string[] = [];

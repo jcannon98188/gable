@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 
 // A real-browser check that <gable-canvas> puts scene content on a real WebGL canvas: bundle a tiny page, load it in a
 // headless Chromium (Edge or Chrome, if installed), have the page read back a pixel and report. Skipped when no browser is found.
-// The full browser smoke suite is TASK-105.10.
+// The full browser smoke suite is canvas/129.
 const candidates = [
   process.env.GABLE_BROWSER,
   "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",

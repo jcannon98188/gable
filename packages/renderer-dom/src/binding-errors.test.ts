@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // An error thrown by renderer.setProperty for a `prop` binding is not swallowed by the binding guard of applyBindings: as before
-// TASK-105.17 inlined that guard, only the expression is guarded, so the failure is not reported as a "binding" error of the guard.
+// canvas/136 inlined that guard, only the expression is guarded, so the failure is not reported as a "binding" error of the guard.
 import { afterEach, describe, expect, it } from "vitest";
 import { bootstrap, ErrorHandler, flushSync, html, signal } from "@gable/core";
 import { dom } from "./index.js";

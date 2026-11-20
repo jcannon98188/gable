@@ -1,6 +1,6 @@
 # Canvas benchmark
 
-Frame cost of the Gable canvas binding (`@gable/renderer-pixi`), per phase, for the ways an entity can be updated, at several entity counts. It is the permanent form of the Pixi spike's benchmark (TASK-104.14).
+Frame cost of the Gable canvas binding (`@gable/renderer-pixi`), per phase, for the ways an entity can be updated, at several entity counts. It is the permanent form of the Pixi spike's benchmark (canvas/119).
 
 ## What it measures
 

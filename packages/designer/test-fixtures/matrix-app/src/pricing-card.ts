@@ -1,4 +1,4 @@
-// The matrix fixture (TASK-56.22): a card whose layout depends on the viewport width (a column on a phone, a row from 700px),
+// The matrix fixture (designer/78): a card whose layout depends on the viewport width (a column on a phone, a row from 700px),
 // so the same Scenario looks different at each breakpoint. The check edits pricing-card.css (pixels change) and the template
 // (an invisible attribute: the markup changes, the pixels do not), then restores both.
 import { html, input } from "@gable/core";

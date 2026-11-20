@@ -1,6 +1,6 @@
-# Frame-flush optimisation (TASK-105.17)
+# Frame-flush optimisation (canvas/136)
 
-The four gated steps of TASK-104.14, each profiled and measured before it was kept. The scene is the canvas benchmark's three-signal style at 5,000 entities: every entity writes three signals per frame, so a frame's flush re-runs 15,000 binding effects.
+The four gated steps of canvas/119, each profiled and measured before it was kept. The scene is the canvas benchmark's three-signal style at 5,000 entities: every entity writes three signals per frame, so a frame's flush re-runs 15,000 binding effects.
 
 ## Result
 

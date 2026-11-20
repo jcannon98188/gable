@@ -105,7 +105,7 @@ export class FrameSet {
   readonly settled = signal(false);
 
   readonly selected = computed(() => this.frames().find((f) => f.id === this.selectedId()) ?? this.frames()[0]!);
-  /** The width the selected frame renders at, and the Tailwind breakpoint it reaches (TASK-56.6 drives its variants from these). */
+  /** The width the selected frame renders at, and the Tailwind breakpoint it reaches (designer/62 drives its variants from these). */
   readonly selectedWidth = computed(() => this.selected().size().width);
   /** The project's own breakpoints (Tailwind mode sets them from its theme); null means Tailwind's defaults. */
   readonly breakpoints = signal<ReadonlyArray<{ name: string; min: number }> | null>(null);

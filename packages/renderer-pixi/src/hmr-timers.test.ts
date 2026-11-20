@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// TASK-104.13 item 3: the dev build warns when a component's Setup starts a raw setInterval or setTimeout without onCleanup.
+// canvas/118 item 3: the dev build warns when a component's Setup starts a raw setInterval or setTimeout without onCleanup.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { html, inject, onCleanup } from "@gable/core";
 import { GableCanvas } from "./index.js";

@@ -1,4 +1,4 @@
-// Driven check of signal state editing (TASK-56.17): in the Inspector, Edit sets a signal of the running app and the frame
+// Driven check of signal state editing (designer/73): in the Inspector, Edit sets a signal of the running app and the frame
 // updates; a value of the wrong shape is refused with the reasons, then written on "Set anyway"; a pin holds against the app
 // until the app fights it, then is suspended with the reason; a child's poked signal is listed as not saveable; "Save as
 // Scenario" writes a scene into the scenes file that mounts with the saved state, and undo takes it back. Then the same over

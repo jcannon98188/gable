@@ -1,4 +1,4 @@
-// The Scenario by breakpoint matrix (TASK-56.22): every Scenario (a scene of a `*.scenes.ts` file) rendered at several widths,
+// The Scenario by breakpoint matrix (designer/78): every Scenario (a scene of a `*.scenes.ts` file) rendered at several widths,
 // saved as baseline images, and compared against them. Types shared by the backend, the shell and the MCP tools; no Node
 // imports, so the shell can use this file. The rendering and the image work are in `server/matrix.ts` and `server/png.ts`.
 

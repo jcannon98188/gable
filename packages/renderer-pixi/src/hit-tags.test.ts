@@ -3,7 +3,7 @@ import { Circle, Container, Ellipse, Polygon, Rectangle, RoundedRectangle } from
 import { describe, expect, it } from "vitest";
 import { createPixiRenderer } from "./renderer.js";
 
-// Declarative hit-shape children on the real Pixi renderer (TASK-105.11).
+// Declarative hit-shape children on the real Pixi renderer (canvas/130).
 function setup() {
   const r = createPixiRenderer();
   const node = r.createElement("container", null);

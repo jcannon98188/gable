@@ -1,6 +1,6 @@
-# Performance: before and after the TASK-12..15 work
+# Performance: before and after the core/12..15 work
 
-A clean A/B measurement of the performance work in `aef49bc` (TASK-12/13/14/15: `@for` LIS reconciler with fewer signal
+A clean A/B measurement of the performance work in `aef49bc` (core/12/13/14/15: `@for` LIS reconciler with fewer signal
 writes, bucketed effect flush, shared `toObservable` effect) and `f648502` (HMR: method-edit versioning, cheaper
 `captureViewState`) against the commit just before it, `435b332`.
 
@@ -77,7 +77,7 @@ Median of 8 runs per side. The `polyfill` and `rxjs` rows run code that did not 
 | toSignal-chain / gable | 1.717 | 1.743 | +1.5% | 3.7% | 24.1% |
 | toSignal-chain / polyfill | 1.606 | 1.611 | +0.3% | 3.0% | 0.6% |
 | toSignal-chain / rxjs | 0.227 | 0.231 | +1.6% | 50.5% | 10.7% |
-| toSignal-fan-in / gable | 0.274 | 0.314 | +14.5% | 4.4% | 8.4% |  (before the TASK-19 fix; see below)
+| toSignal-fan-in / gable | 0.274 | 0.314 | +14.5% | 4.4% | 8.4% |  (before the core/19 fix; see below)
 | toSignal-fan-in / rxjs | 1.830 | 1.811 | -1.0% | 5.6% | 3.1% |
 | round-trip / gable | 0.944 | 0.814 | -13.7% | 13.5% | 9.2% |
 | round-trip / rxjs | 0.093 | 0.093 | +0.1% | 25.2% | 2.9% |
@@ -123,7 +123,7 @@ Method-only and style-only HMR edits and the inner-target method/style edits wer
 
 **Possible regressions, not confirmed as meaningful:**
 
-- `toSignal-fan-in / gable` 0.274 to 0.314 ms (+14.5%): confirmed real, then fixed under TASK-19, see "TASK-19: toSignal fan-in follow-up" below.
+- `toSignal-fan-in / gable` 0.274 to 0.314 ms (+14.5%): confirmed real, then fixed under core/19, see "core/19: toSignal fan-in follow-up" below.
 - HMR leaf-target edits at 2000 components read +7% to +32% slower in the current build (e.g. template text 203/216 to 255/298 ms), and +5% to +11% at 500. The current pair itself varies a lot (255 vs 204 ms for the same row), so with 2 runs per side this is within noise, but there is no sign of a leaf improvement either. A larger run would be needed to settle it.
 
 **Noise caveats:**
@@ -133,18 +133,18 @@ Method-only and style-only HMR edits and the inner-target method/style edits wer
 - js-framework-benchmark paints are quantized to ~16.7 ms frames; only 4 runs of 20 iterations per side, and the baseline create / clear rows carry occasional 170 ms+ outliers.
 - Background Edge/WebView2 processes belonging to the host environment were present (idle) during all runs; a leftover `vite preview` on port 4199 was also running, not used by these measurements.
 
-## TASK-19: toSignal fan-in follow-up
+## core/19: toSignal fan-in follow-up
 
 The +14.5% on `toSignal-fan-in` above was reproduced and mostly removed. This section is deliberately candid about how much of the cause is understood.
 
-**Method.** Baseline = `435b332` built in a throwaway git worktree; "HEAD" = `f648502` (the build the table above measured); "fixed" = HEAD plus the TASK-19 change. Each side's `dist` was copied into its own copy of `examples/reactivity-benchmark` (same rxjs 7.8.2 and signal-polyfill 0.2.2), the full suite was run as separate processes alternating A/B/B/A..., 8 runs per side, median of per-run medians (31 samples, 3 warmup). Nothing else heavy ran in parallel; machine drift still produced a few noisy sets (the +14% did not show in about two of six repeats), so only quiet sets with flat controls are quoted.
+**Method.** Baseline = `435b332` built in a throwaway git worktree; "HEAD" = `f648502` (the build the table above measured); "fixed" = HEAD plus the core/19 change. Each side's `dist` was copied into its own copy of `examples/reactivity-benchmark` (same rxjs 7.8.2 and signal-polyfill 0.2.2), the full suite was run as separate processes alternating A/B/B/A..., 8 runs per side, median of per-run medians (31 samples, 3 warmup). Nothing else heavy ran in parallel; machine drift still produced a few noisy sets (the +14% did not show in about two of six repeats), so only quiet sets with flat controls are quoted.
 
 **Reproduction.** Baseline 0.277-0.282 ms vs HEAD 0.309-0.323 ms across repeats (+10% to +17%), `rxjs` control flat. The gap also exists at steady state (300 samples: 0.230 vs 0.272), so it is not only warm-up.
 
 **What was found.**
 
-- The fan-in scenario touches only: 1,000 `state.set` calls (write path), 1,000 reads in the sum computed, one effect run. The only per-element changes between the two builds on that path are the `writes++` counter that TASK-14 added to every signal write (to detect "first run wrote a signal it read") and the `toSignal` read/write wrapper layers. The per-flush bucket logic runs once per flush and is not the cost.
-- Toggling pieces of the TASK-14 diff in the built `dist` (drop `writes++`, drop the read-phase wrapper, make `EffectNode` a plain object with a WeakMap instead of a `Signal.Computed` subclass) gave inconsistent results: only the WeakMap variant closed the gap, but it made `create-dispose` +27% and `toObservable-subscribe` +29% worse, and a Map variant with delete-on-dispose did not close it at all. Removing `writes++` alone was worth about 3%. Under `--no-maglev` the HEAD build was faster than the baseline, and raising V8's inlining budget also closed the gap, so the remainder of the regression is sensitive to JIT inlining decisions in the shared polyfill hot loop and **is not a single algorithmic cost I can point at**. I did not find one line to blame, and the fix below is a reduction of per-write and per-read overhead, not a reversal of an identified mistake.
+- The fan-in scenario touches only: 1,000 `state.set` calls (write path), 1,000 reads in the sum computed, one effect run. The only per-element changes between the two builds on that path are the `writes++` counter that core/14 added to every signal write (to detect "first run wrote a signal it read") and the `toSignal` read/write wrapper layers. The per-flush bucket logic runs once per flush and is not the cost.
+- Toggling pieces of the core/14 diff in the built `dist` (drop `writes++`, drop the read-phase wrapper, make `EffectNode` a plain object with a WeakMap instead of a `Signal.Computed` subclass) gave inconsistent results: only the WeakMap variant closed the gap, but it made `create-dispose` +27% and `toObservable-subscribe` +29% worse, and a Map variant with delete-on-dispose did not close it at all. Removing `writes++` alone was worth about 3%. Under `--no-maglev` the HEAD build was faster than the baseline, and raising V8's inlining budget also closed the gap, so the remainder of the regression is sensitive to JIT inlining decisions in the shared polyfill hot loop and **is not a single algorithmic cost I can point at**. I did not find one line to blame, and the fix below is a reduction of per-write and per-read overhead, not a reversal of an identified mistake.
 
 **Fix** (`packages/core/src/signals.ts`, `packages/core/src/bridge.ts`):
 
@@ -167,11 +167,11 @@ Effect ordering is untouched (`order.test.ts` passes), and a guard test there as
 | toObservable-subscribe / gable | 2.327 | 2.273 | 2.309 | +1.6% |
 | round-trip / gable | 0.920 | 0.816 | 0.823 | +0.9% |
 
-All other scenarios (deep-chain, wide-fanout, diamond, dynamic-deps, batched-writes, toSignal-chain) stayed within about 3% of both builds. The TASK-14/15 gains are intact (everything else vs HEAD is inside run-to-run spread).
+All other scenarios (deep-chain, wide-fanout, diamond, dynamic-deps, batched-writes, toSignal-chain) stayed within about 3% of both builds. The core/14/15 gains are intact (everything else vs HEAD is inside run-to-run spread).
 
 **What is not fully fixed.** At the default 31 samples the fixed build is 0.289 vs the 0.277 baseline (+4%), with overlapping ranges (fixed 0.267-0.298, baseline 0.272-0.288), so it is "back to roughly baseline", not demonstrably below it. At steady state (300 samples, 4 runs per side) the fixed build is ahead: 0.161 ms vs 0.187 for baseline and HEAD (in that particular set HEAD showed no gap, while two earlier 300-sample sets showed HEAD +18%, so the steady-state gap is itself not stable). Because the cause is JIT-sensitive, a future unrelated change near the polyfill hot path could move this scenario by a few percent either way.
 
-## TASK-44: virtual scroll (`useVirtualizer`) against plain `@for`
+## core/44: virtual scroll (`useVirtualizer`) against plain `@for`
 
 `examples/virtual-benchmark` renders the js-framework-benchmark rows case (same row data generator, same row component with id, clickable label and remove link) two ways: every row as a node in an `@for` (`?mode=plain`), and through `useVirtualizer` from `@gable/ui-primitives` (`?mode=virtual`: 38 px fixed rows, `getKey` by row id, overscan 5) inside a 400 px scroll container. `node scripts/bench.mjs` builds it, drives headless Chrome with Playwright (the vite and playwright-core of `examples/js-framework-benchmark` are reused) and prints the median of fresh-page runs. Same measurement as the js-framework-benchmark script: click (or scroll assignment) to the next painted frame, quantized to about 16.7 ms.
 

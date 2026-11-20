@@ -1,4 +1,4 @@
-// A canvas boundary's scene as a DOM-like tree for the Designer (TASK-105.20). Pure: it reads the devtools hook's boundary
+// A canvas boundary's scene as a DOM-like tree for the Designer (canvas/139). Pure: it reads the devtools hook's boundary
 // trees and shapes them for the shell; the agent supplies the hook.
 import type { BoundaryNode, BoundaryTree, PageRect, SourceInfo } from "@gable/core/devtools";
 

@@ -1,4 +1,4 @@
-// The MCP control plane (TASK-56.13) against the `mcp-app` fixture: the tools over an in-memory MCP client, with a fake
+// The MCP control plane (designer/69) against the `mcp-app` fixture: the tools over an in-memory MCP client, with a fake
 // Designer window answering the shell bridge, and the HTTP endpoint's auth on a real backend.
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { request as httpRequest } from "node:http";

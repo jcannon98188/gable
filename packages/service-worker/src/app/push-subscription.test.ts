@@ -1,4 +1,4 @@
-// SwPush's subscription helper (TASK-107.2): permission, subscribe, getSubscription and unsubscribe, driven through
+// SwPush's subscription helper (service-worker/117): permission, subscribe, getSubscription and unsubscribe, driven through
 // the package's root entry and DI against pages of the in-memory browser. The browser models pushManager, the
 // notification permission and its prompt, so the flow is tested end to end with the worker's push handlers.
 import { afterEach, describe, expect, it } from "vitest";

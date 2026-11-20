@@ -1,5 +1,5 @@
 // Renderer boundaries in the devtools hook: a renderer registers a snapshot of its node tree and the hook reports it with
-// source locations and the effects of the last flush (TASK-105.20). Driven here with DOM elements standing in for scene nodes.
+// source locations and the effects of the last flush (canvas/139). Driven here with DOM elements standing in for scene nodes.
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { flushSync, html, signal } from "@gable/core";
 import { mount, type TestNode } from "@gable/testing";

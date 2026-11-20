@@ -1,4 +1,4 @@
-// TASK-56.14: templates that do not compile are named (file, line, message) instead of leaving the canvas silently stale,
+// designer/70: templates that do not compile are named (file, line, message) instead of leaving the canvas silently stale,
 // and a bound class list is read-only in the Style panel.
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

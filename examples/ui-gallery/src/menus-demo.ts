@@ -4,7 +4,7 @@ import { MenuTrigger, UiButton, UiContextMenu, UiDropdownMenu, UiRangeSlider, ty
 const flip = (list: MenuEntry[], value: string, checked: boolean): MenuEntry[] =>
   list.map((entry) => (entry.type === 'checkbox' && entry.value === value ? { ...entry, checked } : entry.type === 'submenu' ? { ...entry, entries: flip(entry.entries, value, checked) } : entry));
 
-/** Submenus, radio items and the range slider (TASK-54): a dropdown menu, a context menu and a two-thumb slider. */
+/** Submenus, radio items and the range slider (ui/54): a dropdown menu, a context menu and a two-thumb slider. */
 export class MenusDemo {
   static meta = {
     selector: 'app-root',

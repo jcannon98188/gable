@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Accessibility depth (TASK-56.26): the focus order, the accessibility tree and stepping focus (agent/a11y-depth.ts, run on a
+// Accessibility depth (designer/82): the focus order, the accessibility tree and stepping focus (agent/a11y-depth.ts, run on a
 // real DOM), the Focus & tree panel's rows, and what the MCP tools make of the reports.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { a11yTree, focusOrder, hasFocusIndicator, nameOf, roleOf, stepFocus, tabOrder, type NodeRef } from "./agent/a11y-depth.js";

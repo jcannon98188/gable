@@ -1,4 +1,4 @@
-// Driven check of the drawer's Network panel (TASK-56.20): the frame's real requests are logged; recording keeps real
+// Driven check of the drawer's Network panel (designer/76): the frame's real requests are logged; recording keeps real
 // responses across a reload and saves them as a Scenario written into the scenes file (undo restores it byte for byte);
 // under that Scenario the app is answered by the mocks, not the server; a mock is edited and removed in place; the slow,
 // error and offline conditions apply to the page's requests (and whole-frame offline over CDP to everything); and the MCP

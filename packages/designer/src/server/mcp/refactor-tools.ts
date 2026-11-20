@@ -1,4 +1,4 @@
-// MCP tools for refactors from the canvas (TASK-56.24): find every use of a component or a CSS class, and rename a component
+// MCP tools for refactors from the canvas (designer/80): find every use of a component or a CSS class, and rename a component
 // across the project. Both read the project's files; the rename is the `renameComponent` op of the edit service, so it is the
 // same minimal patches on the same undo history as every other edit (several files, one undo step).
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";

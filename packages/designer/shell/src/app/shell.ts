@@ -63,7 +63,7 @@ export class TopBar {
   state = inject(DesignerState);
   chrome = inject(ChromeState);
   edit = inject(EditState);
-  /** Lets an agent drive this window over MCP (TASK-56.13). */
+  /** Lets an agent drive this window over MCP (designer/69). */
   control = inject(ControlChannel);
 
   targets: ToggleGroupItem[] = [

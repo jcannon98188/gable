@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "vite";
 import { describe, expect, it } from "vitest";
 
-// The real-browser smoke suite (TASK-104.10): one opt-in run in a headless Chromium with WebGL (software GL), mounting
+// The real-browser smoke suite (canvas/115): one opt-in run in a headless Chromium with WebGL (software GL), mounting
 // a scene through the real renderer to catch wiring mistakes no double can: host lifecycle, the DOM and scene event
 // path, the a11y mirror. Opt in with GABLE_BROWSER_SMOKE=1 (CI sets it only when the canvas packages change, see
 // .github/workflows/canvas-browser.yml). GABLE_BROWSER points at a Chromium, Edge or Chrome binary; common install

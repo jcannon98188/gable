@@ -1,4 +1,4 @@
-// The drawer's Changes tab (TASK-56.25): the project's uncommitted files, grouped, with each file's diff rendered by gable-ui's
+// The drawer's Changes tab (designer/81): the project's uncommitted files, grouped, with each file's diff rendered by gable-ui's
 // code block (`language="diff"`), a commit box for the files you tick, and revert for a whole file or one hunk (with Undo).
 // Git runs in the backend; nothing here is kept by the Designer (ADR 0001).
 import { computed, html, inject, signal } from "@gable/core";

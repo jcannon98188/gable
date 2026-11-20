@@ -1,4 +1,4 @@
-// The selected frame's storage and cookies, for the Storage panel and MCP (TASK-56.21). The Preview agent reads and edits
+// The selected frame's storage and cookies, for the Storage panel and MCP (designer/77). The Preview agent reads and edits
 // localStorage, sessionStorage and the cookies the page can see (agent/storage.ts) and says when the page changed them;
 // with CDP the backend lists and writes every cookie of the frame (HttpOnly ones and attributes included), otherwise the
 // panel shows the page's view and says what it cannot see. Each frame has its own origin, so its own storage.

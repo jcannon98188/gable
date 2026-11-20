@@ -1,4 +1,4 @@
-// Refactors from the canvas (TASK-56.24): find every use of a component or a CSS class, and rename a component across the
+// Refactors from the canvas (designer/80): find every use of a component or a CSS class, and rename a component across the
 // project. Both read the project's files (no model is kept, ADR 0001). Rename is a set of minimal text patches over several
 // files that the edit service commits as ONE history entry, so a single undo takes the whole rename back.
 //

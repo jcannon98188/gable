@@ -1,4 +1,4 @@
-# Pixi 8 input behaviour verified for the canvas binding (TASK-105.5)
+# Pixi 8 input behaviour verified for the canvas binding (canvas/124)
 
 Checked against pixi.js 8.23.0 (`lib/events/EventSystem.js`). The tests in `packages/renderer-pixi/src/input.test.ts` ("Pixi 8 behaviour the input model relies on", "DOM and scene separation") pin the findings.
 

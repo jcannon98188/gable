@@ -1,4 +1,4 @@
-// The Storage panel's shared types (TASK-56.21): the selected frame's localStorage, sessionStorage and cookies, read and
+// The Storage panel's shared types (designer/77): the selected frame's localStorage, sessionStorage and cookies, read and
 // edited in the page by the Preview agent (src/agent/storage.ts), and cookies over CDP where the backend has it (HttpOnly
 // cookies and cookie attributes are invisible to the page). Each preview frame has its own origin, so its own storage.
 

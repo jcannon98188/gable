@@ -1,6 +1,6 @@
 name: Canvas browser smoke
-# The same workflow also runs the golden-image suite (TASK-105.14): see packages/renderer-pixi/golden/README.md.
-# The real-Chromium smoke suite for the canvas binding (TASK-105.10). It runs only when the canvas packages (or this
+# The same workflow also runs the golden-image suite (canvas/133): see packages/renderer-pixi/golden/README.md.
+# The real-Chromium smoke suite for the canvas binding (canvas/129). It runs only when the canvas packages (or this
 # workflow) change; the main CI job never runs it (the test is opt-in through GABLE_BROWSER_SMOKE).
 on:
   push:

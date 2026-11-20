@@ -1,4 +1,4 @@
-// Page bundled by browser-golden.test.ts (TASK-105.14): a few small scenes, each in its own <gable-canvas> boundary,
+// Page bundled by browser-golden.test.ts (canvas/133): a few small scenes, each in its own <gable-canvas> boundary,
 // reporting the rendered pixels (RGBA, base64) of each. No text and no external assets: those depend on fonts and
 // the network, not on the renderer. Shapes only, so a golden changes when rendering changes, not when the machine does.
 import { bootstrap, html } from "@gable/core";

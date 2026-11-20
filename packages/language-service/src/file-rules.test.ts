@@ -283,7 +283,7 @@ describe("accessibility rules", () => {
 });
 
 describe("template holes", () => {
-  it("reports a ${} hole as a template-syntax error (TASK-30)", async () => {
+  it("reports a ${} hole as a template-syntax error (core/30)", async () => {
     const { diagnostics } = await check("holes-fail");
     const holes = diagnostics.filter((d) => d.rule === "template-syntax" && /holes/.test(d.message));
     expect(holes.length).toBe(2);

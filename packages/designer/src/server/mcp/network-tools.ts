@@ -1,4 +1,4 @@
-// The MCP tools behind the Network panel (TASK-56.20): a frame's requests and network condition, recording real responses
+// The MCP tools behind the Network panel (designer/76): a frame's requests and network condition, recording real responses
 // and saving them as a Scenario, and editing a Scenario's mocks. The frame's side goes through the shell (the panel does the
 // same thing, so the human sees it); writes to scenes files go through the edit service like every other source edit, and
 // answer with the diff.

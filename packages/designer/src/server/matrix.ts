@@ -1,4 +1,4 @@
-// The Scenario by breakpoint matrix (TASK-56.22), backend half. Every scene of every `*.scenes.ts` file is mounted by the
+// The Scenario by breakpoint matrix (designer/78), backend half. Every scene of every `*.scenes.ts` file is mounted by the
 // component-mode host (the same `mountScene` the Designer's component mode and `@gable/testing` use) in a headless Chromium
 // at each breakpoint's width, screenshotted, and compared with the baseline saved for that cell.
 //

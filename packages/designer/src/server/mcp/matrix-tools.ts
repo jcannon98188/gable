@@ -1,4 +1,4 @@
-// The MCP tools behind the Matrix tab (TASK-56.22): render every Scenario at several widths, look at the grid, save the
+// The MCP tools behind the Matrix tab (designer/78): render every Scenario at several widths, look at the grid, save the
 // pictures as baselines, and see what changed against them. They go through the shell, so the drawer's Matrix tab shows
 // what an agent asks for. The renders are real (a headless browser loading the project's dev server); nothing is written
 // to the project, and baselines live in the Designer's data directory.

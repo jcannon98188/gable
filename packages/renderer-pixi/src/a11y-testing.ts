@@ -1,4 +1,4 @@
-// The recorded twin of the DOM mirror, for the scene test renderer (TASK-104.10, TASK-104.11): the same A11yMirror, but
+// The recorded twin of the DOM mirror, for the scene test renderer (canvas/115, canvas/116): the same A11yMirror, but
 // its sink only records, and focus movement is simulated. Free of any pixi.js or DOM import.
 import type { A11yEntry, A11yMirror, A11yNode, A11ySink } from "./a11y.js";
 

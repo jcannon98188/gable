@@ -1,4 +1,4 @@
-// Driven check of refactors from the canvas (TASK-56.24): Rename component and Find uses (palette and Inspector), Extract with
+// Driven check of refactors from the canvas (designer/80): Rename component and Find uses (palette and Inspector), Extract with
 // props, and MCP find_uses / rename_component / extract_component over HTTP. A rename is one undo step over every file it
 // touches; Find uses lists declaration, imports, code references and template uses, and a template use selects its element.
 //

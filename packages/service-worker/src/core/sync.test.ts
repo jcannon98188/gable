@@ -1,4 +1,4 @@
-// Background sync registrations and sync handlers (TASK-106.4), driven through the in-memory worker scope.
+// Background sync registrations and sync handlers (service-worker/111), driven through the in-memory worker scope.
 import { describe, expect, it } from "vitest";
 import { createWorkerScope, type WorkerScopeOptions } from "../testing/worker-scope.js";
 import { backgroundSync, type SyncContext } from "./index.js";

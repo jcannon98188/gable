@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createComponent, createInjector, flushSync, html, signal } from "@gable/core";
 import { createSceneTestRenderer } from "../testing.js";
 
-// Declarative hit-* children through the scene test renderer (TASK-105.11). The host component has its own template
+// Declarative hit-* children through the scene test renderer (canvas/130). The host component has its own template
 // (scene components projected into <gable-canvas> cannot inject boundary services, ADR 0019).
 function build(template: ReturnType<typeof html>, setup: (self: any) => void = () => {}) {
   const scene = createSceneTestRenderer();

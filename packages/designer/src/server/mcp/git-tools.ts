@@ -1,4 +1,4 @@
-// The MCP tools behind the Source control view (TASK-56.25): what changed in the project's working tree, one file's diff
+// The MCP tools behind the Source control view (designer/81): what changed in the project's working tree, one file's diff
 // as hunks, committing a selection, reverting a file or a hunk and putting the revert back. They run git in the backend,
 // exactly as the drawer's Changes tab does, and tell the Designer window to refresh. Nothing here needs a window.
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";

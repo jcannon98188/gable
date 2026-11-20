@@ -1,4 +1,4 @@
-// End-to-end check of the MCP control plane (TASK-56.13): a real backend (the built CLI), a real Designer window (the
+// End-to-end check of the MCP control plane (designer/69): a real backend (the built CLI), a real Designer window (the
 // shell in headless Edge/Chrome) and MCP clients over streamable HTTP and over stdio.
 //
 //   npm run build -w packages/designer && node packages/designer/e2e/mcp-check.mjs [--browser <path>] [--keep] [--shot <dir>]

@@ -1,4 +1,4 @@
-// The drawer's Why tab (TASK-56.19): for the selected element, what each of its bindings depends on (the signals it reads,
+// The drawer's Why tab (designer/75): for the selected element, what each of its bindings depends on (the signals it reads,
 // through computeds) and why it last updated: the signal writes the devtools hook recorded behind each run. "Highlight
 // updates" outlines, on the canvas, the elements whose bindings re-run. Everything is the hook's own record; a run no write
 // explains says so instead of guessing.

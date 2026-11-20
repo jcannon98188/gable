@@ -1,4 +1,4 @@
-// Driven check of the drawer's Matrix tab (TASK-56.22): every Scenario is rendered at several widths in a headless browser,
+// Driven check of the drawer's Matrix tab (designer/78): every Scenario is rendered at several widths in a headless browser,
 // baselines are saved, and a CSS change shows as a "changed" cell (pixels, with the red diff) while an invisible markup change
 // shows as a "markup" cell (the rendered-markup diff in the ui code-block). The MCP matrix tools do the same.
 //
