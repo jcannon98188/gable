@@ -15,7 +15,7 @@ ordinal: 272000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-v1 scope in ADR 0021 includes push, but an app can only receive pushes: nothing in the package wraps PushManager.subscribe, permission handling or unsubscribe, so apps must reach into navigator.serviceWorker themselves to get a subscription to send to their server.
+v1 scope in ADR 0022 includes push, but an app can only receive pushes: nothing in the package wraps PushManager.subscribe, permission handling or unsubscribe, so apps must reach into navigator.serviceWorker themselves to get a subscription to send to their server.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

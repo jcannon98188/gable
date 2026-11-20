@@ -15,7 +15,7 @@ ordinal: 271000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-ADR 0021 promises a versioned precache that installs atomically, but install() only checks for a 200 status. The Vite plugin already emits a content hash per file in the manifest, so a deploy that lands mid-install can store files from two releases under one version, and the installed marker is not proof the cache matches the manifest.
+ADR 0022 promises a versioned precache that installs atomically, but install() only checks for a 200 status. The Vite plugin already emits a content hash per file in the manifest, so a deploy that lands mid-install can store files from two releases under one version, and the installed marker is not proof the cache matches the manifest.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

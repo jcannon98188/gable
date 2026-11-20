@@ -15,7 +15,7 @@ ordinal: 273000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-v1 scope in ADR 0021 includes background sync, but it exists only worker-side in core: an app has no way to register a sync tag, and the default runtime built with defineWorker has no way to handle sync events apart from dropping to the core API by hand.
+v1 scope in ADR 0022 includes background sync, but it exists only worker-side in core: an app has no way to register a sync tag, and the default runtime built with defineWorker has no way to handle sync events apart from dropping to the core API by hand.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

@@ -8,14 +8,14 @@ updated_date: '2026-11-14T09:31:00Z'
 labels: []
 dependencies: []
 documentation:
-  - docs/adr/0021-service-worker-support-is-one-layered-package-and-web-only.md
+  - docs/adr/0022-service-worker-support-is-one-layered-package-and-web-only.md
 ordinal: 261000
 ---
 
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Gable apps have no way to work offline or receive push. Support ships as one layered package: a core authoring API, a default declarative worker, and app-side services. See docs/adr/0021-service-worker-support-is-one-layered-package-and-web-only.md for the decisions (layering, app-controlled updates, web-only).
+Gable apps have no way to work offline or receive push. Support ships as one layered package: a core authoring API, a default declarative worker, and app-side services. See docs/adr/0022-service-worker-support-is-one-layered-package-and-web-only.md for the decisions (layering, app-controlled updates, web-only).
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -33,5 +33,5 @@ AC evidence (TASK-106.8, 2026-11-14): #1 TASK-106.1 to 106.8 are all Done. #2 pa
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Service worker support shipped as one layered package, @gable/service-worker: core authoring API (routing, caching strategies, versioned precache, lifecycle, typed messages, push and background sync), a default runtime driven by gable.sw.json, app-side services with an update signal, a gableServiceWorker() Vite plugin, a create-gable --service-worker option, docs, and a headless-browser end-to-end test (install, offline, update via activateUpdate()). Decisions in docs/adr/0021. Known gaps recorded in docs/packages/service-worker.md: no push subscription helper, no app-side background sync registration, no precache hash verification, no clients.claim on first activation.
+Service worker support shipped as one layered package, @gable/service-worker: core authoring API (routing, caching strategies, versioned precache, lifecycle, typed messages, push and background sync), a default runtime driven by gable.sw.json, app-side services with an update signal, a gableServiceWorker() Vite plugin, a create-gable --service-worker option, docs, and a headless-browser end-to-end test (install, offline, update via activateUpdate()). Decisions in docs/adr/0022. Known gaps recorded in docs/packages/service-worker.md: no push subscription helper, no app-side background sync registration, no precache hash verification, no clients.claim on first activation.
 <!-- SECTION:FINAL_SUMMARY:END -->
