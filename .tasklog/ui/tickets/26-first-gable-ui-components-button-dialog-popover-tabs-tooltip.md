@@ -1,8 +1,7 @@
 ---
 kind: ticket
 title: "First gable-ui components: Button, Dialog, Popover, Tabs, Tooltip, Select"
-status: claimed
-claimed_by: "@claude"
+status: open
 blocked_by: [25]
 tags:
   - ui

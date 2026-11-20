@@ -1,8 +1,7 @@
 ---
 kind: ticket
 title: ">-\n  gable-ui: gallery demos and browser check for multi-combobox, RTL/cascading\n  resizable, stacked chart"
-status: claimed
-claimed_by: imported
+status: open
 tags:
   - ui
   - in-progress

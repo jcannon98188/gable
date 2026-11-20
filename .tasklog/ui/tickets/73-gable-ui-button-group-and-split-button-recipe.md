@@ -1,8 +1,7 @@
 ---
 kind: ticket
 title: "gable-ui: Button group and split-button recipe"
-status: claimed
-claimed_by: "@claude"
+status: open
 tags:
   - ui
   - gable-ui

@@ -1,8 +1,7 @@
 ---
 kind: ticket
 title: "gable-ui: Drawer"
-status: claimed
-claimed_by: "@claude"
+status: open
 tags:
   - ui
   - in-progress

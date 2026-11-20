@@ -1,8 +1,7 @@
 ---
 kind: ticket
 title: "gable-ui: Command palette (Command)"
-status: claimed
-claimed_by: "@claude"
+status: open
 tags:
   - ui
   - in-progress

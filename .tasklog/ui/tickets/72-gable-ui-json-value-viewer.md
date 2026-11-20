@@ -1,8 +1,7 @@
 ---
 kind: ticket
 title: "gable-ui: JSON / value viewer"
-status: claimed
-claimed_by: "@claude"
+status: open
 tags:
   - ui
   - gable-ui

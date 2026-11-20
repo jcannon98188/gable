@@ -1,8 +1,7 @@
 ---
 kind: ticket
 title: "gable-ui: Toast stacking and collapse of overflow"
-status: claimed
-claimed_by: imported
+status: open
 tags:
   - ui
   - in-progress

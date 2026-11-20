@@ -1,8 +1,7 @@
 ---
 kind: ticket
 title: "gable-ui: chart secondary axis, zoom and pie-slice toggling"
-status: claimed
-claimed_by: imported
+status: open
 tags:
   - ui
   - in-progress

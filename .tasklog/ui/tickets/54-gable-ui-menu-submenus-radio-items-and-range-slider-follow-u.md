@@ -1,8 +1,7 @@
 ---
 kind: ticket
 title: "gable-ui: Menu submenus, radio items and range slider follow-ups"
-status: claimed
-claimed_by: "@claude"
+status: open
 tags:
   - ui
   - in-progress
