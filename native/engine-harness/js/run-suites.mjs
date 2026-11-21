@@ -135,6 +135,11 @@ async function main() {
       outOfScope.push({ file: rel(f), reason: `Node tooling: loads ${script[1].replace(/^(\.\.\/)+/, "")} at run time` });
       return;
     }
+    // @gable/vite is the Vite plugin: its dist imports the real vite package, so a test importing it is Node tooling.
+    if (/^import[^"']*["']@gable\/vite["']/m.test(src)) {
+      outOfScope.push({ file: rel(f), reason: "Node tooling: imports @gable/vite" });
+      return;
+    }
     if (direct.length) {
       outOfScope.push({ file: rel(f), reason: `Node tooling: imports ${[...new Set(direct)].slice(0, 4).join(", ")}${direct.length > 4 ? ", ..." : ""}` });
       return;
