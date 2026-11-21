@@ -6,6 +6,7 @@ import { mountApp, type AppFixture, type MountAppOptions } from "@gable/testing"
 import type { TestAssets } from "./assets.js";
 import type { SceneTestRenderer } from "./renderer.js";
 
+/** Options of `mountWithScene`: the usual app mount options plus the scene to build into and an optional Assets double. */
 export interface MountWithSceneOptions extends Omit<MountAppOptions, "routes"> {
   /** The scene the page's canvas host builds into: `static meta = { ..., renderer: scene.boundary }`. */
   scene: SceneTestRenderer;
@@ -15,6 +16,7 @@ export interface MountWithSceneOptions extends Omit<MountAppOptions, "routes"> {
   routes?: MountAppOptions["routes"];
 }
 
+/** The fixture `mountWithScene` returns: the DOM-side app fixture plus `scene`, `assets` and deterministic `frame` and `frames` steps. */
 export interface SceneFixture<T extends object> extends AppFixture<T> {
   readonly scene: SceneTestRenderer;
   readonly assets: TestAssets | undefined;

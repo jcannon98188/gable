@@ -9,6 +9,7 @@
 // This module is free of any pixi.js import: the container node (the real Pixi ParticleContainer from the Pixi renderer,
 // or the in-memory node of the scene test renderer) supplies the particle factory, so the same code runs on both.
 
+/** The initial state of a particle: position, scale, anchor, rotation, tint, alpha and texture. Every field is optional. */
 export interface ParticleOptions {
   x?: number;
   y?: number;
@@ -48,6 +49,7 @@ export interface ParticleHost {
   update(): void;
 }
 
+/** The handle `particles()` returns for a `<particle-container>`: the live particles, and methods to add, remove and clear them and re-upload static fields. */
 export interface ParticleSet {
   /** The live particles, in draw order. Treat as read-only; mutate through `add`, `remove` and `clear`. */
   readonly items: readonly ParticleLike[];

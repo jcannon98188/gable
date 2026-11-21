@@ -4,6 +4,7 @@
 import { InjectionToken, type Provider } from "@gable/core";
 import { DEV } from "./dev.js";
 
+/** Options of the dev-only frame overlay: the frame budget, the rolling window, the update interval and the time source. */
 export interface CanvasDebugOptions {
   /** The frame budget in milliseconds, which dropped frames are counted against. Default 1000 / 60. */
   budgetMs?: number;

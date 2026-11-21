@@ -3,6 +3,7 @@
 import { effect, inject, onCleanup, untracked } from "@gable/core";
 import { LiveAnnouncer, type Politeness } from "@gable/core/renderer";
 
+/** Options of `announceOnChange`: the politeness of the announcement and the throttle interval. */
 export interface AnnounceOptions {
   /** Default `polite`. */
   politeness?: Politeness;

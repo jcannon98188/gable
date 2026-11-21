@@ -8,6 +8,7 @@
  * type-checked against the Pixi element map. Boundary components (`meta.renderer`) need no marker.
  */
 export const pixiElements = "pixi" as const;
+/** The type of the `pixiElements` marker: the literal `"pixi"`. */
 export type PixiElements = typeof pixiElements;
 
 /** How a property's value is typed and how a static attribute string is converted. */
@@ -30,6 +31,7 @@ export function propTypeText(spec: PropSpec): string {
   return PROP_KIND_TS[spec.kind];
 }
 
+/** The type and static-attribute rules of one scene property: its kind, plus the accepted values or Pixi type where the kind needs them. */
 export interface PropSpec {
   readonly kind: PropKind;
   /** For `string` properties with a closed set of values: the accepted strings. They become a literal union in the emitted type and are checked in static attributes. */
@@ -47,8 +49,10 @@ export interface AxisPropSpec extends PropSpec {
   readonly of: PointPropName;
 }
 
+/** The point-like properties (`position`, `scale`, `pivot`, `skew`, `anchor`, `tilePosition`, `tileScale`) that also accept dotted axes such as `scale.x`. */
 export type PointPropName = "position" | "scale" | "pivot" | "skew" | "anchor" | "tilePosition" | "tileScale";
 
+/** The pointer, mouse, touch and wheel event names a scene tag accepts as `(event)` listeners. */
 export type SceneEventName =
   | "pointerdown"
   | "pointerup"
@@ -126,6 +130,7 @@ export const SCENE_EVENTS = {
   wheel: "FederatedWheelEvent",
 } as const satisfies Record<SceneEventName, SceneEventType>;
 
+/** The tag names of the scene elements that map to Pixi display objects, such as `container`, `sprite` and `text`. */
 export type SceneTagName =
   | "container"
   | "sprite"
@@ -136,11 +141,13 @@ export type SceneTagName =
   | "nine-slice-sprite"
   | "particle-container";
 
+/** The tag names of the geometry children a `graphics` element accepts: `rect`, `rounded-rect`, `circle`, `ellipse` and `polygon`. */
 export type ShapeTagName = "rect" | "rounded-rect" | "circle" | "ellipse" | "polygon";
 
 /** Declarative hit-shape children (canvas/130): the shape tags with a `hit-` prefix. Any scene tag accepts them. */
 export type HitTagName = "hit-rect" | "hit-rounded-rect" | "hit-circle" | "hit-ellipse" | "hit-polygon";
 
+/** The description of one scene tag: the Pixi class it creates, its properties, and the children and text content it accepts. */
 export interface TagSpec {
   /** Pixi class the renderer instantiates (a name, never an import). */
   readonly pixiClass: string;
@@ -151,6 +158,7 @@ export interface TagSpec {
   readonly textContent?: boolean;
 }
 
+/** The description of one `hit-*` tag: the Pixi shape its geometry maps onto, the matching shape tag and the geometry properties. */
 export interface HitSpec {
   /** The Pixi shape class the geometry maps onto (the node's hitArea is built from it). */
   readonly pixiShape: string;
@@ -159,6 +167,7 @@ export interface HitSpec {
   readonly props: Readonly<Record<string, PropSpec>>;
 }
 
+/** The description of one graphics shape tag: the Pixi shape class its geometry maps onto and its geometry and painting properties. */
 export interface ShapeSpec {
   /** The Pixi shape class the geometry maps onto. */
   readonly pixiShape: string;
@@ -227,6 +236,7 @@ const TEXT_PROPS = {
   lineHeight: num,
 } as const satisfies Record<string, PropSpec>;
 
+/** The scene tag table: every scene tag name with the Pixi class it creates and the properties it accepts. */
 export const SCENE_TAGS: Readonly<Record<SceneTagName, TagSpec>> = {
   container: { pixiClass: "Container", props: CONTAINER_PROPS },
   sprite: {
@@ -301,18 +311,22 @@ export const HIT_TAGS: Readonly<Record<HitTagName, HitSpec>> = Object.fromEntrie
   }),
 ) as Record<HitTagName, HitSpec>;
 
+/** True when `name` is a `hit-*` tag name; narrows the string to `HitTagName`. */
 export function isHitTag(name: string): name is HitTagName {
   return Object.prototype.hasOwnProperty.call(HIT_TAGS, name);
 }
 
+/** True when `name` is a scene tag name; narrows the string to `SceneTagName`. */
 export function isSceneTag(name: string): name is SceneTagName {
   return Object.prototype.hasOwnProperty.call(SCENE_TAGS, name);
 }
 
+/** True when `name` is a graphics shape tag name; narrows the string to `ShapeTagName`. */
 export function isShapeTag(name: string): name is ShapeTagName {
   return Object.prototype.hasOwnProperty.call(SHAPE_TAGS, name);
 }
 
+/** True when `name` is a scene event name; narrows the string to `SceneEventName`. */
 export function isSceneEvent(name: string): name is SceneEventName {
   return Object.prototype.hasOwnProperty.call(SCENE_EVENTS, name);
 }
@@ -348,6 +362,7 @@ export function resolveProperty(tag: SceneTagName | ShapeTagName | HitTagName, n
   return { kind: "number", axis, of: of as PointPropName };
 }
 
+/** The result of converting a static attribute string: the converted `value`, or a `message` saying why the string is not valid for the property. */
 export type StaticConversion = { readonly ok: true; readonly value: unknown } | { readonly ok: false; readonly message: string };
 
 const fail = (message: string): StaticConversion => ({ ok: false, message });

@@ -53,6 +53,7 @@ export interface ApplicationLike {
   destroy(removeView?: boolean, options?: { children?: boolean }): void;
 }
 
+/** Options for the Pixi scene renderer, given to `createPixiRenderer` or `<gable-canvas [options]>`: canvas appearance and size, render mode, input sources, extra tags and the dev overlay. */
 export interface PixiRendererOptions {
   /** Background colour of the canvas. Default: transparent. */
   background?: string | number;
@@ -87,6 +88,7 @@ export interface PixiRendererOptions {
   tags?: Readonly<Record<string, TagRegistration>>;
 }
 
+/** How to register an extra scene tag: a factory for its node and the properties it adds to a container's. */
 export interface TagRegistration {
   /** Builds the node. */
   create(): Container;
@@ -94,6 +96,7 @@ export interface TagRegistration {
   props?: Readonly<Record<string, PropSpec>>;
 }
 
+/** The renderer of a Pixi scene (a Gable `Renderer` whose nodes are Pixi containers), together with the canvas boundary's services: the root node, canvas size, frame hooks, pointer, keyboard, gamepad, reduced motion and the accessibility mirror. `mount` creates the Pixi Application and starts the render loop; `destroy` tears it down. */
 export interface PixiSceneRenderer extends Renderer<Container> {
   /** The node the scene is built into; `mount()` adds it to the stage. */
   readonly root: Container;

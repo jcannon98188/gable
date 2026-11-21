@@ -2,6 +2,7 @@
 // signals. Driven by the stage's federated pointer events. Free of any pixi.js import.
 import { signal, type WritableSignal } from "@gable/core";
 
+/** A point in scene coordinates. */
 export interface PointerPoint {
   readonly x: number;
   readonly y: number;

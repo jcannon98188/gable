@@ -41,6 +41,7 @@ function createPixiBackend(): AssetsBackend {
   };
 }
 
+/** Options of `provideAssets`: the named bundles the app declares, and an optional replacement for Pixi's asset system. */
 export interface AssetsOptions {
   /** Bundles by name, as Pixi manifest entries. Import single files normally so Vite hashes their URLs. */
   bundles: Readonly<Record<string, BundleEntries>>;
@@ -63,8 +64,10 @@ export function provideAssets(options: AssetsOptions): Provider[] {
   return [{ provide: ASSETS_OPTIONS, useValue: options }];
 }
 
+/** Where a bundle is in its life: `idle` before a load, `loading`, `ready` once loaded, or `error` when the load failed. */
 export type BundleStatus = "idle" | "loading" | "ready" | "error";
 
+/** Options of `BundleHandle.load`. */
 export interface LoadOptions {
   /** App-lifetime assets: this load is not released when the calling scope is disposed. */
   keepAlive?: boolean;
@@ -90,6 +93,7 @@ export interface BundleHandle {
   unload(): Promise<void>;
 }
 
+/** The app-level asset service. Declare bundles with `provideAssets`, then get a handle with `bundle(name)` and load it explicitly; the handle exposes status, progress and errors as signals. Textures resolve from Pixi's cache once a bundle is ready. */
 export class Assets {
   static scope = "root";
 

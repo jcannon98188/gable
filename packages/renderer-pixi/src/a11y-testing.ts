@@ -2,6 +2,7 @@
 // its sink only records, and focus movement is simulated. Free of any pixi.js or DOM import.
 import type { A11yEntry, A11yMirror, A11yNode, A11ySink } from "./a11y.js";
 
+/** Options of the recorder's `tab`: `shift` moves focus backwards, as Shift+Tab. */
 export type TabOptions = { shift?: boolean };
 
 /**

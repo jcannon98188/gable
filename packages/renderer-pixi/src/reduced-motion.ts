@@ -5,6 +5,7 @@ import { signal, type WritableSignal } from "@gable/core";
 /** The slice of `window.matchMedia` the service uses. */
 export type MatchMedia = (query: string) => MediaQueryListLike;
 
+/** The slice of `MediaQueryList` the `ReducedMotion` service uses: the current match and change listeners. */
 export interface MediaQueryListLike {
   readonly matches: boolean;
   addEventListener(type: "change", listener: (event: { matches: boolean }) => void): void;

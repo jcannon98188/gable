@@ -27,6 +27,7 @@ export interface A11yNode {
   listenerCount?(name: string): number;
 }
 
+/** A rectangle in canvas (CSS pixel) coordinates: where a mirror element sits over the canvas. */
 export interface A11yBounds {
   x: number;
   y: number;
@@ -82,6 +83,7 @@ function validate(props: A11yProps): void {
   if (typeof props.label !== "string" || props.label === "") throw new Error(`[a11y] needs a label (the accessible name) alongside role "${props.role}".`);
 }
 
+/** The semantic mirror of a scene: tracks the nodes tagged with `[a11y]`, orders them and works out their bounds, and renders them as hidden DOM elements through a sink. The renderer owns one and exposes it as `a11y`; `activate` fires a node's tap handlers for keyboard and assistive-technology activation. */
 export class A11yMirror<N extends A11yNode = A11yNode> {
   readonly #props = new Map<N, A11yProps>();
   #sink: A11ySink<N> | null = null;

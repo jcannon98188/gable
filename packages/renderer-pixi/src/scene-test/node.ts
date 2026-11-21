@@ -2,6 +2,7 @@
 // Free of any pixi.js import. `toData` turns a node into plain data for assertions.
 import { SCENE_TAGS, type HitTagName, type PropSpec, type SceneTagName, type ShapeTagName } from "../elements.js";
 
+/** A point with `x` and `y` coordinates. */
 export interface Point {
   x: number;
   y: number;
@@ -266,6 +267,7 @@ export function paintOrder(node: SceneNode): SceneNode[] {
 
 // --- plain data ----------------------------------------------------------------------------------------------------
 
+/** A graphics shape or hit-shape child as plain data: its tag and the properties set on it. */
 export interface ShapeData {
   tag: ShapeTagName | HitTagName;
   [prop: string]: unknown;

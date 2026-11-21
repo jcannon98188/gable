@@ -2,6 +2,7 @@
 // loop, plus connect and disconnect signals. No remapping layer. Free of any pixi.js import.
 import { signal, type WritableSignal } from "@gable/core";
 
+/** A copy of one gamepad button as of the polled frame: whether it is pressed or touched, and its analogue value. */
 export interface GamepadButtonSnapshot {
   readonly pressed: boolean;
   readonly touched: boolean;
@@ -26,6 +27,7 @@ export interface GamepadSource {
   readonly axes: ArrayLike<number>;
   readonly buttons: ArrayLike<{ readonly pressed: boolean; readonly touched?: boolean; readonly value: number }>;
 }
+/** A function returning the current gamepads, like `navigator.getGamepads`; disconnected slots are `null`. Pass one as the `getGamepads` renderer option to supply your own source. */
 export type GetGamepads = () => ArrayLike<GamepadSource | null>;
 
 /**

@@ -6,6 +6,7 @@ import { ASSETS_OPTIONS, type AssetsBackend, type BundleEntries } from "../asset
 import type { StubTexture } from "./node.js";
 import type { StubTextures } from "./renderer.js";
 
+/** Options of `provideTestAssets`: the bundles the app declares and the texture registry to fill. */
 export interface TestAssetsOptions {
   /** The bundles the app declares: names with their manifest entries (as `provideAssets`), or just names. */
   bundles: Readonly<Record<string, BundleEntries>> | readonly string[];
@@ -30,6 +31,7 @@ export interface BundleScript {
   expectReleased(): void;
 }
 
+/** The Assets double `provideTestAssets` returns: the providers to install, the stub texture registry, and per-bundle scripts to hold, fail or inspect loads. */
 export interface TestAssets {
   /** Put these in the app's root providers (or `mountWithScene({ assets })`). */
   readonly providers: Provider[];
@@ -60,6 +62,7 @@ function aliasesOf(entries: BundleEntries): string[] {
   return Object.keys(entries);
 }
 
+/** Replaces the asset system under the real Assets service with a scriptable double, so bundle handles and scope release behave as in production. Bundles are ready at once with stub textures unless a test holds or fails them. */
 export function provideTestAssets(options: TestAssetsOptions): TestAssets {
   const textures: StubTextures = options.textures ?? new Map();
   const declared: Record<string, BundleEntries> = Array.isArray(options.bundles)

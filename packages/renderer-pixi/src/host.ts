@@ -9,6 +9,7 @@ import { CANVAS_DEBUG } from "./canvas-debug.js";
 import { DEV } from "./dev.js";
 import type { PixiRendererOptions } from "./renderer.js";
 
+/** The `<gable-canvas>` element: hosts a Pixi scene inside a normal DOM page. Its content is built with the Pixi renderer; Pixi loads lazily on first mount, and the `placeholder` slot shows meanwhile. Configure it with `options`, `renderMode` and `debug`. */
 export class GableCanvas {
   static meta = {
     selector: "gable-canvas",

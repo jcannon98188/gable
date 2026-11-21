@@ -20,6 +20,7 @@ const BUTTON_MASK = [1, 4, 2];
 const maskOf = (button: number | undefined) => BUTTON_MASK[button ?? 0] ?? 1;
 const distance = (a: PointerPoint, b: PointerPoint) => Math.hypot(a.x - b.x, a.y - b.y);
 
+/** What a drag callback receives: where the press started, where the pointer is now, and the movement since the start and since the previous event. */
 export interface DragEvent {
   /** Where the press happened, in scene coordinates. */
   readonly start: PointerPoint;
@@ -33,6 +34,7 @@ export interface DragEvent {
   readonly cancelled: boolean;
 }
 
+/** Options of `createDrag`: the travel threshold, the button and the start, move and end callbacks. */
 export interface DragOptions {
   /** Distance in scene units the pointer must travel from the press before it is a drag. Default 4. A press that stays within it is a tap. */
   threshold?: number;
@@ -43,6 +45,7 @@ export interface DragOptions {
   onEnd?(event: DragEvent): void;
 }
 
+/** The handle `createDrag` returns: forward `pointerdown` to `down`, read `dragging` and call `cancel` to end the gesture early. */
 export interface DragHandle {
   /** Forward the node's `pointerdown` event here. */
   down(event?: PressEventLike): void;
@@ -127,6 +130,7 @@ export function createDrag(options: DragOptions = {}): DragHandle {
   };
 }
 
+/** What the `onLongPress` callback receives: where the press started and where the pointer is when the delay elapsed. */
 export interface LongPressEvent {
   /** Where the press happened, in scene coordinates. */
   readonly start: PointerPoint;
@@ -134,6 +138,7 @@ export interface LongPressEvent {
   readonly position: PointerPoint;
 }
 
+/** Options of `createLongPress`: the hold delay, the drift tolerance, the button and the callback. */
 export interface LongPressOptions {
   /** How long the pointer must be held, in milliseconds of frame time. Default 500. */
   delayMs?: number;
@@ -144,6 +149,7 @@ export interface LongPressOptions {
   onLongPress(event: LongPressEvent): void;
 }
 
+/** The handle `createLongPress` returns: forward `pointerdown` to `down`, read `pressing` and call `cancel` to abandon a pending press. */
 export interface LongPressHandle {
   /** Forward the node's `pointerdown` event here. */
   down(event?: PressEventLike): void;

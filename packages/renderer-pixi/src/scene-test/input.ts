@@ -6,6 +6,7 @@ import type { Keyboard } from "../keyboard.js";
 import type { Pointer } from "../pointer.js";
 import { SceneNode, apply, invert, paintOrder, worldMatrix, type Point, type StubTexture } from "./node.js";
 
+/** Simulated pointer input for the scene test renderer, in scene coordinates. It drives the real Pointer service and fires the scene events on the hit node as the Pixi renderer would. */
 export interface PointerSimulator {
   /** Moves the pointer to scene (x, y): hover transitions (`pointerover`, `pointerout`, enter and leave), then `pointermove`. */
   move(x: number, y: number): void;
@@ -19,6 +20,7 @@ export interface PointerSimulator {
   leave(): void;
 }
 
+/** Simulated keyboard input for the scene test renderer. It drives the real Keyboard service. */
 export interface KeyboardSimulator {
   /** Holds a key (a `KeyboardEvent.code`). Pressing a held key does nothing, as in the browser's auto-repeat filter. */
   press(code: string): void;
@@ -27,6 +29,7 @@ export interface KeyboardSimulator {
   blur(): void;
 }
 
+/** Simulated gamepads for the scene test renderer. State reaches the Gamepad service at the next frame, as with a polled device. */
 export interface GamepadSimulator {
   /** Plugs a pad in at `index` (default 0). Its state reaches `Gamepad.pads` at the next frame. */
   connect(index?: number, options?: { id?: string; axes?: number; buttons?: number }): void;

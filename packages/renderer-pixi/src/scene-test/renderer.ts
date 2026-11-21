@@ -27,6 +27,7 @@ import { createInputSimulators, type GamepadSimulator, type KeyboardSimulator, t
 import { SceneNode, apply, attachParticleHost, isStyleField, paintOrder, tagInfoFor, toData, worldMatrix, type Point, type SceneNodeData, type StubTexture, type TagInfo } from "./node.js";
 import { findAll as selectAll } from "./select.js";
 
+/** Options of `createSceneTestRenderer`: canvas size, render mode, extra tags and the lenient contract mode. */
 export interface SceneTestOptions {
   /** CSS pixel size of the canvas the scene sees through `CanvasSize`. Default 300 by 150, like the real renderer's fallback. */
   width?: number;
@@ -45,6 +46,7 @@ export interface SceneTestOptions {
 /** The loaded textures by alias; the Assets double fills it, and a `texture="alias"` binding reads it, as Pixi's cache. */
 export type StubTextures = Map<string, StubTexture>;
 
+/** An in-memory Pixi scene for tests: the renderer and boundary to build a component into, queries that return the scene as plain data, a deterministic frame loop, simulated pointer, keyboard and gamepad input, and the Gable services a canvas provides. */
 export interface SceneTestRenderer {
   /** The Renderer for the contract suite or for `createComponent(..., { renderer })`. */
   readonly renderer: Renderer<SceneNode>;
@@ -115,6 +117,7 @@ function colorValue(value: unknown): unknown {
   return value;
 }
 
+/** Creates a scene test renderer: a Pixi-free, in-memory scene with the production tag table and property semantics. Use it to test scene components with no canvas, WebGL or real timers. */
 export function createSceneTestRenderer(options: SceneTestOptions = {}): SceneTestRenderer {
   const lenient = options.lenient === true;
   const textures: StubTextures = new Map();
