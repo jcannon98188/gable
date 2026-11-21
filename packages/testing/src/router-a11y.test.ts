@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { html, inject } from "@gable/core";
-import { LiveAnnouncer } from "@gable/core/renderer";
-import { RouterOutlet, type Route } from "@gable/core/router";
-import { mountApp } from "@gable/testing";
+import { html, inject } from "@gablejs/core";
+import { LiveAnnouncer } from "@gablejs/core/renderer";
+import { RouterOutlet, type Route } from "@gablejs/core/router";
+import { mountApp } from "@gablejs/testing";
 
 class Home {
   static meta = { selector: "app-home", template: html`<h1>Home</h1>` };

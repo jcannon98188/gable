@@ -1,5 +1,5 @@
 // The Scenario by breakpoint matrix (designer/78), backend half. Every scene of every `*.scenes.ts` file is mounted by the
-// component-mode host (the same `mountScene` the Designer's component mode and `@gable/testing` use) in a headless Chromium
+// component-mode host (the same `mountScene` the Designer's component mode and `@gablejs/testing` use) in a headless Chromium
 // at each breakpoint's width, screenshotted, and compared with the baseline saved for that cell.
 //
 // Nothing is faked and nothing is written to the project: the pictures come from a real render of the project's own dev

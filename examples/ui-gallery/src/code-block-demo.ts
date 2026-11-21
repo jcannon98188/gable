@@ -1,7 +1,7 @@
-import { html, signal } from '@gable/core';
-import { UiCodeBlock, type Highlighter } from '@gable/ui';
+import { html, signal } from '@gablejs/core';
+import { UiCodeBlock, type Highlighter } from '@gablejs/ui';
 
-export const TS_SAMPLE = `import { signal } from '@gable/core';
+export const TS_SAMPLE = `import { signal } from '@gablejs/core';
 
 /** A counter. */
 export class Counter {

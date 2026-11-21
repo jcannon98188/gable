@@ -1,4 +1,4 @@
-import { I18n, html, i18n, signal } from "@gable/core";
+import { I18n, html, i18n, signal } from "@gablejs/core";
 
 export class Good {
   static meta = {

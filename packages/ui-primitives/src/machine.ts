@@ -1,6 +1,6 @@
-import { computed, effect, signal, untracked, type ReadonlySignal } from "@gable/core";
-import { inject } from "@gable/core";
-import { currentScope, injectHost } from "@gable/core/internal";
+import { computed, effect, signal, untracked, type ReadonlySignal } from "@gablejs/core";
+import { inject } from "@gablejs/core";
+import { currentScope, injectHost } from "@gablejs/core/internal";
 import { MACHINE_ENV } from "./env.js";
 import type { Machine, MachineSchema, Service } from "@zag-js/core";
 import { VanillaMachine, normalizeProps } from "@zag-js/vanilla";

@@ -36,7 +36,7 @@ TypeScript cannot enforce a type on a class's static side without a base class o
 
 ## Implementation notes
 
-Validation: npx vitest run packages/language-service packages/create-gable (102 + 15 passed); gable-check clean on examples/todomvc, examples/js-framework-benchmark, create-gable template (template checked via a copy under examples/ so @gable/core resolved; injecting a selector typo in copies of template and todomvc produced component-meta errors). Not covered: value types inside nested providers/host entries beyond assignability; non-literal spread keys skip the missing-selector check.
+Validation: npx vitest run packages/language-service packages/create-gable (102 + 15 passed); gable-check clean on examples/todomvc, examples/js-framework-benchmark, create-gable template (template checked via a copy under examples/ so @gablejs/core resolved; injecting a selector typo in copies of template and todomvc produced component-meta errors). Not covered: value types inside nested providers/host entries beyond assignability; non-literal spread keys skip the missing-selector check.
 
 ## Answer
 

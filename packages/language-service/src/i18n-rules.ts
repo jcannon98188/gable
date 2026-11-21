@@ -1,7 +1,7 @@
 // i18n marker lint rules for templates. They look at the scanned template tree only (no types, no catalogs).
 // Each rule reports through `report(start, length, rule, message)` like the a11y rules.
 
-import { decodeEntities, messageFromParts, messageFromStrings, messageId, parseMarker } from "@gable/core/tooling";
+import { decodeEntities, messageFromParts, messageFromStrings, messageId, parseMarker } from "@gablejs/core/tooling";
 import ts from "@typescript/typescript6";
 import type { Report } from "./a11y-rules.js";
 import type { AnalyzerConfig, I18nCheckConfig } from "./config.js";

@@ -1,5 +1,5 @@
-import { computed, contentChild, effect, html, inject, input, model, signal } from "@gable/core";
-import { CollapsibleState, UiPopup, UiProps, bindProps } from "@gable/ui-primitives";
+import { computed, contentChild, effect, html, inject, input, model, signal } from "@gablejs/core";
+import { CollapsibleState, UiPopup, UiProps, bindProps } from "@gablejs/ui-primitives";
 
 /** Marks the element that toggles a collapsible: `<button slot="trigger" collapsibleTrigger uiButton>Toggle</button>`. */
 export class CollapsibleTrigger {

@@ -4,7 +4,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import type { ComponentDetail } from "@gable/core/devtools";
+import type { ComponentDetail } from "@gablejs/core/devtools";
 import type { ControlCommands, SignalsResult } from "../../control-protocol.js";
 import { defaultSceneFields, sceneValues } from "../../signal-value.js";
 import type { EditService } from "../edit/service.js";

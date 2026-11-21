@@ -23,7 +23,7 @@ const BODY = `
     }
   </li>
 `;
-const FILE = (body: string) => `import { html } from "@gable/core";\n\nexport class TodoItem {\n  static meta = {\n    selector: "todo-item",\n    template: html\`${body}\`,\n  };\n}\n`;
+const FILE = (body: string) => `import { html } from "@gablejs/core";\n\nexport class TodoItem {\n  static meta = {\n    selector: "todo-item",\n    template: html\`${body}\`,\n  };\n}\n`;
 
 function project(eol = "\n") {
   const root = mkdtempSync(join(tmpdir(), "gable-polish-"));

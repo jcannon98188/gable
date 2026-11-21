@@ -34,7 +34,7 @@ export function scenarioModule(scenesModule: string, name: string): string {
   const path = JSON.stringify(scenesModule);
   const scene = JSON.stringify(name);
   return `import definition from ${path};
-import { mockHttp } from "@gable/core/http";
+import { mockHttp } from "@gablejs/core/http";
 ${MOCK_LOG}
 const hook = globalThis.__GABLE_DESIGNER_HOOK__;
 const scene = definition.scenes[${scene}];
@@ -46,14 +46,14 @@ if (hook && scene) {
 `;
 }
 
-/** The generated module that mounts one scene of a scenes file. It lives in the project's module graph so it shares its `@gable/core` and renderer, and HMR works. */
+/** The generated module that mounts one scene of a scenes file. It lives in the project's module graph so it shares its `@gablejs/core` and renderer, and HMR works. */
 export function hostModule(scenesModule: string, initial: string | null): string {
   const path = JSON.stringify(scenesModule);
   return `import * as scenesModule from ${path};
-import { createComponent, createInjector, RENDERER } from "@gable/core";
-import { mockHttp } from "@gable/core/http";
-import { applySceneState } from "@gable/core/tooling";
-import { dom } from "@gable/renderer-dom";
+import { createComponent, createInjector, RENDERER } from "@gablejs/core";
+import { mockHttp } from "@gablejs/core/http";
+import { applySceneState } from "@gablejs/core/tooling";
+import { dom } from "@gablejs/renderer-dom";
 
 const root = document.getElementById("gable-scene-root");
 ${MOCK_LOG}
@@ -151,7 +151,7 @@ export function designerPlugin(options: { agentFile: string; axeFile?: string | 
       if (id.startsWith(HOST)) return VIRTUAL + id.slice(HOST.length);
     },
     load(id) {
-      if (id === INSTALL_ID) return `import { installDesigner } from "@gable/core/designer";
+      if (id === INSTALL_ID) return `import { installDesigner } from "@gablejs/core/designer";
 installDesigner();
 `;
       if (id.startsWith(SCENARIO_VIRTUAL)) {

@@ -1,6 +1,6 @@
-import { computed, effect, html, inject, input, signal } from "@gable/core";
-import { Title } from "@gable/core/renderer";
-import { Router } from "@gable/core/router";
+import { computed, effect, html, inject, input, signal } from "@gablejs/core";
+import { Title } from "@gablejs/core/renderer";
+import { Router } from "@gablejs/core/router";
 import { ApiData } from "./api-data.js";
 import type { ApiIndexEntry, ApiPackage, ApiSymbol } from "./api-types.js";
 import { SymbolView, symbolToc } from "./api-view.js";

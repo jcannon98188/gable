@@ -1,10 +1,10 @@
 // The Preview agent. Dev only: the Designer's Vite plugin injects it into the previewed app, and it stays dormant unless
 // the page was opened by the Designer (the shell names the iframe, see `protocol.ts`). It owns no framework logic: it rides
-// on the two dev hooks of @gable/core (devtools for state, designer for template nodes) and adds picking, overlays and the
+// on the two dev hooks of @gablejs/core (devtools for state, designer for template nodes) and adds picking, overlays and the
 // postMessage transport.
-import type { BoundaryInfo, BoundaryTree, DevtoolsEvent, GableDevtoolsHook } from "@gable/core/devtools";
+import type { BoundaryInfo, BoundaryTree, DevtoolsEvent, GableDevtoolsHook } from "@gablejs/core/devtools";
 import { pageRectFor, sceneReport } from "./scene.js";
-import type { DesignerHook, DesignNode } from "@gable/core/designer";
+import type { DesignerHook, DesignNode } from "@gablejs/core/designer";
 import { RUN_CONTEXT, runOptions, toReport, type AxeLike } from "./a11y.js";
 import { a11yTree, focusOrder, focusOrderOf, nameOf, stepFocus, tabOrder, type NodeRef } from "./a11y-depth.js";
 import { GableCounter, PerfCollector, domSize, settled } from "./perf.js";

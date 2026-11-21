@@ -1,6 +1,6 @@
-import { effect, input, output } from "@gable/core";
-import { currentScope, injectHost } from "@gable/core/internal";
-import type { Renderer } from "@gable/core/renderer";
+import { effect, input, output } from "@gablejs/core";
+import { currentScope, injectHost } from "@gablejs/core/internal";
+import type { Renderer } from "@gablejs/core/renderer";
 import { instructionsId } from "./dnd-announce.js";
 import { dragStartsHere, liftsHere, overlayOf, DRAG_HANDLE_ATTR } from "./dnd.js";
 import { getDndManager, type DndZone, type DragSource, type DropInfo, type PointerDragOptions, type SortableItemInfo } from "./dnd-manager.js";

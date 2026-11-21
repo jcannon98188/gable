@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
-import { mount } from "@gable/testing";
-import { createTestRenderer } from "@gable/testing/renderer";
+import { html, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
+import { createTestRenderer } from "@gablejs/testing/renderer";
 
 interface Todo {
   id: number;

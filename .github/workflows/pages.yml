@@ -29,7 +29,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       # npm ci ran before dist/ existed, so it could not link the gable-check bin; link it now that the build has run.
-      - run: npm rebuild @gable/language-service
+      - run: npm rebuild @gablejs/language-service
       - run: npm run api:strict -w site
       - run: npm test -w site
       - run: npm run check -w site

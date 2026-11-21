@@ -1,5 +1,5 @@
-import { computed, effect, inject, signal } from '@gable/core';
-import { Router } from '@gable/core/router';
+import { computed, effect, inject, signal } from '@gablejs/core';
+import { Router } from '@gablejs/core/router';
 import { matchesFilter, parseTodos, type Filter, type Todo } from '../models/todo.js';
 import { TodoStorage } from './todo-storage.js';
 

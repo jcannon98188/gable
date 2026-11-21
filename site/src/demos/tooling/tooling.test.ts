@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { mount } from "@gable/testing";
-import { formatTemplateLiterals } from "@gable/template-format";
+import { mount } from "@gablejs/testing";
+import { formatTemplateLiterals } from "@gablejs/template-format";
 import { FormatDemo, SAMPLE } from "./format-demo.js";
 
 describe("FormatDemo", () => {

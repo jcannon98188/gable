@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { type ComponentClass, bootstrap, createComponent, createInjector, html, inject, input, InjectionToken, signal } from "@gable/core";
-import { createTestRenderer, createTestRoot } from "@gable/testing/renderer";
-import { mount } from "@gable/testing";
+import { type ComponentClass, bootstrap, createComponent, createInjector, html, inject, input, InjectionToken, signal } from "@gablejs/core";
+import { createTestRenderer, createTestRoot } from "@gablejs/testing/renderer";
+import { mount } from "@gablejs/testing";
 
 const GREETING = new InjectionToken<string>("greeting");
 

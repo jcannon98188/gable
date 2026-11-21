@@ -1,8 +1,8 @@
 // What the shell draws on the canvas beyond the agent's own selection: the read-only hatch on an element the panels cannot edit,
 // the selection mirrored into the other frames while Sync is on, and drag-insert from the Insert tab (the agent finds the
 // element under the pointer and draws the insertion line; the drop is an ordinary insert edit relative to that element).
-import { computed, effect, inject, signal, untracked } from "@gable/core";
-import type { DesignNode } from "@gable/core/designer";
+import { computed, effect, inject, signal, untracked } from "@gablejs/core";
+import type { DesignNode } from "@gablejs/core/designer";
 import type { DropWhere } from "../../../src/protocol.js";
 import type { PaletteEntry } from "../../../src/server/edit/types.js";
 import { DesignerState } from "./designer-state.js";

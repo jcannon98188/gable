@@ -1,11 +1,11 @@
 {
-  "name": "@gable/core",
+  "name": "@gablejs/core",
   "slug": "core",
   "version": "0.0.0",
   "description": "Components, signals, dependency injection and the router.",
   "entryPoints": [
     {
-      "path": "@gable/core",
+      "path": "@gablejs/core",
       "symbols": [
         {
           "id": "core:signal",
@@ -46,7 +46,7 @@
       ]
     },
     {
-      "path": "@gable/core/router",
+      "path": "@gablejs/core/router",
       "symbols": [
         {
           "id": "core/router:Router",

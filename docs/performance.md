@@ -10,9 +10,9 @@ writes, bucketed effect flush, shared `toObservable` effect) and `f648502` (HMR:
   **Current** = `f648502` (HEAD, same procedure). The benchmark apps from HEAD (`examples/js-framework-benchmark`,
   `examples/reactivity-benchmark`, `examples/hmr-benchmark`) were copied twice outside the repo; each copy has its own
   `vendor/` with the baseline or the current tarballs, and a fresh `npm install` (no lockfile, no stale
-  `node_modules/@gable`). The same benchmark code and app source therefore run on both framework builds. Which build is
+  `node_modules/@gablejs`). The same benchmark code and app source therefore run on both framework builds. Which build is
   installed was verified by looking for the `longestIncreasing` helper (the LIS reconciler) in the installed
-  `@gable/core/dist`: present only in the current copies.
+  `@gablejs/core/dist`: present only in the current copies.
 - **Alternation**: runs were interleaved A/B/B/A/A/B/B/A so that slow drift of the machine hits both sides equally.
   Reported numbers are the **median of the per-run medians**; "spread" is (max - min) / median across those per-run medians.
 - **js-framework-benchmark**: `npm run bench -- --iterations 20`, 8 runs (4 per side). Fresh page per iteration, headless Edge.
@@ -173,7 +173,7 @@ All other scenarios (deep-chain, wide-fanout, diamond, dynamic-deps, batched-wri
 
 ## core/44: virtual scroll (`useVirtualizer`) against plain `@for`
 
-`examples/virtual-benchmark` renders the js-framework-benchmark rows case (same row data generator, same row component with id, clickable label and remove link) two ways: every row as a node in an `@for` (`?mode=plain`), and through `useVirtualizer` from `@gable/ui-primitives` (`?mode=virtual`: 38 px fixed rows, `getKey` by row id, overscan 5) inside a 400 px scroll container. `node scripts/bench.mjs` builds it, drives headless Chrome with Playwright (the vite and playwright-core of `examples/js-framework-benchmark` are reused) and prints the median of fresh-page runs. Same measurement as the js-framework-benchmark script: click (or scroll assignment) to the next painted frame, quantized to about 16.7 ms.
+`examples/virtual-benchmark` renders the js-framework-benchmark rows case (same row data generator, same row component with id, clickable label and remove link) two ways: every row as a node in an `@for` (`?mode=plain`), and through `useVirtualizer` from `@gablejs/ui-primitives` (`?mode=virtual`: 38 px fixed rows, `getKey` by row id, overscan 5) inside a 400 px scroll container. `node scripts/bench.mjs` builds it, drives headless Chrome with Playwright (the vite and playwright-core of `examples/js-framework-benchmark` are reused) and prints the median of fresh-page runs. Same measurement as the js-framework-benchmark script: click (or scroll assignment) to the next painted frame, quantized to about 16.7 ms.
 
 Chrome 156, 7 fresh pages per cell, median (ms, lower is better). "Rows in DOM" is the row node count after the operation.
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { html, inject } from "@gable/core";
-import { Assets } from "@gable/renderer-pixi";
-import { createSceneTestRenderer, mountWithScene, provideTestAssets } from "@gable/renderer-pixi/testing";
+import { html, inject } from "@gablejs/core";
+import { Assets } from "@gablejs/renderer-pixi";
+import { createSceneTestRenderer, mountWithScene, provideTestAssets } from "@gablejs/renderer-pixi/testing";
 import { Level } from "./assets.js";
 
 // In tests, provideTestAssets replaces the asset system under the real Assets service, so the handle's signals and the

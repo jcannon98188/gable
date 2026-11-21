@@ -1,5 +1,5 @@
-import { type ComponentMeta, computed, contentChild, effect, html, inject, input, model, output, signal, untracked } from "@gable/core";
-import { MenuState, UiPopup, UiPortal, UiProps, bindProps, type PropBag } from "@gable/ui-primitives";
+import { type ComponentMeta, computed, contentChild, effect, html, inject, input, model, output, signal, untracked } from "@gablejs/core";
+import { MenuState, UiPopup, UiPortal, UiProps, bindProps, type PropBag } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 import { UiIcon } from "../lib/icon.js";
 import type { Placement } from "../lib/placement.js";

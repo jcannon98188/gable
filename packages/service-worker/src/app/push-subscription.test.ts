@@ -2,7 +2,7 @@
 // the package's root entry and DI against pages of the in-memory browser. The browser models pushManager, the
 // notification permission and its prompt, so the flow is tested end to end with the worker's push handlers.
 import { afterEach, describe, expect, it } from "vitest";
-import { createInjector, type Injector } from "@gable/core";
+import { createInjector, type Injector } from "@gablejs/core";
 import { lifecycle, onNotificationClick, onPush } from "../core/index.js";
 import { createBrowser, type InMemoryBrowser, type InMemoryBrowserOptions, type InMemoryPage, type WorkerScript } from "../testing/browser.js";
 import {

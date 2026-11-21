@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createScope, runInScope } from "@gable/core/internal";
+import { createScope, runInScope } from "@gablejs/core/internal";
 import { Frame, MAX_FRAME_DT } from "./frame.js";
 
 describe("Frame service", () => {

@@ -1,5 +1,5 @@
-import { computed, html, inject, input, model, output } from "@gable/core";
-import { RadioGroupState, UiProps } from "@gable/ui-primitives";
+import { computed, html, inject, input, model, output } from "@gablejs/core";
+import { RadioGroupState, UiProps } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 import { UiIcon } from "../lib/icon.js";
 

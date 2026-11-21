@@ -19,7 +19,7 @@ ordinal: 84000
 
 ## Question
 
-A drag-and-drop layer in the style of Angular CDK / dnd-kit: draggable, drop containers, sortable lists (with keyboard support and live-region announcements), cross-container transfer, drag handle, auto-scroll and an overlay drag preview using the portal. Pointer-based (not HTML5 DnD) for consistent behaviour, with accessible keyboard alternatives. Build as primitives in @gable/ui-primitives with a Sortable component in gable-ui. Use a framework-agnostic library only if one fits; otherwise implement.
+A drag-and-drop layer in the style of Angular CDK / dnd-kit: draggable, drop containers, sortable lists (with keyboard support and live-region announcements), cross-container transfer, drag handle, auto-scroll and an overlay drag preview using the portal. Pointer-based (not HTML5 DnD) for consistent behaviour, with accessible keyboard alternatives. Build as primitives in @gablejs/ui-primitives with a Sortable component in gable-ui. Use a framework-agnostic library only if one fits; otherwise implement.
 
 ## Acceptance criteria
 

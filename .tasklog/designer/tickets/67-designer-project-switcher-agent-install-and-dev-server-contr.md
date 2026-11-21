@@ -26,7 +26,7 @@ Follow-up to designer/64. Open project dialog, Preview agent install, and dev-se
 
 ## Implementation plan
 
-1. Backend (Node, ADR 0002): src/server/dev-server.ts owns the project's Vite (spawn via wrapper config, status, crash-after-ready detection, log ring buffer, restart on the same preview port); src/server/projects.ts holds recent projects (user data dir), a folder lister, the project check (package.json, Vite, @gable/core/designer = the Preview agent's in-app hook, package manager) and the install runner; src/server/project-api.ts serves /api/project/* and /api/server/*.
+1. Backend (Node, ADR 0002): src/server/dev-server.ts owns the project's Vite (spawn via wrapper config, status, crash-after-ready detection, log ring buffer, restart on the same preview port); src/server/projects.ts holds recent projects (user data dir), a folder lister, the project check (package.json, Vite, @gablejs/core/designer = the Preview agent's in-app hook, package manager) and the install runner; src/server/project-api.ts serves /api/project/* and /api/server/*.
 2. backend.ts: per-project session (dev server, watcher, edits, tailwind, diagnostics) swappable behind the same HTTP server, token and preview port; SSE server/log/project events.
 3. cli.ts: project optional (falls back to the most recent). Rust: pass the project only when given (stays window + process lifetime).
 4. Shell: ProjectState service; Open project dialog (path field, folder browser, recents, Open); Connect dialog with check chips and Install and start (live log); failure card with log tail, Restart server, Open log; dev server log dialog.
@@ -42,16 +42,16 @@ Verification (2026-11-07):
 - e2e/chrome-check.mjs: 14/14 PASS after dropping its 'Open a project not available yet' entry.
 - Found while driving: the template language has no ?: operator, '[]' literal or calls with arguments in bindings; those moved into computeds (they only fail at runtime).
 
-Limits: the Tauri window itself was not launched (cargo check only); only npm installs were exercised end to end (pnpm/yarn/bun are detected and unit-tested, not run); an outdated @gable/core is reported, not upgraded; the folder picker is an in-app lister, not the OS dialog.
+Limits: the Tauri window itself was not launched (cargo check only); only npm installs were exercised end to end (pnpm/yarn/bun are detected and unit-tested, not run); an outdated @gablejs/core is reported, not upgraded; the folder picker is an in-app lister, not the OS dialog.
 
 ## Answer
 
 Open project, Preview agent install and dev server control now run against the backend (ADR 0002: Node owns the project's Vite; Rust stays window + process lifetime).
 
-Backend: src/server/dev-server.ts (DevServer runs the project's own Vite through the wrapper config, tracks starting/running/failed/stopped incl. a crash after ready, ring-buffer log, restart on the same preview port), src/server/projects.ts (recent.json in the user data dir, folder lister, project check: package.json, Vite, @gable/core/designer, package manager from packageManager/lockfile; install runner), src/server/project-api.ts (/api/project/recent|folders|open|install, /api/server/log|restart). backend.ts keeps a per-project Session (dev server, watcher, edits, Tailwind, diagnostics) swapped behind the same server, token and preview port; SSE server/log/project events. cli.ts: project optional, falls back to the most recent; main.rs passes it only when given.
+Backend: src/server/dev-server.ts (DevServer runs the project's own Vite through the wrapper config, tracks starting/running/failed/stopped incl. a crash after ready, ring-buffer log, restart on the same preview port), src/server/projects.ts (recent.json in the user data dir, folder lister, project check: package.json, Vite, @gablejs/core/designer, package manager from packageManager/lockfile; install runner), src/server/project-api.ts (/api/project/recent|folders|open|install, /api/server/log|restart). backend.ts keeps a per-project Session (dev server, watcher, edits, Tailwind, diagnostics) swapped behind the same server, token and preview port; SSE server/log/project events. cli.ts: project optional, falls back to the most recent; main.rs passes it only when given.
 
 Shell: ProjectState service; Open a project dialog (path, recents, folder lister, refusal reasons); Connect dialog with check chips, Install and start and the live install log, opened by itself on a first run that needs it; failure card with reason, log tail, Restart server, Open log, Install…; Dev server log dialog; palette commands for log, restart and install.
 
 Tests: src/project.test.ts (unit + backend endpoints with a fake vite), e2e/project-check.mjs (headless Edge, 22 checks), chrome-check updated. tsc, typecheck:tests, designer build, cargo check and full vitest (1488 tests) pass. README documents the flow and endpoints.
 
-Not verified: the Tauri window run; pnpm/yarn/bun installs end to end. Follow-ups: OS folder picker / drag-drop, starting with no project at all (currently the CLI needs a folder or a recent one), an upgrade path for an outdated @gable/core.
+Not verified: the Tauri window run; pnpm/yarn/bun installs end to end. Follow-ups: OS folder picker / drag-drop, starting with no project at all (currently the CLI needs a folder or a recent one), an upgrade path for an outdated @gablejs/core.

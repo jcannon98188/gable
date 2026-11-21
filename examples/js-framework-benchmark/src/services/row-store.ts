@@ -1,4 +1,4 @@
-import { signal } from '@gable/core';
+import { signal } from '@gablejs/core';
 import { buildRows, type Row } from '../data.js';
 
 /** The benchmark's state and operations. Rows are immutable; "update" replaces the touched rows, which `@for` keeps keyed by id. */

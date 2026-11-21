@@ -12,7 +12,7 @@ ordinal: 270000
 
 ## Question
 
-service-worker/106 shipped @gable/service-worker (ADR 0022) with four known gaps recorded in docs/packages/service-worker.md: an app cannot obtain a push subscription, background sync has no app-side registration, the precache does not verify fetched bytes against the manifest hashes, and the worker does not claim the page on first activation. v1 scope in ADR 0022 includes push and background sync, so the first two are gaps against the agreed scope.
+service-worker/106 shipped @gablejs/service-worker (ADR 0022) with four known gaps recorded in docs/packages/service-worker.md: an app cannot obtain a push subscription, background sync has no app-side registration, the precache does not verify fetched bytes against the manifest hashes, and the worker does not claim the page on first activation. v1 scope in ADR 0022 includes push and background sync, so the first two are gaps against the agreed scope.
 
 ## Acceptance criteria
 

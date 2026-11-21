@@ -1,6 +1,6 @@
 // Ambient types for what the Gable Vite plugin adds to imports. Reference once per project:
-//   /// <reference types="@gable/vite/client" />
-// or list "@gable/vite/client" in tsconfig `compilerOptions.types`.
+//   /// <reference types="@gablejs/vite/client" />
+// or list "@gablejs/vite/client" in tsconfig `compilerOptions.types`.
 
 /**
  * `import hero from "./hero.json?family"` (spritesheet JSON or bitmap-font descriptor): the final URL of the descriptor, with its

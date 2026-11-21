@@ -4,7 +4,7 @@
 import "pixi.js/events";
 import { Container, Graphics, NineSliceSprite, ParticleContainer, Sprite, Texture, TilingSprite } from "pixi.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createComponent, flushSync, html, signal, type ComponentRef } from "@gable/core";
+import { createComponent, flushSync, html, signal, type ComponentRef } from "@gablejs/core";
 import { isSceneTag, propertiesOf, type SceneTagName } from "../elements.js";
 import { particles } from "../particles.js";
 import { createPixiRenderer } from "../renderer.js";

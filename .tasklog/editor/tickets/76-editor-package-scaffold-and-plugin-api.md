@@ -35,4 +35,4 @@ Plugin contract in packages/editor/src/plugin.ts; GableEditor wraps TipTap Edito
 
 ## Answer
 
-Scaffolded @gable/editor with EditorPlugin API (extensions, toolbar, yjs hook, requires/priority resolution, error cases), GableEditor, corePlugin, README, workspace build + vitest alias. Verified by 6 passing tests and a clean tsc build.
+Scaffolded @gablejs/editor with EditorPlugin API (extensions, toolbar, yjs hook, requires/priority resolution, error cases), GableEditor, corePlugin, README, workspace build + vitest alias. Verified by 6 passing tests and a clean tsc build.

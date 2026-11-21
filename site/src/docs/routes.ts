@@ -1,5 +1,5 @@
 import "./docs.css";
-import type { Route } from "@gable/core/router";
+import type { Route } from "@gablejs/core/router";
 import { ApiIndexPage, ApiSymbolPage, DocsHome, DocsNotFound, GuidePage, PackagePage } from "./pages.js";
 import { DocsShell } from "./shell.js";
 

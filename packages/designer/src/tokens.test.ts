@@ -19,7 +19,7 @@ import { buildTokenIndex, canvasSelector, kindOf, schemeOf, scopeOf, type TokenI
 import { planTokenEdit } from "./server/tokens/patch.js";
 
 const FIXTURE = fileURLToPath(new URL("../test-fixtures/tokens-app", import.meta.url));
-// Copies live under the repo's node_modules (ignored by git) so `@import "tailwindcss"` and `@gable/ui/theme.css` resolve.
+// Copies live under the repo's node_modules (ignored by git) so `@import "tailwindcss"` and `@gablejs/ui/theme.css` resolve.
 const SCRATCH = fileURLToPath(new URL("../../../node_modules/.cache/gable-tokens-test", import.meta.url));
 const made: string[] = [];
 afterAll(() => {
@@ -127,7 +127,7 @@ describe("tokens: the index of the fixture", () => {
     expect(index.byName.get("--space-card")!.dark?.value).toBe("20px");
 
     const primary = index.byName.get("--primary")!;
-    expect(primary.defs.every((d) => !d.editable && d.file === "@gable/ui/theme.css")).toBe(true);
+    expect(primary.defs.every((d) => !d.editable && d.file === "@gablejs/ui/theme.css")).toBe(true);
     expect(primary.light?.value).toBe("oklch(0.205 0 0)");
     expect(primary.dark?.value).toBe("oklch(0.922 0 0)");
     // Package tokens are overridden in the stylesheet that imports them.
@@ -137,7 +137,7 @@ describe("tokens: the index of the fixture", () => {
     // resolved through the alias
     expect(index.byName.get("--color-primary")!.light?.resolved).toBe("oklch(0.205 0 0)");
     expect(index.list.darkVia[0]).toBe(".dark");
-    expect(index.list.sheets.find((s) => s.file === "@gable/ui/theme.css")).toMatchObject({ editable: false, importer: STYLES });
+    expect(index.list.sheets.find((s) => s.file === "@gablejs/ui/theme.css")).toMatchObject({ editable: false, importer: STYLES });
     // Tailwind's own default theme is left to Tailwind mode.
     expect(index.byName.has("--color-red-500")).toBe(false);
   });

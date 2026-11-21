@@ -4,8 +4,8 @@
 //   shared:   1 signal per entity holding a fresh pose object, 3 bindings reading it (<rock-shared>)
 //   ref:      direct writes to the Pixi node through #ref, no signals, no bindings   (<rock-ref>)
 //   particles: one Pixi ParticleContainer moved from a single hook, the "give up components" ceiling (<rock-particles>)
-import { html, inject, injectHost, input, signal, untracked, viewChild } from "@gable/core";
-import { Frame, pixiRenderer, type PixiRendererOptions } from "@gable/renderer-pixi";
+import { html, inject, injectHost, input, signal, untracked, viewChild } from "@gablejs/core";
+import { Frame, pixiRenderer, type PixiRendererOptions } from "@gablejs/renderer-pixi";
 import { Cache, Container, Particle, ParticleContainer, Texture } from "pixi.js";
 
 export interface Seed {

@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { gable } from "@gable/vite";
+import { gable } from "@gablejs/vite";
 import { defineConfig, type Plugin } from "vite";
 
 // The fixture's own backend, served by its dev server: the users come from api/users.json, and /api/hits counts the

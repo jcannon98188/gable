@@ -1,4 +1,4 @@
-# @gable/designer
+# @gablejs/designer
 
 The Gable Designer: inspect a running Gable app, mount one component in isolation, and see language-service problems on the
 canvas. Private (not published).
@@ -20,7 +20,7 @@ Parts:
 - `src-tauri`: the thin Rust desktop host (window and process lifetime only).
 
 Scenarios are `*.scenes.ts` files beside a component (see `examples/todomvc/src/components/todo-item.scenes.ts`); the same
-files run under `@gable/testing` with `mountScene`.
+files run under `@gablejs/testing` with `mountScene`.
 
 ## Editing (source write-back)
 
@@ -28,7 +28,7 @@ The Content and Style tabs change the project's own files; the Designer keeps no
 `/api/edit/apply` (token and Host checked) that the backend turns into a **minimal text patch**; the project's Vite then
 hot-updates the canvas and the shell selects the same element again.
 
-- Position authority: `@gable/template-format`'s lossless parser (`parseTemplateTree`: every element, attribute name/value and
+- Position authority: `@gablejs/template-format`'s lossless parser (`parseTemplateTree`: every element, attribute name/value and
   quote has raw offsets). The runtime `pos` is only a handle: a `TargetRef` is `{ raw, start, tag, modulePath }`, the raw template
   text plus the offset of the element's `<`, verified against the parser (a stale handle is refused, never guessed). Templates with
   escapes, and files holding two identical literals, are refused.
@@ -204,7 +204,7 @@ since the scene mounted, with their values; signals that were set but that a Sce
 service's) are listed with why. **Save as Scenario** writes the chosen fields as a new scene: a copy of the mounted one (without
 its description unless one is typed) with `inputs` for inputs and `state` for signals, as one minimal, undoable edit of the
 scenes file (`addScene` with `inputs`/`state`, `src/server/edit/scenario.ts`), then mounts it. `Scene.state` is new in
-`@gable/core/tooling`: writable signals of the component set after it mounts (in the Designer and by `@gable/testing`'s
+`@gablejs/core/tooling`: writable signals of the component set after it mounts (in the Designer and by `@gablejs/testing`'s
 `mountScene`); inputs and models belong in `inputs`, and page mode ignores it.
 
 The protocol gained `signalJson` (through `devtools`), `setSignalValue`, `pinSignal`, `pins` and `sceneState`; all additive,
@@ -227,7 +227,7 @@ row travels to that step, **Replay** steps forward from where the frame is (or f
 goes back to the newest state, **Pause**/**Record** stops and resumes recording, and **Clear** forgets the steps. Writes from
 the Inspector's Set and Pin are recorded too, marked **Designer**.
 
-Recording lives in the devtools layer of `@gable/core` (`src/signal-history.ts`, dev-only like the rest of the hook: `signal()`
+Recording lives in the devtools layer of `@gablejs/core` (`src/signal-history.ts`, dev-only like the rest of the hook: `signal()`
 and state sources tell the hook before a write only when `DEV` and recording are on). The Preview agent turns it on when a
 frame connects. It keeps values by reference and a short preview of each, in a ring buffer of the last 300 steps and 2000
 writes (at most 500 per step; a bigger step is marked incomplete); older steps are dropped and counted. A travel sets each
@@ -254,7 +254,7 @@ between and whether the app or the Designer made the write (set_signal, the Insp
 selected element's own bindings; **Component** lists every effect of its component. **Highlight updates** outlines, on the
 canvas, the elements whose bindings re-run, fading out after under a second.
 
-How it is found, with nothing guessed: while a Designer is connected, the devtools hook of `@gable/core` remembers the value
+How it is found, with nothing guessed: while a Designer is connected, the devtools hook of `@gablejs/core` remembers the value
 of each state signal before its first write in a task. When a pending effect is about to re-run it walks the effect's sources
 (through computeds, bounded at 300 nodes) and reports the written signals whose value changed. A run no recorded write
 explains says exactly that (a hot update, time travel or a write the Designer did not see), never a made-up cause. Template
@@ -305,7 +305,7 @@ applies the new Scenario (page mode: the Scenario picker; component mode: the sc
 status, delay, error or JSON body and *Remove* drops a mock, each a minimal patch with undo (ops `setMock`, `removeMock`), and
 refused when the mock at that index is no longer for that URL. A computed reply or list is shown read-only.
 
-Limits: a Scenario's mocks answer requests made through `@gable/core/http`'s `Http` client only (`mockHttp` replaces its
+Limits: a Scenario's mocks answer requests made through `@gablejs/core/http`'s `Http` client only (`mockHttp` replaces its
 backend). A recorded raw `fetch` or `XMLHttpRequest` still becomes a mock, but the raw call keeps going to the network.
 Conditions on raw calls do apply. The protocol gained `network`, `setNetworkCondition`, `record`, `recording` and the
 `activity` message; all additive, so `PROTOCOL_VERSION` is unchanged.
@@ -415,10 +415,10 @@ only, projects marked). Opening a folder stops the current project's Vite, start
 reloads the shell; the backend, its token and the window stay. Recent projects (ten at most) are kept in `recent.json` in the
 user data directory; the CLI and the desktop app reopen the most recent one when started without a folder.
 
-The **Connect** dialog checks the project: package.json, Vite, and the Preview agent's in-app hook (`@gable/core/designer`,
+The **Connect** dialog checks the project: package.json, Vite, and the Preview agent's in-app hook (`@gablejs/core/designer`,
 `src/server/projects.ts`). When they are listed in package.json but not installed, **Install and start** runs the project's
 package manager (`packageManager` field or lockfile: npm, pnpm, yarn or bun) and restarts the dev server; a project that is not
-a Gable app, or whose `@gable/core` is too old, is told so and not installed into. The Designer's half of the agent comes from
+a Gable app, or whose `@gablejs/core` is too old, is told so and not installed into. The Designer's half of the agent comes from
 its Vite plugin, so nothing is added to the source.
 
 When the dev server fails or stops, the canvas says why, shows the end of its log and offers **Restart server** and **Open
@@ -499,7 +499,7 @@ one). Vite's HMR then applies it to the running router.
 
 ### Scenarios in both modes
 
-A scene can mock HTTP and name a start URL, and the same file serves component mode, page mode and `@gable/testing`:
+A scene can mock HTTP and name a start URL, and the same file serves component mode, page mode and `@gablejs/testing`:
 
 ```ts
 export default {
@@ -512,7 +512,7 @@ export default {
 } satisfies ComponentScenes<UserList>;
 ```
 
-`http` goes through `mockHttp` (`@gable/core/http`), which replaces the `HttpBackend`; unmatched requests answer 404 and warn.
+`http` goes through `mockHttp` (`@gablejs/core/http`), which replaces the `HttpBackend`; unmatched requests answer 404 and warn.
 In page mode the Scenario picker in the Routes tab reloads the page with `?__gable_scenario=<file>|<scene>`. The Designer's Vite
 plugin injects a module that sets `__GABLE_DESIGNER_HOOK__.rootProviders` (the mocks plus the scene's `providers`), which
 `bootstrap` appends after the app's own providers in development. The drawer's **Network** tab shows the mocks and the request log (see Network).
@@ -573,7 +573,7 @@ with or without Tailwind. The source is the truth (ADR 0001): the backend reads 
 on the same undo history as every other edit.
 
 - **What is read** (`src/server/tokens/`). Every `.css` file of the project (not `node_modules`, `dist` and the like), plus the
-  package stylesheets they `@import` (`@gable/ui/theme.css`). Package stylesheets are read-only. Each definition keeps its
+  package stylesheets they `@import` (`@gablejs/ui/theme.css`). Package stylesheets are read-only. Each definition keeps its
   exact context: `:root`, `.dark`, `@media (prefers-color-scheme: dark) :root`, `[data-theme="ocean"]`, `@theme` /
   `@theme inline`, or a component selector. Tailwind's own `--tw-*` and the default theme are left to Tailwind mode.
 - **Light and dark.** A token's light value is the last document-wide definition outside dark mode; its dark value is the last

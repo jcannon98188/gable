@@ -1,7 +1,7 @@
 // Signal <-> stream machinery shared by toSignal and direct template binding.
 // It is structurally typed against Observable/Promise and never imports RxJS,
 // so signals and templates stay RxJS-free (RxJS is only a peer dependency of
-// the `@gable/core/rxjs` entry).
+// the `@gablejs/core/rxjs` entry).
 import { stateSource, type ReadonlySignal } from "./signals.js";
 import { reportError } from "./errors.js";
 import { currentScope, type Scope } from "./scope.js";

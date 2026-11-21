@@ -1,4 +1,4 @@
-import { computed, signal } from "@gable/core";
+import { computed, signal } from "@gablejs/core";
 import { BehaviorSubject, Subject } from "rxjs";
 
 export const count = signal(0);

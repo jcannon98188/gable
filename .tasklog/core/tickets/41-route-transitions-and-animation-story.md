@@ -32,7 +32,7 @@ Presence handles enter and exit animation of components. Define and document the
 
 Implemented in packages/core/src/transition.ts and router-view.ts (RouterOutlet.transition input, Route.transition, provideRouteTransitions). Tests: packages/testing/src/route-transitions.test.ts, packages/renderer-dom/src/route-transitions.test.ts, examples/ui-gallery/src/transitions-demo.test.ts (passes via root aliases; gallery uses vendored tarballs, so it needs pack-local refresh to run in its own vitest). computedExitDuration duplicates presence domEnv timing parsing; follow-up could share it.
 
-Housekeeping: computedExitDuration now lives in packages/core/src/exit-duration.ts (exported via @gable/core/internal); transition.ts and ui-primitives presence.ts both use it, duplicate parser removed.
+Housekeeping: computedExitDuration now lives in packages/core/src/exit-duration.ts (exported via @gablejs/core/internal); transition.ts and ui-primitives presence.ts both use it, duplicate parser removed.
 
 ## Answer
 

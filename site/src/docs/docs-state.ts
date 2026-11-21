@@ -1,5 +1,5 @@
-import { computed, inject, signal } from "@gable/core";
-import { Router } from "@gable/core/router";
+import { computed, inject, signal } from "@gablejs/core";
+import { Router } from "@gablejs/core/router";
 import { ApiData } from "./api-data.js";
 import { pathOf } from "./base.js";
 import { GUIDES, appPackages } from "./content.js";
@@ -37,7 +37,7 @@ export interface NavPackage {
   apiLabel: string;
 }
 
-const short = (name: string) => name.replace(/^@gable\//, "");
+const short = (name: string) => name.replace(/^@gablejs\//, "");
 
 /** The sidebar and the previous/next order: the guides, then each package's overview and reference. */
 export class DocsNav {

@@ -1,5 +1,5 @@
-import { computed, html, inject, input } from "@gable/core";
-import { ProgressState, UiProps } from "@gable/ui-primitives";
+import { computed, html, inject, input } from "@gablejs/core";
+import { ProgressState, UiProps } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 
 /**

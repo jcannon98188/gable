@@ -3,7 +3,7 @@ import { ServiceWorkerConfigError, type ServiceWorkerConfig, type ServiceWorkerC
 import { globToRegExp } from "./glob.js";
 
 /**
- * What a production build emitted, the input the default worker caches from. `@gable/vite` writes it next to the
+ * What a production build emitted, the input the default worker caches from. `@gablejs/vite` writes it next to the
  * worker file; a hand-written worker can be given one too.
  *
  * The worker sorts `files` into the config's asset groups: each file belongs to the first group with a pattern that
@@ -21,7 +21,7 @@ export interface AssetManifest {
    */
   readonly files: readonly string[];
   /**
-   * The content hash of each file in `files`, by path, in the format `@gable/vite` emits: the first 16 hex digits of
+   * The content hash of each file in `files`, by path, in the format `@gablejs/vite` emits: the first 16 hex digits of
    * the file's SHA-256 digest. When present, the default worker checks every prefetch file it fetches against its
    * hash while the release installs, and fails the install on a mismatch (the precache's `hashes`).
    * Optional, so a hand-written manifest without hashes still works, unverified.

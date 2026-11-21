@@ -1,4 +1,4 @@
-import { html } from "@gable/core";
+import { html } from "@gablejs/core";
 import { FrameworkDemos } from "./demos/signals/framework-demos.js";
 import { RouterDemo } from "./demos/router/router-demo.js";
 

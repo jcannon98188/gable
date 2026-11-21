@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { html } from "@gable/core";
-import { LiveAnnouncer } from "@gable/core/renderer";
-import { mount } from "@gable/testing";
-import { provideTestDom } from "@gable/ui-primitives/testing";
+import { html } from "@gablejs/core";
+import { LiveAnnouncer } from "@gablejs/core/renderer";
+import { mount } from "@gablejs/testing";
+import { provideTestDom } from "@gablejs/ui-primitives/testing";
 import { ToastService, UiToaster } from "./toast.js";
 
 class App {

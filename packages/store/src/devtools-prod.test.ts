@@ -13,19 +13,19 @@ async function bundle(dev: boolean): Promise<string> {
     define: { __GABLE_DEV__: String(dev) },
     resolve: {
       alias: [
-        { find: /^@gable\/core\/internal$/, replacement: fileURLToPath(new URL("../../core/src/internal.ts", import.meta.url)) },
-        { find: /^@gable\/core\/rxjs$/, replacement: fileURLToPath(new URL("../../core/src/rxjs.ts", import.meta.url)) },
-        { find: /^@gable\/core$/, replacement: fileURLToPath(new URL("../../core/src/index.ts", import.meta.url)) },
+        { find: /^@gablejs\/core\/internal$/, replacement: fileURLToPath(new URL("../../core/src/internal.ts", import.meta.url)) },
+        { find: /^@gablejs\/core\/rxjs$/, replacement: fileURLToPath(new URL("../../core/src/rxjs.ts", import.meta.url)) },
+        { find: /^@gablejs\/core$/, replacement: fileURLToPath(new URL("../../core/src/index.ts", import.meta.url)) },
       ],
     },
     plugins: [
       {
         name: "entry",
         enforce: "pre",
-        resolveId: (id) => (id === entry ? id : id === "@gable/store" ? store : undefined),
+        resolveId: (id) => (id === entry ? id : id === "@gablejs/store" ? store : undefined),
         load: (id) =>
           id === entry
-            ? `import { signalStore, withState, withMethods, withDevtools } from "@gable/store";
+            ? `import { signalStore, withState, withMethods, withDevtools } from "@gablejs/store";
 class S extends signalStore(withState({ n: 0 }), withMethods(() => ({ inc() { return 1; } })), withDevtools("S")) {}
 console.log(S);\n`
             : undefined,

@@ -1,11 +1,11 @@
-# @gable/ui-primitives
+# @gablejs/ui-primitives
 
 Headless, accessible UI primitives under gable-ui: dialogs, tabs, popovers, tooltips, selects, virtual scrolling and more.
 
 ## Install
 
 ```sh
-npm install @gable/ui-primitives
+npm install @gablejs/ui-primitives
 ```
 
 ## Documentation

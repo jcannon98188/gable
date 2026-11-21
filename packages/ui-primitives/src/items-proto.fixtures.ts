@@ -1,7 +1,7 @@
 // Throwaway prototypes for ui/24 (items for Select/Combobox/Menu). Not exported from the package index.
-import type { Provider } from "@gable/core";
+import type { Provider } from "@gablejs/core";
 import { provideTestDom } from "./test-dom.js";
-import { inject, input } from "@gable/core";
+import { inject, input } from "@gablejs/core";
 import * as select from "@zag-js/select";
 import * as combobox from "@zag-js/combobox";
 import * as menu from "@zag-js/menu";

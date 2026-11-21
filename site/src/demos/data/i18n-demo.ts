@@ -1,4 +1,4 @@
-import { I18n, computed, html, inject, provideI18n, signal } from "@gable/core";
+import { I18n, computed, html, inject, provideI18n, signal } from "@gablejs/core";
 import { catalogs, locales, type DemoLocale } from "./catalogs.js";
 
 /** Every id the template below marks, so the demo can list the ones the active catalog does not have. */

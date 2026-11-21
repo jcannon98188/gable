@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { inject, type ReadonlySignal } from "@gable/core";
-import { createTestInjector } from "@gable/testing";
+import { inject, type ReadonlySignal } from "@gablejs/core";
+import { createTestInjector } from "@gablejs/testing";
 import {
   addEntities,
   addEntity,

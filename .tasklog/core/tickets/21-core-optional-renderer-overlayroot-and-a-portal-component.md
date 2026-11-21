@@ -33,4 +33,4 @@ Design: Renderer.overlayRoot?(): N (core/renderer.ts, documented). DOM renderer:
 
 ## Answer
 
-Added optional Renderer.overlayRoot(), DOM and test renderer implementations, and a UiPortal component in @gable/ui-primitives that moves its host to the overlay root with bindings and injector intact and removes it on scope disposal. Errors name the renderer when overlayRoot is missing. Verified by 8 new tests (in-memory and jsdom); tsc clean. Risk: portal directly inside reordered keyed @for rows.
+Added optional Renderer.overlayRoot(), DOM and test renderer implementations, and a UiPortal component in @gablejs/ui-primitives that moves its host to the overlay root with bindings and injector intact and removes it on scope disposal. Errors name the renderer when overlayRoot is missing. Verified by 8 new tests (in-memory and jsdom); tsc clean. Risk: portal directly inside reordered keyed @for rows.

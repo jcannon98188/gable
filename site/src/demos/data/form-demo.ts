@@ -1,5 +1,5 @@
-import { computed, html, signal } from "@gable/core";
-import { email, form, minLength, required, requiredTrue, validate, validateAsync, type ErrorObject, type Field } from "@gable/core/forms";
+import { computed, html, signal } from "@gablejs/core";
+import { email, form, minLength, required, requiredTrue, validate, validateAsync, type ErrorObject, type Field } from "@gablejs/core/forms";
 import { debounceTime, delay, of, switchMap } from "rxjs";
 
 /** Handles the pretend server already has. The check below is local, with a delay, standing in for an HTTP call. */
@@ -35,7 +35,7 @@ function shown(field: Field<any>) {
 }
 
 /**
- * A sign-up form on the real `@gable/core/forms` API: `form(model, schema)` over a signal, rules from the schema
+ * A sign-up form on the real `@gablejs/core/forms` API: `form(model, schema)` over a signal, rules from the schema
  * functions, an RxJS async validator, a cross-field rule and `submit()`. Each input is bound with `[field]`.
  */
 export class FormDemo {

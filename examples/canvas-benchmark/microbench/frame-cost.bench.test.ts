@@ -7,9 +7,9 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { Container } from "pixi.js";
 import { afterAll, describe, expect, it } from "vitest";
-import { bootstrap, whenFlushed } from "@gable/core";
-import { createDomRenderer } from "@gable/renderer-dom";
-import { type ApplicationLike, type FrameScheduler } from "@gable/renderer-pixi";
+import { bootstrap, whenFlushed } from "@gablejs/core";
+import { createDomRenderer } from "@gablejs/renderer-dom";
+import { type ApplicationLike, type FrameScheduler } from "@gablejs/renderer-pixi";
 import { benchApp, makeSeeds, registerRock, STYLES, type Style } from "../src/entities.js";
 import { Recorder, summarizeSeries } from "../src/measure.js";
 

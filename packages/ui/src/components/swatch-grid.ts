@@ -1,4 +1,4 @@
-import { computed, html, input, model, output, signal } from "@gable/core";
+import { computed, html, input, model, output, signal } from "@gablejs/core";
 import { cn } from "../lib/cn.js";
 
 /** One cell of a swatch grid. `color` is any CSS colour (fills the cell); `content` is text shown in the cell (a scale step like "4"). */

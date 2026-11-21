@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { Observable, delay, of, switchMap } from "rxjs";
-import { html, input, model, output, signal, computed } from "@gable/core";
-import { disabled, email, form, minLength, required, validateAsync } from "@gable/core/forms";
-import { mount } from "@gable/testing";
+import { html, input, model, output, signal, computed } from "@gablejs/core";
+import { disabled, email, form, minLength, required, validateAsync } from "@gablejs/core/forms";
+import { mount } from "@gablejs/testing";
 
 describe("[field] on native controls", () => {
   class Signup {

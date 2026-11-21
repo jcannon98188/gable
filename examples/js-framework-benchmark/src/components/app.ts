@@ -1,4 +1,4 @@
-import { html, inject } from '@gable/core';
+import { html, inject } from '@gablejs/core';
 import { RowStore } from '../services/row-store.js';
 import { RowView } from './row.js';
 

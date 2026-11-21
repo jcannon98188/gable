@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
-import { html, inject, signal } from "@gable/core";
-import { PRESENCE_ENV } from "@gable/ui-primitives";
-import { expectNoA11yViolations } from "@gable/testing/a11y";
+import { html, inject, signal } from "@gablejs/core";
+import { PRESENCE_ENV } from "@gablejs/ui-primitives";
+import { expectNoA11yViolations } from "@gablejs/testing/a11y";
 import { UiButton } from "./button.js";
 import { UiDialog } from "./dialog.js";
 import { ToastService, UiToaster } from "./toast.js";

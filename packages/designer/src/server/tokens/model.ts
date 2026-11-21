@@ -7,7 +7,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { findHtmlLiterals, parseTemplateTree } from "@gable/template-format";
+import { findHtmlLiterals, parseTemplateTree } from "@gablejs/template-format";
 import { elementsOf } from "../edit/template.js";
 import { sourceText } from "../source.js";
 import type { TailwindModel } from "../tailwind/model.js";

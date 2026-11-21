@@ -9,8 +9,8 @@ const entry = "\0canvas-devtools-prod-entry";
 async function bundle(dev: boolean): Promise<string> {
   const src = (p: string) => fileURLToPath(new URL(p, import.meta.url));
   const aliases = [
-    { find: /^@gable\/core$/, replacement: src("../../core/src/index.ts") },
-    { find: /^@gable\/core\/renderer$/, replacement: src("../../core/src/renderer.ts") },
+    { find: /^@gablejs\/core$/, replacement: src("../../core/src/index.ts") },
+    { find: /^@gablejs\/core\/renderer$/, replacement: src("../../core/src/renderer.ts") },
   ];
   const result = await build({
     configFile: false,
@@ -22,7 +22,7 @@ async function bundle(dev: boolean): Promise<string> {
       {
         name: "entry",
         resolveId: (id) => (id === entry ? id : undefined),
-        load: (id) => (id === entry ? `import { bootstrap, hotData, isHotUpdating } from "@gable/core";\nimport { createPixiRenderer, provideCanvasDebug, GableCanvas } from ${JSON.stringify(src("./index.ts"))};\nconsole.log(createPixiRenderer({ debug: true }), provideCanvasDebug(), bootstrap, GableCanvas, hotData, isHotUpdating);\n` : undefined),
+        load: (id) => (id === entry ? `import { bootstrap, hotData, isHotUpdating } from "@gablejs/core";\nimport { createPixiRenderer, provideCanvasDebug, GableCanvas } from ${JSON.stringify(src("./index.ts"))};\nconsole.log(createPixiRenderer({ debug: true }), provideCanvasDebug(), bootstrap, GableCanvas, hotData, isHotUpdating);\n` : undefined),
       },
     ],
     build: { write: false, minify: true, rollupOptions: { input: entry, external: ["pixi.js", "pixi.js/events"] }, lib: false },

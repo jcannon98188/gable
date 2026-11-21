@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { computed, html, inject, input, lazy, signal } from "@gable/core";
-import { ActiveRoute, RouterLink, RouterLinkActive, RouterOutlet, redirect, type Route } from "@gable/core/router";
+import { computed, html, inject, input, lazy, signal } from "@gablejs/core";
+import { ActiveRoute, RouterLink, RouterLinkActive, RouterOutlet, redirect, type Route } from "@gablejs/core/router";
 import { firstValueFrom } from "rxjs";
-import { mountApp } from "@gable/testing";
+import { mountApp } from "@gablejs/testing";
 
 class Home {
   static meta = { selector: "app-home", template: html`<h1>Home</h1>` };

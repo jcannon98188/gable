@@ -1,6 +1,6 @@
 // The app-level Assets service (canvas/114): explicit loading through bundle handles over Pixi's global `Assets`.
 // Templates never start a load; they read the handle's signals. Textures resolve from Pixi's cache (see renderer.ts).
-import { InjectionToken, computed, inject, onCleanup, signal, type Provider, type ReadonlySignal } from "@gable/core";
+import { InjectionToken, computed, inject, onCleanup, signal, type Provider, type ReadonlySignal } from "@gablejs/core";
 
 /** A Pixi manifest entry list for one bundle: `{ alias, src }` entries (spritesheets, bitmap fonts and web fonts included). */
 export type BundleEntries = ReadonlyArray<Record<string, unknown>> | Readonly<Record<string, unknown>>;

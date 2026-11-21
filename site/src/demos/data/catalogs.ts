@@ -1,4 +1,4 @@
-import type { CatalogSource } from "@gable/core";
+import type { CatalogSource } from "@gablejs/core";
 
 /**
  * The message catalogs of the i18n demo, keyed by the explicit ids (`@@id`) used in `i18n-demo.ts`.

@@ -1,7 +1,7 @@
 // Scene templates (canvas/112, canvas/126). A template is typed against the Pixi element map
 // when it is a renderer boundary's own template (`meta.renderer`), when it carries the marker
 // (`meta.elements: pixiElements`) or when it is projected into a boundary component. Everything
-// else keeps the DOM map. The map itself is `buildElementMap()` from `@gable/renderer-pixi/elements`:
+// else keeps the DOM map. The map itself is `buildElementMap()` from `@gablejs/renderer-pixi/elements`:
 // one table, no copy here.
 
 import ts from "@typescript/typescript6";
@@ -19,7 +19,7 @@ import {
   type HitTagName,
   type SceneTagName,
   type ShapeTagName,
-} from "@gable/renderer-pixi/elements";
+} from "@gablejs/renderer-pixi/elements";
 import type { RuleId } from "./config.js";
 import type { TemplateModel } from "./emit.js";
 import type { ElementNode, TNode } from "./scan.js";

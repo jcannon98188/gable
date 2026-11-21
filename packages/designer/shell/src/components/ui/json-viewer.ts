@@ -1,4 +1,4 @@
-import { computed, html, input, model, output, signal } from "@gable/core";
+import { computed, html, input, model, output, signal } from "@gablejs/core";
 import { cn } from "../../lib/ui/cn.js";
 import { useHostClass } from "../../lib/ui/host-class.js";
 import { UiTree, expandableIds, type TreeNode } from "./tree.js";

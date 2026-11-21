@@ -1,4 +1,4 @@
-import { computed, html, signal } from "@gable/core";
+import { computed, html, signal } from "@gablejs/core";
 import { buttonVariants, type ButtonSize, type ButtonVariant } from "../../../../packages/ui/src/components/button.js";
 import { cn } from "../../../../packages/ui/src/lib/cn.js";
 import { demoStyles } from "../signals/demo-style.js";
@@ -7,7 +7,7 @@ const VARIANTS: readonly ButtonVariant[] = ["default", "destructive", "outline",
 const SIZES: readonly ButtonSize[] = ["default", "sm", "lg", "icon", "compact", "icon-compact"];
 
 /**
- * The real `buttonVariants` and `cn` from @gable/ui. The components are styled with Tailwind utility classes and this site
+ * The real `buttonVariants` and `cn` from @gablejs/ui. The components are styled with Tailwind utility classes and this site
  * does not load Tailwind, so the demo shows what the components compute (the class string) instead of painting a button
  * that would render unstyled. Pick a variant and size, add your own `class`, and see tailwind-merge resolve the conflicts.
  */

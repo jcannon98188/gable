@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { html, signal } from "@gable/core";
-import { mount } from "@gable/testing";
-import { provideTestDom } from "@gable/ui-primitives/testing";
+import { html, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
+import { provideTestDom } from "@gablejs/ui-primitives/testing";
 import { UiButton } from "./button.js";
 import { UiTooltip } from "./tooltip.js";
 

@@ -1,6 +1,6 @@
-import { computed, signal } from "@gable/core";
-import type { ComponentDetail, HmrEntry, InjectorDetail, InjectorNode, TreeNode } from "@gable/core/devtools";
-import type { DesignNode } from "@gable/core/designer";
+import { computed, signal } from "@gablejs/core";
+import type { ComponentDetail, HmrEntry, InjectorDetail, InjectorNode, TreeNode } from "@gablejs/core/devtools";
+import type { DesignNode } from "@gablejs/core/designer";
 import { SCENARIO_PARAM, type CanvasDiagnostic, type SceneInfo } from "../../../src/protocol.js";
 import type { ProjectInfo } from "../../../src/server/backend.js";
 import type { ProjectDiagnostic } from "../../../src/server/analyze-worker.js";

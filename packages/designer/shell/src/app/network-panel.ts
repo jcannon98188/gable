@@ -1,7 +1,7 @@
 // The drawer's Network panel (it replaces the HTTP panel): the selected frame's API requests as the Preview agent saw them,
 // the network condition put on them (slow, error, offline), recording real responses and saving them as a Scenario, and the
 // mocks of the Scenario that answers the frame now, editable in place. Everything shown comes from the page or the source.
-import { computed, effect, html, inject, signal, untracked } from "@gable/core";
+import { computed, effect, html, inject, signal, untracked } from "@gablejs/core";
 import { conditionLabel, filterEntries, type EntryFilter, isFailed, mocksFromRecording, type MockInfo, type NetworkCondition, type NetworkEntry } from "../../../src/network.js";
 import { UiButton } from "../components/ui/button.js";
 import { UiDialog } from "../components/ui/dialog.js";

@@ -1,6 +1,6 @@
 // The `component-meta` rule: TypeScript cannot put a type on a class's static side without a
 // base class or decorator, so `static meta = { ... }` is checked here against ComponentMeta
-// (@gable/core). Reports unknown keys, mistyped values, `imports` entries that are not
+// (@gablejs/core). Reports unknown keys, mistyped values, `imports` entries that are not
 // components or lazy() entries, and a missing selector. A meta that already carries a type
 // (an annotation, or `satisfies`/`as` ComponentMeta) is left to the compiler.
 
@@ -12,7 +12,7 @@ export type MetaReport = (start: number, length: number, message: string, fixes?
 
 const checkers = new WeakMap<ts.TypeChecker, ts.Type | null>();
 
-/** The ComponentMeta interface of the @gable/core in the program, when the program has one. */
+/** The ComponentMeta interface of the @gablejs/core in the program, when the program has one. */
 function componentMetaType(checker: ts.TypeChecker, program: ts.Program): ts.Type | null {
   let type = checkers.get(checker);
   if (type !== undefined) return type;
@@ -59,7 +59,7 @@ export function componentMetaRules(sf: ts.SourceFile, checker: ts.TypeChecker, p
 
 function checkMeta(sf: ts.SourceFile, checker: ts.TypeChecker, metaType: ts.Type, member: ts.PropertyDeclaration, init: ts.Expression, report: MetaReport): void {
   const satisfies = (): Fix => {
-    const imported = ensureImport(sf.fileName, sf, "ComponentMeta", "@gable/core", true);
+    const imported = ensureImport(sf.fileName, sf, "ComponentMeta", "@gablejs/core", true);
     return {
       title: "Add 'satisfies ComponentMeta'",
       edits: [...(imported.edit ? [imported.edit] : []), { file: sf.fileName, start: init.end, length: 0, newText: ` satisfies ${imported.local}` }],

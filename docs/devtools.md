@@ -2,7 +2,7 @@
 
 A browser extension (Manifest V3: Chrome, Edge and other Chromium browsers) that adds a **Gable** panel to the browser devtools: the component tree, each component's inputs, signals and computeds with live values and dependency edges, an effect log with flush timings, the injector tree, router state, HMR events, and anything registered by stores.
 
-It works on **development builds only**. The instrumentation lives in `@gable/core` behind the `DEV` flag and is removed from production builds, so a production page has no hook and the extension shows "Waiting for a Gable app".
+It works on **development builds only**. The instrumentation lives in `@gablejs/core` behind the `DEV` flag and is removed from production builds, so a production page has no hook and the extension shows "Waiting for a Gable app".
 
 ## Load it unpacked
 
@@ -31,7 +31,7 @@ After rebuilding the extension, press the reload button on its card in `chrome:/
 
 ## Open in editor
 
-The panel asks the page's hook to call Vite's built-in `/__open-in-editor` endpoint. The hook gets a component's module from the HMR registration (`registerModule`) and the project root from `globalThis.__GABLE_DEV_SERVER__`, which `@gable/vite` injects into `index.html` in dev. It needs the Vite dev server, a configured editor (`EDITOR` or `LAUNCH_EDITOR`), and components registered with the Gable Vite plugin.
+The panel asks the page's hook to call Vite's built-in `/__open-in-editor` endpoint. The hook gets a component's module from the HMR registration (`registerModule`) and the project root from `globalThis.__GABLE_DEV_SERVER__`, which `@gablejs/vite` injects into `index.html` in dev. It needs the Vite dev server, a configured editor (`EDITOR` or `LAUNCH_EDITOR`), and components registered with the Gable Vite plugin.
 
 ## How it works
 
@@ -42,7 +42,7 @@ window.__GABLE_DEVTOOLS_HOOK__
 inject.js (bridge) <-- window.postMessage --> content.js <-- port --> Relay <-- port --> panel
 ```
 
-- `@gable/core` installs `window.__GABLE_DEVTOOLS_HOOK__` in dev (`DEV && typeof window !== "undefined"`). It is transport agnostic: `hook.call(method, params)` returns JSON-safe results, `hook.connect(listener)` pushes events, `hook.element(id)` and `hook.componentFor(node)` map between ids and elements. Methods: `hello`, `tree`, `component`, `signal`, `setSignal`, `highlight`, `openInEditor`, `injectors`, `injector`, `routers`, `navigate`, `effectLog`, `clearEffectLog`, `hmrLog`, `inspectors`. The extension only talks to the page through this hook.
+- `@gablejs/core` installs `window.__GABLE_DEVTOOLS_HOOK__` in dev (`DEV && typeof window !== "undefined"`). It is transport agnostic: `hook.call(method, params)` returns JSON-safe results, `hook.connect(listener)` pushes events, `hook.element(id)` and `hook.componentFor(node)` map between ids and elements. Methods: `hello`, `tree`, `component`, `signal`, `setSignal`, `highlight`, `openInEditor`, `injectors`, `injector`, `routers`, `navigate`, `effectLog`, `clearEffectLog`, `hmrLog`, `inspectors`. The extension only talks to the page through this hook.
 - `inject.js` runs in the page's own world (`world: "MAIN"`) and speaks the protocol over `window.postMessage`. `content.js` relays it to the service worker over a port. The service worker (`Relay`) keeps per-tab state, sets the badge and keeps one hook subscription while any panel is open.
 - The protocol is in `packages/devtools-extension/src/protocol.ts`; the panel's logic (`src/panel/model.ts`) has no DOM or `chrome.*` dependency and is unit tested, as is the whole page-to-panel path.
 - **Decision**: the panel UI is plain TypeScript, not Gable. It stays small, adds no dependency on the framework it inspects, and cannot inspect itself.
@@ -55,7 +55,7 @@ const handle = hook?.registerInspector("cart", { label: "Cart store", snapshot: 
 handle?.log("add", { sku: "a1" });
 ```
 
-`snapshot()` is called whenever the Stores tab refreshes; `log(type, data)` appends a history entry (the last 500 are kept). Guard the registration with `DEV` so production builds drop it. No dependency on core internals is needed. For a `signalStore`, add the `withDevtools("Cart")` feature from `@gable/store` instead: it registers the store (dev only) and logs history entries: an `action` entry for every method call from `withMethods` (an `rxMethod` used as a method included) with the method `name`, a short summary of its `args` and the `patches` (changed keys with new values) it made before returning, plus `error` if it threw; and a `patch` entry for each `patchState` that changes something outside a method call. Patches made after an `await`, or later by an `rxMethod` pipeline, are not part of the action and appear as `patch` entries. Wrapping methods is dev only (the `__GABLE_DEV__` guard), so production builds contain none of it.
+`snapshot()` is called whenever the Stores tab refreshes; `log(type, data)` appends a history entry (the last 500 are kept). Guard the registration with `DEV` so production builds drop it. No dependency on core internals is needed. For a `signalStore`, add the `withDevtools("Cart")` feature from `@gablejs/store` instead: it registers the store (dev only) and logs history entries: an `action` entry for every method call from `withMethods` (an `rxMethod` used as a method included) with the method `name`, a short summary of its `args` and the `patches` (changed keys with new values) it made before returning, plus `error` if it threw; and a `patch` entry for each `patchState` that changes something outside a method call. Patches made after an `await`, or later by an `rxMethod` pipeline, are not part of the action and appear as `patch` entries. Wrapping methods is dev only (the `__GABLE_DEV__` guard), so production builds contain none of it.
 
 ## Manual checklist
 

@@ -1,6 +1,6 @@
-import { bootstrap, createComponent, html, signal, type ComponentRef } from "@gable/core";
-import { whenFlushed } from "@gable/core/internal";
-import type { Renderer } from "@gable/core/renderer";
+import { bootstrap, createComponent, html, signal, type ComponentRef } from "@gablejs/core";
+import { whenFlushed } from "@gablejs/core/internal";
+import type { Renderer } from "@gablejs/core/renderer";
 
 /** How a renderer under test is created and inspected. Every method is about observable results, never internals. */
 export interface RendererHarness<N> {

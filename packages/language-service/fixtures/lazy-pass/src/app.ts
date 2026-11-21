@@ -1,4 +1,4 @@
-import { html, lazy, signal } from "@gable/core";
+import { html, lazy, signal } from "@gablejs/core";
 
 export class Page {
   static meta = {

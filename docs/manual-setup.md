@@ -5,18 +5,18 @@ Add Gable to an existing Vite and TypeScript app. For a new app use [Getting sta
 ## 1. Install
 
 ```
-npm install @gable/core @gable/renderer-dom rxjs
-npm install -D @gable/vite @gable/testing @gable/language-service @gable/prettier-plugin typescript vitest
+npm install @gablejs/core @gablejs/renderer-dom rxjs
+npm install -D @gablejs/vite @gablejs/testing @gablejs/language-service @gablejs/prettier-plugin typescript vitest
 ```
 
-Keep every `@gable/*` package on the same version (the starter pins them with `~`). `rxjs` is a peer dependency of `@gable/core`. Vite 8 or newer is required.
+Keep every `@gablejs/*` package on the same version (the starter pins them with `~`). `rxjs` is a peer dependency of `@gablejs/core`. Vite 8 or newer is required.
 
 ## 2. Add the Vite plugin
 
 <!-- template: vite.config.ts -->
 ```ts
 import tailwindcss from "@tailwindcss/vite";
-import { gable } from "@gable/vite";
+import { gable } from "@gablejs/vite";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -29,7 +29,7 @@ Put `gable()` in `plugins`. Tailwind is optional; it is shown because the starte
 
 ## 3. Meet the tsconfig requirements
 
-`@gable/vite` reads your `tsconfig.json` (following `extends` and project references) and stops with a clear error if any of these hold:
+`@gablejs/vite` reads your `tsconfig.json` (following `extends` and project references) and stops with a clear error if any of these hold:
 
 - `useDefineForClassFields` is `false`. Gable needs native class fields.
 - `experimentalDecorators` or `emitDecoratorMetadata` is `true`. Gable components use no decorators.
@@ -52,7 +52,7 @@ A matching configuration:
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "types": ["vite/client"],
-    "plugins": [{ "name": "@gable/language-service", "renderer": "@gable/renderer-dom" }]
+    "plugins": [{ "name": "@gablejs/language-service", "renderer": "@gablejs/renderer-dom" }]
   },
   "include": ["src", "vite.config.ts"]
 }
@@ -83,15 +83,15 @@ Add a script so CI fails on template errors:
 
 <!-- template: src/main.ts -->
 ```ts
-import { bootstrap } from "@gable/core";
-import { dom } from "@gable/renderer-dom";
+import { bootstrap } from "@gablejs/core";
+import { dom } from "@gablejs/renderer-dom";
 import "./global.css";
 import { Root } from "./root.js";
 
 bootstrap(Root, { renderer: dom(), target: "#app" });
 ```
 
-`bootstrap` takes the root component and a renderer. `dom()` from `@gable/renderer-dom` renders into the page; `target` is a selector for the host element. Your `index.html` needs that element and a module script pointing at this file:
+`bootstrap` takes the root component and a renderer. `dom()` from `@gablejs/renderer-dom` renders into the page; `target` is a selector for the host element. Your `index.html` needs that element and a module script pointing at this file:
 
 <!-- template: index.html -->
 ```html
@@ -111,20 +111,20 @@ bootstrap(Root, { renderer: dom(), target: "#app" });
 
 ## 6. Choose the renderer for the language service
 
-The language service checks templates against a renderer's elements and events. Set `renderer` in the plugin entry (shown in the tsconfig above) to the package you pass to `bootstrap`: `@gable/renderer-dom`.
+The language service checks templates against a renderer's elements and events. Set `renderer` in the plugin entry (shown in the tsconfig above) to the package you pass to `bootstrap`: `@gablejs/renderer-dom`.
 
 ## 7. Tests and formatting
 
-Tests import `mount` from `@gable/testing` and run under Vitest; set `test.include` in `vite.config.ts` as above. For formatting, add the plugin to `.prettierrc.json`:
+Tests import `mount` from `@gablejs/testing` and run under Vitest; set `test.include` in `vite.config.ts` as above. For formatting, add the plugin to `.prettierrc.json`:
 
 <!-- template: .prettierrc.json -->
 ```json
 {
-  "plugins": ["@gable/prettier-plugin"],
+  "plugins": ["@gablejs/prettier-plugin"],
   "printWidth": 100
 }
 ```
 
 ## Trying unpublished builds
 
-The `@gable/*` packages are not published yet. From a checkout of the Gable monorepo, run `npm run pack:local -- <your-app-dir>`: it builds, packs every publishable package into `<your-app-dir>/vendor`, and rewrites that app's `@gable/*` dependencies to `file:vendor/<tarball>` with matching `overrides` (the packages depend on each other). Add `--no-update` to print the entries instead. To scaffold a new app against the same tarballs, run `node packages/create-gable/dist/bin.js --local <your-app-dir>/vendor my-app` from the monorepo. `packages/create-gable/src/scaffold.test.ts` packs by hand and does the same to test the starter in CI.
+The `@gablejs/*` packages are not published yet. From a checkout of the Gable monorepo, run `npm run pack:local -- <your-app-dir>`: it builds, packs every publishable package into `<your-app-dir>/vendor`, and rewrites that app's `@gablejs/*` dependencies to `file:vendor/<tarball>` with matching `overrides` (the packages depend on each other). Add `--no-update` to print the entries instead. To scaffold a new app against the same tarballs, run `node packages/create-gable/dist/bin.js --local <your-app-dir>/vendor my-app` from the monorepo. `packages/create-gable/src/scaffold.test.ts` packs by hand and does the same to test the starter in CI.

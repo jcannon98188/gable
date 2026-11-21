@@ -1,6 +1,6 @@
 // Signal churn: a wide graph of signals and computeds, written and read
-// back many times. Pure @gable/core, no renderer.
-import { computed, signal, untracked } from "@gable/core";
+// back many times. Pure @gablejs/core, no renderer.
+import { computed, signal, untracked } from "@gablejs/core";
 
 const WIDTH = 200;
 const DEPTH = 6;

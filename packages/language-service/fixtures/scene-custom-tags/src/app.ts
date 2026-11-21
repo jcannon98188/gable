@@ -1,5 +1,5 @@
-import { html } from "@gable/core";
-import { pixiElements } from "@gable/renderer-pixi/elements";
+import { html } from "@gablejs/core";
+import { pixiElements } from "@gablejs/renderer-pixi/elements";
 
 // Custom scene tags: `star` is registered with a string literal (found in the source), `gem` is declared in the tsconfig plugin option `sceneTags`.
 declare const renderer: { registerTag(tag: string, registration: unknown): void };

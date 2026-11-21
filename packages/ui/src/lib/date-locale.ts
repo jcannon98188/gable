@@ -1,4 +1,4 @@
-import { computed, effect, I18n, inject, signal, type ReadonlySignal } from "@gable/core";
+import { computed, effect, I18n, inject, signal, type ReadonlySignal } from "@gablejs/core";
 import { format, type Locale } from "date-fns";
 
 /** A date-fns locale, or a function returning one (read inside computeds, so a signal it reads re-renders). */

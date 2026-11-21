@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import * as core from "@gable/core";
+import * as core from "@gablejs/core";
 
 describe("public API", () => {
   it("does not expose the signal polyfill at runtime or in declarations", () => {

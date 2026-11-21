@@ -1,4 +1,4 @@
-import { html } from "@gable/core";
+import { html } from "@gablejs/core";
 import { Playground } from "./demos/playground/playground.js";
 
 export class Compiler {

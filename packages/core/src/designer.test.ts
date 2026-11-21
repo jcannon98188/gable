@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { html, input, signal } from "@gable/core";
-import { createDevtools, type DevtoolsInstance } from "@gable/core/devtools";
-import { createDesigner, type DesignerInstance } from "@gable/core/designer";
-import { mount } from "@gable/testing";
+import { html, input, signal } from "@gablejs/core";
+import { createDevtools, type DevtoolsInstance } from "@gablejs/core/devtools";
+import { createDesigner, type DesignerInstance } from "@gablejs/core/designer";
+import { mount } from "@gablejs/testing";
 
 let dt: DevtoolsInstance;
 let designer: DesignerInstance;
@@ -126,7 +126,7 @@ describe("design layer", () => {
 
 describe("rootProviders", () => {
   it("are added to the root injector by bootstrap, after the app's own providers", async () => {
-    const { bootstrap, InjectionToken, inject: inj } = await import("@gable/core");
+    const { bootstrap, InjectionToken, inject: inj } = await import("@gablejs/core");
     const { createTestRenderer } = await import("../../testing/src/renderer.js");
     const T = new InjectionToken<string>("T");
     let seen = "";

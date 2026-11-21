@@ -1,6 +1,6 @@
 // Page bundled by browser.test.ts: a <gable-canvas> with a red rectangle, reporting what a real browser rendered.
-import { bootstrap, html } from "@gable/core";
-import { createDomRenderer } from "@gable/renderer-dom";
+import { bootstrap, html } from "@gablejs/core";
+import { createDomRenderer } from "@gablejs/renderer-dom";
 import { Application, Rectangle } from "pixi.js";
 import { GableCanvas } from "../src/host.js";
 

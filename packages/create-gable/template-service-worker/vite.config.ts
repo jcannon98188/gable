@@ -1,5 +1,5 @@
 import tailwindcss from "@tailwindcss/vite";
-import { gable, gableServiceWorker } from "@gable/vite";
+import { gable, gableServiceWorker } from "@gablejs/vite";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({

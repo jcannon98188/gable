@@ -1,6 +1,6 @@
-# @gable/ui
+# @gablejs/ui
 
-gable-ui: shadcn-style components for Gable, built on [@gable/ui-primitives](./ui-primitives.md). Buttons, forms, overlays, menus, navigation, tables, charts, a calendar, a tree, a code block and more, in the shadcn neutral style with Tailwind v4, `tw-animate-css`, lucide icons and CSS variables for the theme. Like shadcn, the components are meant to be copied into your app and owned by you. The [gable-ui CLI](./gable-ui.md) does the copying.
+gable-ui: shadcn-style components for Gable, built on [@gablejs/ui-primitives](./ui-primitives.md). Buttons, forms, overlays, menus, navigation, tables, charts, a calendar, a tree, a code block and more, in the shadcn neutral style with Tailwind v4, `tw-animate-css`, lucide icons and CSS variables for the theme. Like shadcn, the components are meant to be copied into your app and owned by you. The [gable-ui CLI](./gable-ui.md) does the copying.
 
 ## Install
 
@@ -18,7 +18,7 @@ npx gable-ui add button dialog select
 Components are plain Gable classes, and simple ones are attribute directives so the element stays native:
 
 ```ts
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 import { UiButton } from "./components/ui/button.js";
 import { UiDialog } from "./components/ui/dialog.js";
 
@@ -43,7 +43,7 @@ export class Page {
 - **You can override anything.** A `class` (or `*Class`) input is merged last with `tailwind-merge`, so your utilities win conflicts. The demo below runs the real `buttonVariants` and `cn`.
 - **State drives animation.** `data-state="open|closed"` selects the enter and exit animations, and `usePresence` delays `hidden` so the exit plays.
 - **Form controls follow one convention.** `[field]` binds a signal-form field, with a `value` model, `invalid`, `disabled` and a `touched` output. `ui-form`, `ui-field` and `uiFieldControl` add labels, descriptions and error text over `Form<T>`.
-- **Machines come from the primitives.** Dialog, popover, tabs, tooltip and select are `*State` classes in `@gable/ui-primitives`, and parts in projected content are wired by the parent with `contentChild` and an effect (the owner push).
+- **Machines come from the primitives.** Dialog, popover, tabs, tooltip and select are `*State` classes in `@gablejs/ui-primitives`, and parts in projected content are wired by the parent with `contentChild` and an effect (the owner push).
 
 ```demo ui-variants
 Pick a variant and size, then add your own class to see tailwind-merge resolve the conflict.

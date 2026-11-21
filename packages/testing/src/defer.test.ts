@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { html, lazy, signal } from "@gable/core";
-import { mount } from "@gable/testing";
-import { createTestRenderer } from "@gable/testing/renderer";
+import { html, lazy, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
+import { createTestRenderer } from "@gablejs/testing/renderer";
 
 afterEach(() => vi.useRealTimers());
 

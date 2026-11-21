@@ -1,5 +1,5 @@
-import { computed, html, signal } from '@gable/core';
-import { UiBadge, UiButton, UiTable, UiTableBody, UiTableCell, UiTableContainer, UiTableHead, UiTableHeader, UiTableRow, UiVirtualList, UiVirtualTable, type VirtualListItem, type VirtualTableColumn } from '@gable/ui';
+import { computed, html, signal } from '@gablejs/core';
+import { UiBadge, UiButton, UiTable, UiTableBody, UiTableCell, UiTableContainer, UiTableHead, UiTableHeader, UiTableRow, UiVirtualList, UiVirtualTable, type VirtualListItem, type VirtualTableColumn } from '@gablejs/ui';
 
 const ROWS = 100_000;
 const FIRST = ['Ada', 'Grace', 'Alan', 'Linus', 'Margaret', 'Dennis', 'Barbara', 'Ken', 'Edsger', 'Radia'];

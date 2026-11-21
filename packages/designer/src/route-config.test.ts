@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { applyTextEdits, editRouteConfig, listComponents, locateRouteConfig, planRouteEdit } from "./server/route-config.js";
 
-const TODOMVC = `import type { Route } from '@gable/core/router';
+const TODOMVC = `import type { Route } from '@gablejs/core/router';
 
 /** \`#/\`, \`#/active\` and \`#/completed\`. The filter rides along as route data. */
 export const routes: Route[] = [
@@ -24,13 +24,13 @@ describe("route config patches", () => {
   });
 
   it("appends when there is no catch-all, and keeps a missing trailing comma missing", () => {
-    const text = `import type { Route } from '@gable/core/router';\nexport const routes: Route[] = [\n  { path: '' },\n  { path: 'a' }\n];\n`;
+    const text = `import type { Route } from '@gablejs/core/router';\nexport const routes: Route[] = [\n  { path: '' },\n  { path: 'a' }\n];\n`;
     const out = edit(text, { op: "add", parent: [], route: { path: "b" } });
     expect(out).toContain("  { path: 'a' },\n  { path: 'b' }\n];");
   });
 
   it("handles a one-line array, double quotes and CRLF", () => {
-    const one = `import { Route } from "@gable/core/router";\nconst routes: Route[] = [{ path: "" }, { path: "x" }];\n`;
+    const one = `import { Route } from "@gablejs/core/router";\nconst routes: Route[] = [{ path: "" }, { path: "x" }];\n`;
     expect(edit(one, { op: "add", parent: [], index: 1, route: { path: "y" } })).toContain(`[{ path: "" }, { path: "y" }, { path: "x" }]`);
     const crlf = TODOMVC.replaceAll("\n", "\r\n");
     const out = edit(crlf, { op: "add", parent: [], route: { path: "about" } });
@@ -79,8 +79,8 @@ describe("route config files", () => {
     const root = mkdtempSync(join(tmpdir(), "designer-routes-"));
     mkdirSync(join(root, "src", "pages"), { recursive: true });
     writeFileSync(join(root, "src", "routes.ts"), TODOMVC);
-    writeFileSync(join(root, "src", "main.ts"), `import { provideRouter } from '@gable/core/router';\nimport { routes } from './routes.js';\nprovideRouter(routes);\n`);
-    writeFileSync(join(root, "src", "pages", "about.ts"), `import { html } from '@gable/core';\nexport class About {\n  static meta = { selector: 'app-about', template: html\`<p>About</p>\` };\n}\nclass Hidden { static meta = {} }\n`);
+    writeFileSync(join(root, "src", "main.ts"), `import { provideRouter } from '@gablejs/core/router';\nimport { routes } from './routes.js';\nprovideRouter(routes);\n`);
+    writeFileSync(join(root, "src", "pages", "about.ts"), `import { html } from '@gablejs/core';\nexport class About {\n  static meta = { selector: 'app-about', template: html\`<p>About</p>\` };\n}\nclass Hidden { static meta = {} }\n`);
     return root;
   };
 

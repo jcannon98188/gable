@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { bootstrap, type ComponentClass } from "@gable/core";
-import { whenFlushed } from "@gable/core/internal";
-import { dom } from "@gable/renderer-dom";
+import { bootstrap, type ComponentClass } from "@gablejs/core";
+import { whenFlushed } from "@gablejs/core/internal";
+import { dom } from "@gablejs/renderer-dom";
 import { DialogDemo } from "./dialog-demo.js";
 import { TabsDemo } from "./tabs-demo.js";
 import { RovingDemo } from "./roving-demo.js";

@@ -32,7 +32,7 @@ LiveAnnouncer + FocusManager abstract services in core platform; DOM and in-memo
 
 ## Implementation notes
 
-Added LiveAnnouncer and FocusManager (core/platform.ts, exported from @gable/core/renderer), DOM impl (renderer-dom/platform.ts: hidden status/alert regions in overlayRoot or body, tabindex=-1 focus), in-memory impl (testing/platform.ts: messages/polite/assertive, focused node found in mounted tree). Router: provideRouter(routes, { a11y }) with announce/politeness/focus/initial; Route.announce and Route.focus override/opt out. Skips initial navigation and same-path (query/fragment) changes; runs via runAfterFlush so the new view exists. mountApp takes a11y and exposes announcer/focus. Tests: testing/src/router-a11y.test.ts, renderer-dom/src/a11y.test.ts. Docs: router.md, accessibility.md. Note: error-boundary tests failing belong to core/42; browser.test viewport trigger failed once (unrelated).
+Added LiveAnnouncer and FocusManager (core/platform.ts, exported from @gablejs/core/renderer), DOM impl (renderer-dom/platform.ts: hidden status/alert regions in overlayRoot or body, tabindex=-1 focus), in-memory impl (testing/platform.ts: messages/polite/assertive, focused node found in mounted tree). Router: provideRouter(routes, { a11y }) with announce/politeness/focus/initial; Route.announce and Route.focus override/opt out. Skips initial navigation and same-path (query/fragment) changes; runs via runAfterFlush so the new view exists. mountApp takes a11y and exposes announcer/focus. Tests: testing/src/router-a11y.test.ts, renderer-dom/src/a11y.test.ts. Docs: router.md, accessibility.md. Note: error-boundary tests failing belong to core/42; browser.test viewport trigger failed once (unrelated).
 
 ## Answer
 

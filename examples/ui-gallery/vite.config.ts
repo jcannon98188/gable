@@ -1,4 +1,4 @@
-import { gable } from '@gable/vite';
+import { gable } from '@gablejs/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vitest/config';
 

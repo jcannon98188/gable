@@ -1,4 +1,4 @@
-// The `[field]` directive: binds a form field (see `@gable/core/forms`) to a control.
+// The `[field]` directive: binds a form field (see `@gablejs/core/forms`) to a control.
 // It is structural on purpose, so the core never imports the forms module: a field is any
 // writable signal with a `state` namespace.
 import { effect, untracked } from "./signals.js";

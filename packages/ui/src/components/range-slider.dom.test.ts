@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 import { UiRangeSlider } from "./slider.js";
 import { $$, key, settle, useDomApp } from "../test-utils.js";
 
@@ -63,7 +63,7 @@ describe("UiRangeSlider", () => {
   });
 
   it("has no axe violations", async () => {
-    const { expectNoA11yViolations } = await import("@gable/testing/a11y");
+    const { expectNoA11yViolations } = await import("@gablejs/testing/a11y");
     await boot(App);
     await expectNoA11yViolations(document.body);
   });

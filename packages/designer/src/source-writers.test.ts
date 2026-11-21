@@ -3,7 +3,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { formatTemplateLiterals, parseTemplateTree } from "@gable/template-format";
+import { formatTemplateLiterals, parseTemplateTree } from "@gablejs/template-format";
 import { describe, expect, it } from "vitest";
 import { readSceneFile } from "./server/scene-index.js";
 import { EditService } from "./server/edit/service.js";
@@ -24,7 +24,7 @@ function tempRoot(): string {
 
 // --- Scenarios ------------------------------------------------------------------------------------------------------
 
-const SCENES = `import type { ComponentScenes } from '@gable/core/tooling';
+const SCENES = `import type { ComponentScenes } from '@gablejs/core/tooling';
 import { TodoItem } from './todo-item.js';
 
 const providers = [];
@@ -109,7 +109,7 @@ describe("Scenario writer", () => {
 
 // --- Extract component ------------------------------------------------------------------------------------------------
 
-const PAGE = `import { html, signal } from '@gable/core';
+const PAGE = `import { html, signal } from '@gablejs/core';
 import { Badge } from './badge.js';
 
 export class Shop {
@@ -135,7 +135,7 @@ export class Shop {
 }
 `;
 
-const BADGE = `import { html } from '@gable/core';
+const BADGE = `import { html } from '@gablejs/core';
 
 export class Badge {
   static meta = { selector: 'app-badge', template: html\`<span>New</span>\` };
@@ -183,7 +183,7 @@ describe("Extract component", () => {
     const r = ok(s.svc.apply({ op: "extract", target: s.target("div"), name: "ProductCard" }));
     expect(r.label).toBe("Extract ProductCard");
     expect(r.created).toEqual(["src/product-card.ts"]);
-    expect(s.createdText()).toBe(`import { html } from '@gable/core';
+    expect(s.createdText()).toBe(`import { html } from '@gablejs/core';
 import { Badge } from './badge.js';
 
 export class ProductCard {

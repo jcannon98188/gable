@@ -1,5 +1,5 @@
-import { computed, html, signal } from '@gable/core';
-import { UiResizableHandle, UiResizablePanel, UiResizablePanelGroup } from '@gable/ui';
+import { computed, html, signal } from '@gablejs/core';
+import { UiResizableHandle, UiResizablePanel, UiResizablePanelGroup } from '@gablejs/ui';
 
 /** Resizable panels: a two-pane split with a grip, a nested vertical split, a collapsible sidebar with a saved layout. */
 export class ResizableDemo {

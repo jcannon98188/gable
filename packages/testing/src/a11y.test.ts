@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { html } from "@gable/core";
-import { bootstrap } from "@gable/core";
-import { whenFlushed } from "@gable/core/internal";
-import { dom } from "@gable/renderer-dom";
-import { expectNoA11yViolations, a11yViolations } from "@gable/testing/a11y";
-import { mount } from "@gable/testing";
+import { html } from "@gablejs/core";
+import { bootstrap } from "@gablejs/core";
+import { whenFlushed } from "@gablejs/core/internal";
+import { dom } from "@gablejs/renderer-dom";
+import { expectNoA11yViolations, a11yViolations } from "@gablejs/testing/a11y";
+import { mount } from "@gablejs/testing";
 
 class Good {
   static meta = { selector: "good-app", template: html`<button>Save</button>` };

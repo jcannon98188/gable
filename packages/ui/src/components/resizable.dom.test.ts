@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 import { UiResizableHandle, UiResizablePanel, UiResizablePanelGroup } from "./resizable.js";
 import { $, $$, key, pointer, settle, useDomApp } from "../test-utils.js";
 
@@ -214,7 +214,7 @@ describe("Resizable persistence", () => {
 
 describe("Resizable accessibility", () => {
   it("has no axe violations, horizontal and vertical", async () => {
-    const { expectNoA11yViolations } = await import("@gable/testing/a11y");
+    const { expectNoA11yViolations } = await import("@gablejs/testing/a11y");
     const app = await boot(App);
     await expectNoA11yViolations(document.body);
     app.direction.set("vertical");

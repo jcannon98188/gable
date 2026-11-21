@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { type ComponentClass, bootstrap, html, inject } from "@gable/core";
-import { whenFlushed } from "@gable/core/internal";
-import { Router, RouterOutlet, provideRouter, provideRouteTransitions, type Route } from "@gable/core/router";
+import { type ComponentClass, bootstrap, html, inject } from "@gablejs/core";
+import { whenFlushed } from "@gablejs/core/internal";
+import { Router, RouterOutlet, provideRouter, provideRouteTransitions, type Route } from "@gablejs/core/router";
 import { dom } from "./index.js";
 
 class Home {

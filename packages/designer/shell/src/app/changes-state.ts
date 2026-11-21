@@ -2,7 +2,7 @@
 // this reads its status and the selected file's diff, commits the chosen files and reverts a file or a hunk. It keeps no
 // copy of anything: the working tree is the truth (ADR 0001), and every answer is re-read after a write. Refreshes ride the
 // event stream the shell already has (`files` and `git` events bump `DesignerState.changesTick`); the count in the tab's badge follows, the selected diff is read only while the tab is shown.
-import { computed, effect, inject, signal, untracked } from "@gable/core";
+import { computed, effect, inject, signal, untracked } from "@gablejs/core";
 import { suggestMessage, type ChangedFile, type FileDiff, type GitError, type GitStatus, type GitStatusResult, type RevertResult, type CommitResult } from "../../../src/git.js";
 import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";

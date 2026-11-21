@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { inject } from "@gable/core";
-import { createTestInjector } from "@gable/testing";
+import { inject } from "@gablejs/core";
+import { createTestInjector } from "@gablejs/testing";
 import { getState, patchState, signalStore, withHotState, withMethods, withState, withStorage, type StorageLike } from "./index.js";
 
 class MemoryStorage implements StorageLike {

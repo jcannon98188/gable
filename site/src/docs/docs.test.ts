@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mount, mountApp } from "@gable/testing";
+import { mount, mountApp } from "@gablejs/testing";
 import { App } from "../app.js";
 import { routes } from "../routes.js";
 import { API_SOURCE, type ApiSource } from "./api-data.js";
@@ -64,8 +64,8 @@ describe("routes", () => {
     expect(guide.query("h2#set-it-up")).toBeTruthy();
 
     const pkg = await open("/docs/core");
-    expect(pkg.text()).toContain("@gable/core");
-    expect(pkg.text()).toContain("@gable/core/router");
+    expect(pkg.text()).toContain("@gablejs/core");
+    expect(pkg.text()).toContain("@gablejs/core/router");
 
     const index = await open("/docs/core/api");
     expect(index.text()).toContain("signal");
@@ -248,7 +248,7 @@ describe("API reference pages", () => {
 
   it("lists every entry point on the package reference index", async () => {
     const app = await open("/docs/core/api");
-    expect(app.queryAll("h2.md-h code").map((n) => app.textOf(n))).toEqual(["@gable/core", "@gable/core/router"]);
+    expect(app.queryAll("h2.md-h code").map((n) => app.textOf(n))).toEqual(["@gablejs/core", "@gablejs/core/router"]);
     const link = app.queryAll("ul.symbols a").find((a) => app.textOf(a) === "signal")!;
     expect(link.attrs["href"]).toBe("/docs/core/api/core%3Asignal");
   });

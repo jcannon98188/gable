@@ -1,7 +1,7 @@
-import { computed, effect, html, signal, untracked, viewChild } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
+import { computed, effect, html, signal, untracked, viewChild } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
 import { Mark, type Editor } from "@tiptap/core";
-import { GableEditor, basicStylesPlugin, corePlugin, definePlugin, headingPlugin, historyPlugin, listPlugin, watchToolbar, type ToolbarItemState } from "@gable/editor";
+import { GableEditor, basicStylesPlugin, corePlugin, definePlugin, headingPlugin, historyPlugin, listPlugin, watchToolbar, type ToolbarItemState } from "@gablejs/editor";
 import { editorStyles } from "./editor-style.js";
 
 const Highlight = Mark.create({
@@ -71,7 +71,7 @@ const START =
   "<h2>Gable editor</h2><p>Select some of this text and use the toolbar, or try <strong>Ctrl+B</strong>, <em>Ctrl+I</em> and <mark>Ctrl+Shift+H</mark>. Typing <code># </code> or <code>- </code> at the start of a line starts a heading or a list.</p><ul><li>Plugins add the marks and nodes.</li><li>Plugins add the toolbar buttons too.</li></ul>";
 
 /**
- * A real `@gable/editor` editor: `GableEditor` assembled from plugins (the stock formatting plugins plus two written
+ * A real `@gablejs/editor` editor: `GableEditor` assembled from plugins (the stock formatting plugins plus two written
  * here), a toolbar drawn by this component from `watchToolbar`, and the document read back as HTML. The ready-made
  * `<gable-editor>` element draws its own toolbar; this demo builds one by hand to show that the toolbar model is
  * UI-agnostic.

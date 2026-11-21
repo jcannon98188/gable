@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
-import { bootstrap } from '@gable/core';
-import { whenFlushed } from '@gable/core/internal';
-import { createDomRenderer } from '@gable/renderer-dom';
-import { expectNoA11yViolations } from '@gable/testing/a11y';
-import { PRESENCE_ENV } from '@gable/ui-primitives';
+import { bootstrap } from '@gablejs/core';
+import { whenFlushed } from '@gablejs/core/internal';
+import { createDomRenderer } from '@gablejs/renderer-dom';
+import { expectNoA11yViolations } from '@gablejs/testing/a11y';
+import { PRESENCE_ENV } from '@gablejs/ui-primitives';
 import { ToastDemo } from './toast-demo.js';
 
 let destroy = () => {};

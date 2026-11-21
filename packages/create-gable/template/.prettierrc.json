@@ -1,4 +1,4 @@
 {
-  "plugins": ["@gable/prettier-plugin"],
+  "plugins": ["@gablejs/prettier-plugin"],
   "printWidth": 100
 }

@@ -98,6 +98,6 @@ export function checkTsconfig(root: string, explicit?: string): void {
   const out: string[] = [];
   problems(file, new Set(), out);
   if (out.length > 0) {
-    throw new Error(`@gable/vite: tsconfig conflicts with Gable's native class fields:\n  ${[...new Set(out)].join("\n  ")}`);
+    throw new Error(`@gablejs/vite: tsconfig conflicts with Gable's native class fields:\n  ${[...new Set(out)].join("\n  ")}`);
   }
 }

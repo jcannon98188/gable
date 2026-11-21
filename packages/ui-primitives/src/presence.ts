@@ -1,6 +1,6 @@
-import { InjectionToken, effect, inject, input, signal, untracked, type InputSignal, type ReadonlySignal } from "@gable/core";
-import { computedExitDuration, currentScope, holdRemoval, injectHost } from "@gable/core/internal";
-import type { Renderer } from "@gable/core/renderer";
+import { InjectionToken, effect, inject, input, signal, untracked, type InputSignal, type ReadonlySignal } from "@gablejs/core";
+import { computedExitDuration, currentScope, holdRemoval, injectHost } from "@gablejs/core/internal";
+import type { Renderer } from "@gablejs/core/renderer";
 
 /**
  * How presence asks "does leaving play an animation or transition?" without assuming a DOM. Under a DOM renderer

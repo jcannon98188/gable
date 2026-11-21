@@ -1,4 +1,4 @@
-// `@gable/core/router`: route config, the outlet, router state as signals with Observable twins,
+// `@gablejs/core/router`: route config, the outlet, router state as signals with Observable twins,
 // function guards and the routerLink directives. Imports RxJS (a peer dependency).
 export { Router, ActiveRoute, provideRouter } from "./router-state.js";
 export type { NavigationEvent, NavigationOutcome, NavigateOptions, RouterAccessibilityOptions, AnnounceContext } from "./router-state.js";

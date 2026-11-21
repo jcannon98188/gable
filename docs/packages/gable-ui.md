@@ -1,6 +1,6 @@
 # gable-ui (CLI)
 
-`gable-ui` copies component source into your project, shadcn-style, so you own the files afterwards. The components come from [@gable/ui](./ui.md); this package is the command-line tool and the registry format around them. It is versioned in lockstep with the rest of Gable.
+`gable-ui` copies component source into your project, shadcn-style, so you own the files afterwards. The components come from [@gablejs/ui](./ui.md); this package is the command-line tool and the registry format around them. It is versioned in lockstep with the rest of Gable.
 
 ## Install and use
 
@@ -47,7 +47,7 @@ The commands are exported for scripts and tests: `init`, `add`, `buildRegistry`,
 
 ## Why there is no live demo
 
-This is a command-line tool that edits files and runs your package manager, so there is nothing to run in a page. The component behaviour it installs is shown live in the [@gable/ui-primitives guide](./ui-primitives.md) and the [@gable/ui guide](./ui.md).
+This is a command-line tool that edits files and runs your package manager, so there is nothing to run in a page. The component behaviour it installs is shown live in the [@gablejs/ui-primitives guide](./ui-primitives.md) and the [@gablejs/ui guide](./ui.md).
 
 The [full CLI and registry notes](../gable-ui-cli.md) cover every flag, the item fields and how the registry is generated.
 

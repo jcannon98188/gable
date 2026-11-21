@@ -1,4 +1,4 @@
-import { html } from "@gable/core";
+import { html } from "@gablejs/core";
 
 export class Badge {
   static meta = {

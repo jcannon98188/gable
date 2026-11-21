@@ -1,5 +1,5 @@
-import { computed, html, input, model, output } from "@gable/core";
-import { applySortableMove, UiDragHandle, UiSortable, UiSortableItem, type SortableMove } from "@gable/ui-primitives";
+import { computed, html, input, model, output } from "@gablejs/core";
+import { applySortableMove, UiDragHandle, UiSortable, UiSortableItem, type SortableMove } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 import { UiIcon } from "../lib/icon.js";
 
@@ -26,7 +26,7 @@ let counter = 0;
  *   <ui-sortable name="done" group="board" label="Done" [(items)]="done"></ui-sortable>
  *
  * `items` is the model, so `[field]` and two-way binding work; `moved` and `removed` also report every change. For rows
- * with custom markup use the `uiSortable` and `uiSortableItem` directives from `@gable/ui-primitives` directly.
+ * with custom markup use the `uiSortable` and `uiSortableItem` directives from `@gablejs/ui-primitives` directly.
  */
 export class UiSortableList {
   static meta = {

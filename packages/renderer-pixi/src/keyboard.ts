@@ -1,6 +1,6 @@
 // The Keyboard service (canvas/113): polled per-frame key state for frame hooks plus a signal for templates. Keys are
 // `KeyboardEvent.code` values (layout independent). Free of any pixi.js import.
-import { signal, type WritableSignal } from "@gable/core";
+import { signal, type WritableSignal } from "@gablejs/core";
 
 /**
  * Provided at every canvas boundary. By default it listens on the canvas host, so it is active only while the host has

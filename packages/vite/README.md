@@ -1,11 +1,11 @@
-# @gable/vite
+# @gablejs/vite
 
 The Gable Vite plugins: dev-only HMR accept lines, forced native class fields, fail-fast tsconfig checks, i18n extraction and baking, and the service worker build step.
 
 ## Install
 
 ```sh
-npm install @gable/vite
+npm install @gablejs/vite
 ```
 
 ## Documentation

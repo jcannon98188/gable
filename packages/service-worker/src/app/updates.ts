@@ -1,8 +1,8 @@
 // App-controlled updates (ADR 0022): a new version installs in the background, the app is told through a signal, and
 // it takes over only when the app calls activateUpdate(). Everything here reads the worker through the message
 // protocol, plus the registration's standard waiting and installing slots, so it works with any worker built on core.
-import { inject, signal, type ReadonlySignal } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
+import { inject, signal, type ReadonlySignal } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
 import { filter, type Observable, type Subscription } from "rxjs";
 import {
   SW_PROTOCOL,

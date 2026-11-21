@@ -1,7 +1,7 @@
 // Registration of the app's service worker, and the stream of protocol messages its workers send (ADR 0022).
 // It registers only in production builds, so a dev server's HMR never competes with a worker.
-import { inject, InjectionToken, signal, type Provider, type ReadonlySignal } from "@gable/core";
-import { currentScope, reportError } from "@gable/core/internal";
+import { inject, InjectionToken, signal, type Provider, type ReadonlySignal } from "@gablejs/core";
+import { currentScope, reportError } from "@gablejs/core/internal";
 import { Subject, type Observable } from "rxjs";
 import { isWorkerToAppMessage, type WorkerToAppMessage } from "../core/messages.js";
 import type {
@@ -11,7 +11,7 @@ import type {
   ServiceWorkerRegistrationLike,
 } from "./container.js";
 
-/** Production builds define this as `false` (`@gable/vite` does on `vite build`), the same flag `@gable/core` uses. */
+/** Production builds define this as `false` (`@gablejs/vite` does on `vite build`), the same flag `@gablejs/core` uses. */
 declare const __GABLE_DEV__: boolean | undefined;
 const isProductionBuild = () => typeof __GABLE_DEV__ !== "undefined" && __GABLE_DEV__ === false;
 

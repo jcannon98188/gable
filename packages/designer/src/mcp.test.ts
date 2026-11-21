@@ -9,7 +9,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import type { DesignNode } from "@gable/core/designer";
+import type { DesignNode } from "@gablejs/core/designer";
 import { afterAll, describe, expect, it } from "vitest";
 import type { ControlRequest, SelectionSnapshot, ShellSnapshot } from "./control-protocol.js";
 import { startBackend } from "./server/backend.js";

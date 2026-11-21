@@ -1,4 +1,4 @@
-import { html, computed, inject } from "@gable/core";
+import { html, computed, inject } from "@gablejs/core";
 import { ThemeStore } from "./theme.js";
 
 export class DesignerSection {

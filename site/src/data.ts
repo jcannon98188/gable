@@ -1,4 +1,4 @@
-import { ErrorBoundary, html } from "@gable/core";
+import { ErrorBoundary, html } from "@gablejs/core";
 import "./demos/data/data-demos.css";
 import { FormDemo } from "./demos/data/form-demo.js";
 import { I18nDemo } from "./demos/data/i18n-demo.js";

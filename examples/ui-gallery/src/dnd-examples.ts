@@ -1,6 +1,6 @@
-import { computed, html, signal } from '@gable/core';
-import { UiDraggable, UiDropZone, type DropEvent, type SortableMove } from '@gable/ui-primitives';
-import { UiBadge, UiCard, UiCardContent, UiCardHeader, UiCardTitle, UiSortableList, type SortableRow } from '@gable/ui';
+import { computed, html, signal } from '@gablejs/core';
+import { UiDraggable, UiDropZone, type DropEvent, type SortableMove } from '@gablejs/ui-primitives';
+import { UiBadge, UiCard, UiCardContent, UiCardHeader, UiCardTitle, UiSortableList, type SortableRow } from '@gablejs/ui';
 
 const row = (id: string, label: string, description?: string): SortableRow => ({ id, label, description });
 

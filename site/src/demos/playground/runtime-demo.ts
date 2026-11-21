@@ -1,5 +1,5 @@
-import { computed, createComponent, createInjector, ErrorHandler, RENDERER, signal, type ComponentClass } from "@gable/core";
-import type { Renderer } from "@gable/core/renderer";
+import { computed, createComponent, createInjector, ErrorHandler, RENDERER, signal, type ComponentClass } from "@gablejs/core";
+import type { Renderer } from "@gablejs/core/renderer";
 
 /** The state a playground template can read. Everything here is an ordinary Gable field. */
 export class DemoState {

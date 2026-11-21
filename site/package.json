@@ -13,17 +13,17 @@
     "api:strict": "node scripts/extract-api.mjs --strict"
   },
   "dependencies": {
-    "@gable/core": "*",
-    "@gable/editor": "*",
-    "@gable/renderer-dom": "*",
-    "@gable/store": "*",
+    "@gablejs/core": "*",
+    "@gablejs/editor": "*",
+    "@gablejs/renderer-dom": "*",
+    "@gablejs/store": "*",
     "@tiptap/core": "^3.33.0",
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
-    "@gable/language-service": "*",
-    "@gable/testing": "*",
-    "@gable/vite": "*",
+    "@gablejs/language-service": "*",
+    "@gablejs/testing": "*",
+    "@gablejs/vite": "*",
     "@typescript/typescript6": "^6.0.2",
     "typescript": "^7.0.2",
     "vite": "^8.3.6",

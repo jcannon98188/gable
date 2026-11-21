@@ -1,4 +1,4 @@
-import { I18n, i18n, inject, signal } from "@gable/core";
+import { I18n, i18n, inject, signal } from "@gablejs/core";
 
 export class Inbox {
   #i18n = inject(I18n);

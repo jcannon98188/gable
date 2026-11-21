@@ -1,4 +1,4 @@
-import { html } from "@gable/core";
+import { html } from "@gablejs/core";
 
 /** The lazy route's page. It lives in its own module so the bundler splits it into a chunk the router loads on demand. */
 export class ReportsPage {

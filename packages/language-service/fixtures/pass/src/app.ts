@@ -1,4 +1,4 @@
-import { html, signal, computed } from "@gable/core";
+import { html, signal, computed } from "@gablejs/core";
 import { Observable } from "rxjs";
 
 interface Todo {

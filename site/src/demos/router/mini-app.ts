@@ -1,6 +1,6 @@
-import { computed, html, inject, input, lazy, signal } from "@gable/core";
-import { ErrorHandler } from "@gable/core";
-import { redirect, Router, RouterOutlet, type Route } from "@gable/core/router";
+import { computed, html, inject, input, lazy, signal } from "@gablejs/core";
+import { ErrorHandler } from "@gablejs/core";
+import { redirect, Router, RouterOutlet, type Route } from "@gablejs/core/router";
 import { DemoLink as RouterLink, DemoLinkActive as RouterLinkActive } from "./links.js";
 
 /** Who is signed in. Provided per demo, so two demos on a page would not share it. */

@@ -1,6 +1,6 @@
 ---
 kind: ticket
-title: "@gable/store devtools: log actions (method calls), not only patches"
+title: "@gablejs/store devtools: log actions (method calls), not only patches"
 status: resolved
 tags:
   - store

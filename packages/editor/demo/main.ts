@@ -1,5 +1,5 @@
-import { bootstrap, html, signal } from "@gable/core";
-import { dom } from "@gable/renderer-dom";
+import { bootstrap, html, signal } from "@gablejs/core";
+import { dom } from "@gablejs/renderer-dom";
 import type { Editor } from "@tiptap/core";
 import {
   GableComments,
@@ -11,7 +11,7 @@ import {
   tablePlugin,
   imagePlugin,
   suggestionsPlugin,
-} from "@gable/editor";
+} from "@gablejs/editor";
 import "./styles.css";
 
 // Two clients in one page, joined by an in-memory provider. Swap `linkPeers` for `adaptProvider(new WebsocketProvider(...))`

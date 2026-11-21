@@ -39,7 +39,7 @@ Options:
   --registry <dir|url>     Where components come from: a registry directory, a gable-ui source tree or a git
                            URL (url#ref for a branch or tag). Default: the registry bundled with this CLI.
                            "init" remembers it in gable-ui.json.
-  --local <dir>            Install @gable/* from the tarballs in <dir> (made by "npm run pack:local" in the
+  --local <dir>            Install @gablejs/* from the tarballs in <dir> (made by "npm run pack:local" in the
                            Gable repository) instead of the npm registry. For unpublished builds.
   --no-install             Edit package.json but do not run the package manager.
   --overwrite, -o          (add) Replace files that already exist and differ.

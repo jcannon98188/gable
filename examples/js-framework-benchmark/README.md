@@ -32,7 +32,7 @@ row's `input`. Event handlers call store methods.
 
 ## Run
 
-`@gable/*` is not published to npm yet, so it is installed from tarballs in `vendor/` (gitignored):
+`@gablejs/*` is not published to npm yet, so it is installed from tarballs in `vendor/` (gitignored):
 
 ```
 npm run pack:local -- examples/js-framework-benchmark    # from the repository root; builds and packs the packages
@@ -70,13 +70,13 @@ published to npm first (this example installs it from tarballs).
 1. Fork krausest/js-framework-benchmark and create `frameworks/keyed/gable/`.
 2. Copy `src/`, `tsconfig.json`, `vite.upstream.config.ts` and `package.json` there (not `public/`: upstream serves
    `/css/currentStyle.css` itself), and copy `upstream/index.html` to `index.html`.
-3. In `package.json`: replace the `file:` dependencies and the `overrides` block with the published `@gable/*` versions
+3. In `package.json`: replace the `file:` dependencies and the `overrides` block with the published `@gablejs/*` versions
    (pinned, since the packages are lockstep), drop the `dev`, `preview`, `test`, `check`, `bench` and
    `playwright-core` entries, and add:
 
    ```json
    "js-framework-benchmark": {
-     "frameworkVersionFromPackage": "@gable/core",
+     "frameworkVersionFromPackage": "@gablejs/core",
      "frameworkHomeURL": "https://github.com/jcannon98188/gable",
      "customURL": "/",
      "issues": []
@@ -84,7 +84,7 @@ published to npm first (this example installs it from tarballs).
    ```
 
    `build-prod` stays `vite build --config vite.upstream.config.ts`; point `outDir` in that config at `dist` (upstream
-   loads `dist/main.js`). Delete `src/benchmark-app.test.ts` or keep `@gable/testing` and `vitest` as dev dependencies.
+   loads `dist/main.js`). Delete `src/benchmark-app.test.ts` or keep `@gablejs/testing` and `vitest` as dev dependencies.
 4. From the benchmark repo root: `npm ci && npm start`, then `cd frameworks/keyed/gable && npm ci && npm run build-prod`.
    Check it at `http://localhost:8080/frameworks/keyed/gable/` and run the correctness check
    (`npm run isKeyed` and `cd webdriver-ts && npm run bench -- --headless --framework keyed/gable --count 1`) per the

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { bootstrap, ErrorHandler, html, signal } from "@gable/core";
-import { whenFlushed } from "@gable/core/internal";
+import { bootstrap, ErrorHandler, html, signal } from "@gablejs/core";
+import { whenFlushed } from "@gablejs/core/internal";
 import { createDomRenderer } from "./index.js";
 
 beforeEach(() => {

@@ -35,7 +35,7 @@ export interface ComponentMeta {
   /** CSS for this component. Scoped to it unless `encapsulation` is `'none'`. */
   styles?: string | readonly string[];
   /**
-   * Type-level marker for tooling: `elements: pixiElements` (from `@gable/renderer-pixi/elements`) says this component's
+   * Type-level marker for tooling: `elements: pixiElements` (from `@gablejs/renderer-pixi/elements`) says this component's
    * template uses scene tags, so the language service types it against the Pixi element map. A renderer boundary
    * (`renderer`) implies it. Not read at runtime.
    */
@@ -162,7 +162,7 @@ let hostContext: { renderer: Renderer<any>; host: unknown } | null = null;
 export interface HostRef<N = unknown> {
   /** The renderer that owns the host node. */
   renderer: Renderer<N>;
-  /** The component's host node (a DOM element under `@gable/renderer-dom`). */
+  /** The component's host node (a DOM element under `@gablejs/renderer-dom`). */
   host: N;
 }
 

@@ -18,13 +18,13 @@ function run(argv: string[], env: Record<string, string> = {}, answer = "") {
 const read = (...p: string[]) => readFileSync(join(cwd, ...p), "utf8");
 
 describe("create-gable", () => {
-  it("copies the starter, pins @gable/* to its own version and ships no lockfile", async () => {
+  it("copies the starter, pins @gablejs/* to its own version and ships no lockfile", async () => {
     const { code } = await run(["my-app"]);
     expect(code).toBe(0);
     const pkg = JSON.parse(read("my-app", "package.json"));
     expect(pkg.name).toBe("my-app");
     const own = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
-    const gable = Object.entries({ ...pkg.dependencies, ...pkg.devDependencies }).filter(([n]) => n.startsWith("@gable/"));
+    const gable = Object.entries({ ...pkg.dependencies, ...pkg.devDependencies }).filter(([n]) => n.startsWith("@gablejs/"));
     expect(gable.length).toBeGreaterThan(0);
     for (const [, range] of gable) expect(range).toBe(`~${own}`);
     expect(Object.keys(pkg.scripts)).toEqual(["dev", "build", "preview", "test", "check", "format"]);
@@ -63,7 +63,7 @@ describe("create-gable", () => {
       expect((await run(["my-app", "--service-worker"])).code).toBe(0);
       const pkg = JSON.parse(read("my-app", "package.json"));
       const own = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
-      expect(pkg.dependencies["@gable/service-worker"]).toBe(`~${own}`);
+      expect(pkg.dependencies["@gablejs/service-worker"]).toBe(`~${own}`);
       expect(Object.keys(pkg.dependencies)).toEqual([...Object.keys(pkg.dependencies)].sort());
       expect(read("my-app", "vite.config.ts")).toContain("gableServiceWorker()");
       expect(read("my-app", "src", "main.ts")).toContain('provideServiceWorker({ url: "/sw.js" })');
@@ -105,42 +105,42 @@ describe("create-gable", () => {
     };
     const all = ["core", "renderer-dom", "testing", "vite", "language-service", "prettier-plugin", "template-format"].map((n) => `gable-${n}-1.2.3.tgz`);
 
-    it("points @gable/* at the tarballs and overrides every one of them", async () => {
+    it("points @gablejs/* at the tarballs and overrides every one of them", async () => {
       const dir = fake(...all, "create-gable-1.2.3.tgz");
       const result = await run(["--local", dir, "my-app"]);
       expect(result.code).toBe(0);
       const pkg = JSON.parse(read("my-app", "package.json"));
       const spec = (n: string) => `file:${dir.split(sep).join("/")}/gable-${n}-1.2.3.tgz`;
-      expect(pkg.dependencies["@gable/core"]).toBe(spec("core"));
-      expect(pkg.devDependencies["@gable/vite"]).toBe(spec("vite"));
+      expect(pkg.dependencies["@gablejs/core"]).toBe(spec("core"));
+      expect(pkg.devDependencies["@gablejs/vite"]).toBe(spec("vite"));
       expect(pkg.dependencies.rxjs).toBe("^7.8.2");
       expect(Object.keys(pkg.overrides).sort()).toEqual(
-        ["core", "language-service", "prettier-plugin", "renderer-dom", "template-format", "testing", "vite"].map((n) => `@gable/${n}`),
+        ["core", "language-service", "prettier-plugin", "renderer-dom", "template-format", "testing", "vite"].map((n) => `@gablejs/${n}`),
       );
-      expect(pkg.overrides["@gable/template-format"]).toBe(spec("template-format"));
+      expect(pkg.overrides["@gablejs/template-format"]).toBe(spec("template-format"));
     });
 
-    it("needs the @gable/service-worker tarball with --service-worker", async () => {
+    it("needs the @gablejs/service-worker tarball with --service-worker", async () => {
       const dir = fake(...all);
       const missing = await run(["--local", dir, "--service-worker", "my-app"]);
       expect(missing.code).toBe(1);
-      expect(missing.err).toContain("no tarball for @gable/service-worker");
-      writeFileSync(join(dir, "gable-service-worker-1.2.3.tgz"), "");
+      expect(missing.err).toContain("no tarball for @gablejs/service-worker");
+      writeFileSync(join(dir, "gablejs-service-worker-1.2.3.tgz"), "");
       expect((await run(["--local", dir, "--service-worker", "my-app"])).code).toBe(0);
-      expect(JSON.parse(read("my-app", "package.json")).dependencies["@gable/service-worker"]).toMatch(/gable-service-worker-1.2.3.tgz$/);
+      expect(JSON.parse(read("my-app", "package.json")).dependencies["@gablejs/service-worker"]).toMatch(/gablejs-service-worker-1.2.3.tgz$/);
     });
 
     it("accepts --local=<dir> and a relative directory", async () => {
       fake(...all);
       expect((await run(["my-app", "--local=vendor"])).code).toBe(0);
-      expect(JSON.parse(read("my-app", "package.json")).dependencies["@gable/core"]).toMatch(/^file:.*\/vendor\/gable-core-1\.2\.3\.tgz$/);
+      expect(JSON.parse(read("my-app", "package.json")).dependencies["@gablejs/core"]).toMatch(/^file:.*\/vendor\/gablejs-core-1\.2\.3\.tgz$/);
     });
 
     it("fails before writing anything when a tarball is missing, the directory is absent or the value is missing", async () => {
       const dir = fake(...all.filter((f) => !f.includes("-vite-")));
       const missing = await run(["--local", dir, "my-app"]);
       expect(missing.code).toBe(1);
-      expect(missing.err).toContain("no tarball for @gable/vite");
+      expect(missing.err).toContain("no tarball for @gablejs/vite");
       expect(existsSync(join(cwd, "my-app"))).toBe(false);
       expect((await run(["--local", join(cwd, "nope"), "my-app"])).err).toContain("not a directory");
       expect((await run(["my-app", "--local"])).code).toBe(2);

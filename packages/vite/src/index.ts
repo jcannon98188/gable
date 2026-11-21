@@ -2,7 +2,7 @@ import { basename } from "node:path";
 import type { Plugin } from "vite";
 import { checkTsconfig } from "./tsconfig-check.js";
 
-const GABLE_IMPORT = /\b(?:from|import)\s*["']@gable\//;
+const GABLE_IMPORT = /\b(?:from|import)\s*["']@gablejs\//;
 const HAS_EXPORT = /^\s*export\s/m;
 const SCRIPT = /\.(?:[mc]?[jt]s|[jt]sx)$/;
 
@@ -14,7 +14,7 @@ export function acceptLine(file: string): string {
   const self = JSON.stringify(`./${basename(file)}`);
   return [
     `import * as __gableSelf from ${self};`,
-    `import * as __gableHmr from "@gable/core/hmr";`,
+    `import * as __gableHmr from "@gablejs/core/hmr";`,
     `if (import.meta.hot) {`,
     `  __gableHmr.register(import.meta.url, __gableSelf);`,
     `  import.meta.hot.accept((m) => { __gableHmr.update(import.meta.url, m, import.meta.hot); });`,
@@ -25,7 +25,7 @@ export function acceptLine(file: string): string {
 /**
  * The Gable Vite plugin. Dev server only: appends a self-accept line to modules that export something and import
  * from Gable (no template or metadata parsing). Always: native class fields at ES2022, no decorators, a fail-fast
- * tsconfig check, and one copy of `@gable/core`. Production builds get no Gable transform.
+ * tsconfig check, and one copy of `@gablejs/core`. Production builds get no Gable transform.
  *
  * @returns A Vite plugin; list it in `plugins`.
  *
@@ -33,7 +33,7 @@ export function acceptLine(file: string): string {
  * ```ts
  * // vite.config.ts
  * import { defineConfig } from "vite";
- * import { gable } from "@gable/vite";
+ * import { gable } from "@gablejs/vite";
  *
  * export default defineConfig({ plugins: [gable()] });
  * ```
@@ -44,8 +44,8 @@ export function gable(): Plugin {
     name: "gable",
     config(_, { command }) {
       return {
-        resolve: { dedupe: ["@gable/core"] },
-        optimizeDeps: { exclude: ["@gable/core", "@gable/renderer-dom", "@gable/testing"] },
+        resolve: { dedupe: ["@gablejs/core"] },
+        optimizeDeps: { exclude: ["@gablejs/core", "@gablejs/renderer-dom", "@gablejs/testing"] },
         oxc: { target: "es2022", decorator: { legacy: false } },
         ...(command === "build" ? { define: { __GABLE_DEV__: "false" } } : {}),
       };

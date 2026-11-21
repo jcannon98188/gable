@@ -5,8 +5,8 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { Container, EventSystem, Rectangle } from "pixi.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { bootstrap, flushSync, html, inject, signal } from "@gable/core";
-import { createDomRenderer } from "@gable/renderer-dom";
+import { bootstrap, flushSync, html, inject, signal } from "@gablejs/core";
+import { createDomRenderer } from "@gablejs/renderer-dom";
 import { Gamepad, GableCanvas, Keyboard, Pointer, pixiRenderer, type ApplicationLike, type FrameScheduler, type PixiRendererOptions } from "./index.js";
 
 function harness(extra: Partial<PixiRendererOptions> = {}) {

@@ -1,4 +1,4 @@
-import { html, inject } from "@gable/core";
+import { html, inject } from "@gablejs/core";
 import { DocLink } from "./docs/doc-link.js";
 import { ThemeStore } from "./theme.js";
 

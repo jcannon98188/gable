@@ -530,7 +530,7 @@ define("fetch", () => Promise.reject(new TypeError("fetch is not available in th
 
 /* ---------------- beyond spec section 8 ---------------- */
 
-// @zag-js/store (under @gable/ui-primitives) tests `x instanceof File` and
+// @zag-js/store (under @gablejs/ui-primitives) tests `x instanceof File` and
 // `x instanceof Blob` on every proxied value, so it throws a ReferenceError
 // on a host without them. Section 8 does not list them: the switch-over
 // report flags this for the host runtime. Minimal, data-holding versions.

@@ -1,5 +1,5 @@
-import type { Provider } from "@gable/core";
-import { parentOf, queryAll, type TestNode } from "@gable/testing/renderer";
+import type { Provider } from "@gablejs/core";
+import { parentOf, queryAll, type TestNode } from "@gablejs/testing/renderer";
 import { MACHINE_ENV, type RootNodeLike } from "./env.js";
 
 /**

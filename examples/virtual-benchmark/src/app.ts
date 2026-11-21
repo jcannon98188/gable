@@ -1,5 +1,5 @@
-import { computed, html, input, signal } from '@gable/core';
-import { UiProps, useVirtualizer } from '@gable/ui-primitives';
+import { computed, html, input, signal } from '@gablejs/core';
+import { UiProps, useVirtualizer } from '@gablejs/ui-primitives';
 import { buildRows, type Row } from '../../js-framework-benchmark/src/data.js';
 
 /** The same row component as the js-framework-benchmark's rows case (id, a clickable label, remove), as a div grid. */

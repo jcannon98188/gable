@@ -1,5 +1,5 @@
-import { computed, effect, html, inject, signal, untracked } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
+import { computed, effect, html, inject, signal, untracked } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
 import { UiButton } from "../components/ui/button.js";
 import { UiResizableHandle, UiResizablePanel, UiResizablePanelGroup } from "../components/ui/resizable.js";
 import { UiTab, UiTabs } from "../components/ui/tabs.js";

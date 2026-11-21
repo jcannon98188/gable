@@ -1,5 +1,5 @@
-import { computed, html, inject, signal } from "@gable/core";
-import { DIALOG, DialogState } from "@gable/ui-primitives";
+import { computed, html, inject, signal } from "@gablejs/core";
+import { DIALOG, DialogState } from "@gablejs/ui-primitives";
 import { primitivesStyles } from "./primitives-style.js";
 
 /**

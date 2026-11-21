@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { html } from "@gable/core";
-import { MAX_FRAME_DT } from "@gable/renderer-pixi";
-import { createSceneTestRenderer, mountWithScene } from "@gable/renderer-pixi/testing";
+import { html } from "@gablejs/core";
+import { MAX_FRAME_DT } from "@gablejs/renderer-pixi";
+import { createSceneTestRenderer, mountWithScene } from "@gablejs/renderer-pixi/testing";
 import { Clock, Runner } from "./frame.js";
 
 function mount() {

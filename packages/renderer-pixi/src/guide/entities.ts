@@ -1,5 +1,5 @@
-import { html, inject, input, signal } from "@gable/core";
-import { Frame } from "@gable/renderer-pixi";
+import { html, inject, input, signal } from "@gablejs/core";
+import { Frame } from "@gablejs/renderer-pixi";
 
 /** An entity is plain data. */
 export interface Rock {

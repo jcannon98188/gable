@@ -1,5 +1,5 @@
-import { computed, html, input, output, signal } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
+import { computed, html, input, output, signal } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
 import { cn } from "../lib/cn.js";
 import { diffLines, parseDiff, serializeDiff, splitRows, type DiffLine } from "../lib/diff.js";
 import { tokenize, type Highlighter, type Token, type TokenKind } from "../lib/highlight.js";

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
-import { currentScope, holdRemoval } from "@gable/core/internal";
-import { mount } from "@gable/testing";
+import { html, signal } from "@gablejs/core";
+import { currentScope, holdRemoval } from "@gablejs/core/internal";
+import { mount } from "@gablejs/testing";
 
 /** A component that keeps its branch mounted until its gate is released (what an exit animation does). */
 const gates: Array<() => void> = [];

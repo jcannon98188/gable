@@ -1,7 +1,7 @@
 // defineWorker({ sync }): sync handlers keyed by tag, wired through core's backgroundSync, on the in-memory worker
 // scope; and the default worker paired with the app's SwSync on the in-memory browser.
 import { afterEach, describe, expect, it } from "vitest";
-import { createInjector, type Injector } from "@gable/core";
+import { createInjector, type Injector } from "@gablejs/core";
 import { SW_PROTOCOL, type SyncContext } from "../core/index.js";
 import { createBrowser, type InMemoryBrowserOptions } from "../testing/browser.js";
 import { createWorkerScope, type Network } from "../testing/worker-scope.js";

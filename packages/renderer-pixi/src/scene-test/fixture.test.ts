@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computed, html, inject, signal, type ComponentClass } from "@gable/core";
+import { computed, html, inject, signal, type ComponentClass } from "@gablejs/core";
 import { Assets, Frame, ReducedMotion } from "../index.js";
 import { createSceneTestRenderer, mountWithScene, provideTestAssets } from "../testing.js";
 

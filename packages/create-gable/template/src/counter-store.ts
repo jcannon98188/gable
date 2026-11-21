@@ -1,4 +1,4 @@
-import { signal } from "@gable/core";
+import { signal } from "@gablejs/core";
 
 /** A root-scoped service: one instance for the whole app, shared by every component that injects it. */
 export class CounterStore {

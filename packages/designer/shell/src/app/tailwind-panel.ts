@@ -2,7 +2,7 @@
 // state toolbar (hover, focus, disabled, group, dark) with forced-state preview, the element's classes (dynamic ones read-only),
 // and a searchable class palette with live hover preview and autocomplete. All reading and planning happens in the backend
 // (`/api/tailwind/*`); this component only shows it and turns a pick into a class edit.
-import { computed, effect, html, inject, signal, untracked } from "@gable/core";
+import { computed, effect, html, inject, signal, untracked } from "@gablejs/core";
 import type { ControlDef, ControlOption, SearchHit } from "../../../src/server/tailwind/types.js";
 import { UiButton } from "../components/ui/button.js";
 import { UiCommand, type CommandItem } from "../components/ui/command.js";

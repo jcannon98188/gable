@@ -1,11 +1,11 @@
-# @gable/renderer-dom
+# @gablejs/renderer-dom
 
-The renderer that puts a Gable app in a browser. `@gable/core` never touches `document`: it describes work as a small set of calls (create a node, set a property, insert, remove, listen) on a `Renderer`, and this package implements them over the real DOM. It also ships the browser services the router needs (Location, History, Title, Meta, LiveAnnouncer, FocusManager), scoped component styles, and the `viewport`, `interaction` and `hover` triggers for `@defer`.
+The renderer that puts a Gable app in a browser. `@gablejs/core` never touches `document`: it describes work as a small set of calls (create a node, set a property, insert, remove, listen) on a `Renderer`, and this package implements them over the real DOM. It also ships the browser services the router needs (Location, History, Title, Meta, LiveAnnouncer, FocusManager), scoped component styles, and the `viewport`, `interaction` and `hover` triggers for `@defer`.
 
 ## Install
 
 ```
-npm install @gable/core @gable/renderer-dom
+npm install @gablejs/core @gablejs/renderer-dom
 ```
 
 `npm create gable@latest my-app` wires it up for you.
@@ -15,8 +15,8 @@ npm install @gable/core @gable/renderer-dom
 `dom()` creates the renderer and `bootstrap` mounts the root component into a target element.
 
 ```ts
-import { bootstrap } from "@gable/core";
-import { dom } from "@gable/renderer-dom";
+import { bootstrap } from "@gablejs/core";
+import { dom } from "@gablejs/renderer-dom";
 import { Root } from "./root.js";
 
 bootstrap(Root, { renderer: dom(), target: "#app" });
@@ -63,6 +63,6 @@ Some details worth knowing:
 - `knownTags` lists the element names the renderer knows per namespace, used for its dev-time unknown-tag warning.
 - `createDomPlatform()` builds just the browser services, for code that needs Location or History without the renderer.
 
-To write your own renderer, for example for tests, see the `Renderer` type from `@gable/core/renderer`. Tests normally use the in-memory renderer in [@gable/testing](./testing.md).
+To write your own renderer, for example for tests, see the `Renderer` type from `@gablejs/core/renderer`. Tests normally use the in-memory renderer in [@gablejs/testing](./testing.md).
 
 Every exported symbol is documented in the API reference, linked below.

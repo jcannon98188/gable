@@ -1,4 +1,4 @@
-import { computed, html, inject, input, model } from "@gable/core";
+import { computed, html, inject, input, model } from "@gablejs/core";
 import {
   SelectState,
   UiPortal,
@@ -9,7 +9,7 @@ import {
   UiSelectValueText,
   selectCollection,
   type SelectItem,
-} from "@gable/ui-primitives";
+} from "@gablejs/ui-primitives";
 import { cn } from "../../lib/ui/cn.js";
 import { UiIcon } from "../../lib/ui/icon.js";
 

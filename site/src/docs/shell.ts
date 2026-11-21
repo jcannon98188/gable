@@ -1,7 +1,7 @@
-import { computed, effect, html, inject, signal } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
-import { FocusManager } from "@gable/core/renderer";
-import { RouterOutlet } from "@gable/core/router";
+import { computed, effect, html, inject, signal } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
+import { FocusManager } from "@gablejs/core/renderer";
+import { RouterOutlet } from "@gablejs/core/router";
 import { REPO } from "./base.js";
 import { DocLink } from "./doc-link.js";
 import { DocsSearch } from "./docs-search.js";

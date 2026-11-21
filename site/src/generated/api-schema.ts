@@ -8,7 +8,7 @@ export interface ApiIndex {
     slug: string;
     version: string;
     description: string;
-    /** Import paths, e.g. "@gable/core" and "@gable/core/rxjs". */
+    /** Import paths, e.g. "@gablejs/core" and "@gablejs/core/rxjs". */
     entryPoints: string[];
     symbolCount: number;
     /** Symbols with no TSDoc summary. */
@@ -26,7 +26,7 @@ export interface ApiPackage {
 }
 
 export interface ApiEntryPoint {
-  /** "@gable/core" or "@gable/core/rxjs". */
+  /** "@gablejs/core" or "@gablejs/core/rxjs". */
   path: string;
   /** Ordered by kind group (the ApiKind order below), then name. */
   symbols: ApiSymbol[];
@@ -62,7 +62,7 @@ export interface ApiSymbol {
   members?: ApiMember[];
   extends?: string[];
   implements?: string[];
-  /** @see and {@link} targets: symbol ids ("@gable/core#signal") when resolvable in the package, else raw text. */
+  /** @see and {@link} targets: symbol ids ("@gablejs/core#signal") when resolvable in the package, else raw text. */
   see?: string[];
   /** Repo-relative source file of the declaration (packages/<pkg>/src/...), when it can be found. */
   sourceFile?: string;

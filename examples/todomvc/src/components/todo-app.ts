@@ -1,4 +1,4 @@
-import { html, inject, signal } from '@gable/core';
+import { html, inject, signal } from '@gablejs/core';
 import { TodoStore } from '../services/todo-store.js';
 import { TodoItem } from './todo-item.js';
 

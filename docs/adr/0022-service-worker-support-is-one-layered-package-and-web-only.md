@@ -1,10 +1,10 @@
 # Service worker support is one layered package and is web-only
 
-Gable ships service worker support as a single package, `@gable/service-worker`, with three layers on separate subpath exports. The layers are the authoring API, a default worker built on it, and the app-side services.
+Gable ships service worker support as a single package, `@gablejs/service-worker`, with three layers on separate subpath exports. The layers are the authoring API, a default worker built on it, and the app-side services.
 
-- `@gable/service-worker/core` is the authoring API for writing a worker. It has request routing, caching strategies (cache-first, network-first, stale-while-revalidate, network-only), a versioned precache that installs and activates atomically, lifecycle hooks, a typed message channel to the app, and push and background sync handlers.
-- `@gable/service-worker/runtime` is the default worker. It reads `gable.sw.json` (asset groups, data groups, navigation fallback) and wires the core primitives. Most apps never open it. It uses only core's public surface, so a primitive the runtime needs that core does not export is a gap in core.
-- `@gable/service-worker` is the app side: injectable services for registration, an update-available signal, `checkForUpdate()`, `activateUpdate()`, Observables for version, push and notification-click events. It registers only in production builds, so it never competes with HMR.
+- `@gablejs/service-worker/core` is the authoring API for writing a worker. It has request routing, caching strategies (cache-first, network-first, stale-while-revalidate, network-only), a versioned precache that installs and activates atomically, lifecycle hooks, a typed message channel to the app, and push and background sync handlers.
+- `@gablejs/service-worker/runtime` is the default worker. It reads `gable.sw.json` (asset groups, data groups, navigation fallback) and wires the core primitives. Most apps never open it. It uses only core's public surface, so a primitive the runtime needs that core does not export is a gap in core.
+- `@gablejs/service-worker` is the app side: injectable services for registration, an update-available signal, `checkForUpdate()`, `activateUpdate()`, Observables for version, push and notification-click events. It registers only in production builds, so it never competes with HMR.
 
 The Angular-style declarative worker is the default. Going further means either extending it (`defineWorker({ config, extend })` adds routes and handlers to the declarative behaviour) or replacing it with a worker written against core alone. The Vite plugin emits the hashed asset manifest in both cases, so a hand-written worker keeps atomic versioned updates.
 
@@ -28,6 +28,6 @@ Letting a new version activate on next load. It is simpler but gives the app no 
 
 Dev mode has no worker, so HMR is unaffected. Worker behaviour is tested in production builds and with an in-memory worker scope in unit tests.
 
-`@gable/vite` gains a build-time step to emit the manifest and worker file. It still needs no compiler awareness of Gable's templates. The step is a separate plugin, `gableServiceWorker()`, so apps without a worker are unaffected, and `@gable/service-worker` is only an optional peer of `@gable/vite`. The manifest is built into the worker file, so every release is a new worker script for the browser to install. A custom worker is a module whose default export is `(self, manifest) => void` or a `defineWorker()` result, and the plugin calls it with the manifest; that default export is part of the plugin's contract.
+`@gablejs/vite` gains a build-time step to emit the manifest and worker file. It still needs no compiler awareness of Gable's templates. The step is a separate plugin, `gableServiceWorker()`, so apps without a worker are unaffected, and `@gablejs/service-worker` is only an optional peer of `@gablejs/vite`. The manifest is built into the worker file, so every release is a new worker script for the browser to install. A custom worker is a module whose default export is `(self, manifest) => void` or a `defineWorker()` result, and the plugin calls it with the manifest; that default export is part of the plugin's contract.
 
 Devtools support for worker version and cache state is deferred.

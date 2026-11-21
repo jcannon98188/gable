@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
-import { mount } from "@gable/testing";
-import { pressKey, provideTestDom } from "@gable/ui-primitives/testing";
+import { html, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
+import { pressKey, provideTestDom } from "@gablejs/ui-primitives/testing";
 import { UiResizableHandle, UiResizablePanel, UiResizablePanelGroup } from "./resizable.js";
 
 class App {

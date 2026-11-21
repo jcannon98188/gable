@@ -1,7 +1,7 @@
 // The command palette, generated from the current state. Every control outside a modal has a command that runs it or moves to it;
 // a modal's fields and an open picker's options are reached through the command that opens them. Selecting one runs it by its
 // value, so the template only passes a string.
-import { computed, html, inject } from "@gable/core";
+import { computed, html, inject } from "@gablejs/core";
 import { fuzzyFilter, UiCommandDialog, type CommandItem } from "../components/ui/command.js";
 import { TEXT_SCALES } from "../../../src/devices.js";
 import { ChromeState } from "./chrome-state.js";

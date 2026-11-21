@@ -1,4 +1,4 @@
-import { effect, injectHost } from "@gable/core";
+import { effect, injectHost } from "@gablejs/core";
 
 /**
  * Keeps the host element's `class` attribute equal to `classes()`. Templates cannot call functions, so a component

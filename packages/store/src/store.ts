@@ -1,6 +1,6 @@
-import { computed, signal, untracked, type ReadonlySignal, type WritableSignal } from "@gable/core";
-import { hotState } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
+import { computed, signal, untracked, type ReadonlySignal, type WritableSignal } from "@gablejs/core";
+import { hotState } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
 
 /** Dev-only code is gated on this so bundlers can drop it (`define: { __GABLE_DEV__: false }`), the same flag core uses. */
 declare const __GABLE_DEV__: boolean | undefined;

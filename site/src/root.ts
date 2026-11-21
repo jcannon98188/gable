@@ -1,4 +1,4 @@
-import { html } from "@gable/core";
+import { html } from "@gablejs/core";
 import { SiteNav } from "./site-nav.js";
 import { Hero } from "./hero.js";
 import { WhatYouGet } from "./what-you-get.js";

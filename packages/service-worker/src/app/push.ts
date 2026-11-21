@@ -1,6 +1,6 @@
 // Push for the app (ADR 0022): the push messages and notification clicks the worker forwards to open pages, as
 // Observables, and the push subscription helper (permission, subscribe, getSubscription, unsubscribe).
-import { inject, signal, type ReadonlySignal } from "@gable/core";
+import { inject, signal, type ReadonlySignal } from "@gablejs/core";
 import { filter, map, type Observable } from "rxjs";
 import type { NotificationClickMessage, NotificationInfo, PushMessage, WorkerToAppMessage } from "../core/messages.js";
 import { whenActive } from "./active.js";

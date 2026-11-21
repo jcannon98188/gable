@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { I18n, i18n, html, inject, signal, computed } from "@gable/core";
-import { extractTemplateMessages, messageId } from "@gable/core/tooling";
-import { mount } from "@gable/testing";
+import { I18n, i18n, html, inject, signal, computed } from "@gablejs/core";
+import { extractTemplateMessages, messageId } from "@gablejs/core/tooling";
+import { mount } from "@gablejs/testing";
 
 const id = messageId;
 

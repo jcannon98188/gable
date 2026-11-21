@@ -1,13 +1,13 @@
 // gableServiceWorker() through real Vite builds of the sample app: what a production build emits (the asset manifest
 // with content hashes, and the worker file), the emitted worker running on the in-memory worker scope and browser
-// from @gable/service-worker's tests, and nothing emitted in dev.
+// from @gablejs/service-worker's tests, and nothing emitted in dev.
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { build, createServer, type InlineConfig, type Rollup } from "vite";
 import { afterEach, describe, expect, it } from "vitest";
-import { createInjector } from "@gable/core";
-import { provideServiceWorker, SERVICE_WORKER_CONTAINER, SwRegistration, SwUpdates } from "@gable/service-worker";
+import { createInjector } from "@gablejs/core";
+import { provideServiceWorker, SERVICE_WORKER_CONTAINER, SwRegistration, SwUpdates } from "@gablejs/service-worker";
 import { createBrowser, type WorkerScript } from "../../service-worker/src/testing/browser.js";
 import { createWorkerScope, type Network } from "../../service-worker/src/testing/worker-scope.js";
 import { gableServiceWorker, type GableServiceWorkerOptions } from "./index.js";
@@ -168,8 +168,8 @@ const workerScript = (files: Files): WorkerScript => (self) => new Function("sel
 
 /** A custom worker on core alone: the build's manifest precached atomically per release, updates app-controlled. */
 const CUSTOM_WORKER = `
-import { createFetchRouter, createPrecache, lifecycle, type WorkerScope } from "@gable/service-worker/core";
-import type { AssetManifest } from "@gable/service-worker/runtime";
+import { createFetchRouter, createPrecache, lifecycle, type WorkerScope } from "@gablejs/service-worker/core";
+import type { AssetManifest } from "@gablejs/service-worker/runtime";
 
 export default function worker(self: WorkerScope, manifest: AssetManifest): void {
   const precache = createPrecache(self, { version: manifest.version, urls: manifest.files, hashes: manifest.hashes });
@@ -238,7 +238,7 @@ describe("a custom worker built on core", () => {
 describe("a custom worker entry", () => {
   it("may default-export a defineWorker() result, which is started with the manifest", { timeout: 60_000 }, async () => {
     const entry = `
-import { defineWorker } from "@gable/service-worker/runtime";
+import { defineWorker } from "@gablejs/service-worker/runtime";
 import config from "../gable.sw.json";
 export default defineWorker({ config, extend: ({ manifest }) => { (globalThis as Record<string, unknown>).__started = manifest.version; } });
 `;

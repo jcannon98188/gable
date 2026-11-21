@@ -1,10 +1,10 @@
 // Renderer boundaries in the devtools hook: a renderer registers a snapshot of its node tree and the hook reports it with
 // source locations and the effects of the last flush (canvas/139). Driven here with DOM elements standing in for scene nodes.
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { flushSync, html, signal } from "@gable/core";
-import { mount, type TestNode } from "@gable/testing";
-import { createDesigner, type DesignerInstance } from "@gable/core/designer";
-import { createDevtools, type BoundarySpec, type BoundaryTree, type DevtoolsEvent, type DevtoolsInstance } from "@gable/core/devtools";
+import { flushSync, html, signal } from "@gablejs/core";
+import { mount, type TestNode } from "@gablejs/testing";
+import { createDesigner, type DesignerInstance } from "@gablejs/core/designer";
+import { createDevtools, type BoundarySpec, type BoundaryTree, type DevtoolsEvent, type DevtoolsInstance } from "@gablejs/core/devtools";
 
 let dt: DevtoolsInstance;
 let designer: DesignerInstance | null = null;

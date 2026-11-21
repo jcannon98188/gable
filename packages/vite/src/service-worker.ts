@@ -1,6 +1,6 @@
 // gableServiceWorker(): at production build, emits the asset manifest and the service worker file (ADR 0022).
 //
-// The plugin never imports @gable/service-worker itself: the worker it bundles does, from the app's dependencies, and
+// The plugin never imports @gablejs/service-worker itself: the worker it bundles does, from the app's dependencies, and
 // the default worker's config is checked through a dynamic import at build time. Apps without the plugin pay nothing.
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -17,7 +17,7 @@ export interface GableServiceWorkerOptions {
   /**
    * A custom worker module, relative to the project root, in place of the default worker. Its default export is
    * either a function `(self, manifest) => void`, which sets the worker up with core's API, or the result of
-   * `defineWorker()` from `@gable/service-worker/runtime`. The worker file calls it once, when it runs, with the
+   * `defineWorker()` from `@gablejs/service-worker/runtime`. The worker file calls it once, when it runs, with the
    * worker's `self` and the build's {@link EmittedAssetManifest}.
    */
   readonly entry?: string;
@@ -32,7 +32,7 @@ export interface GableServiceWorkerOptions {
 
 /**
  * The asset manifest a production build emits, written as JSON next to the worker file and built into the worker.
- * It is an `AssetManifest` of `@gable/service-worker/runtime`, plus each file's content hash.
+ * It is an `AssetManifest` of `@gablejs/service-worker/runtime`, plus each file's content hash.
  */
 export interface EmittedAssetManifest {
   /**
@@ -57,7 +57,7 @@ const PLACEHOLDER = "__GABLE_SW_MANIFEST__";
 const PLACEHOLDER_LITERAL = new RegExp(`(["'\`])${PLACEHOLDER}\\1`, "g");
 
 const hash = (content: string | Uint8Array) => createHash("sha256").update(content).digest("hex").slice(0, 16);
-const fail = (message: string) => new Error(`@gable/vite gableServiceWorker(): ${message}`);
+const fail = (message: string) => new Error(`@gablejs/vite gableServiceWorker(): ${message}`);
 
 /** The files under `dir`, as `/`-separated paths relative to it. */
 function walk(dir: string, prefix = ""): string[] {
@@ -66,19 +66,19 @@ function walk(dir: string, prefix = ""): string[] {
   );
 }
 
-/** What the default worker's build-time check needs from `@gable/service-worker/runtime`. */
+/** What the default worker's build-time check needs from `@gablejs/service-worker/runtime`. */
 interface RuntimeChecks {
   validateConfig(config: unknown): unknown;
   validateManifest(config: unknown, manifest: unknown): unknown;
 }
 
 async function loadRuntime(): Promise<RuntimeChecks> {
-  // A variable specifier keeps @gable/vite's own build from needing the package's types.
-  const specifier: string = "@gable/service-worker/runtime";
+  // A variable specifier keeps @gablejs/vite's own build from needing the package's types.
+  const specifier: string = "@gablejs/service-worker/runtime";
   try {
     return (await import(/* @vite-ignore */ specifier)) as RuntimeChecks;
   } catch (error) {
-    throw fail(`the default worker needs @gable/service-worker; install it with "npm install @gable/service-worker" (${String(error)})`);
+    throw fail(`the default worker needs @gablejs/service-worker; install it with "npm install @gablejs/service-worker" (${String(error)})`);
   }
 }
 
@@ -127,7 +127,7 @@ async function bundleWorker(config: ResolvedConfig, worker: string, defaultWorke
 }
 
 /**
- * Service worker support for production builds (`@gable/service-worker`, ADR 0022). `vite build` emits two files
+ * Service worker support for production builds (`@gablejs/service-worker`, ADR 0022). `vite build` emits two files
  * into the output directory:
  *
  * - the asset manifest, `sw-manifest.json` ({@link EmittedAssetManifest}): every emitted file with its content hash,
@@ -135,7 +135,7 @@ async function bundleWorker(config: ResolvedConfig, worker: string, defaultWorke
  * - the worker file, `sw.js`: one classic script with the manifest built in, so each release is a new worker that
  *   installs into its own caches and waits for the app's `activateUpdate()`.
  *
- * The worker is the default one, `@gable/service-worker/runtime` driven by `gable.sw.json` (checked against the
+ * The worker is the default one, `@gablejs/service-worker/runtime` driven by `gable.sw.json` (checked against the
  * manifest at build time), or a custom module named by `entry`. Register it from the app with
  * `provideServiceWorker({ url: "/sw.js" })`. The dev server gets nothing: no worker file, no manifest, and the app
  * side does not register there, so HMR is unaffected.
@@ -147,7 +147,7 @@ async function bundleWorker(config: ResolvedConfig, worker: string, defaultWorke
  * ```ts
  * // vite.config.ts
  * import { defineConfig } from "vite";
- * import { gable, gableServiceWorker } from "@gable/vite";
+ * import { gable, gableServiceWorker } from "@gablejs/vite";
  *
  * export default defineConfig({ plugins: [gable(), gableServiceWorker()] });
  * ```
@@ -199,7 +199,7 @@ export function gableServiceWorker(options: GableServiceWorkerOptions = {}): Plu
           const checked = runtime.validateConfig(JSON.parse(readFileSync(configFile, "utf8")));
           runtime.validateManifest(checked, { version: "build", files });
           const source = [
-            `import { defineWorker } from "@gable/service-worker/runtime";`,
+            `import { defineWorker } from "@gablejs/service-worker/runtime";`,
             `import config from ${JSON.stringify(normalizePath(configFile))};`,
             `export default defineWorker({ config });`,
           ].join("\n");

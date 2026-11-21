@@ -1,7 +1,7 @@
 // The Designer's driven keyboard and accessibility-tree check (e2e/a11y-depth-check.mjs) runs against this app. It has
 // keyboard problems ON PURPOSE: a positive tabindex, a control that is only a div with a role, a text field without a name,
 // a button that hides its focus ring (index.html) and a skipped heading level. Do not fix them.
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 
 export class FocusApp {
   static meta = {

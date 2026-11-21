@@ -1,4 +1,4 @@
-import type { ComponentScenes } from '@gable/core/tooling';
+import type { ComponentScenes } from '@gablejs/core/tooling';
 import '../app.css';
 import { TodoStore } from '../services/todo-store.js';
 import { TodoItem } from './todo-item.js';

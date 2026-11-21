@@ -1,5 +1,5 @@
-import { computed, html, inject, input, model, output } from "@gable/core";
-import { SwitchState, UiProps } from "@gable/ui-primitives";
+import { computed, html, inject, input, model, output } from "@gablejs/core";
+import { SwitchState, UiProps } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 
 const CONTROL =

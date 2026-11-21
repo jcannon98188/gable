@@ -151,10 +151,10 @@ try {
   check((await shownValue("--space-card", "dark")) === "20px", "a prefers-color-scheme: dark value counts as dark too", await shownValue("--space-card", "dark"));
   const swatch = await q(`return getComputedStyle(document.querySelector(${JSON.stringify(`${tok("--brand")} [data-scheme="light"] .sw`)})).backgroundColor`);
   check(swatch === "rgb(255, 0, 102)", "colour tokens show a swatch of their value", swatch);
-  check((await q(`return document.querySelector(${JSON.stringify(`${tok("--primary")} [data-part="token-package"]`)})?.textContent.trim()`)) === "@gable/ui", "gable-ui's theme.css tokens are listed and marked as a package's");
+  check((await q(`return document.querySelector(${JSON.stringify(`${tok("--primary")} [data-part="token-package"]`)})?.textContent.trim()`)) === "@gablejs/ui", "gable-ui's theme.css tokens are listed and marked as a package's");
   check(/^oklch\(0\.205 0 0\)/.test((await shownValue("--primary", "light")) ?? "") && /override/.test((await shownValue("--primary", "light")) ?? ""), "a package token's light value says an edit writes an override", await shownValue("--primary", "light"));
   const source = await q(`return document.querySelector('[data-part="tokens-source"]').textContent`);
-  check(source.includes("src/styles.css") && source.includes("@gable/ui/theme.css (read-only)") && source.includes("dark values from .dark"), "the tab says which stylesheets it read and where dark values come from", source);
+  check(source.includes("src/styles.css") && source.includes("@gablejs/ui/theme.css (read-only)") && source.includes("dark values from .dark"), "the tab says which stylesheets it read and where dark values come from", source);
   const uses = await q(`return document.querySelector(${JSON.stringify(`${tok("--brand")} [data-part="token-uses"]`)}).textContent.trim()`);
   check(uses === "3 uses", "--brand's uses are counted (the .card rule, an inline style, the text-brand class)", uses);
 

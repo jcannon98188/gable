@@ -1,7 +1,7 @@
 // Runs in the page's own JavaScript world (a `world: "MAIN"` content script). Connects to the Gable hook and
 // speaks the protocol over `window.postMessage`; the isolated content script relays it to the extension.
 import { FROM_PAGE, TO_PAGE, envelope, isToPage, unwrap, type FromPage, type ToPage } from "./protocol.js";
-import type { DevtoolsEvent, GableDevtoolsHook } from "@gable/core/devtools";
+import type { DevtoolsEvent, GableDevtoolsHook } from "@gablejs/core/devtools";
 
 /** The slice of `window` the bridge uses. */
 export interface BridgeWindow {

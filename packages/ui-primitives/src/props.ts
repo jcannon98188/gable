@@ -1,6 +1,6 @@
-import { effect } from "@gable/core";
-import { currentScope, injectHost } from "@gable/core/internal";
-import type { Renderer } from "@gable/core/renderer";
+import { effect } from "@gablejs/core";
+import { currentScope, injectHost } from "@gablejs/core/internal";
+import type { Renderer } from "@gablejs/core/renderer";
 
 /** The attribute bag a Zag prop getter returns, after `normalizeProps` (lower-cased keys, `on*` handlers). */
 export type PropBag = Record<string, unknown>;

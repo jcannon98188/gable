@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { html } from "@gable/core";
-import { Meta } from "@gable/core/renderer";
-import { RouterOutlet, type Route } from "@gable/core/router";
-import { mountApp } from "@gable/testing";
+import { html } from "@gablejs/core";
+import { Meta } from "@gablejs/core/renderer";
+import { RouterOutlet, type Route } from "@gablejs/core/router";
+import { mountApp } from "@gablejs/testing";
 
 class Page {
   static meta = { selector: "app-page", template: html`<p>page</p>` };

@@ -1,3 +1,3 @@
-import { signal } from "@gable/core";
+import { signal } from "@gablejs/core";
 
 export const count = signal(0);

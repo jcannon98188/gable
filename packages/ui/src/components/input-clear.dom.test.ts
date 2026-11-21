@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
-import { form, required } from "@gable/core/forms";
-import { expectNoA11yViolations } from "@gable/testing/a11y";
+import { html, signal } from "@gablejs/core";
+import { form, required } from "@gablejs/core/forms";
+import { expectNoA11yViolations } from "@gablejs/testing/a11y";
 import { UiInputClear } from "./input-clear.js";
 import { $, key, settle, useDomApp } from "../test-utils.js";
 

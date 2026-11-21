@@ -1,6 +1,6 @@
-import { html, signal } from '@gable/core';
-import { RouterLink, RouterLinkActive, RouterOutlet, type Route } from '@gable/core/router';
-import { UiPresence } from '@gable/ui-primitives';
+import { html, signal } from '@gablejs/core';
+import { RouterLink, RouterLinkActive, RouterOutlet, type Route } from '@gablejs/core/router';
+import { UiPresence } from '@gablejs/ui-primitives';
 
 class Home {
   static meta = { selector: 'demo-home', template: html`<h2>Home</h2><p>Each page enters with <code>[data-state=open]</code> and leaves with <code>[data-state=closed]</code>.</p>` };

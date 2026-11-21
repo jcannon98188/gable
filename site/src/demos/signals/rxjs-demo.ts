@@ -1,4 +1,4 @@
-import { html, inject, signal, computed } from "@gable/core";
+import { html, inject, signal, computed } from "@gablejs/core";
 import { Observable, Subject, debounceTime, distinctUntilChanged, map, startWith, switchMap, timer } from "rxjs";
 import { demoStyles } from "./demo-style.js";
 

@@ -1,11 +1,11 @@
-# @gable/language-service
+# @gablejs/language-service
 
 Gable template analyzer: type-checks html templates against component classes. Ships the tsserver plugin (main) and the gable-check CLI.
 
 ## Install
 
 ```sh
-npm install @gable/language-service
+npm install @gablejs/language-service
 ```
 
 ## Documentation

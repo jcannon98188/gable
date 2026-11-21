@@ -38,7 +38,7 @@ Visual edits must land as small reviewable text patches so code and designer sta
 
 ## Implementation notes
 
-Built: position-tracking parser in @gable/template-format (parseTemplateTree: offsets for elements, attrs, values, quotes) is the position authority; runtime pos is only a handle (TargetRef = raw + offset + tag, verified, stale refused). Edit engine in packages/designer/src/server/edit (template.ts ops+validators, hunks.ts reverse patches with context relocation, css.ts, meta.ts, palette.ts, service.ts). /api/edit/{describe,apply,undo,redo,history,palette}. Shell: Edit tab (edit-state.ts, edit-panel.ts). Formatter: formatter-clean templates are reformatted whole with project prettier options, others touched only at the edit. Evidence: vitest (designer 30, template-format 33) and a driven run in headless Edge over CDP against a copy of examples/todomvc (real backend, project Vite, HMR): panel text edit, external edit detected, undo/redo relocated, insert/wrap/move/delete, read-only refusal, CSS patch. Not covered by the driven run: setMeta, binding/attr via panel UI (unit tests only), formatter parity on a clean template (unit tests only; todomvc template was not clean). Limits: escaped or duplicate-literal templates refused; no event-handler editing; no cross-template move; styles: strings in .ts not editable.
+Built: position-tracking parser in @gablejs/template-format (parseTemplateTree: offsets for elements, attrs, values, quotes) is the position authority; runtime pos is only a handle (TargetRef = raw + offset + tag, verified, stale refused). Edit engine in packages/designer/src/server/edit (template.ts ops+validators, hunks.ts reverse patches with context relocation, css.ts, meta.ts, palette.ts, service.ts). /api/edit/{describe,apply,undo,redo,history,palette}. Shell: Edit tab (edit-state.ts, edit-panel.ts). Formatter: formatter-clean templates are reformatted whole with project prettier options, others touched only at the edit. Evidence: vitest (designer 30, template-format 33) and a driven run in headless Edge over CDP against a copy of examples/todomvc (real backend, project Vite, HMR): panel text edit, external edit detected, undo/redo relocated, insert/wrap/move/delete, read-only refusal, CSS patch. Not covered by the driven run: setMeta, binding/attr via panel UI (unit tests only), formatter parity on a clean template (unit tests only; todomvc template was not clean). Limits: escaped or duplicate-literal templates refused; no event-handler editing; no cross-template move; styles: strings in .ts not editable.
 
 ## Answer
 
@@ -51,7 +51,7 @@ created: 2026-11-07T04:24:00Z
 
 ---
 
-Spike finding: the runtime parser only has element positions. Make @gable/template-format lossless parser the position authority (text, attributes, expressions), with the runtime pos as a handle (ordinal in that tree) so two parsers cannot drift. The runtime parser reads cooked strings[0], so backslash escapes shift offsets; CRLF files differ too. Parse the raw string.
+Spike finding: the runtime parser only has element positions. Make @gablejs/template-format lossless parser the position authority (text, attributes, expressions), with the runtime pos as a handle (ordinal in that tree) so two parsers cannot drift. The runtime parser reads cooked strings[0], so backslash escapes shift offsets; CRLF files differ too. Parse the raw string.
 
 ---
 

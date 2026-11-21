@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
-import { mount } from "@gable/testing";
-import { queryAll } from "@gable/testing/renderer";
+import { html, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
+import { queryAll } from "@gablejs/testing/renderer";
 import { UiVirtualList, type VirtualListItem } from "./virtual-list.js";
 import { UiVirtualTable, type VirtualTableColumn } from "./virtual-table.js";
 

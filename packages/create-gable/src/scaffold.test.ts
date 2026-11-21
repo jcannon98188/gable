@@ -11,7 +11,7 @@ import { scaffold } from "./index.js";
 
 const repo = fileURLToPath(new URL("../../..", import.meta.url));
 
-// Everything @gable/* the starters install. Nothing is published, so the CI test packs these from the workspace
+// Everything @gablejs/* the starters install. Nothing is published, so the CI test packs these from the workspace
 // and installs the starters from the tarballs (see docs/manual-setup.md, "Trying unpublished builds").
 const PACKAGES = ["core", "renderer-dom", "testing", "vite", "language-service", "prettier-plugin", "template-format", "service-worker", "renderer-pixi"];
 
@@ -30,7 +30,7 @@ let work: string;
 let project: string;
 let swProject: string;
 
-/** Scaffolds a starter into `work/<name>` and installs it with every @gable/* package from the tarballs. */
+/** Scaffolds a starter into `work/<name>` and installs it with every @gablejs/* package from the tarballs. */
 function create(name: string, tarballs: Record<string, string>, serviceWorker: boolean): string {
   const dir = join(work, name);
   scaffold({ name, targetDir: dir, serviceWorker });
@@ -38,7 +38,7 @@ function create(name: string, tarballs: Record<string, string>, serviceWorker: b
   for (const key of ["dependencies", "devDependencies"]) {
     for (const dep of Object.keys(manifest[key] ?? {})) if (dep in tarballs) manifest[key][dep] = tarballs[dep];
   }
-  manifest.overrides = tarballs; // @gable/* packages depend on each other at the lockstep version
+  manifest.overrides = tarballs; // @gablejs/* packages depend on each other at the lockstep version
   writeFileSync(join(dir, "package.json"), JSON.stringify(manifest, null, 2));
   run("npm install --no-audit --no-fund", dir);
   return dir;
@@ -51,7 +51,7 @@ beforeAll(() => {
   mkdirSync(join(work, "tarballs"));
   for (const name of PACKAGES) {
     const file = run(`npm pack ./packages/${name} --pack-destination "${join(work, "tarballs")}" --silent`, repo).trim().split("\n").pop()!;
-    tarballs[`@gable/${name}`] = `file:${join(work, "tarballs", file).split(sep).join("/")}`;
+    tarballs[`@gablejs/${name}`] = `file:${join(work, "tarballs", file).split(sep).join("/")}`;
   }
   project = create("my-app", tarballs, false);
   swProject = create("sw-app", tarballs, true);
@@ -84,7 +84,7 @@ describe("the scaffolded starter", () => {
   });
 
   it("pays nothing for the service worker option when it is off", () => {
-    expect(existsSync(join(project, "node_modules/@gable/service-worker"))).toBe(false);
+    expect(existsSync(join(project, "node_modules/@gablejs/service-worker"))).toBe(false);
     expect(existsSync(join(project, "dist/sw.js"))).toBe(false);
     expect(existsSync(join(project, "dist/sw-manifest.json"))).toBe(false);
     expect(bundle(project)).not.toMatch(/serviceWorker|gable-sw@1/);

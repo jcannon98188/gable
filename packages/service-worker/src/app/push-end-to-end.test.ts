@@ -2,7 +2,7 @@
 // a worker built on onPush and onNotificationClick runs on the in-memory browser, and an app page's SwPush
 // Observables receive what the handlers forward, through the message protocol alone.
 import { afterEach, describe, expect, it } from "vitest";
-import { createInjector, type Injector } from "@gable/core";
+import { createInjector, type Injector } from "@gablejs/core";
 import { lifecycle, onNotificationClick, onPush } from "../core/index.js";
 import { createBrowser, type WorkerScript } from "../testing/browser.js";
 import { provideServiceWorker, SERVICE_WORKER_CONTAINER, SwPush, SwRegistration, type NotificationClick } from "../index.js";

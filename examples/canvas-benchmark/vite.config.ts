@@ -9,11 +9,11 @@ const root = process.env.GABLE_SRC ? resolve(process.env.GABLE_SRC) : fileURLToP
 const pkg = (p: string) => resolve(root, "packages", p);
 
 export const aliases = [
-  { find: /^@gable\/core$/, replacement: pkg("core/src/index.ts") },
-  { find: /^@gable\/core\/renderer$/, replacement: pkg("core/src/renderer.ts") },
-  { find: /^@gable\/core\/internal$/, replacement: pkg("core/src/internal.ts") },
-  { find: /^@gable\/renderer-dom$/, replacement: pkg("renderer-dom/src/index.ts") },
-  { find: /^@gable\/renderer-pixi$/, replacement: pkg("renderer-pixi/src/index.ts") },
+  { find: /^@gablejs\/core$/, replacement: pkg("core/src/index.ts") },
+  { find: /^@gablejs\/core\/renderer$/, replacement: pkg("core/src/renderer.ts") },
+  { find: /^@gablejs\/core\/internal$/, replacement: pkg("core/src/internal.ts") },
+  { find: /^@gablejs\/renderer-dom$/, replacement: pkg("renderer-dom/src/index.ts") },
+  { find: /^@gablejs\/renderer-pixi$/, replacement: pkg("renderer-pixi/src/index.ts") },
 ];
 
 export default defineConfig({

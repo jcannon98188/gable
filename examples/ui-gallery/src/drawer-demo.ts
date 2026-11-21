@@ -1,5 +1,5 @@
-import { html, signal } from '@gable/core';
-import { DialogTrigger, UiButton, UiDrawer } from '@gable/ui';
+import { html, signal } from '@gablejs/core';
+import { DialogTrigger, UiButton, UiDrawer } from '@gablejs/ui';
 
 /**
  * Drawers from each edge, with drag to dismiss and snap points. Drag a panel (or its grab handle) toward its edge with a

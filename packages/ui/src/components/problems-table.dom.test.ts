@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { html } from "@gable/core";
-import { expectNoA11yViolations } from "@gable/testing/a11y";
+import { html } from "@gablejs/core";
+import { expectNoA11yViolations } from "@gablejs/testing/a11y";
 import { UiBadge } from "./badge.js";
 import { UiTable, UiTableBody, UiTableCell, UiTableContainer, UiTableHead, UiTableHeader, UiTableRow } from "./table.js";
 import { UiVirtualTable, type VirtualTableColumn } from "./virtual-table.js";

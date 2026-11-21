@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { Observable, debounceTime, delay, firstValueFrom, of, switchMap, throwError } from "rxjs";
-import { html, signal } from "@gable/core";
-import { each, form, required, validateAsync } from "@gable/core/forms";
-import { mount } from "@gable/testing";
+import { html, signal } from "@gablejs/core";
+import { each, form, required, validateAsync } from "@gablejs/core/forms";
+import { mount } from "@gablejs/testing";
 
 function host<F>(make: () => F) {
   class Host {

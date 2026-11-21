@@ -27,7 +27,7 @@ describe("import scanning", () => {
   });
 
   it("maps specifiers to npm packages", () => {
-    expect(packageOf("@gable/core/hmr")).toBe("@gable/core");
+    expect(packageOf("@gablejs/core/hmr")).toBe("@gablejs/core");
     expect(packageOf("clsx")).toBe("clsx");
     expect(packageOf("lucide/dist/x")).toBe("lucide");
     expect(packageOf("node:fs")).toBeUndefined();
@@ -57,8 +57,8 @@ describe("rewriting imports to the project's paths", () => {
   });
 
   it("points relative imports at where the files landed, keeping the .js extension style", () => {
-    const source = `import { cn } from "../lib/cn.js";\nimport { b } from "./button.js";\nimport { input } from "@gable/core";\n`;
-    expect(rewriteFile(source, "components/dialog.ts", sources)).toBe(`import { cn } from "../lib/helpers/cn.js";\nimport { b } from "./button.js";\nimport { input } from "@gable/core";\n`);
+    const source = `import { cn } from "../lib/cn.js";\nimport { b } from "./button.js";\nimport { input } from "@gablejs/core";\n`;
+    expect(rewriteFile(source, "components/dialog.ts", sources)).toBe(`import { cn } from "../lib/helpers/cn.js";\nimport { b } from "./button.js";\nimport { input } from "@gablejs/core";\n`);
   });
 
   it("handles extensionless specifiers, same-directory targets and nested destinations", () => {
@@ -135,19 +135,19 @@ describe("package.json edits", () => {
     expect(mergeDependencies(manifest, { dependencies: { clsx: "^2.0.0" } })).toEqual({ text: manifest, added: [] });
   });
 
-  it("with a local tarball directory points @gable/* at the tarballs and overrides them all", () => {
+  it("with a local tarball directory points @gablejs/* at the tarballs and overrides them all", () => {
     const dir = temp();
-    for (const f of ["gable-core-0.0.0.tgz", "gable-ui-primitives-0.0.0.tgz", "gable-ui-0.0.0.tgz"]) writeFileSync(join(dir, f), "");
-    const { text } = mergeDependencies(manifest, { dependencies: { "@gable/ui-primitives": "~0.0.0" } }, dir);
+    for (const f of ["gablejs-core-0.0.0.tgz", "gablejs-ui-primitives-0.0.0.tgz", "gablejs-ui-0.0.0.tgz"]) writeFileSync(join(dir, f), "");
+    const { text } = mergeDependencies(manifest, { dependencies: { "@gablejs/ui-primitives": "~0.0.0" } }, dir);
     const spec = (f: string) => `file:${join(dir, f).replace(/\\/g, "/")}`;
     const parsed = JSON.parse(text);
-    expect(parsed.dependencies["@gable/ui-primitives"]).toBe(spec("gable-ui-primitives-0.0.0.tgz"));
+    expect(parsed.dependencies["@gablejs/ui-primitives"]).toBe(spec("gablejs-ui-primitives-0.0.0.tgz"));
     expect(parsed.overrides).toEqual({
-      "@gable/core": spec("gable-core-0.0.0.tgz"),
-      "@gable/ui": spec("gable-ui-0.0.0.tgz"),
-      "@gable/ui-primitives": spec("gable-ui-primitives-0.0.0.tgz"),
+      "@gablejs/core": spec("gablejs-core-0.0.0.tgz"),
+      "@gablejs/ui": spec("gablejs-ui-0.0.0.tgz"),
+      "@gablejs/ui-primitives": spec("gablejs-ui-primitives-0.0.0.tgz"),
     });
-    expect(() => mergeDependencies(manifest, { dependencies: { "@gable/missing": "~0.0.0" } }, dir)).toThrow(/no tarball for @gable\/missing/);
+    expect(() => mergeDependencies(manifest, { dependencies: { "@gablejs/missing": "~0.0.0" } }, dir)).toThrow(/no tarball for @gablejs\/missing/);
     expect(() => mergeDependencies(manifest, { dependencies: { x: "1" } }, join(dir, "nope"))).toThrow(/not a directory/);
   });
 

@@ -12,9 +12,9 @@
     "isolatedModules": true,
     "types": ["vite/client"],
     "paths": {
-      "@gable/core": ["../../packages/core/src/index.ts"],
-      "@gable/renderer-dom": ["../../packages/renderer-dom/src/index.ts"],
-      "@gable/renderer-pixi": ["../../packages/renderer-pixi/src/index.ts"]
+      "@gablejs/core": ["../../packages/core/src/index.ts"],
+      "@gablejs/renderer-dom": ["../../packages/renderer-dom/src/index.ts"],
+      "@gablejs/renderer-pixi": ["../../packages/renderer-pixi/src/index.ts"]
     }
   },
   "include": ["src", "microbench", "vite.config.ts"]

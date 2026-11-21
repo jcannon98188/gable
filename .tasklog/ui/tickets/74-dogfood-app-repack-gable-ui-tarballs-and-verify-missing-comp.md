@@ -15,7 +15,7 @@ ordinal: 122000
 
 ## Question
 
-A dogfooding app reported missing virtual list/table and panels, which exist (core/44, ui/53). Likely a stale vendored @gable/ui. Run npm run pack:local after the second pass lands, tell the dogfooder to repack, and confirm what remains missing.
+A dogfooding app reported missing virtual list/table and panels, which exist (core/44, ui/53). Likely a stale vendored @gablejs/ui. Run npm run pack:local after the second pass lands, tell the dogfooder to repack, and confirm what remains missing.
 
 ## Acceptance criteria
 

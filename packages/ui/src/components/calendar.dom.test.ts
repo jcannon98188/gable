@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
-import { form } from "@gable/core/forms";
-import { expectNoA11yViolations } from "@gable/testing/a11y";
+import { html, signal } from "@gablejs/core";
+import { form } from "@gablejs/core/forms";
+import { expectNoA11yViolations } from "@gablejs/testing/a11y";
 import { fr } from "date-fns/locale";
 import { UiCalendar, type DateRange } from "./calendar.js";
 import { UiDatePicker } from "./date-picker.js";

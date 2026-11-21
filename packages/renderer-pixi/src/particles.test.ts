@@ -2,7 +2,7 @@
 // renderer and on the scene test renderer, which must agree.
 import { ParticleContainer, Texture } from "pixi.js";
 import { describe, expect, it } from "vitest";
-import { createComponent, flushSync, html } from "@gable/core";
+import { createComponent, flushSync, html } from "@gablejs/core";
 import { createPixiRenderer } from "./renderer.js";
 import { particles } from "./particles.js";
 import { createSceneTestRenderer, SceneNode } from "./testing.js";
@@ -11,8 +11,8 @@ const live = () => {
   const pixi = createPixiRenderer();
   const scene = createSceneTestRenderer();
   return [
-    { name: "pixi", renderer: pixi as unknown as import("@gable/core/renderer").Renderer<any>, root: pixi.root as unknown },
-    { name: "scene test", renderer: scene.renderer as import("@gable/core/renderer").Renderer<any>, root: scene.root as unknown },
+    { name: "pixi", renderer: pixi as unknown as import("@gablejs/core/renderer").Renderer<any>, root: pixi.root as unknown },
+    { name: "scene test", renderer: scene.renderer as import("@gablejs/core/renderer").Renderer<any>, root: scene.root as unknown },
   ] as const;
 };
 

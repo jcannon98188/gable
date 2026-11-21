@@ -1,6 +1,6 @@
 // Background sync for the app (ADR 0022): registers the sync tags the worker handles. Only Chromium-based browsers
 // have Background Sync, so every call has a defined outcome without it, and none of them throws.
-import { inject } from "@gable/core";
+import { inject } from "@gablejs/core";
 import { whenActive } from "./active.js";
 import type { SyncManagerLike } from "./container.js";
 import { SwRegistration } from "./registration.js";

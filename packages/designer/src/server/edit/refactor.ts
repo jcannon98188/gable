@@ -7,7 +7,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, relative, resolve, sep } from "node:path";
 import ts from "@typescript/typescript6";
-import { findHtmlLiterals, parseTemplateTree } from "@gable/template-format";
+import { findHtmlLiterals, parseTemplateTree } from "@gablejs/template-format";
 import { sourceText } from "../source.js";
 import { lineCol, lineText } from "../tokens/css-scan.js";
 import { projectFiles } from "../tokens/model.js";

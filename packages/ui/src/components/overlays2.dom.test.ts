@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 import { UiAlertDialog } from "./alert-dialog.js";
 import { UiButton } from "./button.js";
 import { DialogTrigger } from "./dialog.js";

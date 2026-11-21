@@ -15,7 +15,7 @@ A client-side web framework that keeps the best of Angular (components, dependen
 ## A taste
 
 ```ts
-import { computed, html, inject, signal } from "@gable/core";
+import { computed, html, inject, signal } from "@gablejs/core";
 import { CounterStore } from "./counter-store.js";
 
 export class Counter {
@@ -49,8 +49,8 @@ export class Counter {
 ```
 
 ```ts
-import { bootstrap } from "@gable/core";
-import { dom } from "@gable/renderer-dom";
+import { bootstrap } from "@gablejs/core";
+import { dom } from "@gablejs/renderer-dom";
 import { Root } from "./root.js";
 
 bootstrap(Root, { renderer: dom(), target: "#app" });
@@ -73,17 +73,17 @@ All packages share one version number and are released together.
 
 | Package | What it is |
 | --- | --- |
-| `@gable/core` | Runtime: signals, components, DI, templates, plus the `/router`, `/forms`, `/http`, `/rxjs` and `/hmr` entry points |
-| `@gable/renderer-dom` | The DOM renderer |
-| `@gable/vite` | Vite plugin: dev-only HMR wiring and tsconfig checks |
-| `@gable/testing` | Test harness with an in-memory renderer (`mount`) |
-| `@gable/service-worker` | Service worker support: a default worker driven by `gable.sw.json`, a worker authoring API and app-side update and push services |
-| `@gable/language-service` | Template type-checking: tsserver plugin and the `gable-check` CLI |
-| `@gable/template-format`, `@gable/prettier-plugin` | Template formatter and its Prettier plugin |
+| `@gablejs/core` | Runtime: signals, components, DI, templates, plus the `/router`, `/forms`, `/http`, `/rxjs` and `/hmr` entry points |
+| `@gablejs/renderer-dom` | The DOM renderer |
+| `@gablejs/vite` | Vite plugin: dev-only HMR wiring and tsconfig checks |
+| `@gablejs/testing` | Test harness with an in-memory renderer (`mount`) |
+| `@gablejs/service-worker` | Service worker support: a default worker driven by `gable.sw.json`, a worker authoring API and app-side update and push services |
+| `@gablejs/language-service` | Template type-checking: tsserver plugin and the `gable-check` CLI |
+| `@gablejs/template-format`, `@gablejs/prettier-plugin` | Template formatter and its Prettier plugin |
 | `gable-vscode` | VS Code extension: diagnostics, completions and highlighting for templates |
 | `create-gable` | `npm create gable` project starter |
 
-`rxjs` is a peer dependency of `@gable/core`.
+`rxjs` is a peer dependency of `@gablejs/core`.
 
 ## Getting started
 

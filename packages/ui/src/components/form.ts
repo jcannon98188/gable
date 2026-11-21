@@ -1,13 +1,13 @@
-import { computed, contentChild, effect, html, input, output, signal } from "@gable/core";
-import type { ErrorObject, FieldState, SubmitAction, SubmitResult } from "@gable/core/forms";
-import { bindProps } from "@gable/ui-primitives";
+import { computed, contentChild, effect, html, input, output, signal } from "@gablejs/core";
+import type { ErrorObject, FieldState, SubmitAction, SubmitResult } from "@gablejs/core/forms";
+import { bindProps } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 import { useHostClass } from "../lib/host-class.js";
 import type { InputDensity } from "./input.js";
 import { UiSelect } from "./select.js";
 
 /**
- * Form and Field: label, description and error display on top of `@gable/core/forms`.
+ * Form and Field: label, description and error display on top of `@gablejs/core/forms`.
  *
  *   <ui-form [submit]="form.submit" [action]="save" (submitted)="done($event)">
  *     <ui-field [state]="form.email.state" label="Email" description="We never share it.">
@@ -50,7 +50,7 @@ export class UiForm {
   }
 }
 
-/** Built-in messages for the rule kinds in `@gable/core/forms`, used when a validator gives none. */
+/** Built-in messages for the rule kinds in `@gablejs/core/forms`, used when a validator gives none. */
 export const DEFAULT_MESSAGES: Record<string, (error: ErrorObject) => string> = {
   required: () => "This field is required.",
   requiredTrue: () => "This must be checked.",

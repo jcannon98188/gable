@@ -3,7 +3,7 @@
 // or another frame is selected, and keeps the whole-frame offline switch (CDP, in the backend) in step with the condition.
 // Recording ends as a Scenario written into a scenes file through the edit API, like every other source edit (ADR 0001):
 // nothing recorded is kept by the Designer itself.
-import { computed, effect, inject, signal, untracked } from "@gable/core";
+import { computed, effect, inject, signal, untracked } from "@gablejs/core";
 import {
   NORMAL_CONDITION,
   OFFLINE_NEEDS_CDP,

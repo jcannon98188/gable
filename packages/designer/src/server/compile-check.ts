@@ -4,7 +4,7 @@
 // changed file, so the shell can say which file and line keeps the canvas from following, before the full analysis is back.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
-import { checkTemplateSyntax } from "@gable/language-service";
+import { checkTemplateSyntax } from "@gablejs/language-service";
 import { literalAt, sourceText } from "./source.js";
 
 export interface CompileError {

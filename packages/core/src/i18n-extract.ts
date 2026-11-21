@@ -1,4 +1,4 @@
-// Message extraction from a template source string, for build tooling (`@gable/core/tooling`).
+// Message extraction from a template source string, for build tooling (`@gablejs/core/tooling`).
 // It uses the runtime's own template parser, so the ids it finds are the ids the runtime looks up.
 import { parseTemplate, type TemplateNode } from "./template.js";
 import type { ExtractedMessage } from "./i18n-message.js";

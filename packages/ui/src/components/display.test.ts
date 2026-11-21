@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
-import { mount } from "@gable/testing";
+import { html, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
 import { UiAlert, UiAlertDescription, UiAlertTitle } from "./alert.js";
 import { UiBadge } from "./badge.js";
 import { UiBreadcrumb, UiBreadcrumbEllipsis, UiBreadcrumbItem, UiBreadcrumbLink, UiBreadcrumbList, UiBreadcrumbPage, UiBreadcrumbSeparator } from "./breadcrumb.js";

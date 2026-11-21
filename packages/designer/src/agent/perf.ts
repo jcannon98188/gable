@@ -3,7 +3,7 @@
 // shift sources, the slowest interaction's target). Nothing is simulated: an entry type the engine does not report makes
 // its metric unavailable, not zero. The numbers come from a dev server (unminified modules, HMR client, no compression),
 // so they are indicative of the page, not of a production build.
-import type { DesignNode } from "@gable/core/designer";
+import type { DesignNode } from "@gablejs/core/designer";
 import type { PerfElement, PerfMetric, PerfMetricId, PerfRating, PerfReport, PerfShift } from "../protocol.js";
 
 /** Good at or below the first, poor above the second: web-vitals for FCP, LCP, CLS, INP and TTFB; Lighthouse for TBT and DOM size. */

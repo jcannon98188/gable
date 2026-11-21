@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
-import { injectHost } from "@gable/core/internal";
-import { mount, type TestNode } from "@gable/testing";
-import { queryAll } from "@gable/testing/renderer";
+import { html, signal } from "@gablejs/core";
+import { injectHost } from "@gablejs/core/internal";
+import { mount, type TestNode } from "@gablejs/testing";
+import { queryAll } from "@gablejs/testing/renderer";
 import { useLayer } from "./layer.js";
 import { usePosition } from "./position.js";
 import { useRovingTabindex } from "./roving.js";

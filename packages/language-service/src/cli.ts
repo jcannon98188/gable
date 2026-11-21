@@ -13,7 +13,7 @@ Type-checks html templates against their component classes. --fix first applies
 the quick fixes (extracting computed view-model signals, calling bare signals).
 Exits 1 when any
 diagnostic has severity "error", 2 on a usage or configuration problem.
-Rule severities (off | warn | error) come from the "@gable/language-service"
+Rule severities (off | warn | error) come from the "@gablejs/language-service"
 entry of compilerOptions.plugins in the tsconfig.
 `;
 

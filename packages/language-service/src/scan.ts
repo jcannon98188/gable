@@ -1,9 +1,9 @@
 // An offset-aware scanner for Gable template syntax. It mirrors the structure of
-// the runtime parser in @gable/core but keeps source positions, which the runtime
+// the runtime parser in @gablejs/core but keeps source positions, which the runtime
 // has no use for. Expression grammar is NOT handled here: every expression is
-// returned as a `Src` and validated by @gable/core/tooling's parser.
+// returned as a `Src` and validated by @gablejs/core/tooling's parser.
 
-import { BLOCK_START, VOID, indexOfTopLevel } from "@gable/core/tooling";
+import { BLOCK_START, VOID, indexOfTopLevel } from "@gablejs/core/tooling";
 
 /** An expression's trimmed text and its absolute offset in the source file. */
 export interface Src {

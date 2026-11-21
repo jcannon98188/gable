@@ -1,5 +1,5 @@
 // The message core of i18n: pure, DOM-free and signal-free, so build tooling (the Vite plugin's extractor and
-// baked builds) can import it from `@gable/core/i18n` without pulling in the runtime. It parses ICU-style messages,
+// baked builds) can import it from `@gablejs/core/i18n` without pulling in the runtime. It parses ICU-style messages,
 // formats them on Intl, derives stable message ids, and reads and writes catalogs (JSON, and XLIFF 1.2).
 
 // --- message syntax --------------------------------------------------------

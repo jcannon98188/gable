@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 import { UiButton } from "./button.js";
 import { UiContextMenu } from "./context-menu.js";
 import { MenuTrigger, UiDropdownMenu, menuRows, type MenuEntry } from "./dropdown-menu.js";
@@ -210,7 +210,7 @@ describe("menu radio items", () => {
 
 describe("menu accessibility", () => {
   it("has no axe violations with a submenu open", async () => {
-    const { expectNoA11yViolations } = await import("@gable/testing/a11y");
+    const { expectNoA11yViolations } = await import("@gablejs/testing/a11y");
     await boot(App);
     await open();
     await expectNoA11yViolations(document.body);

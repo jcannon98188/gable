@@ -1,12 +1,12 @@
-import { computed, effect, html, signal } from '@gable/core';
-import { email, form, minLength, required } from '@gable/core/forms';
+import { computed, effect, html, signal } from '@gablejs/core';
+import { email, form, minLength, required } from '@gablejs/core/forms';
 import {
   CollapsibleTrigger, DialogTrigger, HoverCardTrigger, MenuTrigger, PopoverTrigger, UiAccordion, UiAccordionItem, UiAlert, UiAlertDescription, UiAlertDialog, UiAlertTitle, UiAvatar, UiBadge,
   UiBreadcrumb, UiBreadcrumbItem, UiBreadcrumbLink, UiBreadcrumbList, UiBreadcrumbPage, UiBreadcrumbSeparator, UiButton, UiCard, UiCardContent, UiCardDescription, UiCardFooter, UiCardHeader,
   UiCardTitle, UiCheckbox, UiCollapsible, UiCombobox, UiMultiCombobox, UiContextMenu, UiDialog, UiDropdownMenu, UiField, UiFieldControl, UiForm, UiHoverCard, UiInput, UiLabel, UiPagination, UiPopover,
   UiProgress, UiRadioGroup, UiScrollArea, UiSelect, UiSeparator, UiSheet, UiSkeleton, UiSlider, UiSwitch, UiTab, UiTable, UiTableBody, UiTableCaption, UiTableCell, UiTableHead,
   UiTableHeader, UiTableRow, UiTabs, UiTextarea, UiToggle, UiToggleGroup, UiTooltip, type MenuEntry, type SelectItem,
-} from '@gable/ui';
+} from '@gablejs/ui';
 
 const FRUIT: SelectItem[] = [
   { value: 'apple', label: 'Apple' },

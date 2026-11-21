@@ -1,5 +1,5 @@
-import { computed, input, model } from "@gable/core";
-import { ToggleState, bindProps } from "@gable/ui-primitives";
+import { computed, input, model } from "@gablejs/core";
+import { ToggleState, bindProps } from "@gablejs/ui-primitives";
 import { useHostClass } from "../lib/host-class.js";
 import { variants } from "../lib/variants.js";
 

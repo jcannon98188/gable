@@ -1,4 +1,4 @@
-import { computed, html, injectHost, input, model, output } from "@gable/core";
+import { computed, html, injectHost, input, model, output } from "@gablejs/core";
 import { cn } from "../lib/cn.js";
 import { useHostClass } from "../lib/host-class.js";
 import { UiIcon } from "../lib/icon.js";

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { computed, contentChild, contentChildren, html, input, signal, viewChild, viewChildren } from "@gable/core";
-import { mount } from "@gable/testing";
+import { computed, contentChild, contentChildren, html, input, signal, viewChild, viewChildren } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
 
 class Card {
   static meta = {

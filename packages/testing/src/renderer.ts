@@ -1,4 +1,4 @@
-import type { Renderer } from "@gable/core/renderer";
+import type { Renderer } from "@gablejs/core/renderer";
 import { createTestPlatform, type TestPlatform } from "./platform.js";
 
 export { createTestPlatform } from "./platform.js";

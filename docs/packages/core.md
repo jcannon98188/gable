@@ -1,11 +1,11 @@
-# @gable/core
+# @gablejs/core
 
-The framework itself: components, signals, dependency injection, control-flow templates, a router, forms, an HTTP client and i18n. Components are plain classes with a static `meta`, state lives in field initialisers, and there are no decorators and no base class. The DOM is one renderer behind a seam (`@gable/renderer-dom`), so tests can run on an in-memory renderer with no jsdom.
+The framework itself: components, signals, dependency injection, control-flow templates, a router, forms, an HTTP client and i18n. Components are plain classes with a static `meta`, state lives in field initialisers, and there are no decorators and no base class. The DOM is one renderer behind a seam (`@gablejs/renderer-dom`), so tests can run on an in-memory renderer with no jsdom.
 
 ## Install
 
 ```
-npm install @gable/core @gable/renderer-dom rxjs
+npm install @gablejs/core @gablejs/renderer-dom rxjs
 ```
 
 `npm create gable@latest my-app` sets all of this up, with Vite, TypeScript and the language service. See [Getting started](../getting-started.md) or [Manual setup](../manual-setup.md) for an existing app.
@@ -13,7 +13,7 @@ npm install @gable/core @gable/renderer-dom rxjs
 ## A component
 
 ```ts
-import { computed, html, signal } from "@gable/core";
+import { computed, html, signal } from "@gablejs/core";
 
 export class Counter {
   static meta = {
@@ -45,7 +45,7 @@ The source below is the real demo component.
 
 ## What else is in the package
 
-The main entry point exports `signal`, `computed`, `effect`, `input`, `output`, `model`, `inject`, `createComponent`, `bootstrap`, `ErrorHandler`, `ErrorBoundary` and `provideI18n`. The rest sits behind subpath entry points: `@gable/core/router`, `/forms`, `/http`, `/i18n`, `/rxjs`, `/renderer`, `/hmr` and `/devtools`.
+The main entry point exports `signal`, `computed`, `effect`, `input`, `output`, `model`, `inject`, `createComponent`, `bootstrap`, `ErrorHandler`, `ErrorBoundary` and `provideI18n`. The rest sits behind subpath entry points: `@gablejs/core/router`, `/forms`, `/http`, `/i18n`, `/rxjs`, `/renderer`, `/hmr` and `/devtools`.
 
 - The [router guide](../router.md) covers routes, params, guards, lazy loading, hash mode and focus management.
 - The [error handling guide](../errors.md) covers the error handler, reporting and error boundaries.

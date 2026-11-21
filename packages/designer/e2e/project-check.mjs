@@ -53,7 +53,7 @@ write(
       name: "fixture-app",
       private: true,
       type: "module",
-      dependencies: { "@gable/core": `file:${slash(join(repo, "packages/core"))}`, "@gable/renderer-dom": `file:${slash(join(repo, "packages/renderer-dom"))}` },
+      dependencies: { "@gablejs/core": `file:${slash(join(repo, "packages/core"))}`, "@gablejs/renderer-dom": `file:${slash(join(repo, "packages/renderer-dom"))}` },
       devDependencies: { vite: `file:${slash(join(repo, "node_modules/vite"))}` },
     },
     null,
@@ -73,8 +73,8 @@ write(
 write(join(fixture, "index.html"), `<!doctype html><html><head><meta charset="utf-8"><title>Fixture</title></head><body><div id="app"></div><script type="module" src="/src/main.ts"></script></body></html>\n`);
 write(
   join(fixture, "src/main.ts"),
-  `import { bootstrap, html } from "@gable/core";
-import { dom } from "@gable/renderer-dom";
+  `import { bootstrap, html } from "@gablejs/core";
+import { dom } from "@gablejs/renderer-dom";
 
 class Root {
   static meta = { selector: "app-root", template: html\`<main><h1>Fixture app</h1><p class="lead">Installed from the Designer.</p></main>\` };

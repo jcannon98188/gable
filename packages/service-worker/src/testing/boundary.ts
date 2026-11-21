@@ -1,7 +1,7 @@
 // The runtime import boundary (ADR 0022): the default worker is built on core's public surface only.
 //
-// A runtime module may import other runtime modules, core's public entry (`@gable/service-worker/core`, or
-// `core/index` by relative path), and packages other than @gable/service-worker. Anything else, such as a core
+// A runtime module may import other runtime modules, core's public entry (`@gablejs/service-worker/core`, or
+// `core/index` by relative path), and packages other than @gablejs/service-worker. Anything else, such as a core
 // internal, the app side or the test helpers, is a violation. Comments are not stripped, so an import written in a
 // comment counts too.
 
@@ -17,7 +17,7 @@ export interface BoundaryViolation {
   readonly specifier: string;
 }
 
-const PACKAGE = "@gable/service-worker";
+const PACKAGE = "@gablejs/service-worker";
 const CORE_ENTRY = `${PACKAGE}/core`;
 
 // `import x from "m"`, `import type { X } from "m"`, `import "m"`, `export { x } from "m"`, `export * from "m"`.

@@ -141,12 +141,12 @@ function reservedStateKey(sf: ts.SourceFile, checker: ts.TypeChecker, call: ts.C
   visit(read.getReturnType(), 0);
 }
 
-/** Whether `call` is a call to the named export of @gable/core (under any import alias). */
+/** Whether `call` is a call to the named export of @gablejs/core (under any import alias). */
 function isCoreCall(checker: ts.TypeChecker, call: ts.CallExpression, name: string): boolean {
   if (!ts.isIdentifier(call.expression)) return false;
   const symbol = checker.getSymbolAtLocation(call.expression);
   return !!symbol?.declarations?.some(
-    (d) => ts.isImportSpecifier(d) && (d.propertyName ?? d.name).text === name && ts.isStringLiteral(d.parent.parent.parent.moduleSpecifier) && /^@gable\/core(\/|$)/.test(d.parent.parent.parent.moduleSpecifier.text),
+    (d) => ts.isImportSpecifier(d) && (d.propertyName ?? d.name).text === name && ts.isStringLiteral(d.parent.parent.parent.moduleSpecifier) && /^@gablejs\/core(\/|$)/.test(d.parent.parent.parent.moduleSpecifier.text),
   );
 }
 

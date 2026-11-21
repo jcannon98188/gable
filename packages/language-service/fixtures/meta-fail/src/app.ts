@@ -1,4 +1,4 @@
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 
 export class Leaf {
   static meta = { selector: "x-leaf", template: html`<i></i>` };

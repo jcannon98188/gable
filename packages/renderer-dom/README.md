@@ -1,11 +1,11 @@
-# @gable/renderer-dom
+# @gablejs/renderer-dom
 
 The DOM renderer for Gable: puts a Gable app in a browser.
 
 ## Install
 
 ```sh
-npm install @gable/renderer-dom
+npm install @gablejs/renderer-dom
 ```
 
 ## Documentation

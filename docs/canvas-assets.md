@@ -1,14 +1,14 @@
 # Loading assets in a canvas scene
 
-Assets load explicitly, through the app-level `Assets` service from `@gable/renderer-pixi`. A scene never starts a load by itself, so loading state is a set of signals you can put in a template.
+Assets load explicitly, through the app-level `Assets` service from `@gablejs/renderer-pixi`. A scene never starts a load by itself, so loading state is a set of signals you can put in a template.
 
 ## Declare bundles
 
 Bundles are Pixi manifest entries, declared once in the app's root providers. Import single files normally so Vite hashes their URLs.
 
 ```ts
-import { bootstrap } from "@gable/core";
-import { provideAssets } from "@gable/renderer-pixi";
+import { bootstrap } from "@gablejs/core";
+import { provideAssets } from "@gablejs/renderer-pixi";
 import shipUrl from "./ship.png";
 
 bootstrap(Root, {
@@ -33,8 +33,8 @@ Spritesheet JSON and bitmap-font descriptors refer to sibling files by relative 
 `inject(Assets).bundle("level1")` returns a handle with the signals `status` (`idle`, `loading`, `ready`, `error`), `progress` (0 to 1), `error` and `ready`, and the methods `load()` and `unload()`.
 
 ```ts
-import { computed, html, inject } from "@gable/core";
-import { Assets } from "@gable/renderer-pixi";
+import { computed, html, inject } from "@gablejs/core";
+import { Assets } from "@gablejs/renderer-pixi";
 
 export class Level {
   static meta = {

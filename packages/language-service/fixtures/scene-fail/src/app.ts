@@ -1,5 +1,5 @@
-import { html, signal } from "@gable/core";
-import { pixiElements } from "@gable/renderer-pixi/elements";
+import { html, signal } from "@gablejs/core";
+import { pixiElements } from "@gablejs/renderer-pixi/elements";
 
 export class Scene {
   static meta = {

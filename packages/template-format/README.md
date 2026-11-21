@@ -1,11 +1,11 @@
-# @gable/template-format
+# @gablejs/template-format
 
 Formatter for Gable html template literals, with the gable-format CLI.
 
 ## Install
 
 ```sh
-npm install @gable/template-format
+npm install @gablejs/template-format
 ```
 
 ## Documentation

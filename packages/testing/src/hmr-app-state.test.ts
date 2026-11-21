@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { html, inject, input, signal } from "@gable/core";
-import { form, minLength, required } from "@gable/core/forms";
-import { RouterOutlet, type Route } from "@gable/core/router";
-import { mount, mountApp } from "@gable/testing";
+import { html, inject, input, signal } from "@gablejs/core";
+import { form, minLength, required } from "@gablejs/core/forms";
+import { RouterOutlet, type Route } from "@gablejs/core/router";
+import { mount, mountApp } from "@gablejs/testing";
 
 // gable-v0/36: Form state, router state and route injectors survive hot updates.
 

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { computed, contentChildren, viewChild, effect, html, inject, input, signal, type ReadonlySignal } from "@gable/core";
-import { mount } from "@gable/testing";
+import { computed, contentChildren, viewChild, effect, html, inject, input, signal, type ReadonlySignal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
 import * as select from "@zag-js/select";
 import { domEvent, focusNode, pressKey } from "./test-dom.js";
 import { bindProps } from "./props.js";

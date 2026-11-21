@@ -1,7 +1,7 @@
 // Tailwind mode's state: the project's design system (from the backend), the editing context (selected frame's breakpoint plus the
 // state toolbar), the selected element's classes analysed against that context, and the temporary previews (hover over a palette
 // entry, forced states). Writes go through EditState as the 56.4 `setAttr` class op, so there is one write path.
-import { computed, effect, inject, signal, untracked } from "@gable/core";
+import { computed, effect, inject, signal, untracked } from "@gablejs/core";
 import type { AttrModel } from "../../../src/server/edit/types.js";
 import type { AnalyzeResult, Breakpoint, ControlOption, PlanResult, SearchHit, TailwindInfo } from "../../../src/server/tailwind/types.js";
 import { DesignerState } from "./designer-state.js";

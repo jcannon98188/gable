@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { html, inject } from "@gable/core";
-import { createSceneTestRenderer, mountWithScene } from "@gable/renderer-pixi/testing";
+import { html, inject } from "@gablejs/core";
+import { createSceneTestRenderer, mountWithScene } from "@gablejs/renderer-pixi/testing";
 import { SpawnState, Spawner } from "./hmr.js";
 
 function mount() {

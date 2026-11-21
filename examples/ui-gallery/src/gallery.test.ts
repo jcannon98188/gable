@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { mount } from '@gable/testing';
-import { provideTestDom } from '@gable/ui-primitives/testing';
+import { mount } from '@gablejs/testing';
+import { provideTestDom } from '@gablejs/ui-primitives/testing';
 import { Gallery } from './gallery.js';
 
 const start = async () => {

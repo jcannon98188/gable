@@ -1,4 +1,4 @@
-# @gable/language-service
+# @gablejs/language-service
 
 The Gable template analyzer. It type-checks the `html` templates in your components against their classes: unknown members, a signal read without `()`, a wrong event name, a binding of the wrong type, accessibility mistakes, missing translations and more. It ships two front ends over one analyzer: a `tsserver` plugin that reports the same problems in your editor, and the `gable-check` command for CI.
 
@@ -7,7 +7,7 @@ It runs on the TypeScript compiler, so it is a Node tool. There is no live demo 
 ## Install
 
 ```
-npm install -D @gable/language-service typescript
+npm install -D @gablejs/language-service typescript
 ```
 
 The starter from [create-gable](./create-gable.md) has this set up. For an existing app see [Manual setup](../manual-setup.md).
@@ -19,7 +19,7 @@ Add an entry to `compilerOptions.plugins` in your `tsconfig.json`. The editor an
 ```json
 {
   "compilerOptions": {
-    "plugins": [{ "name": "@gable/language-service", "renderer": "@gable/renderer-dom" }]
+    "plugins": [{ "name": "@gablejs/language-service", "renderer": "@gablejs/renderer-dom" }]
   }
 }
 ```
@@ -32,11 +32,11 @@ In VS Code, install the `gable.gable-vscode` extension and point the editor at t
 | --- | --- | --- |
 | `templateTag` | `"html"` | The tag of the template literals to check. Must be an identifier. |
 | `rules` | each rule's own default | An object of rule name to `"off"`, `"warn"` or `"error"`. An unknown rule name or severity is a configuration error. |
-| `i18n` | off | Where the translation catalogs are, which turns on `i18n-missing-translation`. Same shape as the options of `gableI18n` in [`@gable/vite`](./vite.md): `sourceLocale`, `locales`, `catalogs`. |
+| `i18n` | off | Where the translation catalogs are, which turns on `i18n-missing-translation`. Same shape as the options of `gableI18n` in [`@gablejs/vite`](./vite.md): `sourceLocale`, `locales`, `catalogs`. |
 
 ```json
 {
-  "name": "@gable/language-service",
+  "name": "@gablejs/language-service",
   "rules": { "a11y-heading-order": "off", "a11y-img-alt": "error" },
   "i18n": { "sourceLocale": "en", "locales": ["fr", "de"], "catalogs": "src/locales/messages.{locale}.json" }
 }
@@ -60,7 +60,7 @@ Type-checks html templates against their component classes. --fix first applies
 the quick fixes (extracting computed view-model signals, calling bare signals).
 Exits 1 when any
 diagnostic has severity "error", 2 on a usage or configuration problem.
-Rule severities (off | warn | error) come from the "@gable/language-service"
+Rule severities (off | warn | error) come from the "@gablejs/language-service"
 entry of compilerOptions.plugins in the tsconfig.
 ```
 
@@ -82,7 +82,7 @@ The starter wires it into its check script:
 ## From code
 
 ```ts
-import { analyzeProject, checkTemplateSyntax } from "@gable/language-service";
+import { analyzeProject, checkTemplateSyntax } from "@gablejs/language-service";
 
 const { diagnostics, configErrors } = analyzeProject("./tsconfig.json");
 const quick = checkTemplateSyntax("card.ts", sourceText); // syntax only, no type check

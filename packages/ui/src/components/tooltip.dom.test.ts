@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { html } from "@gable/core";
-import { expectNoA11yViolations } from "@gable/testing/a11y";
+import { html } from "@gablejs/core";
+import { expectNoA11yViolations } from "@gablejs/testing/a11y";
 import { UiButton } from "./button.js";
 import { UiTooltip } from "./tooltip.js";
 import { $, key, pointer, settle, useDomApp } from "../test-utils.js";

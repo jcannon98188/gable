@@ -4,9 +4,9 @@
 // renderer on the same manual-scheduler application double the input tests use.
 import { Container } from "pixi.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { bootstrap, computed, flushSync, html, signal } from "@gable/core";
-import { LiveAnnouncer, type Politeness } from "@gable/core/renderer";
-import { createDomRenderer } from "@gable/renderer-dom";
+import { bootstrap, computed, flushSync, html, signal } from "@gablejs/core";
+import { LiveAnnouncer, type Politeness } from "@gablejs/core/renderer";
+import { createDomRenderer } from "@gablejs/renderer-dom";
 import { A11yMirror, type A11yEntry, type A11yNode, type A11yProps } from "./a11y.js";
 import { DomA11ySink } from "./a11y-dom.js";
 import { A11yRecorder } from "./a11y-testing.js";

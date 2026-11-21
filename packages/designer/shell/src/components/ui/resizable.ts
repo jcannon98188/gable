@@ -1,6 +1,6 @@
-import { computed, contentChildren, effect, html, injectHost, input, model, signal, untracked } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
-import { ResizeEngine, bindProps, type ResizePanelConfig } from "@gable/ui-primitives";
+import { computed, contentChildren, effect, html, injectHost, input, model, signal, untracked } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
+import { ResizeEngine, bindProps, type ResizePanelConfig } from "@gablejs/ui-primitives";
 import { UiIcon } from "../../lib/ui/icon.js";
 import { cn } from "../../lib/ui/cn.js";
 import { useHostClass } from "../../lib/ui/host-class.js";

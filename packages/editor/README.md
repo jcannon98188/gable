@@ -1,4 +1,4 @@
-# @gable/editor
+# @gablejs/editor
 
 Collaborative rich text editor: TipTap/ProseMirror for the editing model, our own Yjs binding for collaboration. Every feature ships as a plugin.
 
@@ -6,7 +6,7 @@ Collaborative rich text editor: TipTap/ProseMirror for the editing model, our ow
 
 ```ts
 import { Mark } from "@tiptap/core";
-import { GableEditor, corePlugin, definePlugin } from "@gable/editor";
+import { GableEditor, corePlugin, definePlugin } from "@gablejs/editor";
 
 const bold = definePlugin({
   name: "bold",

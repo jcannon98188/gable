@@ -30,7 +30,7 @@ export interface TokenDef {
   name: string;
   /** As written. */
   value: string;
-  /** Project-relative path; a package stylesheet is shown by its import (`@gable/ui/theme.css`). */
+  /** Project-relative path; a package stylesheet is shown by its import (`@gablejs/ui/theme.css`). */
   file: string;
   line: number;
   column: number;

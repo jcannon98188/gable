@@ -1,4 +1,4 @@
-// @gable/service-worker/core: the authoring API for writing a service worker (ADR 0022).
+// @gablejs/service-worker/core: the authoring API for writing a service worker (ADR 0022).
 // The runtime (the default worker) uses only what this module exports.
 export type {
   WorkerClient,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mountScene } from '@gable/testing';
+import { mountScene } from '@gablejs/testing';
 import scenes from './todo-item.scenes.js';
 
 describe('todo-item scenes', () => {

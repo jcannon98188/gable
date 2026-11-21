@@ -1,6 +1,6 @@
 import * as Y from "yjs";
 import { describe, expect, it } from "vitest";
-import { ICONS } from "@gable/ui";
+import { ICONS } from "@gablejs/ui";
 import { ITEM_ICONS } from "./icons.js";
 import { defaultPlugins } from "./component/editor-element.js";
 import { tablePlugin } from "./plugins/table.js";

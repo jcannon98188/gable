@@ -1,6 +1,6 @@
 ---
 kind: ticket
-title: ">-\n  @gable/store: signalStore, withState, withComputed, withMethods, withHooks,\n  patchState"
+title: ">-\n  @gablejs/store: signalStore, withState, withComputed, withMethods, withHooks,\n  patchState"
 status: resolved
 tags:
   - store
@@ -17,7 +17,7 @@ ordinal: 72000
 
 ## Question
 
-A SignalStore-style state library for Gable as new package @gable/store, built on core signals, computed, inject() and scopes with no core changes. Match NgRx SignalStore names for familiarity but adjust to Gable design where appropriate (DI via static scope and providers, no decorators, templates read signals only). Provides signalStore(...features), withState with deep signals (store.user.name()), withComputed, withMethods, withHooks (onInit, onDestroy tied to the component or injector scope), patchState, getState. Decide and document how deep signals are built (proxy vs generated) and how much type inference to keep; prefer a smaller typing surface over fragile inference.
+A SignalStore-style state library for Gable as new package @gablejs/store, built on core signals, computed, inject() and scopes with no core changes. Match NgRx SignalStore names for familiarity but adjust to Gable design where appropriate (DI via static scope and providers, no decorators, templates read signals only). Provides signalStore(...features), withState with deep signals (store.user.name()), withComputed, withMethods, withHooks (onInit, onDestroy tied to the component or injector scope), patchState, getState. Decide and document how deep signals are built (proxy vs generated) and how much type inference to keep; prefer a smaller typing surface over fragile inference.
 
 ## Acceptance criteria
 
@@ -27,7 +27,7 @@ A SignalStore-style state library for Gable as new package @gable/store, built o
 
 ## Implementation plan
 
-1. New package packages/store (@gable/store) wired into workspace (build script, vitest alias, lockfile). 2. Implement signalStore/withState/withComputed/withMethods/withHooks/patchState/getState: lazy Proxy deep signals, class without constructor, scope-tied hooks. 3. Type tests (expectTypeOf) + runtime tests on in-memory renderer. 4. docs/store.md.
+1. New package packages/store (@gablejs/store) wired into workspace (build script, vitest alias, lockfile). 2. Implement signalStore/withState/withComputed/withMethods/withHooks/patchState/getState: lazy Proxy deep signals, class without constructor, scope-tied hooks. 3. Type tests (expectTypeOf) + runtime tests on in-memory renderer. 4. docs/store.md.
 
 ## Implementation notes
 
@@ -35,4 +35,4 @@ Implemented packages/store/src/store.ts (+ index.ts). Tests: npx vitest run pack
 
 ## Answer
 
-Added @gable/store with signalStore, withState, withComputed, withMethods, withHooks, patchState, getState; deep signals via lazy Proxy; read-only state; hooks tied to the owning scope. 17 tests pass, tsc clean, docs/store.md written. Limits: max 8 features per signalStore; deep typing for union-with-null is plain-signal.
+Added @gablejs/store with signalStore, withState, withComputed, withMethods, withHooks, patchState, getState; deep signals via lazy Proxy; read-only state; hooks tied to the owning scope. 17 tests pass, tsc clean, docs/store.md written. Limits: max 8 features per signalStore; deep typing for union-with-null is plain-signal.

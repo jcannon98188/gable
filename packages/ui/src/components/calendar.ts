@@ -1,4 +1,4 @@
-import { computed, effect, html, injectHost, input, model, signal } from "@gable/core";
+import { computed, effect, html, injectHost, input, model, signal } from "@gablejs/core";
 import {
   addDays,
   addMonths,

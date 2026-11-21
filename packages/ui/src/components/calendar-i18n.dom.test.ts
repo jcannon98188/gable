@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { html, I18n, inject, provideI18n, signal } from "@gable/core";
-import { expectNoA11yViolations } from "@gable/testing/a11y";
+import { html, I18n, inject, provideI18n, signal } from "@gablejs/core";
+import { expectNoA11yViolations } from "@gablejs/testing/a11y";
 import { dateFnsLocaleNames } from "../lib/date-locale.js";
 import { UiCalendar } from "./calendar.js";
 import { UiDatePicker } from "./date-picker.js";

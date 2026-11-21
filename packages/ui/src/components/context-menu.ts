@@ -1,5 +1,5 @@
-import { computed, html, inject, input, model, output } from "@gable/core";
-import { MenuState, UiPopup, UiPortal, UiProps, bindProps } from "@gable/ui-primitives";
+import { computed, html, inject, input, model, output } from "@gablejs/core";
+import { MenuState, UiPopup, UiPortal, UiProps, bindProps } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 import type { InputDensity } from "./input.js";
 import { MENU_CONTENT, UiMenuRows, type MenuEntry } from "./dropdown-menu.js";

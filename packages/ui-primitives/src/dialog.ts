@@ -1,4 +1,4 @@
-import { inject } from "@gable/core";
+import { inject } from "@gablejs/core";
 import * as dialog from "@zag-js/dialog";
 import { bindProps } from "./props.js";
 import { useMachine, type MachineBinding } from "./machine.js";

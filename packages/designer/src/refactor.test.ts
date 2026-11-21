@@ -3,7 +3,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parseTemplateTree } from "@gable/template-format";
+import { parseTemplateTree } from "@gablejs/template-format";
 import { describe, expect, it } from "vitest";
 import { EditService } from "./server/edit/service.js";
 import { elementsOf } from "./server/edit/template.js";
@@ -15,7 +15,7 @@ const ok = (r: EditResult) => {
 };
 
 const FILES: Record<string, string> = {
-  "src/todo-item.ts": `import { html, input } from '@gable/core';
+  "src/todo-item.ts": `import { html, input } from '@gablejs/core';
 
 export class TodoItem {
   static meta = {
@@ -29,7 +29,7 @@ export class TodoItem {
   done = input(false);
 }
 `,
-  "src/todo-app.ts": `import { html, signal } from '@gable/core';
+  "src/todo-app.ts": `import { html, signal } from '@gablejs/core';
 import { TodoItem } from './todo-item.js';
 import type { Todo } from './todo.js';
 
@@ -123,7 +123,7 @@ describe("find uses", () => {
   });
 
   it("finds a [class.x] binding on an element", () => {
-    const p = project({ "src/b.ts": "import { html } from '@gable/core';\nexport class B { static meta = { selector: 'app-b', template: html`<p [class.on]=\"x()\" class=\"a on\">x</p>` }; }\n" });
+    const p = project({ "src/b.ts": "import { html } from '@gablejs/core';\nexport class B { static meta = { selector: 'app-b', template: html`<p [class.on]=\"x()\" class=\"a on\">x</p>` }; }\n" });
     const r = p.svc.findUses({ kind: "class", name: "on" });
     if (!r.ok) throw new Error(r.error);
     expect(r.uses.map((u) => u.kind).sort()).toEqual(["class-attr", "class-binding"]);
@@ -185,8 +185,8 @@ describe("rename component", () => {
 
   it("renames an attribute selector (li[app-x]) on its elements", () => {
     const p = project({
-      "src/row.ts": "import { html } from '@gable/core';\nexport class Row { static meta = { selector: 'li[app-row]', template: html`<span>r</span>` }; }\n",
-      "src/list.ts": "import { html } from '@gable/core';\nimport { Row } from './row.js';\nexport class List { static meta = { selector: 'app-list', imports: [Row], template: html`<ul><li app-row></li><li app-row class=\"x\"></li></ul>` }; }\n",
+      "src/row.ts": "import { html } from '@gablejs/core';\nexport class Row { static meta = { selector: 'li[app-row]', template: html`<span>r</span>` }; }\n",
+      "src/list.ts": "import { html } from '@gablejs/core';\nimport { Row } from './row.js';\nexport class List { static meta = { selector: 'app-list', imports: [Row], template: html`<ul><li app-row></li><li app-row class=\"x\"></li></ul>` }; }\n",
     });
     ok(p.svc.apply({ op: "renameComponent", from: "Row", to: "Line", selector: "li[app-line]" }));
     expect(p.read("src/list.ts")).toContain('<li app-line></li><li app-line class="x"></li>');
@@ -229,7 +229,7 @@ describe("rename component", () => {
 });
 
 describe("extract with props", () => {
-  const SRC = `import { html, signal, computed } from '@gable/core';
+  const SRC = `import { html, signal, computed } from '@gablejs/core';
 
 export class TodoApp {
   static meta = {
@@ -276,7 +276,7 @@ export class TodoApp {
     const r = ok(p.svc.apply({ op: "extract", target: target(SRC, "section"), name: "InfoCard", props: true }));
     expect(r.created).toEqual(["src/info-card.ts"]);
     const made = p.read("src/info-card.ts");
-    expect(made).toContain("import { html, input } from '@gable/core';");
+    expect(made).toContain("import { html, input } from '@gablejs/core';");
     expect(made).toContain("finished = input.required<boolean>();");
     expect(made).toContain("title = input.required<string>();");
     expect(made).toContain("hint = input.required<unknown>();");
@@ -313,6 +313,6 @@ export class TodoApp {
     const p = setup(staticSrc);
     const r = ok(p.svc.apply({ op: "extract", target: target(staticSrc, "section"), name: "Plain", props: true }));
     expect(r.created).toEqual(["src/plain.ts"]);
-    expect(p.read("src/plain.ts")).toContain("import { html } from '@gable/core';");
+    expect(p.read("src/plain.ts")).toContain("import { html } from '@gablejs/core';");
   });
 });

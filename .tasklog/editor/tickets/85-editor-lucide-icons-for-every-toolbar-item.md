@@ -23,7 +23,7 @@ Toolbar buttons use text glyphs; table items show truncated two-letter labels ("
 
 ## Implementation notes
 
-Lucide covers every glyph; no extra icon package needed. ToolbarItem.icon (optional) + ITEM_ICONS default map by id, registered into @gable/ui ICONS as ed-*. Label text remains as aria-label/title; label shown only when no icon.
+Lucide covers every glyph; no extra icon package needed. ToolbarItem.icon (optional) + ITEM_ICONS default map by id, registered into @gablejs/ui ICONS as ed-*. Label text remains as aria-label/title; label shown only when no icon.
 
 ## Answer
 

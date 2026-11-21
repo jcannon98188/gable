@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { InjectionToken, html, inject, type Provider } from "@gable/core";
-import { createTestInjector, mount } from "@gable/testing";
+import { InjectionToken, html, inject, type Provider } from "@gablejs/core";
+import { createTestInjector, mount } from "@gablejs/testing";
 
 class Logger {
   static scope = "root";

@@ -1,7 +1,7 @@
 // When the canvas is not showing the source as saved. Two things say so: the backend's compile check (a template in a saved
 // file does not compile: file, line, message) and the page's own hot-update log (an update of a module was rolled back, so
 // the page kept the last good version of it). The banner over the canvas and the Problems tab are built from this.
-import type { HmrEntry } from "@gable/core/devtools";
+import type { HmrEntry } from "@gablejs/core/devtools";
 import type { CompileError } from "../../../src/server/compile-check.js";
 
 /** What the canvas banner says; null when the canvas follows the source. */

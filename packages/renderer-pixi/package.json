@@ -1,5 +1,5 @@
 {
-  "name": "@gable/renderer-pixi",
+  "name": "@gablejs/renderer-pixi",
   "version": "0.0.0",
   "description": "Gable canvas renderer on PixiJS: scene elements, hit areas, gestures, assets, particles and accessibility mirroring.",
   "license": "MIT",
@@ -38,17 +38,17 @@
     "golden:update": "node golden/run.mjs --update"
   },
   "peerDependencies": {
-    "@gable/core": "~0.0.0",
+    "@gablejs/core": "~0.0.0",
     "pixi.js": "^8.0.0",
-    "@gable/testing": "~0.0.0"
+    "@gablejs/testing": "~0.0.0"
   },
   "devDependencies": {
-    "@gable/core": "0.0.0",
+    "@gablejs/core": "0.0.0",
     "pixi.js": "^8.23.0",
-    "@gable/testing": "0.0.0"
+    "@gablejs/testing": "0.0.0"
   },
   "peerDependenciesMeta": {
-    "@gable/testing": {
+    "@gablejs/testing": {
       "optional": true
     }
   },

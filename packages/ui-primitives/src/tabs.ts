@@ -1,4 +1,4 @@
-import { inject, input } from "@gable/core";
+import { inject, input } from "@gablejs/core";
 import * as tabs from "@zag-js/tabs";
 import { bindProps } from "./props.js";
 import { useMachine, type MachineBinding } from "./machine.js";

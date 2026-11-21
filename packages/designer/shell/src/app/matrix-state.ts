@@ -1,7 +1,7 @@
 // The Scenario by breakpoint matrix for the Matrix tab and MCP (designer/78). The backend renders each Scenario at each width in a
 // headless browser, keeps the last run, and saves baselines; this service asks it over `/api/matrix` (a plain request, so
 // no stream is added) and holds what the panel shows: the grid, the cell opened, the widths being asked for.
-import { computed, inject, signal } from "@gable/core";
+import { computed, inject, signal } from "@gablejs/core";
 import {
   DEFAULT_BREAKPOINTS,
   cellId,

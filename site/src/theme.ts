@@ -1,4 +1,4 @@
-import { computed, signal } from "@gable/core";
+import { computed, signal } from "@gablejs/core";
 
 export type Theme = "dark" | "light";
 

@@ -1,11 +1,11 @@
-# @gable/testing
+# @gablejs/testing
 
 A test harness for Gable components. It mounts a component into an in-memory renderer, so there is no jsdom, no browser and no extra setup. You drive the component with events, wait for updates, and assert on text or markup. It works with any runner (examples here use Vitest).
 
 ## Install
 
 ```
-npm install --save-dev @gable/testing
+npm install --save-dev @gablejs/testing
 ```
 
 ## Mount, act, flush, assert
@@ -13,8 +13,8 @@ npm install --save-dev @gable/testing
 `mount(Component, options?)` returns a fixture. The fixture never flushes by itself: after changing a signal or firing an event, `await fixture.flush()` before asserting.
 
 ```ts
-import { html, signal } from "@gable/core";
-import { mount } from "@gable/testing";
+import { html, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
 import { expect, it } from "vitest";
 
 class Counter {
@@ -39,7 +39,7 @@ it("counts clicks", async () => {
 The tests below are the same idea, running for real in this page against the same renderer. Tick the box to break the component and see what a failure looks like.
 
 ```demo testing
-This is a real @gable/testing run, not a recording.
+This is a real @gablejs/testing run, not a recording.
 ```
 
 ## The fixture
@@ -66,7 +66,7 @@ A stub passed to `overrides` must declare the selector of the component it repla
 
 ## HTTP
 
-`fixture.http` is a recording backend for `@gable/core/http`. Requests wait until the test answers them, and any request left open fails the test.
+`fixture.http` is a recording backend for `@gablejs/core/http`. Requests wait until the test answers them, and any request left open fails the test.
 
 ```ts
 const fixture = mount(UserList);
@@ -87,6 +87,6 @@ expect(fixture.text()).toContain("Ada");
 
 ## Everything else
 
-`createTestInjector` builds an injector without a component, for testing services and stores (see [@gable/store](./store.md)). `createTestPlatform` gives the in-memory browser services alone. `fixture.defer` drives `@defer` blocks, and `fixture.hotReplace` replays a hot update through the real HMR path.
+`createTestInjector` builds an injector without a component, for testing services and stores (see [@gablejs/store](./store.md)). `createTestPlatform` gives the in-memory browser services alone. `fixture.defer` drives `@defer` blocks, and `fixture.hotReplace` replays a hot update through the real HMR path.
 
 Every exported symbol is documented in the API reference, linked below.

@@ -1,4 +1,4 @@
-// Tooling entry: the template expression grammar, shared with @gable/language-service
+// Tooling entry: the template expression grammar, shared with @gablejs/language-service
 // so the editor, `gable-check` and the runtime agree on what an expression is.
 export { parseExpression, parseHandler } from "./expression.js";
 export type { Expr, HandlerExpr } from "./expression.js";
@@ -12,7 +12,7 @@ export { extractTemplateMessages } from "./i18n-extract.js";
 export { applySceneState } from "./scene-state.js";
 
 // Scenes (type-only): a Scene places one Component in one situation. Authored as a plain TypeScript file beside the
-// Component (`todo-item.scenes.ts`); the Designer's component mode and `@gable/testing`'s `mountScene` both read it.
+// Component (`todo-item.scenes.ts`); the Designer's component mode and `@gablejs/testing`'s `mountScene` both read it.
 import type { InputValues } from "./app.js";
 import type { ModelSignal } from "./input.js";
 import type { WritableSignal } from "./signals.js";
@@ -38,7 +38,7 @@ export interface Scene<T extends object> {
   state?: SceneState<T>;
   /** Added to a fresh root injector, so they override anything the Component would otherwise get. */
   providers?: Provider[];
-  /** HTTP calls answered without a network: installed as the HTTP backend, under `providers`. See `mockHttp` in `@gable/core/http`. */
+  /** HTTP calls answered without a network: installed as the HTTP backend, under `providers`. See `mockHttp` in `@gablejs/core/http`. */
   http?: HttpMock[];
   /** Page mode (the Designer): the route the app opens at. Ignored when a single Component is mounted. */
   url?: string;

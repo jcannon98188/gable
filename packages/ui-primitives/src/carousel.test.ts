@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { signal } from "@gable/core";
+import { signal } from "@gablejs/core";
 import { useCarousel } from "./carousel.js";
 
 // Without a DOM host the handle only tracks state.

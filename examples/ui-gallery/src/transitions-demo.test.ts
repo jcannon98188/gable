@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
-import { bootstrap } from '@gable/core';
-import { whenFlushed } from '@gable/core/internal';
-import { provideRouter, provideRouteTransitions } from '@gable/core/router';
-import { createDomRenderer } from '@gable/renderer-dom';
-import { PRESENCE_ENV } from '@gable/ui-primitives';
+import { bootstrap } from '@gablejs/core';
+import { whenFlushed } from '@gablejs/core/internal';
+import { provideRouter, provideRouteTransitions } from '@gablejs/core/router';
+import { createDomRenderer } from '@gablejs/renderer-dom';
+import { PRESENCE_ENV } from '@gablejs/ui-primitives';
 import { TransitionsDemo, transitionRoutes } from './transitions-demo.js';
 
 let destroy = () => {};

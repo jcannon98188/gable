@@ -1,6 +1,6 @@
-import { input, output, signal, type ReadonlySignal } from "@gable/core";
-import { currentScope, injectHost } from "@gable/core/internal";
-import type { Renderer } from "@gable/core/renderer";
+import { input, output, signal, type ReadonlySignal } from "@gablejs/core";
+import { currentScope, injectHost } from "@gablejs/core/internal";
+import type { Renderer } from "@gablejs/core/renderer";
 import { instructionsId } from "./dnd-announce.js";
 import { getDndManager, type DragResult, type DragSource, type DndZone, type DropInfo, type PointerDragOptions } from "./dnd-manager.js";
 import { uniqueId } from "./id.js";

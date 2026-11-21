@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { computed, effect, html, inject, signal } from "@gable/core";
-import { mount } from "@gable/testing";
+import { computed, effect, html, inject, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
 
 // Each "version" of a class is a fresh class with the same name, as a re-evaluated module would produce.
 

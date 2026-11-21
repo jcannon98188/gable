@@ -1,6 +1,6 @@
-import { FocusManager, History, Location, LiveAnnouncer, Meta, Title, mergeMeta, metaEntries, type FocusTarget, type MetaTags, type Politeness } from "@gable/core/renderer";
+import { FocusManager, History, Location, LiveAnnouncer, Meta, Title, mergeMeta, metaEntries, type FocusTarget, type MetaTags, type Politeness } from "@gablejs/core/renderer";
 import type { TestNode } from "./renderer.js";
-import type { Provider } from "@gable/core";
+import type { Provider } from "@gablejs/core";
 
 /** In-memory Location, History and Title of the Test renderer: no window, no document. */
 export interface TestPlatform {

@@ -1,4 +1,4 @@
-// Accessibility assertions for mounted fixtures, powered by axe-core. Separate entry (`@gable/testing/a11y`) so the
+// Accessibility assertions for mounted fixtures, powered by axe-core. Separate entry (`@gablejs/testing/a11y`) so the
 // main entry never imports axe-core, which is an optional peer dependency.
 import type { Fixture } from "./index.js";
 
@@ -66,7 +66,7 @@ function resolveTarget(target: A11yTarget): Element | Document {
     throw new Error(
       "expectNoA11yViolations needs a real DOM: this fixture was mounted with the in-memory test renderer. " +
         "Run the test under jsdom (`// @vitest-environment jsdom`), boot the component with `bootstrap(Component, { renderer: dom(), target })` " +
-        "from @gable/renderer-dom, and pass the host element.",
+        "from @gablejs/renderer-dom, and pass the host element.",
     );
   }
   throw new Error("expectNoA11yViolations: pass a fixture backed by the DOM renderer, an Element, or a Document.");

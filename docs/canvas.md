@@ -1,6 +1,6 @@
 # Canvas author guide
 
-`@gable/renderer-pixi` lets a Gable app draw a 2D scene with PixiJS 8 while everything else, the HUD, menus and routing, stays ordinary DOM. This guide is the set of patterns to follow when you build a game or an interactive scene with it. Each section has an example that runs: the files are in `packages/renderer-pixi/src/guide/` and are tested against the scene test renderer, so what you read here is what the tests execute.
+`@gablejs/renderer-pixi` lets a Gable app draw a 2D scene with PixiJS 8 while everything else, the HUD, menus and routing, stays ordinary DOM. This guide is the set of patterns to follow when you build a game or an interactive scene with it. Each section has an example that runs: the files are in `packages/renderer-pixi/src/guide/` and are tested against the scene test renderer, so what you read here is what the tests execute.
 
 Companion pages: [loading assets](./canvas-assets.md), [hit areas](./canvas-hit-areas.md) and [very high counts with `<particle-container>`](./canvas-particles.md).
 
@@ -20,12 +20,12 @@ Two things to know from the start.
 
 **Scene components belong in a host component's own template.** The host and its services (`Frame`, `CanvasSize`, `Pointer`, `Keyboard`, `Gamepad`, `ReducedMotion`) exist inside the renderer boundary. A component that you write between `<gable-canvas>` and `</gable-canvas>` in a page is declared by the page, so its injection resolves in the page's injector (ADR 0019), where those services do not exist: `inject(Frame)` there fails, and the component does not build. The same holds for the host component's own Setup, which is built by the parent renderer: injecting `Frame` or `Pointer` there throws a "No provider" error that names the cause. Put the scene in a component of its own, whose template starts the scene, and use that component's template for everything that needs a boundary service. Services you provide yourself (a `World`, a score) are visible from both sides, which is the point: they are how the DOM HUD and the scene share state.
 
-**Testing uses the scene test renderer.** `createSceneTestRenderer()` from `@gable/renderer-pixi/testing` is an in-memory scene with the real tags and the real `Frame`, `Pointer`, `Keyboard` and `Gamepad` services, driven by a deterministic frame step. `mountWithScene` mounts a page with a canvas in it, so one fixture queries the DOM HUD and the scene. In production the host is `<gable-canvas>`; in a test, `renderer: scene.boundary` makes a component the host. This is the shape every example test below uses:
+**Testing uses the scene test renderer.** `createSceneTestRenderer()` from `@gablejs/renderer-pixi/testing` is an in-memory scene with the real tags and the real `Frame`, `Pointer`, `Keyboard` and `Gamepad` services, driven by a deterministic frame step. `mountWithScene` mounts a page with a canvas in it, so one fixture queries the DOM HUD and the scene. In production the host is `<gable-canvas>`; in a test, `renderer: scene.boundary` makes a component the host. This is the shape every example test below uses:
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { html } from "@gable/core";
-import { createSceneTestRenderer, mountWithScene } from "@gable/renderer-pixi/testing";
+import { html } from "@gablejs/core";
+import { createSceneTestRenderer, mountWithScene } from "@gablejs/renderer-pixi/testing";
 import { Rocks, World } from "./entities.js";
 
 // In production the host is <gable-canvas>; the test renderer's boundary stands in for it. The scene components are in
@@ -70,8 +70,8 @@ describe("guide: entities as components, state in services", () => {
 The default shape is: each entity is a Gable component with its own signal-bound template; the scene's template composes entities; services hold the state that matters and coordinate them. Entities are plain data in a service's list, and an entity component renders that data and owns only transient view state.
 
 ```ts
-import { html, inject, input, signal } from "@gable/core";
-import { Frame } from "@gable/renderer-pixi";
+import { html, inject, input, signal } from "@gablejs/core";
+import { Frame } from "@gablejs/renderer-pixi";
 
 /** An entity is plain data. */
 export interface Rock {
@@ -143,8 +143,8 @@ Fixed-step accumulators live in the `Frame` service, so rebuilding a scene never
 `renderMode="on-demand"` on the host renders only when a hook or an effect wrote to the scene, for scenes that are still most of the time. The default renders every frame.
 
 ```ts
-import { html, inject, signal } from "@gable/core";
-import { Frame } from "@gable/renderer-pixi";
+import { html, inject, signal } from "@gablejs/core";
+import { Frame } from "@gablejs/renderer-pixi";
 
 /** Simulation state in a service: the clock and the fixed-step tick count survive scene rebuilds. */
 export class Clock {
@@ -187,8 +187,8 @@ export class Runner {
 `createDrag` and `createLongPress` compose gestures from a node's `pointerdown` and the `Pointer` service; they are not template syntax. Call them in a component's setup and forward the event: `(pointerdown)="drag.down($event)"`.
 
 ```ts
-import { html, inject, signal } from "@gable/core";
-import { Frame, Keyboard, Pointer, createDrag } from "@gable/renderer-pixi";
+import { html, inject, signal } from "@gablejs/core";
+import { Frame, Keyboard, Pointer, createDrag } from "@gablejs/renderer-pixi";
 
 export class Player {
   static meta = {
@@ -237,8 +237,8 @@ Assets load explicitly through the app-level `Assets` service; a scene never sta
 Templates cannot compute (`level.progress() * 200` is rejected), so derive values in a `computed`.
 
 ```ts
-import { computed, html, inject } from "@gable/core";
-import { Assets, provideAssets } from "@gable/renderer-pixi";
+import { computed, html, inject } from "@gablejs/core";
+import { Assets, provideAssets } from "@gablejs/renderer-pixi";
 
 /** Declared once, in the app's root providers. Import single files normally so Vite hashes their URLs. */
 export const assetProviders = provideAssets({
@@ -272,7 +272,7 @@ export class Level {
 
 `@defer (when level.ready()) { <game-world></game-world> }` keeps the heavy part of a scene out of the download until the assets are in. In tests, `provideTestAssets` replaces the asset system under the real `Assets` service and lets a test hold a load, report progress, finish it or fail it (`bundle.setStatus("loading", 0.25)`, `setStatus("ready")`, `fail(error)`); see `packages/renderer-pixi/src/guide/assets.test.ts`.
 
-**Spritesheets and bitmap fonts: `?family`.** A descriptor names its image by relative path, which Vite's hashing would break. Add `gableAssetFamilies()` from `@gable/vite` to the Vite plugins and import the descriptor with the query: `import sheet from "./hero.json?family"` gives the URL of the descriptor with its siblings hashed and rewritten; use it as a bundle entry's `src`. For types, add `/// <reference types="@gable/vite/client" />` (or `"@gable/vite/client"` in tsconfig `types`). A real-browser test of the built output runs under `GABLE_BROWSER_SMOKE=1`.
+**Spritesheets and bitmap fonts: `?family`.** A descriptor names its image by relative path, which Vite's hashing would break. Add `gableAssetFamilies()` from `@gablejs/vite` to the Vite plugins and import the descriptor with the query: `import sheet from "./hero.json?family"` gives the URL of the descriptor with its siblings hashed and rewritten; use it as a bundle entry's `src`. For types, add `/// <reference types="@gablejs/vite/client" />` (or `"@gablejs/vite/client"` in tsconfig `types`). A real-browser test of the built output runs under `GABLE_BROWSER_SMOKE=1`.
 
 ## Accessibility checklist
 
@@ -300,8 +300,8 @@ A canvas is not exposed as content. There is no automatic accessibility tree gue
 There is no automated game accessibility audit in v1; a lint that flags pointer-listening nodes without `[a11y]` is a possible follow-up.
 
 ```ts
-import { computed, html, inject, signal } from "@gable/core";
-import { ReducedMotion, announceOnChange } from "@gable/renderer-pixi";
+import { computed, html, inject, signal } from "@gablejs/core";
+import { ReducedMotion, announceOnChange } from "@gablejs/renderer-pixi";
 
 export class Score {
   static scope = "root";
@@ -345,8 +345,8 @@ During development, Vite swaps edited modules without a reload. For a canvas gam
 5. **Rebuilds are cheap and safe by construction.** An entity class edit rebuilds all live instances of it; that is fine because the state that matters is entity data in a service. Fixed-step accumulators live in the `Frame` service, so time debt carries across a rebuild, and a rebuild in the middle of a frame takes effect at the next frame, never inside one.
 
 ```ts
-import { hotData, html, inject, signal } from "@gable/core";
-import { Frame } from "@gable/renderer-pixi";
+import { hotData, html, inject, signal } from "@gablejs/core";
+import { Frame } from "@gablejs/renderer-pixi";
 
 /** What must survive a hot edit lives in a root service: the spawn clock and the count. */
 export class SpawnState {
@@ -374,7 +374,7 @@ export class Spawner {
 }
 ```
 
-The repository's HMR suites in `packages/renderer-pixi` check these rules: Application survival, no leaked display objects over many edits (`npm run soak -w @gable/renderer-pixi`), the raw-timer warning, and service-state carry-over.
+The repository's HMR suites in `packages/renderer-pixi` check these rules: Application survival, no leaked display objects over many edits (`npm run soak -w @gablejs/renderer-pixi`), the raw-timer warning, and service-state carry-over.
 
 ## Performance tiers
 
@@ -418,8 +418,8 @@ Not measured yet, and tracked as release-gate work: real-GPU execution time, Lin
 Tier 1 is the right default. Reduce the binding count first (tier 2): one pose signal feeding `[position]` re-runs one binding where `[x]` and `[y]` re-run two. Tier 3 writes to Pixi nodes directly through a template `#ref` and a frame hook, which skips signals and bindings entirely; it works on real Pixi nodes, so it is not exercised by the scene test renderer, whose nodes are records. Tier 4, `<particle-container>`, is for many simple entities that need no events, children or per-entity logic beyond a per-frame loop (sparks, rain, bullets, star fields); see the [particle page](./canvas-particles.md) for its rules. Keep components for anything that needs pointer events, accessibility, children or its own state.
 
 ```ts
-import { html, inject, signal, viewChild } from "@gable/core";
-import { Frame, particles, pixiElements, type ParticleSet } from "@gable/renderer-pixi";
+import { html, inject, signal, viewChild } from "@gablejs/core";
+import { Frame, particles, pixiElements, type ParticleSet } from "@gablejs/renderer-pixi";
 
 /** Tier 1, components with signals: fine up to about 1,000 entities. Each entity is a component, each property a signal. */
 export class Dot {
@@ -462,13 +462,13 @@ These are not bugs to work around; they are how the canvas works, and each is ea
 - **(b) First-frame pointer events can fall through to the stage.** A pointer event that arrives before the first frame has run may be delivered to the stage instead of the node under the pointer. Do not depend on a tap in that window: enable a control only once the scene is showing, or give the same action a DOM control.
 - **(c) A press and release within a single flush is a non-event** for `createDrag` and `createLongPress`: they read the `Pointer` service once per frame flush, so a press and its release that both land between two flushes never become a drag or a long-press. Moves within a frame coalesce to the latest position. (A node's own `(pointertap)` is not affected.)
 - **(d) Hyphenated scene tags work in templates:** `tiling-sprite`, `nine-slice-sprite`, `bitmap-text`, `particle-container`, the `rounded-rect` graphics shape and the `hit-rect`, `hit-circle`, `hit-rounded-rect`, `hit-ellipse` and `hit-polygon` children. They are scene tags, not components, and need no import.
-- **(e) The golden-image and real-browser smoke suites are opt-in.** They need a Chromium (set `GABLE_BROWSER` to a binary if none is found), so a plain test run skips them: set `GABLE_GOLDEN=1` for the golden-image suite (`npm run golden -w @gable/renderer-pixi`, and `golden:update` to rewrite the goldens) and `GABLE_BROWSER_SMOKE=1` for the smoke suite.
+- **(e) The golden-image and real-browser smoke suites are opt-in.** They need a Chromium (set `GABLE_BROWSER` to a binary if none is found), so a plain test run skips them: set `GABLE_GOLDEN=1` for the golden-image suite (`npm run golden -w @gablejs/renderer-pixi`, and `golden:update` to rewrite the goldens) and `GABLE_BROWSER_SMOKE=1` for the smoke suite.
 
 ```ts
 import { describe, expect, it, vi } from "vitest";
-import { html } from "@gable/core";
-import { createDrag } from "@gable/renderer-pixi";
-import { createSceneTestRenderer, mountWithScene } from "@gable/renderer-pixi/testing";
+import { html } from "@gablejs/core";
+import { createDrag } from "@gablejs/renderer-pixi";
+import { createSceneTestRenderer, mountWithScene } from "@gablejs/renderer-pixi/testing";
 import { Runner } from "./frame.js";
 
 describe("guide: known behaviours", () => {

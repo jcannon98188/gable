@@ -1,5 +1,5 @@
-import { computed, contentChild, effect, html, inject, input, model, signal } from "@gable/core";
-import { HoverCardState, UiPopup, UiPortal, UiProps, bindProps } from "@gable/ui-primitives";
+import { computed, contentChild, effect, html, inject, input, model, signal } from "@gablejs/core";
+import { HoverCardState, UiPopup, UiPortal, UiProps, bindProps } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 import type { Placement } from "../lib/placement.js";
 

@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-`create-gable` asks only for a project name (or takes it as the argument). Its one feature option, `--service-worker`, adds offline support ([below](#offline-and-updates-the-service-worker-option)). It detects the package manager that ran it (`npm`, `pnpm`, `yarn` or `bun`) and prints the matching commands. The template ships no lockfile; your first install creates one. The `@gable/*` packages are pinned with `~` to the `create-gable` release that made the project, so they stay in lockstep.
+`create-gable` asks only for a project name (or takes it as the argument). Its one feature option, `--service-worker`, adds offline support ([below](#offline-and-updates-the-service-worker-option)). It detects the package manager that ran it (`npm`, `pnpm`, `yarn` or `bun`) and prints the matching commands. The template ships no lockfile; your first install creates one. The `@gablejs/*` packages are pinned with `~` to the `create-gable` release that made the project, so they stay in lockstep.
 
 Open the URL the dev server prints. You should see "Hello, Gable" and a counter.
 
@@ -41,15 +41,15 @@ Files are kebab-case with no role suffix, one class per file, and tests sit besi
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@gable/core": "~{{version}}",
-    "@gable/renderer-dom": "~{{version}}",
+    "@gablejs/core": "~{{version}}",
+    "@gablejs/renderer-dom": "~{{version}}",
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
-    "@gable/language-service": "~{{version}}",
-    "@gable/prettier-plugin": "~{{version}}",
-    "@gable/testing": "~{{version}}",
-    "@gable/vite": "~{{version}}",
+    "@gablejs/language-service": "~{{version}}",
+    "@gablejs/prettier-plugin": "~{{version}}",
+    "@gablejs/testing": "~{{version}}",
+    "@gablejs/vite": "~{{version}}",
     "@tailwindcss/vite": "^4.3.4",
     "prettier": "^3.9.0",
     "tailwindcss": "^4.3.4",
@@ -65,7 +65,7 @@ Files are kebab-case with no role suffix, one class per file, and tests sit besi
 <!-- template: vite.config.ts -->
 ```ts
 import tailwindcss from "@tailwindcss/vite";
-import { gable } from "@gable/vite";
+import { gable } from "@gablejs/vite";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -93,7 +93,7 @@ export default defineConfig({
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "types": ["vite/client"],
-    "plugins": [{ "name": "@gable/language-service", "renderer": "@gable/renderer-dom" }]
+    "plugins": [{ "name": "@gablejs/language-service", "renderer": "@gablejs/renderer-dom" }]
   },
   "include": ["src", "vite.config.ts"]
 }
@@ -105,8 +105,8 @@ The `plugins` entry wires the Gable language service into the editor and into `g
 
 <!-- template: src/main.ts -->
 ```ts
-import { bootstrap } from "@gable/core";
-import { dom } from "@gable/renderer-dom";
+import { bootstrap } from "@gablejs/core";
+import { dom } from "@gablejs/renderer-dom";
 import "./global.css";
 import { Root } from "./root.js";
 
@@ -117,7 +117,7 @@ bootstrap(Root, { renderer: dom(), target: "#app" });
 
 <!-- template: src/root.ts -->
 ```ts
-import { html } from "@gable/core";
+import { html } from "@gablejs/core";
 import { Counter } from "./counter.js";
 
 export class Root {
@@ -138,7 +138,7 @@ export class Root {
 
 <!-- template: src/counter.ts -->
 ```ts
-import { computed, html, inject, signal } from "@gable/core";
+import { computed, html, inject, signal } from "@gablejs/core";
 import { CounterStore } from "./counter-store.js";
 
 export class Counter {
@@ -176,7 +176,7 @@ export class Counter {
 
 <!-- template: src/counter-store.ts -->
 ```ts
-import { signal } from "@gable/core";
+import { signal } from "@gablejs/core";
 
 /** A root-scoped service: one instance for the whole app, shared by every component that injects it. */
 export class CounterStore {
@@ -195,7 +195,7 @@ export class CounterStore {
 <!-- template: src/counter.test.ts -->
 ```ts
 import { describe, expect, it } from "vitest";
-import { mount } from "@gable/testing";
+import { mount } from "@gablejs/testing";
 import { Counter } from "./counter.js";
 
 describe("Counter", () => {
@@ -232,7 +232,7 @@ describe("Counter", () => {
 <!-- template: .prettierrc.json -->
 ```json
 {
-  "plugins": ["@gable/prettier-plugin"],
+  "plugins": ["@gablejs/prettier-plugin"],
   "printWidth": 100
 }
 ```
@@ -284,7 +284,7 @@ Inputs are bound by the parent after the component's setup (field initialisers) 
 npm test
 ```
 
-`src/counter.test.ts` mounts `Counter` with `mount` from `@gable/testing`, drives it through the test renderer (no browser, no DOM) and reads the result with `fixture.text()` and `fixture.query()`. `fixture.textOf(node)` reads any node’s deep text. For handlers that read `$event`, `fixture.type(input, "text")`, `fixture.change(control, value | checked)` and `fixture.keydown(input, "Enter", { shiftKey: true })` fire `input`, `change` and `keydown` with browser-shaped events (`$event.target.value`, `$event.target.checked`, `$event.key`, `preventDefault()`); `fixture.fill` is for `[field]`-bound controls. The root-scoped `CounterStore` resolves without any setup; pass `providers` to `mount` to replace it.
+`src/counter.test.ts` mounts `Counter` with `mount` from `@gablejs/testing`, drives it through the test renderer (no browser, no DOM) and reads the result with `fixture.text()` and `fixture.query()`. `fixture.textOf(node)` reads any node’s deep text. For handlers that read `$event`, `fixture.type(input, "text")`, `fixture.change(control, value | checked)` and `fixture.keydown(input, "Enter", { shiftKey: true })` fire `input`, `change` and `keydown` with browser-shaped events (`$event.target.value`, `$event.target.checked`, `$event.key`, `preventDefault()`); `fixture.fill` is for `[field]`-bound controls. The root-scoped `CounterStore` resolves without any setup; pass `providers` to `mount` to replace it.
 
 ## Check
 
@@ -300,11 +300,11 @@ Marker rules for i18n (`i18n-attr-missing`, `i18n-not-translatable`, `i18n-marke
 
 Store-specific rules (`store-write-outside-patch`, `store-method-in-template`, `store-outside-injection-context`) are described in `docs/store.md`.
 
-`gable-check` also checks each `static meta` against `ComponentMeta`, since TypeScript cannot type a class’s static side without a base class or decorator. The `gable/component-meta` rule reports unknown keys (`selectr`), values of the wrong type, `imports` entries that are not components or `lazy()` entries, and a missing `selector`; its quick fix adds `satisfies ComponentMeta` (and the import), which hands the same check to the compiler. You can write it yourself by ending the initialiser with `satisfies ComponentMeta` (a type import from `@gable/core`). Once a meta has `satisfies ComponentMeta` or a type annotation, the rule stays out of the way. Set its severity, or turn it off, under `rules` in the plugin entry: `{ "name": "@gable/language-service", "rules": { "component-meta": "warn" } }`.
+`gable-check` also checks each `static meta` against `ComponentMeta`, since TypeScript cannot type a class’s static side without a base class or decorator. The `gable/component-meta` rule reports unknown keys (`selectr`), values of the wrong type, `imports` entries that are not components or `lazy()` entries, and a missing `selector`; its quick fix adds `satisfies ComponentMeta` (and the import), which hands the same check to the compiler. You can write it yourself by ending the initialiser with `satisfies ComponentMeta` (a type import from `@gablejs/core`). Once a meta has `satisfies ComponentMeta` or a type annotation, the rule stays out of the way. Set its severity, or turn it off, under `rules` in the plugin entry: `{ "name": "@gablejs/language-service", "rules": { "component-meta": "warn" } }`.
 
 ## Format
 
-`npm run format` runs Prettier with `@gable/prettier-plugin`, which formats the HTML inside `html` templates as well as the TypeScript.
+`npm run format` runs Prettier with `@gablejs/prettier-plugin`, which formats the HTML inside `html` templates as well as the TypeScript.
 
 ## Build
 
@@ -321,7 +321,7 @@ The production bundle contains no HMR code.
 npm create gable@latest my-app -- --service-worker
 ```
 
-With `--service-worker` the starter also gets [`@gable/service-worker`](./packages/service-worker.md): the production build works offline, and a new release installs in the background and waits until the user takes it from a banner. Without the option the starter has none of these files, no `@gable/service-worker` dependency and no worker code in its bundle. The option adds `gable.sw.json` and `src/update-banner.ts`, puts its own `vite.config.ts`, `src/main.ts` and `src/root.ts` in place of the ones above, and adds `@gable/service-worker` to `dependencies`.
+With `--service-worker` the starter also gets [`@gablejs/service-worker`](./packages/service-worker.md): the production build works offline, and a new release installs in the background and waits until the user takes it from a banner. Without the option the starter has none of these files, no `@gablejs/service-worker` dependency and no worker code in its bundle. The option adds `gable.sw.json` and `src/update-banner.ts`, puts its own `vite.config.ts`, `src/main.ts` and `src/root.ts` in place of the ones above, and adds `@gablejs/service-worker` to `dependencies`.
 
 The worker exists only in a production build, so try it with `npm run build` and `npm run preview`; the dev server has no worker and its HMR works as before. Load the page once to install the worker, stop the preview server and reload: the app still loads. Then change a file, build and preview again, and reload. The browser looks for a new worker when a page loads, and once the new release has installed the banner offers it; call `checkForUpdate()` from `SwUpdates` to look sooner or on a timer.
 
@@ -347,7 +347,7 @@ What the default worker caches. The `app` group (the shell and Vite's `assets/` 
 <!-- template: ../template-service-worker/vite.config.ts -->
 ```ts
 import tailwindcss from "@tailwindcss/vite";
-import { gable, gableServiceWorker } from "@gable/vite";
+import { gable, gableServiceWorker } from "@gablejs/vite";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -360,9 +360,9 @@ export default defineConfig({
 
 <!-- template: ../template-service-worker/src/main.ts -->
 ```ts
-import { bootstrap } from "@gable/core";
-import { dom } from "@gable/renderer-dom";
-import { provideServiceWorker } from "@gable/service-worker";
+import { bootstrap } from "@gablejs/core";
+import { dom } from "@gablejs/renderer-dom";
+import { provideServiceWorker } from "@gablejs/service-worker";
 import "./global.css";
 import { Root } from "./root.js";
 
@@ -377,7 +377,7 @@ bootstrap(Root, {
 
 <!-- template: ../template-service-worker/src/root.ts -->
 ```ts
-import { html } from "@gable/core";
+import { html } from "@gablejs/core";
 import { Counter } from "./counter.js";
 import { UpdateBanner } from "./update-banner.js";
 
@@ -402,8 +402,8 @@ Injecting `SwUpdates` registers the worker, in a production build only. `updateA
 
 <!-- template: ../template-service-worker/src/update-banner.ts -->
 ```ts
-import { html, inject } from "@gable/core";
-import { SwUpdates } from "@gable/service-worker";
+import { html, inject } from "@gablejs/core";
+import { SwUpdates } from "@gablejs/service-worker";
 
 export class UpdateBanner {
   static meta = {
@@ -427,7 +427,7 @@ export class UpdateBanner {
 }
 ```
 
-See the [`@gable/service-worker` guide](./packages/service-worker.md) for what else `gable.sw.json` can say, runtime caching of API calls, push notifications, and writing your own worker.
+See the [`@gablejs/service-worker` guide](./packages/service-worker.md) for what else `gable.sw.json` can say, runtime caching of API calls, push notifications, and writing your own worker.
 
 ## Routing
 

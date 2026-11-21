@@ -102,7 +102,7 @@ Engine (fixed in the engine crates, with regression tests; test262 still passes 
 
 Gable side (minimal fixes):
 
-- **`@gable/core` http assumed `FormData` and `Blob` exist.** `encodeBody` used `body instanceof FormData`, which throws a ReferenceError on a host without those globals; spec section 8 does not list them. The checks now test that the global exists first. Test: `testing/src/http.test.ts`, "sends JSON on a host without FormData or Blob".
+- **`@gablejs/core` http assumed `FormData` and `Blob` exist.** `encodeBody` used `body instanceof FormData`, which throws a ReferenceError on a host without those globals; spec section 8 does not list them. The checks now test that the global exists first. Test: `testing/src/http.test.ts`, "sends JSON on a host without FormData or Blob".
 - **Zag (`@zag-js/store`, used by `ui-primitives`) tests `instanceof File` and `instanceof Blob`.** The harness prelude defines minimal `Blob` and `File` stand-ins. This is a finding for the Gable Native host runtime: it needs `Blob` and `File`, or Zag has to be patched. **Decision for the maintainer:** whether to add `Blob` and `File` to the spec section 8 host globals.
 - `process.env.NODE_ENV` is read by dependencies. App bundles replace it at build time, so the harness bundler defines it rather than the engine providing a `process` global.
 
@@ -114,7 +114,7 @@ A regex with a non-multiline `^`, run with `exec` on a long string, still scans 
 
 ### The benchmark set
 
-The workloads live in `native/engine-harness/bench`. Each runs through public APIs (`@gable/core`, `@gable/testing` and RxJS) and returns a checksum, and the run fails if the engines disagree on it, so a fast time cannot come from skipped work.
+The workloads live in `native/engine-harness/bench`. Each runs through public APIs (`@gablejs/core`, `@gablejs/testing` and RxJS) and returns a checksum, and the run fails if the engines disagree on it, so a fast time cannot come from skipped work.
 
 | benchmark | what it does |
 | --- | --- |
@@ -126,7 +126,7 @@ The workloads live in `native/engine-harness/bench`. Each runs through public AP
 | `template-mount` | Mounting 50 cards (bindings, `@if`, a small `@for` each) through the template interpreter, then destroying them |
 | `template-update` | Updating every binding of a mounted card 200 times |
 | `list-diff` | A keyed `@for` over 1000 rows: reverse, swap two, remove 100, insert 100, replace all, restore |
-| `ui-bundle-startup` | Loading and evaluating the `@gable/ui` bundle (1.4 MB) in a fresh engine |
+| `ui-bundle-startup` | Loading and evaluating the `@gablejs/ui` bundle (1.4 MB) in a fresh engine |
 
 `node native/engine-harness/js/run-bench.mjs` runs each (engine, benchmark) pair in its own process, with 2 warmup and 10 measured iterations, and reports the median. Node is included as a reference only. The CI `bench` job runs it on pull requests that touch `native/` or `packages/` and uploads the JSON. It never fails on numbers.
 
@@ -151,7 +151,7 @@ Geometric mean of Gable / QuickJS-NG over the nine benchmarks: **2.89x** (the Ag
 ### Reading the gap
 
 - **Time.** The AgniJS engine is 1.6x to 4.2x slower than the interim engine on Gable's own workloads. The largest gaps are signal propagation and RxJS (3.1x to 4.2x). Both are dominated by small function calls, closures and property reads. That matches the TASK-100.13 micro-benchmarks (`native/engine/crates/gable-js-bench/baselines/README.md`, geomean 2.87x), where the interpreter core is the largest gap: `loop-array-index` 7.06x, `prop-polymorphic` 7.0x, `prop-monomorphic` 6.3x, `calls-recursive` 5.5x and `method-calls` 5.0x. Template work and list diffing are closer (1.6x to 2.7x) because more of their time is spent in built-ins and string work.
-- **Startup.** Loading the `@gable/ui` bundle takes 145 ms against 69 ms (2.1x). This is compile time; precompiled bytecode (M7) is not used in this measurement.
+- **Startup.** Loading the `@gablejs/ui` bundle takes 145 ms against 69 ms (2.1x). This is compile time; precompiled bytecode (M7) is not used in this measurement.
 - **Memory.** Peak memory is 1.4x to 18x higher. The collector is deferred while a native frame is on the stack, and every callback (a computed, an observer, an `Array.prototype` callback) runs as one. So a single long synchronous host call keeps all of its garbage until it returns. `rxjs-higher-order` peaks at 124 MiB against 6.7 MiB, and `list-diff` at 238 MiB against 41 MiB.
 - **Node** is 10x to 100x faster than either interpreter, as expected for a JIT. It is shown only to place the two interpreters, not as a target.
 

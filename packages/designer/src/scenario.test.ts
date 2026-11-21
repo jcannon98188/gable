@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readSceneFile } from "./server/scene-index.js";
 import { hostModule, scenarioModule } from "./server/vite-plugin.js";
 
-const SCENES = `import type { ComponentScenes } from '@gable/core/tooling';
+const SCENES = `import type { ComponentScenes } from '@gablejs/core/tooling';
 import { UserList } from './http-demo.js';
 export default {
   component: UserList,

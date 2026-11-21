@@ -1,4 +1,4 @@
-import { computed, effect, html, inject, input, signal, viewChild } from '@gable/core';
+import { computed, effect, html, inject, input, signal, viewChild } from '@gablejs/core';
 import { TodoStore } from '../services/todo-store.js';
 import type { Todo } from '../models/todo.js';
 

@@ -148,9 +148,9 @@ export function extractFix(file: string, site: Site, env: FixEnv): Fix | undefin
 
   // Imports and observed-root signals.
   const edits: TextEdit[] = [];
-  const computed = ensureImport(file, env.sf, "computed", "@gable/core");
+  const computed = ensureImport(file, env.sf, "computed", "@gablejs/core");
   if (computed.edit) edits.push(computed.edit);
-  const toSignal = observed.size ? ensureImport(file, env.sf, "toSignal", "@gable/core/rxjs") : undefined;
+  const toSignal = observed.size ? ensureImport(file, env.sf, "toSignal", "@gablejs/core/rxjs") : undefined;
   if (toSignal?.edit) edits.push(toSignal.edit);
   const signalFor = new Map<string, string>();
   const members_: string[] = [];

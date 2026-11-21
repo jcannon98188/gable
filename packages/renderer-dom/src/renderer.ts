@@ -1,4 +1,4 @@
-import { FocusManager, History, Location, LiveAnnouncer, Meta, Title, type Renderer } from "@gable/core/renderer";
+import { FocusManager, History, Location, LiveAnnouncer, Meta, Title, type Renderer } from "@gablejs/core/renderer";
 import { controlBinding } from "./controls.js";
 import { DEV } from "./dev.js";
 import { createDomPlatform, type PlatformOptions } from "./platform.js";

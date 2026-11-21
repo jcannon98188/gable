@@ -1,4 +1,4 @@
-import { signal, type WritableSignal } from "@gable/core";
+import { signal, type WritableSignal } from "@gablejs/core";
 
 /**
  * What a scene sees of its host's canvas: the CSS size in CSS pixels and the device pixel ratio the buffer uses.

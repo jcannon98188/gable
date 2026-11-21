@@ -1,7 +1,7 @@
 // The Frame service (canvas/111, ADR 0020): the per-frame hooks of a canvas boundary. The boundary's loop calls
 // `advance(dt)` once per animation frame; scenes register with `inject(Frame).onFrame(dt => ...)` or `onFixedStep(hz, cb)`.
 // Kept free of any pixi.js import so injecting it never loads Pixi.
-import { onCleanup } from "@gable/core";
+import { onCleanup } from "@gablejs/core";
 
 /**
  * The longest dt a frame reports, in seconds. A tab that was hidden or a long stall must not become one giant step. This is a

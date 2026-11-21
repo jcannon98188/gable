@@ -23,7 +23,7 @@ describe("registry-meta", () => {
       const imports = c.files.flatMap((f) => specifiers(read(`components/${f}`)));
       const lib = imports.flatMap((s) => s.match(/^\.\.\/lib\/(.+)\.js$/)?.[1] ?? []);
       const siblings = imports.flatMap((s) => s.match(/^\.\/(.+)\.js$/)?.[1] ?? []);
-      const npm = imports.filter((s) => !s.startsWith(".")).map((s) => (s.startsWith("@gable/core") ? "@gable/core" : s));
+      const npm = imports.filter((s) => !s.startsWith(".")).map((s) => (s.startsWith("@gablejs/core") ? "@gablejs/core" : s));
       expect({ name: c.name, lib: sorted(lib) }).toEqual({ name: c.name, lib: c.lib });
       expect({ name: c.name, registryDependencies: sorted(siblings) }).toEqual({ name: c.name, registryDependencies: c.registryDependencies });
       expect({ name: c.name, dependencies: sorted(npm) }).toEqual({ name: c.name, dependencies: c.dependencies });
@@ -36,7 +36,7 @@ describe("registry-meta", () => {
   it("matches what each lib module really imports", () => {
     for (const l of LIB_META) {
       const imports = specifiers(read(`lib/${l.file}`));
-      const npm = imports.filter((s) => !s.startsWith(".")).map((s) => (s.startsWith("@gable/core") ? "@gable/core" : s));
+      const npm = imports.filter((s) => !s.startsWith(".")).map((s) => (s.startsWith("@gablejs/core") ? "@gablejs/core" : s));
       const lib = imports.flatMap((s) => s.match(/^\.\/(.+)\.js$/)?.[1] ?? []);
       expect({ name: l.name, dependencies: sorted(npm), lib: sorted(lib) }).toEqual({ name: l.name, dependencies: l.dependencies, lib: l.lib });
     }

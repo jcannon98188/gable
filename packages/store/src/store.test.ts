@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { effect, html, inject, type ReadonlySignal } from "@gable/core";
-import { createTestInjector, mount } from "@gable/testing";
+import { effect, html, inject, type ReadonlySignal } from "@gablejs/core";
+import { createTestInjector, mount } from "@gablejs/testing";
 import { getState, patchState, signalStore, withComputed, withHooks, withHotState, withMethods, withState, type DeepSignal } from "./index.js";
 
 interface Todo {

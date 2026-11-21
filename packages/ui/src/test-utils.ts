@@ -1,8 +1,8 @@
 // Helpers for the jsdom tests (`// @vitest-environment jsdom`). Not part of the package: excluded from the build.
 import { afterEach, beforeEach, expect } from "vitest";
-import { bootstrap, ErrorHandler, type Provider } from "@gable/core";
-import { whenFlushed } from "@gable/core/internal";
-import { createDomRenderer } from "@gable/renderer-dom";
+import { bootstrap, ErrorHandler, type Provider } from "@gablejs/core";
+import { whenFlushed } from "@gablejs/core/internal";
+import { createDomRenderer } from "@gablejs/renderer-dom";
 
 // jsdom has neither; Zag's positioning (Floating UI autoUpdate) observes with both.
 class NoopObserver {

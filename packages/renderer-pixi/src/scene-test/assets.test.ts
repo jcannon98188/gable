@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createComponent, createInjector, flushSync, html, inject, whenFlushed } from "@gable/core";
+import { createComponent, createInjector, flushSync, html, inject, whenFlushed } from "@gablejs/core";
 import { Assets } from "../index.js";
 import { createSceneTestRenderer, provideTestAssets } from "../testing.js";
 

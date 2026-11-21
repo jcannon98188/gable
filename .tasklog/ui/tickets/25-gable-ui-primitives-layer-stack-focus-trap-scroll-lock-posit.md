@@ -1,6 +1,6 @@
 ---
 kind: ticket
-title: "@gable/ui-primitives: layer stack, focus trap, scroll lock, positioning"
+title: "@gablejs/ui-primitives: layer stack, focus trap, scroll lock, positioning"
 status: resolved
 blocked_by: [20, core/21, core/22, core/23]
 tags:
@@ -20,7 +20,7 @@ The shared primitive layer under the components: dismissable layer stack (Escape
 
 ## Acceptance criteria
 
-- [x] #1 New package @gable/ui-primitives with each utility documented and tested
+- [x] #1 New package @gablejs/ui-primitives with each utility documented and tested
 - [x] #2 Positioning updates and cleanup are tied to the component scope
 - [x] #3 Layer stack handles nested overlays correctly (only the topmost dismisses)
 
@@ -34,4 +34,4 @@ Added to packages/ui-primitives: layer.ts (useLayer, UiLayer, isTopmostLayer), p
 
 ## Answer
 
-Added layer (useLayer/uiLayer: Zag layer stack, focus trap and restore, scroll lock, aria-hidden outside), positioning (usePosition/uiPosition on @floating-ui/dom, scope-cleaned autoUpdate) and roving tabindex (useRovingTabindex/uiRoving) to @gable/ui-primitives, with docs in docs/ui-primitives.md, and added the select/combobox/menu/dismissable/focus-trap/remove-scroll/aria-hidden and @floating-ui/dom dependencies. Verified by 80 passing tests in packages/ui-primitives (jsdom and in-memory) and clean tsc. Limits are listed in the notes.
+Added layer (useLayer/uiLayer: Zag layer stack, focus trap and restore, scroll lock, aria-hidden outside), positioning (usePosition/uiPosition on @floating-ui/dom, scope-cleaned autoUpdate) and roving tabindex (useRovingTabindex/uiRoving) to @gablejs/ui-primitives, with docs in docs/ui-primitives.md, and added the select/combobox/menu/dismissable/focus-trap/remove-scroll/aria-hidden and @floating-ui/dom dependencies. Verified by 80 passing tests in packages/ui-primitives (jsdom and in-memory) and clean tsc. Limits are listed in the notes.

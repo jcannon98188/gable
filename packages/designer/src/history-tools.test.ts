@@ -8,7 +8,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { afterAll, describe, expect, it } from "vitest";
-import type { HistoryInfo, HistoryStep } from "@gable/core/devtools";
+import type { HistoryInfo, HistoryStep } from "@gablejs/core/devtools";
 import type { ControlRequest, HistoryAction, HistoryResult } from "./control-protocol.js";
 import { EditService } from "./server/edit/service.js";
 import { ShellBridge } from "./server/mcp/bridge.js";

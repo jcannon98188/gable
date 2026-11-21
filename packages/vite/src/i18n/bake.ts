@@ -1,7 +1,7 @@
 // Baking: rewrites the marked text of `html` templates and `i18n` tagged templates to one locale's translations,
 // and removes the markers, so the output needs no catalog and no locale switching.
 import MagicString, { type SourceMap } from "magic-string";
-import { decodeEntities, encodeEntities, dateFormatOptions, extractTemplateMessages, messageFromParts, messageFromStrings, messageId, numberFormatOptions, parseMarker, parseMessage, type MessageNode } from "@gable/core/tooling";
+import { decodeEntities, encodeEntities, dateFormatOptions, extractTemplateMessages, messageFromParts, messageFromStrings, messageId, numberFormatOptions, parseMarker, parseMessage, type MessageNode } from "@gablejs/core/tooling";
 import { assertNoEscapes } from "./extract.js";
 import { DYNAMIC_CALL, cook, lineOf, scanTemplates } from "./scan.js";
 
@@ -49,7 +49,7 @@ const FORM_HELPERS = {
 } as const;
 type FormHelper = keyof typeof FORM_HELPERS;
 
-export const BAKE_PRELUDE = `import { computed as __gableComputed } from "@gable/core";\n${VALUE_HELPER}`;
+export const BAKE_PRELUDE = `import { computed as __gableComputed } from "@gablejs/core";\n${VALUE_HELPER}`;
 
 /** Bakes one module. Returns the same code when there is nothing to do. */
 export function bakeSource(code: string, file: string, options: BakeOptions): BakeResult {

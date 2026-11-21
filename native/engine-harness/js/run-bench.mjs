@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Gable-level benchmarks: the bench/*.bench.ts workloads plus @gable/ui
+// Gable-level benchmarks: the bench/*.bench.ts workloads plus @gablejs/ui
 // bundle startup, on the AgniJS engine, the interim engine (QuickJS-NG) and
 // Node (for reference). Each (engine, benchmark) pair runs in its own
 // process so peak RSS belongs to that workload alone.

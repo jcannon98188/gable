@@ -1,4 +1,4 @@
 @import "tailwindcss";
-@import "@gable/ui/theme.css";
+@import "@gablejs/ui/theme.css";
 @source "../../ui/src";
 @source "../src";

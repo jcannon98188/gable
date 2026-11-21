@@ -1,10 +1,10 @@
-// Template-side edits. The position authority is @gable/template-format's lossless parser (`parseTemplateTree`): every
+// Template-side edits. The position authority is @gablejs/template-format's lossless parser (`parseTemplateTree`): every
 // element, attribute, text run and block has source offsets there, and the runtime's `pos` is only a handle into that tree
 // (matched by the offset of the `<` and checked by tag name, so a stale handle is refused rather than mapped to the wrong place).
 // Everything here works on one template literal's body, as the LF text JavaScript sees (the file side maps CRLF), and turns an
 // operation into text hunks: replacements of exactly the characters that change, plus new lines where markup is inserted.
-import { findHtmlLiterals, formatTemplate, formatTemplateLiteral, parseTemplateTree, type AttrInfo, type TemplateItem, type TemplateLiteralSpan } from "@gable/template-format";
-import { VOID } from "@gable/core/tooling";
+import { findHtmlLiterals, formatTemplate, formatTemplateLiteral, parseTemplateTree, type AttrInfo, type TemplateItem, type TemplateLiteralSpan } from "@gablejs/template-format";
+import { VOID } from "@gablejs/core/tooling";
 import { diffHunk, type Hunk } from "./hunks.js";
 import type { AttrModel, BindingKind, EditError, EditOp, NodeModel, SiblingRef, TargetRef, TextModel, Where, WrapWith } from "./types.js";
 

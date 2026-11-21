@@ -1,7 +1,7 @@
 // Design tokens (designer/79): the project's CSS custom properties as the backend reads them (`/api/tokens/*`), the uses of
 // one, and the tokens the selected element reads. Edits go through EditState as the `setToken` op, so a token edit is a
 // minimal patch on the same undo history (toast with Undo, Ctrl+Z) as every other edit. Nothing is read in the shell itself.
-import { computed, effect, inject, signal, untracked } from "@gable/core";
+import { computed, effect, inject, signal, untracked } from "@gablejs/core";
 import type { ElementToken, TokenDef, TokenInfo, TokenList, TokenTarget, TokenUsage, TokenUsagesResult } from "../../../src/server/tokens/types.js";
 import { DesignerState } from "./designer-state.js";
 import { EditState } from "./edit-state.js";

@@ -1,6 +1,6 @@
-import { effect, input, output, signal, untracked, type ReadonlySignal } from "@gable/core";
-import { currentScope, injectHost } from "@gable/core/internal";
-import type { Renderer } from "@gable/core/renderer";
+import { effect, input, output, signal, untracked, type ReadonlySignal } from "@gablejs/core";
+import { currentScope, injectHost } from "@gablejs/core/internal";
+import type { Renderer } from "@gablejs/core/renderer";
 
 /** The screen edge a drawer is attached to. It decides the drag axis and which direction closes the panel. */
 export type DrawerSide = "top" | "right" | "bottom" | "left";

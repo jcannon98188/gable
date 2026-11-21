@@ -1,4 +1,4 @@
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 
 interface Row {
   id: number;

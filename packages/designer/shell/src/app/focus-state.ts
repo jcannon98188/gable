@@ -3,7 +3,7 @@
 // view: the numbered focus order overlay and keyboard-only mode, which the agent forgets when the page reloads, so they are
 // sent again whenever the frame connects. Reports are only refreshed while the panel (or the overlay) is showing; MCP reads
 // on demand. Nothing is cached across pages: a report names the page it was taken on.
-import { computed, effect, inject, signal, untracked } from "@gable/core";
+import { computed, effect, inject, signal, untracked } from "@gablejs/core";
 import type { A11yTreeNode, A11yTreeReport, FocusEntry, FocusOrderReport, FocusStepResult } from "../../../src/protocol.js";
 import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";

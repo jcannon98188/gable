@@ -3,7 +3,7 @@
 // `TargetRef` (and back), and a before/after pair of file texts into a unified diff.
 import { existsSync, readFileSync } from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
-import { findHtmlLiterals, parseTemplateTree } from "@gable/template-format";
+import { findHtmlLiterals, parseTemplateTree } from "@gablejs/template-format";
 import { sourceText } from "../source.js";
 import { elementsOf } from "../edit/template.js";
 import type { TargetRef } from "../edit/types.js";

@@ -33,7 +33,7 @@ The baseline CKEditor-style experience: what users expect from any rich text edi
 
 ## Implementation notes
 
-Plugins in src/plugins/formatting.ts; toolbar view-model src/toolbar-model.ts; <gable-editor> in src/component/editor-element.ts. 54 tests incl. jsdom component tests (axe clean, keyboard nav, readonly, bubble toolbar, value sync). Notes: template language has no ?: so view-model rows are computed; @gable/ui is a private/copied pack so the editor depends on it for UiToggle; toolbar uses text glyphs because gable-ui has only 18 icons (icon set follow-up); the link item uses window.prompt for the URL until a popover UI exists; bubble position is basic (no collision handling).
+Plugins in src/plugins/formatting.ts; toolbar view-model src/toolbar-model.ts; <gable-editor> in src/component/editor-element.ts. 54 tests incl. jsdom component tests (axe clean, keyboard nav, readonly, bubble toolbar, value sync). Notes: template language has no ?: so view-model rows are computed; @gablejs/ui is a private/copied pack so the editor depends on it for UiToggle; toolbar uses text glyphs because gable-ui has only 18 icons (icon set follow-up); the link item uses window.prompt for the URL until a popover UI exists; bubble position is basic (no collision handling).
 
 ## Answer
 

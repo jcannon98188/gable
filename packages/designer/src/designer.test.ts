@@ -43,7 +43,7 @@ describe("protocol", () => {
 
 describe("source mapping", () => {
   const body = `\n      <ul>\n        <li class="a">one</li>\n      </ul>\n    `;
-  const file = (nl: string) => `import { html } from '@gable/core';\nexport class X {\n  static meta = { template: html\`${body}\` };\n}\n`.replaceAll("\n", nl);
+  const file = (nl: string) => `import { html } from '@gablejs/core';\nexport class X {\n  static meta = { template: html\`${body}\` };\n}\n`.replaceAll("\n", nl);
 
   it("finds the literal by content and maps a range to line and column, in LF and CRLF files", () => {
     for (const nl of ["\n", "\r\n"]) {

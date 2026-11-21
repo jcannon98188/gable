@@ -1,6 +1,6 @@
 ---
 kind: ticket
-title: "Root npm run build: @gable/ui fails on command.ts regex"
+title: "Root npm run build: @gablejs/ui fails on command.ts regex"
 status: resolved
 tags:
   - ui

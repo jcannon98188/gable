@@ -12,15 +12,15 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@gable/core": "~{{version}}",
-    "@gable/renderer-dom": "~{{version}}",
+    "@gablejs/core": "~{{version}}",
+    "@gablejs/renderer-dom": "~{{version}}",
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
-    "@gable/language-service": "~{{version}}",
-    "@gable/prettier-plugin": "~{{version}}",
-    "@gable/testing": "~{{version}}",
-    "@gable/vite": "~{{version}}",
+    "@gablejs/language-service": "~{{version}}",
+    "@gablejs/prettier-plugin": "~{{version}}",
+    "@gablejs/testing": "~{{version}}",
+    "@gablejs/vite": "~{{version}}",
     "@tailwindcss/vite": "^4.3.4",
     "prettier": "^3.9.0",
     "tailwindcss": "^4.3.4",

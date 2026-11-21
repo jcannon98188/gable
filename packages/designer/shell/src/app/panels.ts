@@ -1,7 +1,7 @@
 // The side panels. Templates only read signals (the language service enforces it), so each panel turns the Designer state into
 // display-ready rows in a `computed` and the template just lays them out.
-import { computed, effect, html, inject, signal, untracked } from "@gable/core";
-import type { Preview, TreeNode } from "@gable/core/devtools";
+import { computed, effect, html, inject, signal, untracked } from "@gablejs/core";
+import type { Preview, TreeNode } from "@gablejs/core/devtools";
 import type { OutlineRow } from "../../../src/server/edit/outline.js";
 import type { PaletteEntry } from "../../../src/server/edit/types.js";
 

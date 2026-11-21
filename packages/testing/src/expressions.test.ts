@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
-import { mount } from "@gable/testing";
-import type { TemplateResult } from "@gable/core";
+import { html, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
+import type { TemplateResult } from "@gablejs/core";
 
 let n = 0;
 /** Mounts a one-off component; each call is a distinct call site via a fresh strings array. */

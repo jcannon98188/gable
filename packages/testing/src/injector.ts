@@ -1,5 +1,5 @@
-import { createInjector, type Injector, type Provider } from "@gable/core";
-import { HttpBackend } from "@gable/core/http";
+import { createInjector, type Injector, type Provider } from "@gablejs/core";
+import { HttpBackend } from "@gablejs/core/http";
 import { HttpTestingBackend } from "./http.js";
 
 /**

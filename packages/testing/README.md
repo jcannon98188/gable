@@ -1,11 +1,11 @@
-# @gable/testing
+# @gablejs/testing
 
 Test harness for Gable components: mounts into an in-memory renderer, no jsdom or browser needed.
 
 ## Install
 
 ```sh
-npm install @gable/testing
+npm install @gablejs/testing
 ```
 
 ## Documentation

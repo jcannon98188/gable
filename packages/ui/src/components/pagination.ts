@@ -1,5 +1,5 @@
-import { computed, html, inject, input, model } from "@gable/core";
-import { PaginationState, UiProps } from "@gable/ui-primitives";
+import { computed, html, inject, input, model } from "@gablejs/core";
+import { PaginationState, UiProps } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 import { UiIcon } from "../lib/icon.js";
 import { buttonVariants } from "./button.js";

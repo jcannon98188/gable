@@ -1,11 +1,11 @@
-# @gable/store
+# @gablejs/store
 
-A signal-based state container in the style of NgRx SignalStore, built on core signals, `computed`, `inject()` and scopes. It adds nothing to `@gable/core` beyond a few functions: a store is a plain class made from features.
+A signal-based state container in the style of NgRx SignalStore, built on core signals, `computed`, `inject()` and scopes. It adds nothing to `@gablejs/core` beyond a few functions: a store is a plain class made from features.
 
 ## Install
 
 ```
-npm install @gable/store @gable/core
+npm install @gablejs/store @gablejs/core
 ```
 
 ## A store
@@ -13,7 +13,7 @@ npm install @gable/store @gable/core
 State, derived values and methods are separate features, passed to `signalStore` in the order they build on each other. A later feature sees everything an earlier one added.
 
 ```ts
-import { patchState, signalStore, withComputed, withMethods, withState } from "@gable/store";
+import { patchState, signalStore, withComputed, withMethods, withState } from "@gablejs/store";
 
 export class TodoStore extends signalStore(
   withState({ todos: [] as Todo[], filter: "all" as Filter }),
@@ -59,6 +59,6 @@ Updates are shallow merges, so replace nested objects rather than mutating them.
 
 ## Go deeper
 
-The [store guide](../store.md) is the full reference: lifecycle details, `rxMethod` error handling, persistence options, entity updaters, hot reload, the language-service rules that catch store mistakes, and the design decisions behind deep signals and typing. For checking a store in a test, provide it with `createTestInjector` from [@gable/testing](./testing.md).
+The [store guide](../store.md) is the full reference: lifecycle details, `rxMethod` error handling, persistence options, entity updaters, hot reload, the language-service rules that catch store mistakes, and the design decisions behind deep signals and typing. For checking a store in a test, provide it with `createTestInjector` from [@gablejs/testing](./testing.md).
 
 Every exported symbol is documented in the API reference, linked below.

@@ -1,4 +1,4 @@
-import { computed, effect, html, input, model, output, signal } from "@gable/core";
+import { computed, effect, html, input, model, output, signal } from "@gablejs/core";
 import { format, isAfter, isBefore, isValid, parse, startOfDay } from "date-fns";
 import { cn } from "../lib/cn.js";
 import { useHostClass } from "../lib/host-class.js";

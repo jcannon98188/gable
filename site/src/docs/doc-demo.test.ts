@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { html, signal, type ComponentClass } from "@gable/core";
-import { bootstrap } from "@gable/core";
-import { dom } from "@gable/renderer-dom";
+import { html, signal, type ComponentClass } from "@gablejs/core";
+import { bootstrap } from "@gablejs/core";
+import { dom } from "@gablejs/renderer-dom";
 import { DEMOS, demoByName, type DemoEntry } from "./demos.js";
 import { DocDemo } from "./doc-demo.js";
 import { DocMarkdown } from "./doc-markdown.js";
@@ -116,7 +116,7 @@ describe("package guides", () => {
   it("loads docs/packages/<slug>.md and returns null for a package without one", async () => {
     expect(packageGuideSlugs()).toContain("core");
     const doc = await loadPackageGuide("core");
-    expect(doc!.title).toBe("@gable/core");
+    expect(doc!.title).toBe("@gablejs/core");
     expect(doc!.blocks.some((b) => b.kind === "demo" && b.lang === "signals")).toBe(true);
     expect(await loadPackageGuide("no-such-package")).toBeNull();
   });
@@ -128,7 +128,7 @@ describe("package guides", () => {
 
   it("includes package guides in search", async () => {
     const guide = (await loadPackageGuide("core"))!;
-    const pkg = { name: "@gable/core", slug: "core", description: "", entryPoints: [] } as unknown as ApiPackage;
+    const pkg = { name: "@gablejs/core", slug: "core", description: "", entryPoints: [] } as unknown as ApiPackage;
     const idx = buildSearchIndex(new Map(), [pkg], new Map([["core", guide]]));
     const hits = search(idx, "decorators");
     expect(hits[0]!.entry.url).toBe("/docs/core");

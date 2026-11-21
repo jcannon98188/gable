@@ -1,6 +1,6 @@
 // The heavy half of <gable-canvas>: a component whose template is built with the Pixi renderer. This module (and
 // renderer.ts, and pixi.js behind it) is reached only through the host's dynamic import (canvas/117).
-import { hotData, html, input, isHotUpdating } from "@gable/core";
+import { hotData, html, input, isHotUpdating } from "@gablejs/core";
 import type { Container } from "pixi.js";
 import { DEV } from "./dev.js";
 import { createPixiRenderer, type PixiRendererOptions, type PixiSceneRenderer } from "./renderer.js";

@@ -1,8 +1,8 @@
-# @gable/devtools-extension
+# @gablejs/devtools-extension
 
 A browser extension (Manifest V3, for Chrome, Edge and other Chromium browsers) that adds a **Gable** panel to the browser devtools. It shows the component tree, each component's inputs, signals and computeds with live values and dependency edges, an effect log with flush timings, the injector tree, router state, HMR events and anything your stores register. It is an application: a private extension bundle that nothing imports, so there is no API reference for it. The full guide, with the manual test checklist, is [Devtools](../devtools.md).
 
-It works on **development builds only**. The instrumentation lives in `@gable/core` behind the `DEV` flag and is removed from production builds, so a production page has no hook and the panel shows "Waiting for a Gable app".
+It works on **development builds only**. The instrumentation lives in `@gablejs/core` behind the `DEV` flag and is removed from production builds, so a production page has no hook and the panel shows "Waiting for a Gable app".
 
 ## Install it
 
@@ -39,11 +39,11 @@ const handle = hook?.registerInspector("cart", { label: "Cart store", snapshot: 
 handle?.log("add", { sku: "a1" });
 ```
 
-`snapshot()` is called whenever the Stores tab refreshes, and `log(type, data)` appends a history entry (the last 500 are kept). Guard the registration with `DEV` so production builds drop it. No dependency on core internals is needed. For a `signalStore`, the `withDevtools("Cart")` feature from `@gable/store` does this for you.
+`snapshot()` is called whenever the Stores tab refreshes, and `log(type, data)` appends a history entry (the last 500 are kept). Guard the registration with `DEV` so production builds drop it. No dependency on core internals is needed. For a `signalStore`, the `withDevtools("Cart")` feature from `@gablejs/store` does this for you.
 
 ## How it works
 
-`@gable/core` installs `window.__GABLE_DEVTOOLS_HOOK__` in development. A script in the page's own world (`inject.js`) speaks a protocol over `window.postMessage`, a content script relays it to the service worker, and the service worker relays it to the devtools panel and sets the badge. The panel itself is plain TypeScript, not Gable, so it adds no dependency on the framework it inspects and cannot inspect itself.
+`@gablejs/core` installs `window.__GABLE_DEVTOOLS_HOOK__` in development. A script in the page's own world (`inject.js`) speaks a protocol over `window.postMessage`, a content script relays it to the service worker, and the service worker relays it to the devtools panel and sets the badge. The panel itself is plain TypeScript, not Gable, so it adds no dependency on the framework it inspects and cannot inspect itself.
 
 ## Why there is no live demo here
 

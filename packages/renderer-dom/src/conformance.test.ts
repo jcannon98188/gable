@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { defineRendererConformance } from "@gable/testing/renderer";
+import { defineRendererConformance } from "@gablejs/testing/renderer";
 import { createDomRenderer } from "./index.js";
 
 defineRendererConformance<Node>(

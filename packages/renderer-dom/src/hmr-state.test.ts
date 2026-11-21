@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { bootstrap, flushSync, html, signal } from "@gable/core";
-import { applyUpdate } from "@gable/core/hmr";
+import { bootstrap, flushSync, html, signal } from "@gablejs/core";
+import { applyUpdate } from "@gablejs/core/hmr";
 import { afterEach } from "vitest";
 import { dom } from "./index.js";
 

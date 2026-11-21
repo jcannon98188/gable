@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mount } from "@gable/testing";
+import { mount } from "@gablejs/testing";
 import { SiteRoot } from "./root.js";
 import { SiteNav } from "./site-nav.js";
 import { ThemeStore } from "./theme.js";

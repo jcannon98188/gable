@@ -1,6 +1,6 @@
-import { effect, inject, input, signal, untracked, type ReadonlySignal } from "@gable/core";
-import { currentScope, injectHost } from "@gable/core/internal";
-import type { Renderer } from "@gable/core/renderer";
+import { effect, inject, input, signal, untracked, type ReadonlySignal } from "@gablejs/core";
+import { currentScope, injectHost } from "@gablejs/core/internal";
+import type { Renderer } from "@gablejs/core/renderer";
 import { autoUpdate, computePosition, flip, offset as offsetMiddleware, shift, size, type Placement, type Strategy } from "@floating-ui/dom";
 import { MACHINE_ENV } from "./env.js";
 

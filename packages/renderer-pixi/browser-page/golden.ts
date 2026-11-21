@@ -1,8 +1,8 @@
 // Page bundled by browser-golden.test.ts (canvas/133): a few small scenes, each in its own <gable-canvas> boundary,
 // reporting the rendered pixels (RGBA, base64) of each. No text and no external assets: those depend on fonts and
 // the network, not on the renderer. Shapes only, so a golden changes when rendering changes, not when the machine does.
-import { bootstrap, html } from "@gable/core";
-import { createDomRenderer } from "@gable/renderer-dom";
+import { bootstrap, html } from "@gablejs/core";
+import { createDomRenderer } from "@gablejs/renderer-dom";
 import { Application, Rectangle } from "pixi.js";
 import { GableCanvas } from "../src/host.js";
 import { pixiRenderer } from "../src/renderer.js";

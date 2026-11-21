@@ -1,4 +1,4 @@
-import { html, input } from "@gable/core";
+import { html, input } from "@gablejs/core";
 import type { Inline } from "./markdown.js";
 import { DocLink } from "./doc-link.js";
 

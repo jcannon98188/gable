@@ -1,5 +1,5 @@
 {
-  "name": "@gable/template-format",
+  "name": "@gablejs/template-format",
   "version": "0.0.0",
   "description": "Formatter for Gable html template literals, with the gable-format CLI.",
   "license": "MIT",
@@ -30,7 +30,7 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@gable/core": "0.0.0"
+    "@gablejs/core": "0.0.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.6"

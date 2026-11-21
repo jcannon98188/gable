@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Container, Sprite } from "pixi.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { bootstrap, html, inject, signal } from "@gable/core";
-import { createDomRenderer } from "@gable/renderer-dom";
+import { bootstrap, html, inject, signal } from "@gablejs/core";
+import { createDomRenderer } from "@gablejs/renderer-dom";
 import { CanvasSize, GableCanvas, pixiRenderer, type ApplicationLike, type PixiRendererOptions } from "./index.js";
 
 // A stand-in Application: jsdom has no WebGL. It records what the renderer asked of it.

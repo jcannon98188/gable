@@ -1,4 +1,4 @@
-import { VOID } from "@gable/core/tooling";
+import { VOID } from "@gablejs/core/tooling";
 import { parseTemplate, type Item } from "./parse.js";
 import { findHtmlLiterals, type TemplateLiteralSpan } from "./scan.js";
 

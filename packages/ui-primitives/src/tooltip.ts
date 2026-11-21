@@ -1,4 +1,4 @@
-import { inject } from "@gable/core";
+import { inject } from "@gablejs/core";
 import * as tooltip from "@zag-js/tooltip";
 import { bindProps } from "./props.js";
 import { machineState } from "./state.js";

@@ -1,4 +1,4 @@
-import { computed, effect, injectHost, input } from "@gable/core";
+import { computed, effect, injectHost, input } from "@gablejs/core";
 import { Calendar, Check, Copy, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsUpDown, Circle, CircleAlert, Ellipsis, GripVertical, Minus, X } from "lucide";
 import { cn } from "./cn.js";
 

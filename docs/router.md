@@ -1,15 +1,15 @@
 # Router
 
-The router lives in `@gable/core/router`. It matches the URL against a plain array of route objects, renders the matched component in a `<router-outlet>`, and exposes the current URL, params and data as signals. It imports RxJS, a peer dependency of `@gable/core`.
+The router lives in `@gablejs/core/router`. It matches the URL against a plain array of route objects, renders the matched component in a `<router-outlet>`, and exposes the current URL, params and data as signals. It imports RxJS, a peer dependency of `@gablejs/core`.
 
 ## Set it up
 
 Pass `provideRouter(routes)` as providers when you bootstrap, and put a `<router-outlet>` in your root component:
 
 ```ts
-import { bootstrap, html } from '@gable/core';
-import { provideRouter, RouterOutlet, type Route } from '@gable/core/router';
-import { dom } from '@gable/renderer-dom';
+import { bootstrap, html } from '@gablejs/core';
+import { provideRouter, RouterOutlet, type Route } from '@gablejs/core/router';
+import { dom } from '@gablejs/renderer-dom';
 
 class Home {
   static meta = { selector: 'app-home', template: html`<h1>Home</h1>` };
@@ -170,7 +170,7 @@ class Nav {
 Guards are plain functions in `canActivate`, `canDeactivate` and `canMatch`. They run in an injection context, so `inject()` works. Each may return a boolean, a `Promise` or an `Observable` (the first value is used). Return `false` to cancel, or `redirect(url)` to navigate elsewhere.
 
 ```ts
-import { redirect } from '@gable/core/router';
+import { redirect } from '@gablejs/core/router';
 
 const requireLogin = async () => (inject(Auth).loggedIn() ? true : redirect('/login'));
 
@@ -187,10 +187,10 @@ const routes: Route[] = [
 
 ## Lazy routes
 
-`lazy()` from `@gable/core` is the same helper `@defer` uses. A lazy `component` is loaded before the navigation commits, so the old view stays until the new one is ready. `router.navigating()` is true meanwhile. Lazy `children` are loaded to match them.
+`lazy()` from `@gablejs/core` is the same helper `@defer` uses. A lazy `component` is loaded before the navigation commits, so the old view stays until the new one is ready. `router.navigating()` is true meanwhile. Lazy `children` are loaded to match them.
 
 ```ts
-import { lazy } from '@gable/core';
+import { lazy } from '@gablejs/core';
 
 const routes: Route[] = [
   { path: 'about', component: lazy(() => import('./about.js'), 'About') },
@@ -240,7 +240,7 @@ const routes = [
 
 Fields: `description`, `robots`, `themeColor` (`theme-color`), `canonical` (`<link rel="canonical">`), `og` (`og:*` properties) and `twitter` (`twitter:*` names). Tags merge from the root route down: a child wins per field, and `og` and `twitter` merge per key. On every navigation the merged result replaces the previous route's tags, so nothing leaks between pages. A tag the page already has in `index.html` is updated in place and restored when no route sets it; tags Gable adds are removed.
 
-Inject `Meta` (from `@gable/core/renderer`) to set tags from code, for example once data has loaded: `meta.update({ description })` merges, `meta.set(tags)` replaces, `meta.clear()` removes. The next navigation resets them to the new route's declaration. Tags are written to `document.head` in the browser; they are not rendered into static HTML.
+Inject `Meta` (from `@gablejs/core/renderer`) to set tags from code, for example once data has loaded: `meta.update({ description })` merges, `meta.set(tags)` replaces, `meta.clear()` removes. The next navigation resets them to the new route's declaration. Tags are written to `document.head` in the browser; they are not rendered into static HTML.
 
 In tests, `app.meta.entries` lists the current head entries (`{ kind: 'name' | 'property' | 'link', key, value }`) and `app.meta.get()` the tags.
 
@@ -277,10 +277,10 @@ The announcements come from the `LiveAnnouncer` service (see [Accessibility chec
 
 ## Testing
 
-`mountApp` from `@gable/testing` mounts a root component with a router and an in-memory Location, History and Title. No browser is needed, and `url` sets the starting URL.
+`mountApp` from `@gablejs/testing` mounts a root component with a router and an in-memory Location, History and Title. No browser is needed, and `url` sets the starting URL.
 
 ```ts
-import { mountApp } from '@gable/testing';
+import { mountApp } from '@gablejs/testing';
 
 const app = mountApp(Root, { routes, url: '/users/4' });
 await app.settle(); // also waits for the initial navigation
@@ -336,4 +336,4 @@ app.dispatch(app.query('app-home')!, 'animationend', { target: app.query('app-ho
 
 ### Animating lists
 
-The same hook animates `@for`, `@if` and `@switch`. Put `uiPresence` (from `@gable/ui-primitives`) on the row: it sets `data-state` and keeps the row mounted until its exit animation ends. Style `[data-state='closed']` with the exit and the row's base style with the enter; keyed `@for` moves rows without replaying either. Components can call `usePresence()` directly. See `examples/ui-gallery/src/transitions-demo.ts` (open `/transitions.html` in the dev server) for a routed page set, a list with presence, and a jsdom test.
+The same hook animates `@for`, `@if` and `@switch`. Put `uiPresence` (from `@gablejs/ui-primitives`) on the row: it sets `data-state` and keeps the row mounted until its exit animation ends. Style `[data-state='closed']` with the exit and the row's base style with the enter; keyed `@for` moves rows without replaying either. Components can call `usePresence()` directly. See `examples/ui-gallery/src/transitions-demo.ts` (open `/transitions.html` in the dev server) for a routed page set, a list with presence, and a jsdom test.

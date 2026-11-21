@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mount } from "@gable/testing";
+import { mount } from "@gablejs/testing";
 import { Counter } from "./counter.js";
 
 describe("Counter", () => {

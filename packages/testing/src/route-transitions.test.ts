@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { html } from "@gable/core";
-import { RouterOutlet, provideRouteTransitions, type Route } from "@gable/core/router";
+import { html } from "@gablejs/core";
+import { RouterOutlet, provideRouteTransitions, type Route } from "@gablejs/core/router";
 import { mountApp } from "./index.js";
 
 class Home {

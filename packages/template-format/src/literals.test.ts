@@ -4,7 +4,7 @@ import { formatTemplateLiterals, runCli, type CliIo } from "./index.js";
 describe("formatTemplateLiterals: only html template literals are edited", () => {
   it("rewrites html literals with the indentation of their line and leaves every other byte alone", () => {
     const src = [
-      "import { html } from '@gable/core';",
+      "import { html } from '@gablejs/core';",
       "// html`<p>  comment </p>`",
       'const s = "html`<p>  string </p>`";',
       "const c = css`a   {  color: red }`;",
@@ -18,7 +18,7 @@ describe("formatTemplateLiterals: only html template literals are edited", () =>
     ].join("\n");
     expect(formatTemplateLiterals(src)).toBe(
       [
-        "import { html } from '@gable/core';",
+        "import { html } from '@gablejs/core';",
         "// html`<p>  comment </p>`",
         'const s = "html`<p>  string </p>`";',
         "const c = css`a   {  color: red }`;",

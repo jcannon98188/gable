@@ -1,5 +1,5 @@
 {
   "extends": "../tsconfig.fixture.json",
-  "compilerOptions": { "plugins": [{ "name": "@gable/language-service", "rules": { "scene-pointer-a11y": "off" } }] },
+  "compilerOptions": { "plugins": [{ "name": "@gablejs/language-service", "rules": { "scene-pointer-a11y": "off" } }] },
   "include": ["src"]
 }

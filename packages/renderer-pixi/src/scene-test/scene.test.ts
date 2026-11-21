@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createComponent, flushSync, html, signal } from "@gable/core";
+import { createComponent, flushSync, html, signal } from "@gablejs/core";
 import { createSceneTestRenderer } from "../testing.js";
 
 function build(template: ReturnType<typeof html>, setup: object = {}, options = {}) {

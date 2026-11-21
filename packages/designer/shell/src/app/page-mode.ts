@@ -1,7 +1,7 @@
 // The page-mode UI: the Routes tab (route tree with add and edit written back to the route config, the scenario picker, the
 // active scenario's mocks); the drawer's Network panel is network-panel.ts. The URL bar lives in the canvas toolbar
 // (see DeviceBar). Like the panels, templates only read signals; the components turn the state into display-ready rows in `computed`s.
-import { computed, effect, html, inject, signal, untracked } from "@gable/core";
+import { computed, effect, html, inject, signal, untracked } from "@gablejs/core";
 import { UiButton } from "../components/ui/button.js";
 import { UiDialog } from "../components/ui/dialog.js";
 import { UiSelect } from "../components/ui/select.js";

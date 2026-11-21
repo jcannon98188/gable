@@ -1,5 +1,5 @@
-import { computed, html, signal } from "@gable/core";
-import { formatTemplateLiterals } from "@gable/template-format";
+import { computed, html, signal } from "@gablejs/core";
+import { formatTemplateLiterals } from "@gablejs/template-format";
 import { demoStyles } from "../signals/demo-style.js";
 
 /** A component with a badly laid out template: the sample the demo starts with. */
@@ -18,7 +18,7 @@ export const SAMPLE = [
 ].join("\n");
 
 /**
- * The real `formatTemplateLiterals` from `@gable/template-format`, the function behind the `gable-format` CLI and the
+ * The real `formatTemplateLiterals` from `@gablejs/template-format`, the function behind the `gable-format` CLI and the
  * Prettier plugin. It rewrites only the `html` template literals in the source; everything else is left byte for byte.
  */
 export class FormatDemo {

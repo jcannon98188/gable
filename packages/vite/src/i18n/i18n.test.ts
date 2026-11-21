@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { messageId, parseMessage } from "@gable/core/tooling";
+import { messageId, parseMessage } from "@gablejs/core/tooling";
 import { describe, expect, it } from "vitest";
 import { bakeSource, dynamicCalls } from "./bake.js";
 import { readCatalogFile, writeCatalogs } from "./catalogs.js";
@@ -10,7 +10,7 @@ import { setHtmlLang } from "./plugin.js";
 import { scanTemplates } from "./scan.js";
 
 const sample = [
-  'import { html, i18n, signal } from "@gable/core";',
+  'import { html, i18n, signal } from "@gablejs/core";',
   "export class Inbox {",
   "  static meta = {",
   "    selector: 'x-inbox',",

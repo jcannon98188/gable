@@ -1,11 +1,11 @@
 // Extract component: moves an element of a template into a new component in a file beside it and uses the component in its
-// place. Positions come from @gable/template-format's parser, like every template edit. Only static markup moves: a binding,
+// place. Positions come from @gablejs/template-format's parser, like every template edit. Only static markup moves: a binding,
 // event, reference, block or interpolation reads the old component's state, and carrying that over would mean writing code
 // (inputs, outputs), so such a selection is refused with the reason. The new file is written formatter-clean; the source gets
 // a minimal patch (the element replaced, the class imported and listed in `imports`), and both are one undo step.
 import { existsSync } from "node:fs";
 import { dirname, join, posix } from "node:path";
-import { findHtmlLiterals, formatTemplate, formatTemplateLiteral, parseTemplateTree, type TemplateItem, type TemplateLiteralSpan } from "@gable/template-format";
+import { findHtmlLiterals, formatTemplate, formatTemplateLiteral, parseTemplateTree, type TemplateItem, type TemplateLiteralSpan } from "@gablejs/template-format";
 import type { Hunk } from "./hunks.js";
 import { ensureImport, ensureMetaImport, metaAround } from "./meta.js";
 import { applyPlan, elementsOf, fail, findTarget, type El, type Entry, type FormatOptions } from "./template.js";
@@ -226,7 +226,7 @@ export function planExtract(ctx: ExtractCtx, op: ExtractOp): ExtractPlan | EditE
   const htmlImport = /^import\s*\{[^}]*\bhtml\b[^}]*\}\s*from\s*(['"])([^'"\n]+)\1(;?)/m.exec(text);
   const quote = htmlImport?.[1] ?? "'";
   const semi = htmlImport ? htmlImport[3] : ";";
-  const spec = htmlImport?.[2] ?? "@gable/core";
+  const spec = htmlImport?.[2] ?? "@gablejs/core";
   const unit = fo.useTabs ? "\t" : " ".repeat(fo.indentSize);
   const markup = formatTemplate(body.slice(entry.el.start, entry.el.end), { indentSize: fo.indentSize, useTabs: fo.useTabs, printWidth: Infinity });
   const typed = props.map((p) => ({ name: p, type: inputType(text, p) }));

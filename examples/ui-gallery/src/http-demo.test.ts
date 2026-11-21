@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mountScene } from '@gable/testing';
+import { mountScene } from '@gablejs/testing';
 import scenes from './http-demo.scenes.js';
 
 describe('UserList scenes (the HTTP mocks answer; the test answers nothing by hand)', () => {

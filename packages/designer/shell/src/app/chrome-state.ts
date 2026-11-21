@@ -1,6 +1,6 @@
 // The window itself: theme, which tabs and dialogs are open, and the panel sizes. Remembered per project through the backend
 // (see ChromeSettings in devices.ts), never in the browser, whose origin changes with every launch of the desktop app.
-import { computed, effect, inject, signal, untracked } from "@gable/core";
+import { computed, effect, inject, signal, untracked } from "@gablejs/core";
 import type { ChromeSettings } from "../../../src/devices.js";
 import { DesignerState } from "./designer-state.js";
 

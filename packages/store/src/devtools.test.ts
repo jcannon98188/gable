@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { inject } from "@gable/core";
-import { createDevtools, type DevtoolsInstance, type InspectorInfo } from "@gable/core/devtools";
-import { createTestInjector } from "@gable/testing";
+import { inject } from "@gablejs/core";
+import { createDevtools, type DevtoolsInstance, type InspectorInfo } from "@gablejs/core/devtools";
+import { createTestInjector } from "@gablejs/testing";
 import { patchState, signalStore, withDevtools, withMethods, withState } from "./index.js";
 
 let dt: DevtoolsInstance;

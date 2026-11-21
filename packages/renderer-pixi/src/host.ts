@@ -4,7 +4,7 @@
 // loads, the host shows the `placeholder` slot (a quiet empty box by default).
 //
 // Do not import pixi.js, ./renderer.js or ./scene.js statically here: the lazy chunk would stop being lazy.
-import { computed, html, inject, injectHost, input, lazy } from "@gable/core";
+import { computed, html, inject, injectHost, input, lazy } from "@gablejs/core";
 import { CANVAS_DEBUG } from "./canvas-debug.js";
 import { DEV } from "./dev.js";
 import type { PixiRendererOptions } from "./renderer.js";

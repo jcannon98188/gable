@@ -3,14 +3,14 @@
 A Node-only (no DOM) benchmark of Gable's signal graph and its RxJS bridges, in the style of
 [milomg/js-reactivity-benchmark](https://github.com/milomg/js-reactivity-benchmark): deep, wide, diamond and dynamic
 dependency graphs, many effects, and the `toObservable` / `toSignal` bridges. Where the comparison is natural each
-scenario also runs on the **raw TC39 `signal-polyfill`** (the copy core uses, imported from `@gable/core/internal`; what Gable's `signal`/`computed` wrap) and on **RxJS**.
+scenario also runs on the **raw TC39 `signal-polyfill`** (the copy core uses, imported from `@gablejs/core/internal`; what Gable's `signal`/`computed` wrap) and on **RxJS**.
 
 ## Run it
 
-`@gable/core` is installed from a tarball in the gitignored `vendor/`, like `examples/todomvc`:
+`@gablejs/core` is installed from a tarball in the gitignored `vendor/`, like `examples/todomvc`:
 
 ```sh
-# from the repo root: build, pack @gable/* into this example's vendor/ and point package.json at it
+# from the repo root: build, pack @gablejs/* into this example's vendor/ and point package.json at it
 npm run pack:local -- examples/reactivity-benchmark
 cd examples/reactivity-benchmark
 npm install
@@ -31,7 +31,7 @@ values it computed and how many times effects ran, so a broken graph throws rath
 shows median and min milliseconds per run, `ns/op` (median divided by the operations per run, to compare across
 different graph sizes), and the median relative to Gable (`x gable`, below 1 means faster than Gable).
 
-Effects are flushed with `flushSync()` from `@gable/core/internal` so the timing is the scheduler, not the microtask hop
+Effects are flushed with `flushSync()` from `@gablejs/core/internal` so the timing is the scheduler, not the microtask hop
 (`batched-writes` also has a `gable (microtask)` variant that awaits `whenFlushed()`). The raw polyfill "effect" is a
 single `Watcher` plus a flush that pulls `getPending()`; it has no ordering, scopes or error reporting, so it is the
 floor for what Gable's `effect` adds.

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { BehaviorSubject, Subject, observeOn } from "rxjs";
-import { html, signal } from "@gable/core";
-import { output, renderScheduler, toObservable, toSignal } from "@gable/core/rxjs";
-import { mount } from "@gable/testing";
+import { html, signal } from "@gablejs/core";
+import { output, renderScheduler, toObservable, toSignal } from "@gablejs/core/rxjs";
+import { mount } from "@gablejs/testing";
 
 
 describe("toSignal", () => {

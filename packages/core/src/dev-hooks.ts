@@ -5,7 +5,7 @@ import type { Renderer } from "./renderer.js";
 declare const __GABLE_DEV__: boolean | undefined;
 export const DEV = typeof __GABLE_DEV__ === "undefined" || __GABLE_DEV__ !== false;
 
-// The only HMR code in the core: a slot the dev runtime (`@gable/core/hmr`) fills.
+// The only HMR code in the core: a slot the dev runtime (`@gablejs/core/hmr`) fills.
 // Every use is behind `DEV && hooks.current`, so a production build drops all of it.
 
 /** A two-phase swap: the new thing is built beside the old one; `commit` retires the old, `abort` discards the new. */
@@ -191,7 +191,7 @@ export interface HmrChange {
 // --- design tooling --------------------------------------------------------
 
 /**
- * What the dev-only design layer (`designer.ts`, entry `@gable/core/designer`) receives from the runtime. It is a slot of
+ * What the dev-only design layer (`designer.ts`, entry `@gablejs/core/designer`) receives from the runtime. It is a slot of
  * its own, not part of the devtools protocol: design tooling needs to see template nodes and intercept listeners, which an
  * inspection protocol should not offer. Every call site is behind `DEV && design.current`.
  */

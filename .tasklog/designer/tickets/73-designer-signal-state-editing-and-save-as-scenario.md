@@ -26,7 +26,7 @@ Inspector can set a signal's value (typed, JSON-validated, reversible) in the se
 ## Implementation plan
 
 1. Core devtools (dev-only file, additive): signalJson method returning a signal's value as JSON text when it is plain data (or why not); setSignal unchanged.
-2. Scene.state (tooling type, additive): initial values for the mounted component's own writable signals by field name; applied by the Designer's component host and @gable/testing mountScene.
+2. Scene.state (tooling type, additive): initial values for the mounted component's own writable signals by field name; applied by the Designer's component host and @gablejs/testing mountScene.
 3. designer src/signal-value.ts: typed JSON validation of a new value against the current one (kind, keys, element shape; force overrides) and a TS literal printer in the file's quote style. Unit tests.
 4. Protocol (additive, PROTOCOL_VERSION unchanged): agent methods setSignalValue, pinSignal, pins, sceneState. Agent logic in src/agent/signal-state.ts (pins re-applied after flushes, with a fight guard).
 5. Scenario writer: addScene gains inputs/state overrides merged into the copied scene as minimal text edits. Tests.
@@ -38,7 +38,7 @@ Inspector can set a signal's value (typed, JSON-validated, reversible) in the se
 
 Built on what existed: the devtools hook's setSignal/inspect (writable flag), the Inspector's signal rows, EditService addScene, the control channel/ShellBridge and the MCP control server.
 
-- Core (dev-only): devtools signalJson (plain-data JSON or why not: Date/class instance/function/cycle/non-finite); Scene.state typed for the component's public writable signals (models excluded; other names accepted and checked at mount) and applySceneState in @gable/core/tooling, used by the Designer's component host and @gable/testing mountScene.
+- Core (dev-only): devtools signalJson (plain-data JSON or why not: Date/class instance/function/cycle/non-finite); Scene.state typed for the component's public writable signals (models excluded; other names accepted and checked at mount) and applySceneState in @gablejs/core/tooling, used by the Designer's component host and @gablejs/testing mountScene.
 - Found and fixed a pre-existing core bug in designer.ts: a template node remembered only the first component instance that rendered it, so after a scene remount the Inspector lost the selected element's owner (component null). Now each element maps to its own instance; the node's instance is the latest. Test in designer.test.ts.
 - Agent (src/agent/signal-state.ts): checked writes (signal-value.ts: kind, keys, element shape; force overrides), pins re-applied after flush/tree/hmr in a microtask, suspended when the app overwrites more than 20 times in 1s; sceneState reports the mounted component's inputs and writable signals with poked/changed (baseline at mount) and the poked signals a Scene cannot hold (child's, service's).
 - Protocol additive (signalJson via devtools, setSignalValue, pinSignal, pins, sceneState); control command signals; PROTOCOL_VERSION unchanged.

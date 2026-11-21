@@ -1,5 +1,5 @@
-import { computed, contentChildren, effect, html, inject, input, model, signal } from "@gable/core";
-import { TABS, TabsState, bindProps } from "@gable/ui-primitives";
+import { computed, contentChildren, effect, html, inject, input, model, signal } from "@gablejs/core";
+import { TABS, TabsState, bindProps } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 import type { InputDensity } from "./input.js";
 

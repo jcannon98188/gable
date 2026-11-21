@@ -1,5 +1,5 @@
-import { computed, effect, html, untracked, inject, RENDERER, signal, viewChild, ErrorBoundary } from "@gable/core";
-import type { Renderer } from "@gable/core/renderer";
+import { computed, effect, html, untracked, inject, RENDERER, signal, viewChild, ErrorBoundary } from "@gablejs/core";
+import type { Renderer } from "@gablejs/core/renderer";
 import { renderTemplate } from "./runtime-demo.js";
 import { STARTER, SUGGESTIONS } from "./samples.js";
 

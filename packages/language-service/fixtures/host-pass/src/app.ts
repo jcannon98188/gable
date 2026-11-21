@@ -1,4 +1,4 @@
-import { html, injectHost } from "@gable/core";
+import { html, injectHost } from "@gablejs/core";
 
 function useHost() {
   return injectHost<HTMLElement>();

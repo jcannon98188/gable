@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { InjectionToken, computed, effect, html, inject, input, model, output, signal } from "@gable/core";
-import { RouterOutlet, type Route } from "@gable/core/router";
-import { applyUpdate, registerModule } from "@gable/core/hmr";
-import { mount, mountApp } from "@gable/testing";
-import { createDevtools, jsonOf, parseEdit, preview, type DevtoolsEvent, type DevtoolsInstance } from "@gable/core/devtools";
+import { InjectionToken, computed, effect, html, inject, input, model, output, signal } from "@gablejs/core";
+import { RouterOutlet, type Route } from "@gablejs/core/router";
+import { applyUpdate, registerModule } from "@gablejs/core/hmr";
+import { mount, mountApp } from "@gablejs/testing";
+import { createDevtools, jsonOf, parseEdit, preview, type DevtoolsEvent, type DevtoolsInstance } from "@gablejs/core/devtools";
 
 let dt: DevtoolsInstance;
 const target: { __GABLE_DEVTOOLS_HOOK__?: any } = {};

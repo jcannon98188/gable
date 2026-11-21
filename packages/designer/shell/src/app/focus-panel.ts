@@ -2,7 +2,7 @@
 // name, role and what is wrong with the order), the accessibility tree (role, name and state of what assistive technology is
 // given), and the canvas view: the numbered focus order drawn over the page, and keyboard-only mode. Everything is read from
 // the page as rendered; a row selects its element on the canvas.
-import { computed, html, inject } from "@gable/core";
+import { computed, html, inject } from "@gablejs/core";
 import { UiButton } from "../components/ui/button.js";
 import { UiSwitch } from "../components/ui/switch.js";
 import { UiToggleGroup } from "../components/ui/toggle-group.js";

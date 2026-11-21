@@ -2,7 +2,7 @@ import { doc as prettierDoc, type AstPath, type Doc, type ParserOptions, type Pl
 import { parsers as babelParsers } from "prettier/plugins/babel";
 import { printers as estreePrinters } from "prettier/plugins/estree";
 import { parsers as tsParsers } from "prettier/plugins/typescript";
-import { formatTemplate } from "@gable/template-format";
+import { formatTemplate } from "@gablejs/template-format";
 
 const { hardline, indent, join } = prettierDoc.builders;
 
@@ -82,7 +82,7 @@ const withPrinter = <T extends { astFormat: string }>(p: T): T => ({ ...p, astFo
  *
  * @example
  * ```json
- * { "plugins": ["@gable/prettier-plugin"] }
+ * { "plugins": ["@gablejs/prettier-plugin"] }
  * ```
  */
 export const parsers: Plugin["parsers"] = {
@@ -93,7 +93,7 @@ export const parsers: Plugin["parsers"] = {
 
 /**
  * The `gable-estree` printer: Prettier's own estree printer, except that tagged `html` template literals
- * are formatted with `@gable/template-format` and Prettier's built-in HTML embedding is switched off for them.
+ * are formatted with `@gablejs/template-format` and Prettier's built-in HTML embedding is switched off for them.
  *
  * Only literals tagged exactly `html` are touched; other embedded languages (CSS, GraphQL, markdown) keep
  * Prettier's default handling. Prettier looks this up by name, so you normally never import it.

@@ -58,7 +58,7 @@ describe("entry points", () => {
     const lines: string[] = [];
     run({ packagesDir: packages, outDir: out, log: (l: string) => lines.push(l) });
     expect(lines.join("\n")).toContain("skipped gable-vscode: application, not a library");
-    expect(Object.keys(SKIP).sort()).toEqual(["@gable/designer", "@gable/devtools-extension", "gable-vscode"]);
+    expect(Object.keys(SKIP).sort()).toEqual(["@gablejs/designer", "@gablejs/devtools-extension", "gable-vscode"]);
     fs.rmSync(packages, { recursive: true, force: true });
     fs.rmSync(out, { recursive: true, force: true });
   });

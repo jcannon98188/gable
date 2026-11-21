@@ -1,5 +1,5 @@
-import { computed, html, inject, input, model, output } from "@gable/core";
-import { SliderState, UiProps, type PropBag } from "@gable/ui-primitives";
+import { computed, html, inject, input, model, output } from "@gablejs/core";
+import { SliderState, UiProps, type PropBag } from "@gablejs/ui-primitives";
 import { cn } from "../../lib/ui/cn.js";
 
 /**

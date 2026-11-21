@@ -25,7 +25,7 @@ The site is a single page with no router. Docs need real routes that survive ref
 
 ## Implementation notes
 
-Routing: history mode (clean URLs, in-page # anchors for headings work, pages.yml already copies index.html to 404.html so deep links/refresh work under /gable/; drawback: 404 status on refresh). Code blocks: docs reuse the @gable/ui tokenizer (packages/ui/src/lib/highlight.ts) via a small doc-code component, since ui-code-block itself needs Tailwind. CI: no workflow change needed (npm run build runs the extractor). Not verified: mobile drawer in a real browser (preview viewport would not narrow); covered by mounted tests. Unrelated failing test: site/scripts api-cli test (site/99).
+Routing: history mode (clean URLs, in-page # anchors for headings work, pages.yml already copies index.html to 404.html so deep links/refresh work under /gable/; drawback: 404 status on refresh). Code blocks: docs reuse the @gablejs/ui tokenizer (packages/ui/src/lib/highlight.ts) via a small doc-code component, since ui-code-block itself needs Tailwind. CI: no workflow change needed (npm run build runs the extractor). Not verified: mobile drawer in a real browser (preview viewport would not narrow); covered by mounted tests. Unrelated failing test: site/scripts api-cli test (site/99).
 
 ## Answer
 

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { effect, html, lazy, signal } from "@gable/core";
-import { toSignal } from "@gable/core/rxjs";
-import { mount } from "@gable/testing";
+import { effect, html, lazy, signal } from "@gablejs/core";
+import { toSignal } from "@gablejs/core/rxjs";
+import { mount } from "@gablejs/testing";
 import { Subject, debounceTime, of } from "rxjs";
 
 afterEach(() => vi.useRealTimers());

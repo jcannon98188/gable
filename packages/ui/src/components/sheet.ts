@@ -1,5 +1,5 @@
-import { computed, contentChild, effect, html, inject, input, model } from "@gable/core";
-import { DialogState, UiDialogBackdrop, UiDialogClose, UiDialogContent, UiDialogDescription, UiDialogTitle, UiPortal } from "@gable/ui-primitives";
+import { computed, contentChild, effect, html, inject, input, model } from "@gablejs/core";
+import { DialogState, UiDialogBackdrop, UiDialogClose, UiDialogContent, UiDialogDescription, UiDialogTitle, UiPortal } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 import { UiIcon } from "../lib/icon.js";
 import { DialogTrigger } from "./dialog.js";

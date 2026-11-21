@@ -1,5 +1,5 @@
-import { computed, html, injectHost, input, model, signal } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
+import { computed, html, injectHost, input, model, signal } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
 import { cn } from "../lib/cn.js";
 import { useHostClass } from "../lib/host-class.js";
 
@@ -75,7 +75,7 @@ function arcPath(cx: number, cy: number, inner: number, outer: number, a0: numbe
  *
  * `type` is `line`, `area`, `bar`, `pie` or `donut`. Cartesian charts read one value per series from each row, with the
  * row's `xKey` as the category. Pie and donut charts use the first series for slice sizes and `xKey` for slice names.
- * Series without a `color` take `--chart-1` .. `--chart-5` from `@gable/ui/theme.css`, so charts follow light and dark.
+ * Series without a `color` take `--chart-1` .. `--chart-5` from `@gablejs/ui/theme.css`, so charts follow light and dark.
  * The width follows the element (a `ResizeObserver`); `height` is fixed. Scales are linear from zero with round ticks.
  * `stacked` stacks the series of bar and area charts (negative values stack downwards from zero; ignored for line, pie and
  * donut). In a cartesian chart each legend entry is a toggle button (`aria-pressed`, Space/Enter) that hides or shows

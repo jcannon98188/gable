@@ -1,6 +1,6 @@
-import { computed, html, inject, signal } from "@gable/core";
-import { Http } from "@gable/core/http";
-import { toSignal } from "@gable/core/rxjs";
+import { computed, html, inject, signal } from "@gablejs/core";
+import { Http } from "@gablejs/core/http";
+import { toSignal } from "@gablejs/core/rxjs";
 import { catchError, map, of } from "rxjs";
 
 interface User {

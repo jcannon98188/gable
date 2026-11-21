@@ -1,6 +1,6 @@
-import { bootstrap } from '@gable/core';
-import { provideRouter } from '@gable/core/router';
-import { dom } from '@gable/renderer-dom';
+import { bootstrap } from '@gablejs/core';
+import { provideRouter } from '@gablejs/core/router';
+import { dom } from '@gablejs/renderer-dom';
 import 'todomvc-common/base.css';
 import 'todomvc-app-css/index.css';
 import './app.css';

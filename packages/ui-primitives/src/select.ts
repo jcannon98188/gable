@@ -1,4 +1,4 @@
-import { inject, input } from "@gable/core";
+import { inject, input } from "@gablejs/core";
 import * as select from "@zag-js/select";
 import { bindProps } from "./props.js";
 import { machineState } from "./state.js";

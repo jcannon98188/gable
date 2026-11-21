@@ -29,4 +29,4 @@ Three demos under site/src/demos/data (form-demo, i18n-demo, store-demo, catalog
 
 ## Answer
 
-Added live sign-up form (real @gable/core/forms incl. async + cross-field + submit), runtime I18n demo (en/fr/ar RTL/partial de, plural/select/number/date, catalog and missing list) and @gable/store cart (withState/withComputed/withMethods/withStorage, live getState JSON). Added @gable/store dependency to site. Unrelated failures: router demo tests, typecheck:tests merge conflict in packages/designer, TS error in signals demo.
+Added live sign-up form (real @gablejs/core/forms incl. async + cross-field + submit), runtime I18n demo (en/fr/ar RTL/partial de, plural/select/number/date, catalog and missing list) and @gablejs/store cart (withState/withComputed/withMethods/withStorage, live getState JSON). Added @gablejs/store dependency to site. Unrelated failures: router demo tests, typecheck:tests merge conflict in packages/designer, TS error in signals demo.

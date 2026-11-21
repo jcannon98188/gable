@@ -1,4 +1,4 @@
-import { gable } from "@gable/vite";
+import { gable } from "@gablejs/vite";
 import { defineConfig } from "vitest/config";
 
 // GitHub Pages serves a project site from /<repo>/, so the deploy workflow sets SITE_BASE=/gable/.

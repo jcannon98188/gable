@@ -1,5 +1,5 @@
-import { computed, html, inject, input } from "@gable/core";
-import { ScrollAreaState, UiProps } from "@gable/ui-primitives";
+import { computed, html, inject, input } from "@gablejs/core";
+import { ScrollAreaState, UiProps } from "@gablejs/ui-primitives";
 
 /**
  * A scroll container with a custom, themable scrollbar (Zag's scroll-area measures the viewport and positions the thumb).

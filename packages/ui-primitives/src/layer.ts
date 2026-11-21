@@ -1,5 +1,5 @@
-import { effect, inject, input, output, signal, untracked, type ReadonlySignal } from "@gable/core";
-import { currentScope, injectHost } from "@gable/core/internal";
+import { effect, inject, input, output, signal, untracked, type ReadonlySignal } from "@gablejs/core";
+import { currentScope, injectHost } from "@gablejs/core/internal";
 import { ariaHidden } from "@zag-js/aria-hidden";
 import { trackDismissableElement, type LayerType } from "@zag-js/dismissable";
 import { trapFocus } from "@zag-js/focus-trap";

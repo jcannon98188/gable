@@ -1,11 +1,11 @@
 import { fileURLToPath } from "node:url";
 import ts from "@typescript/typescript6";
-import { buildElementMap, propTypeText, SCENE_EVENTS, SCENE_TAGS, SHAPE_TAGS, HIT_TAGS, propertiesOf, type HitTagName, type SceneTagName, type ShapeTagName } from "@gable/renderer-pixi/elements";
+import { buildElementMap, propTypeText, SCENE_EVENTS, SCENE_TAGS, SHAPE_TAGS, HIT_TAGS, propertiesOf, type HitTagName, type SceneTagName, type ShapeTagName } from "@gablejs/renderer-pixi/elements";
 import { describe, expect, it } from "vitest";
 import { sceneDeclarations, sceneEventNames, scenePropType, scenePropertyNames, sceneTagNames } from "./scene.js";
 
 // The element map the language service types scene templates against comes from one place: the shared
-// tag and property table of @gable/renderer-pixi/elements (canvas/112). These tests tie the two together
+// tag and property table of @gablejs/renderer-pixi/elements (canvas/112). These tests tie the two together
 // and then type-check the emitted declarations against Pixi's own types, so a table entry that drifts from
 // the map, or a map type Pixi would not accept, fails here.
 

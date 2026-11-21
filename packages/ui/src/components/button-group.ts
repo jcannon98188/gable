@@ -1,5 +1,5 @@
-import { computed, html, input } from "@gable/core";
-import { bindProps } from "@gable/ui-primitives";
+import { computed, html, input } from "@gablejs/core";
+import { bindProps } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 import { useHostClass } from "../lib/host-class.js";
 

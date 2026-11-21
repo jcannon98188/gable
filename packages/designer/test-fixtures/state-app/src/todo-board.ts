@@ -1,6 +1,6 @@
 // The signal state fixture (designer/73/18): an input, plain-data signals to poke and pin, a signal that is not plain data,
 // a child's signal (which a Scene of TodoBoard cannot hold), and a button that makes the app fight a pin.
-import { computed, html, input, signal } from "@gable/core";
+import { computed, html, input, signal } from "@gablejs/core";
 
 export class TodoBadge {
   static meta = { selector: "app-todo-badge", template: html`<span class="badge">{{ label() }}</span>` };

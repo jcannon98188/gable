@@ -1,5 +1,5 @@
 // How long an element's exit animation or transition takes, read from its computed style.
-// Shared by route transitions (transition.ts) and @gable/ui-primitives presence via @gable/core/internal.
+// Shared by route transitions (transition.ts) and @gablejs/ui-primitives presence via @gablejs/core/internal.
 
 const ms = (token: string) => (token.endsWith("ms") ? parseFloat(token) : parseFloat(token) * 1000) || 0;
 const list = (value: string | undefined) => (value ?? "").split(/,(?![^(]*\))/).map((s) => s.trim()).filter(Boolean);

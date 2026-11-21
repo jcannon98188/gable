@@ -1,5 +1,5 @@
-import { computed, html, input } from "@gable/core";
-import { UiProps, bindProps, useVirtualizer } from "@gable/ui-primitives";
+import { computed, html, input } from "@gablejs/core";
+import { UiProps, bindProps, useVirtualizer } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 import { UiBadge, type BadgeSeverity } from "./badge.js";
 import { useHostClass } from "../lib/host-class.js";

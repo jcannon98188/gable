@@ -1,5 +1,5 @@
-import { html, injectHost } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
+import { html, injectHost } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
 
 /**
  * Renders its projected content in the renderer's overlay root (`Renderer.overlayRoot()`: `document.body` under the

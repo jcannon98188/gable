@@ -30,9 +30,9 @@ describe.skipIf(!browser)("sample app in a real browser", () => {
       root: here("../sample"),
       resolve: {
         alias: [
-          { find: /^@gable\/core$/, replacement: here("../../core/src/index.ts") },
-          { find: /^@gable\/core\/renderer$/, replacement: here("../../core/src/renderer.ts") },
-          { find: /^@gable\/renderer-dom$/, replacement: here("./index.ts") },
+          { find: /^@gablejs\/core$/, replacement: here("../../core/src/index.ts") },
+          { find: /^@gablejs\/core\/renderer$/, replacement: here("../../core/src/renderer.ts") },
+          { find: /^@gablejs\/renderer-dom$/, replacement: here("./index.ts") },
         ],
       },
       build: { write: false, minify: false, lib: { entry: here("../sample/main.ts"), formats: ["iife"], name: "Sample" } },

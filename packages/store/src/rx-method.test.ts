@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { catchError, debounceTime, distinctUntilChanged, EMPTY, filter, Observable, of, Subject, switchMap, tap, delay } from "rxjs";
-import { inject, signal } from "@gable/core";
-import { flushSync } from "@gable/core/internal";
-import { createTestInjector } from "@gable/testing";
+import { inject, signal } from "@gablejs/core";
+import { flushSync } from "@gablejs/core/internal";
+import { createTestInjector } from "@gablejs/testing";
 import { patchState, rxMethod, signalStore, withMethods, withState } from "./index.js";
 
 beforeEach(() => void vi.useFakeTimers());

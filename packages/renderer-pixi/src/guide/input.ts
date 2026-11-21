@@ -1,5 +1,5 @@
-import { html, inject, signal } from "@gable/core";
-import { Frame, Keyboard, Pointer, createDrag } from "@gable/renderer-pixi";
+import { html, inject, signal } from "@gablejs/core";
+import { Frame, Keyboard, Pointer, createDrag } from "@gablejs/renderer-pixi";
 
 export class Player {
   static meta = {

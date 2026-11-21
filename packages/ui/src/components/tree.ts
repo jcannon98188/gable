@@ -1,6 +1,6 @@
-import { computed, html, injectHost, input, model, output, signal, untracked } from "@gable/core";
-import { whenFlushed } from "@gable/core/internal";
-import { UiProps, bindProps, useVirtualizer } from "@gable/ui-primitives";
+import { computed, html, injectHost, input, model, output, signal, untracked } from "@gablejs/core";
+import { whenFlushed } from "@gablejs/core/internal";
+import { UiProps, bindProps, useVirtualizer } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 import { UiBadge, type BadgeVariant } from "./badge.js";
 import { useHostClass } from "../lib/host-class.js";

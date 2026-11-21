@@ -1,4 +1,4 @@
-import { InjectionToken } from "@gable/core";
+import { InjectionToken } from "@gablejs/core";
 
 /** The slice of the DOM Zag machines reach for through `scope.getRootNode()`. */
 export interface RootNodeLike {

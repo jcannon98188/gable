@@ -1,4 +1,4 @@
-import { html } from "@gable/core";
+import { html } from "@gablejs/core";
 import { Counter } from "./counter.js";
 
 export class Root {

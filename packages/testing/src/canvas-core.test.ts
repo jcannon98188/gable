@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { InjectionToken, RENDERER, effect, flushSync, html, inject, onCleanup, signal, whenFlushed, hotData } from "@gable/core";
-import type { Renderer } from "@gable/core/renderer";
-import { mount } from "@gable/testing";
-import { createTestRenderer, createTestRoot, serialize, type TestNode, type TestRenderer } from "@gable/testing/renderer";
+import { InjectionToken, RENDERER, effect, flushSync, html, inject, onCleanup, signal, whenFlushed, hotData } from "@gablejs/core";
+import type { Renderer } from "@gablejs/core/renderer";
+import { mount } from "@gablejs/testing";
+import { createTestRenderer, createTestRoot, serialize, type TestNode, type TestRenderer } from "@gablejs/testing/renderer";
 
 // A second renderer for a boundary: it records what it was asked to create and whether it was destroyed.
 function secondRenderer(extra: Partial<Renderer<TestNode>> = {}) {

@@ -1,5 +1,5 @@
-import { html, inject } from "@gable/core";
-import { SwUpdates } from "@gable/service-worker";
+import { html, inject } from "@gablejs/core";
+import { SwUpdates } from "@gablejs/service-worker";
 
 export class UpdateBanner {
   static meta = {

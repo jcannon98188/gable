@@ -1,4 +1,4 @@
-import { computed, hotState, signal } from "@gable/core";
+import { computed, hotState, signal } from "@gablejs/core";
 import { Observable, Subject } from "rxjs";
 
 export const count = hotState(import.meta, "count", () => signal(0));

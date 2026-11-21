@@ -87,7 +87,7 @@ export function classOf(checker: ts.TypeChecker, node: ts.Node): ts.ClassDeclara
   return symbol?.declarations?.find(ts.isClassDeclaration);
 }
 
-/** A form field: a writable signal with a `state` namespace (see @gable/core/forms). */
+/** A form field: a writable signal with a `state` namespace (see @gablejs/core/forms). */
 export function isFieldType(checker: ts.TypeChecker, type: ts.Type): boolean {
   const t = checker.getNonNullableType(type);
   const state = t.getProperty("state");
@@ -122,7 +122,7 @@ export function closest(name: string, candidates: string[]): string | undefined 
 }
 
 
-/** A @gable/store store: its type carries the STATE_SOURCE unique-symbol member. */
+/** A @gablejs/store store: its type carries the STATE_SOURCE unique-symbol member. */
 export function isStoreType(checker: ts.TypeChecker, type: ts.Type): boolean {
   return checker.getNonNullableType(type).getProperties().some((p) => /^__@STATE_SOURCE@/.test(p.escapedName as string));
 }

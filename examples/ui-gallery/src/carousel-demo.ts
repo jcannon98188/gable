@@ -1,5 +1,5 @@
-import { computed, html, signal } from '@gable/core';
-import { UiCard, UiCarousel, UiCarouselItem } from '@gable/ui';
+import { computed, html, signal } from '@gablejs/core';
+import { UiCard, UiCarousel, UiCarouselItem } from '@gablejs/ui';
 
 const SLIDES = ['Build', 'Test', 'Ship', 'Learn'];
 

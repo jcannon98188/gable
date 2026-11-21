@@ -1,4 +1,4 @@
-import { ICONS } from "@gable/ui";
+import { ICONS } from "@gablejs/ui";
 import {
   BetweenHorizontalEnd, BetweenHorizontalStart, BetweenVerticalEnd, BetweenVerticalStart, Bold, Captions, Code, Heading1, Heading2,
   Heading3, Image, Italic, Link, List, ListOrdered, ListTodo, MessageSquarePlus, Minus, Pencil, PanelTop, Quote, Redo2, SquareCode,

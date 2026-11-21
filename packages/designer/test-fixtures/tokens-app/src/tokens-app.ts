@@ -1,6 +1,6 @@
 // The Designer's driven token check (e2e/tokens-check.mjs) and src/tokens.test.ts run against this app: its own tokens in
 // src/styles.css next to gable-ui's theme.css, read through a rule (.card), an inline style and Tailwind classes.
-import { html } from "@gable/core";
+import { html } from "@gablejs/core";
 
 export class TokensApp {
   static meta = {

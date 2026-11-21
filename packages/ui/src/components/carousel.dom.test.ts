@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 import { UiCarousel, UiCarouselItem } from "./carousel.js";
 import { $, $$, key, settle, useDomApp } from "../test-utils.js";
 
@@ -236,7 +236,7 @@ describe("Carousel autoplay", () => {
 
 describe("Carousel accessibility", () => {
   it("has no axe violations, with and without autoplay", async () => {
-    const { expectNoA11yViolations } = await import("@gable/testing/a11y");
+    const { expectNoA11yViolations } = await import("@gablejs/testing/a11y");
     const app = await boot(App);
     await expectNoA11yViolations(document.body);
     app.auto.set(1000);

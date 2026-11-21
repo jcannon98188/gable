@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mountApp } from '@gable/testing';
+import { mountApp } from '@gablejs/testing';
 import { TodoApp } from './components/todo-app.js';
 import { routes } from './routes.js';
 import { TodoStorage } from './services/todo-storage.js';

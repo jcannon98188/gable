@@ -1,7 +1,7 @@
 // The Inspector's signal editing (designer/73): an Edit/Pin control on each writable signal or input row, and the "Poked
 // state" section that saves what was set as a new Scenario. The writes, checks and pins happen in the Preview agent (see
 // signal-edits.ts); these components only collect text and show the answers.
-import { computed, html, inject, input, signal, type WritableSignal } from "@gable/core";
+import { computed, html, inject, input, signal, type WritableSignal } from "@gablejs/core";
 import { UiButton } from "../components/ui/button.js";
 import { UiCheckbox } from "../components/ui/checkbox.js";
 import { UiInput } from "../components/ui/input.js";

@@ -1,5 +1,5 @@
-import { computed, effect, html, input, model, output, untracked } from "@gable/core";
-import { UiProps, bindProps, useVirtualizer } from "@gable/ui-primitives";
+import { computed, effect, html, input, model, output, untracked } from "@gablejs/core";
+import { UiProps, bindProps, useVirtualizer } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 import { useHostClass } from "../lib/host-class.js";
 
@@ -25,7 +25,7 @@ export interface VirtualListItem {
  * they know the length of the whole list, not only the rendered part. It measures the real element, so it needs a browser
  * (tests mock layout and call `setScroll`).
  *
- * Need your own row layout, columns or a table? `useVirtualizer` from `@gable/ui-primitives` is the engine under this
+ * Need your own row layout, columns or a table? `useVirtualizer` from `@gablejs/ui-primitives` is the engine under this
  * component; `ui-virtual-table` is the same idea for tabular data.
  */
 export class UiVirtualList {

@@ -1,11 +1,11 @@
-# @gable/service-worker
+# @gablejs/service-worker
 
 Service worker support for Gable apps: a worker authoring API (core), a default declarative worker (runtime) and app-side services.
 
 ## Install
 
 ```sh
-npm install @gable/service-worker
+npm install @gablejs/service-worker
 ```
 
 ## Documentation

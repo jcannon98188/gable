@@ -1,7 +1,7 @@
 // The Designer's driven accessibility and patch-diff check (e2e/a11y-diff-check.mjs) runs against this app. It is
 // inaccessible ON PURPOSE: an image without alt text, a text field without a label and grey-on-white text are what the
 // Preview agent's checks must find and link back here. Do not fix them.
-import { html } from "@gable/core";
+import { html } from "@gablejs/core";
 
 export class A11yApp {
   static meta = {

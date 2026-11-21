@@ -1,8 +1,8 @@
 // Page bundled by browser-smoke.test.ts: a real <gable-canvas> boundary with a host component (a scene component
 // projected from a page cannot inject boundary services, ADR 0019), driven by DOM events, reporting what a real
 // Chromium did. axe-core is injected by the test as a global before this script runs.
-import { bootstrap, html, inject } from "@gable/core";
-import { createDomRenderer } from "@gable/renderer-dom";
+import { bootstrap, html, inject } from "@gablejs/core";
+import { createDomRenderer } from "@gablejs/renderer-dom";
 import { Application, Rectangle } from "pixi.js";
 import { GableCanvas } from "../src/host.js";
 import { Keyboard } from "../src/keyboard.js";

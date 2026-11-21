@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { html } from "@gable/core";
+import { html } from "@gablejs/core";
 import { createSceneTestRenderer, mountWithScene } from "../testing.js";
 
 // Scene tags with a hyphen (rounded-rect, tiling-sprite, nine-slice-sprite, bitmap-text) must be usable in templates:

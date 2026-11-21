@@ -1,4 +1,4 @@
-// `@gable/core/forms`: model-first signal forms. `form(model, schema)` derives a tree of
+// `@gablejs/core/forms`: model-first signal forms. `form(model, schema)` derives a tree of
 // fine-grained writable signals from a writable model signal; the model stays canonical.
 // Per-field state lives under the one reserved `state` property.
 import { Observable, Subject, lastValueFrom, type Subscription } from "rxjs";

@@ -21,7 +21,7 @@ export function componentSource(i, n, injectsStore) {
   const kids = childrenOf(i, n);
   const imports = kids.map((c) => `import { ${className(c)} } from './c${c}.js';`).join("\n");
   const kidTags = kids.map((c) => `        <app-c${c}></app-c${c}>`).join("\n");
-  return `import { computed, html, inject, signal } from '@gable/core';
+  return `import { computed, html, inject, signal } from '@gablejs/core';
 import { Store } from './store.js';
 ${imports}
 
@@ -67,7 +67,7 @@ ${kidTags}
 `;
 }
 
-export const storeSource = `import { computed, signal } from '@gable/core';
+export const storeSource = `import { computed, signal } from '@gablejs/core';
 
 export class Store {
   static scope = 'root';
@@ -91,7 +91,7 @@ export function generateApp(dir, n) {
   writeFileSync(join(dir, "src", "store.ts"), storeSource);
   writeFileSync(
     join(dir, "src", "main.ts"),
-    `import { bootstrap } from '@gable/core';\nimport { dom } from '@gable/renderer-dom';\nimport { C0 } from './c0.js';\n\nbootstrap(C0, { renderer: dom(), target: '#app' });\n`,
+    `import { bootstrap } from '@gablejs/core';\nimport { dom } from '@gablejs/renderer-dom';\nimport { C0 } from './c0.js';\n\nbootstrap(C0, { renderer: dom(), target: '#app' });\n`,
   );
   writeFileSync(
     join(dir, "index.html"),

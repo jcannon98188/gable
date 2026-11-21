@@ -1,4 +1,4 @@
-import { computed, html, input } from "@gable/core";
+import { computed, html, input } from "@gablejs/core";
 import type { ApiMember, ApiParam, ApiSymbol } from "./api-types.js";
 import { REPO } from "./base.js";
 import { DocCode } from "./doc-code.js";

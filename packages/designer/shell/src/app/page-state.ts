@@ -2,8 +2,8 @@
 // joined with the route config as written in the source, the scenario list, the mocked HTTP traffic) and does what it asks
 // (navigate, add and edit routes through the backend, pick a scenario). It sits beside `DesignerState`, which owns the
 // preview connection, and only reads from it.
-import { computed, effect, inject, signal, untracked } from "@gable/core";
-import type { RouteNode, RouterInfo } from "@gable/core/devtools";
+import { computed, effect, inject, signal, untracked } from "@gablejs/core";
+import type { RouteNode, RouterInfo } from "@gablejs/core/devtools";
 import type { HttpLogEntry, PageScenarioInfo } from "../../../src/protocol.js";
 import type { ComponentInfo, RouteConfigInfo, RouteEdit, RouteSourceNode } from "../../../src/server/route-config.js";
 import type { SceneFileEntry } from "../../../src/server/scene-index.js";

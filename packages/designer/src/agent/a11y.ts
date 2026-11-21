@@ -2,7 +2,7 @@
 // so contrast is measured, unlike under jsdom), each finding tied to the template node that renders its element. The checker
 // is not part of the agent bundle: the Designer's Vite plugin serves the Designer's own axe-core at `AXE_PATH` and it is
 // loaded on the first run.
-import type { DesignNode } from "@gable/core/designer";
+import type { DesignNode } from "@gablejs/core/designer";
 import type { A11yCheck, A11yReport } from "../protocol.js";
 
 /** The slice of axe-core's API and results the agent reads. */

@@ -1,7 +1,7 @@
 // The template outline the Structure tab shows: one row per element, control-flow block and interpolated text of a
 // component's template, from the same lossless parser the edits use, so a row's `start` is the handle the agent maps back
 // to a rendered node (`nodeAt`). Blocks are read-only here: what they render is decided at runtime.
-import type { TemplateItem } from "@gable/template-format";
+import type { TemplateItem } from "@gablejs/template-format";
 
 export interface OutlineRow {
   /** Offset of the element's `<` in the template body (the agent's handle); for blocks and text, where they start. */

@@ -13,7 +13,7 @@ async function bundle(code: string): Promise<string> {
     logLevel: "silent",
     root,
     define: { __GABLE_DEV__: "false" },
-    resolve: { alias: [{ find: /^@gable\/core$/, replacement: src("../../core/src/index.ts") }, { find: /^@gable\/core\/renderer$/, replacement: src("../../core/src/renderer.ts") }] },
+    resolve: { alias: [{ find: /^@gablejs\/core$/, replacement: src("../../core/src/index.ts") }, { find: /^@gablejs\/core\/renderer$/, replacement: src("../../core/src/renderer.ts") }] },
     plugins: [{ name: "entry", resolveId: (id) => (id === entry ? id : undefined), load: (id) => (id === entry ? code : undefined) }],
     build: { write: false, minify: false, rollupOptions: { input: entry, external: [/^pixi\.js/] }, lib: false },
   });

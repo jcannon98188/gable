@@ -34,4 +34,4 @@ The Gable v0 client-side framework spec. Read its relevant sections and the clos
 
 ## What to build
 
-@gable/renderer-dom: the node operations over the DOM, SVG and MathML namespaces, scoped styles, DOM defer triggers (viewport, interaction, hover), real Location, History and Title, a typed element and property map, and the field binding hook points. A Renderer-contract conformance suite runs against both the Test renderer and the DOM renderer.
+@gablejs/renderer-dom: the node operations over the DOM, SVG and MathML namespaces, scoped styles, DOM defer triggers (viewport, interaction, hover), real Location, History and Title, a typed element and property map, and the field binding hook points. A Renderer-contract conformance suite runs against both the Test renderer and the DOM renderer.

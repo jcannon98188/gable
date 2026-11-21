@@ -1,11 +1,11 @@
-# @gable/core
+# @gablejs/core
 
 Gable framework core: components, signals, dependency injection, control-flow templates, router, forms, HTTP client and i18n.
 
 ## Install
 
 ```sh
-npm install @gable/core
+npm install @gablejs/core
 ```
 
 ## Documentation

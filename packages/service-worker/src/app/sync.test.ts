@@ -1,6 +1,6 @@
 // SwSync, the app side of background sync, against a worker built on core's backgroundSync on the in-memory browser.
 import { afterEach, describe, expect, it } from "vitest";
-import { createInjector, type Injector } from "@gable/core";
+import { createInjector, type Injector } from "@gablejs/core";
 import { backgroundSync, lifecycle } from "../core/index.js";
 import { createBrowser, type InMemoryBrowserOptions, type WorkerScript } from "../testing/browser.js";
 import { provideServiceWorker, SERVICE_WORKER_CONTAINER, SwRegistration, SwSync } from "../index.js";

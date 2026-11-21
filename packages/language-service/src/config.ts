@@ -57,7 +57,7 @@ export const RULES = {
 /** The name of one analyzer rule, for example `"bare-signal"`: a key of {@link RULES}. Used in the `rules` plugin option and on every diagnostic. */
 export type RuleId = keyof typeof RULES;
 
-/** The `i18n` plugin option: where the translation catalogs are. Same shape as the options of `gableI18n` in `@gable/vite`. */
+/** The `i18n` plugin option: where the translation catalogs are. Same shape as the options of `gableI18n` in `@gablejs/vite`. */
 export interface I18nCheckConfig {
   /** The language the templates are written in; it needs no catalog. Default `"en"`. */
   sourceLocale: string;
@@ -70,7 +70,7 @@ export interface I18nCheckConfig {
 }
 
 /**
- * The resolved analyzer settings, built from the `@gable/language-service` entry in a tsconfig's
+ * The resolved analyzer settings, built from the `@gablejs/language-service` entry in a tsconfig's
  * `compilerOptions.plugins` (`templateTag`, `rules`, `i18n`). Every field has a default, so you only write the
  * entry to override something.
  */
@@ -84,7 +84,7 @@ export interface AnalyzerConfig {
   i18n?: I18nCheckConfig;
 }
 
-export const PLUGIN_NAME = "@gable/language-service";
+export const PLUGIN_NAME = "@gablejs/language-service";
 
 /** Reads the plugin entry of a tsconfig's `compilerOptions.plugins`. Problems come back as `errors`. */
 export function readConfig(options: ts.CompilerOptions): { config: AnalyzerConfig; errors: string[] } {

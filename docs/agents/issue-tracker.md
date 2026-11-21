@@ -12,8 +12,8 @@ A ticket's id is `<effort>/<NN>`, for example `canvas/141`. An effort is a body 
 | `designer` | The visual editor |
 | `editor` | The collaborative rich text editor |
 | `native` | The Gable Native design map |
-| `canvas` | The canvas design map and the `@gable/renderer-pixi` build |
-| `service-worker` | `@gable/service-worker` and its follow-ups |
+| `canvas` | The canvas design map and the `@gablejs/renderer-pixi` build |
+| `service-worker` | `@gablejs/service-worker` and its follow-ups |
 | `site` | The marketing site and docs |
 
 The tickets were imported from Backlog.md. Each keeps its old path in `imported_from`, and its old `TASK-n` id appears in older commit messages and in `imported_from`. Tickets that were Backlog.md epics (for example the former TASK-105) are ordinary tickets in their effort; their children carry a `parent-<n>` tag. Imported tickets keep their old labels as tags.

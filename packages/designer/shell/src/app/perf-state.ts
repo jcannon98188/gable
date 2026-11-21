@@ -2,7 +2,7 @@
 // this asks for a measurement when the frame (re)loads, after a hot update or a navigation, and on Re-run, which reloads the
 // frame first so the load metrics (FCP, LCP, CLS) are of a fresh load. A report always names the page and the moment it was
 // taken; nothing is carried over from another page or frame.
-import { computed, effect, inject, signal, untracked } from "@gable/core";
+import { computed, effect, inject, signal, untracked } from "@gablejs/core";
 import { NO_THROTTLE, throttleLabel, type Throttle } from "../../../src/devices.js";
 import type { PerfElement, PerfMetric, PerfRating, PerfReport } from "../../../src/protocol.js";
 import { DesignerState } from "./designer-state.js";

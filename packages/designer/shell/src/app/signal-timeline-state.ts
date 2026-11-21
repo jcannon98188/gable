@@ -1,9 +1,9 @@
 // The State timeline (designer/74): the selected frame's recorded state history, and travel through it. The devtools hook
-// records the app's writes to its state signals (steps, bounded; `@gable/core` signal-history.ts) once the Preview agent turns
+// records the app's writes to its state signals (steps, bounded; `@gablejs/core` signal-history.ts) once the Preview agent turns
 // recording on; this service fetches the steps when a new one is recorded and asks the frame to travel to one. Replay travels
 // forward one step at a time. Nothing here is simulated: an empty history says so.
-import { effect, inject, signal, untracked } from "@gable/core";
-import type { HistoryInfo, TravelResult } from "@gable/core/devtools";
+import { effect, inject, signal, untracked } from "@gablejs/core";
+import type { HistoryInfo, TravelResult } from "@gablejs/core/devtools";
 import { DesignerState } from "./designer-state.js";
 
 export class SignalTimeline {

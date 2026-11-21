@@ -59,10 +59,10 @@ mkdirSync(cache, { recursive: true });
 const root = mkdtempSync(join(cache, "app-"));
 cpSync(join(designer, "test-fixtures", "mcp-app"), root, { recursive: true });
 writeFileSync(join(root, "index.html"), `<!doctype html>\n<html><head><meta charset="utf-8" /><title>MCP fixture</title></head>\n<body><div id="app"></div><script type="module" src="/src/main.ts"></script></body></html>\n`);
-writeFileSync(join(root, "vite.config.ts"), `import { gable } from "@gable/vite";\nimport { defineConfig } from "vite";\nexport default defineConfig({ plugins: [gable()] });\n`);
+writeFileSync(join(root, "vite.config.ts"), `import { gable } from "@gablejs/vite";\nimport { defineConfig } from "vite";\nexport default defineConfig({ plugins: [gable()] });\n`);
 writeFileSync(
   join(root, "src", "main.ts"),
-  `import { bootstrap, html } from "@gable/core";\nimport { provideRouter, RouterOutlet } from "@gable/core/router";\nimport { dom } from "@gable/renderer-dom";\nimport { ProfileCard } from "./card.js";\nimport { routes } from "./routes.js";\n\nexport class App {\n  static meta = { selector: "app-root", imports: [ProfileCard, RouterOutlet], template: html\`<main><app-profile-card></app-profile-card><router-outlet></router-outlet></main>\` };\n}\n\nbootstrap(App, { renderer: dom(), providers: provideRouter(routes), target: "#app" });\n`,
+  `import { bootstrap, html } from "@gablejs/core";\nimport { provideRouter, RouterOutlet } from "@gablejs/core/router";\nimport { dom } from "@gablejs/renderer-dom";\nimport { ProfileCard } from "./card.js";\nimport { routes } from "./routes.js";\n\nexport class App {\n  static meta = { selector: "app-root", imports: [ProfileCard, RouterOutlet], template: html\`<main><app-profile-card></app-profile-card><router-outlet></router-outlet></main>\` };\n}\n\nbootstrap(App, { renderer: dom(), providers: provideRouter(routes), target: "#app" });\n`,
 );
 const dataDir = attach ? attach.data : mkdtempSync(join(cache, "data-"));
 const env = { ...process.env, GABLE_DESIGNER_DATA: dataDir };

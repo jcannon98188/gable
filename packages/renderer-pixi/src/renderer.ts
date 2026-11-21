@@ -7,8 +7,8 @@
 // lightweight records that mark their graphics dirty; `frame()` redraws each dirty graphics once.
 import "pixi.js/events"; // installs eventMode, cursor, hitArea and interactiveChildren on Container
 import { Application, BitmapText, Cache, Circle, Container, Ellipse, Graphics, NineSliceSprite, Particle, ParticleContainer, Polygon, Rectangle, RoundedRectangle, Sprite, Text, Texture, TilingSprite } from "pixi.js";
-import { flushSync, type Provider } from "@gable/core";
-import type { Renderer } from "@gable/core/renderer";
+import { flushSync, type Provider } from "@gablejs/core";
+import type { Renderer } from "@gablejs/core/renderer";
 import { DEV } from "./dev.js";
 import type { ParticleLike, ParticleOptions } from "./particles.js";
 import type { CanvasDebugOptions } from "./canvas-debug.js";

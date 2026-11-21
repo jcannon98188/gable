@@ -16,7 +16,7 @@ An app made with `npm create gable@latest` is already set up: its `.vscode/exten
 ```json
 {
   "compilerOptions": {
-    "plugins": [{ "name": "@gable/language-service", "renderer": "@gable/renderer-dom" }]
+    "plugins": [{ "name": "@gablejs/language-service", "renderer": "@gablejs/renderer-dom" }]
   }
 }
 ```

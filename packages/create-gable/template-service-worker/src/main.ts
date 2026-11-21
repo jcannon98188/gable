@@ -1,6 +1,6 @@
-import { bootstrap } from "@gable/core";
-import { dom } from "@gable/renderer-dom";
-import { provideServiceWorker } from "@gable/service-worker";
+import { bootstrap } from "@gablejs/core";
+import { dom } from "@gablejs/renderer-dom";
+import { provideServiceWorker } from "@gablejs/service-worker";
 import "./global.css";
 import { Root } from "./root.js";
 

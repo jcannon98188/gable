@@ -15,8 +15,8 @@ async function bundle(dev: boolean): Promise<string> {
       {
         name: "entry",
         // The published package lists its index as having side effects (see core's package.json); mirror that for the source.
-        resolveId: (id) => (id === entry ? id : id === "@gable/core" ? { id: core, moduleSideEffects: true } : undefined),
-        load: (id) => (id === entry ? `import { signal, computed, effect, html } from "@gable/core";\nconsole.log(signal(1)(), computed, effect, html);\n` : undefined),
+        resolveId: (id) => (id === entry ? id : id === "@gablejs/core" ? { id: core, moduleSideEffects: true } : undefined),
+        load: (id) => (id === entry ? `import { signal, computed, effect, html } from "@gablejs/core";\nconsole.log(signal(1)(), computed, effect, html);\n` : undefined),
       },
     ],
     build: { write: false, minify: true, rollupOptions: { input: entry }, lib: false },

@@ -26,7 +26,7 @@ Imported from backlog.md without a description.
 
 ## Answer
 
-@gable/vite plugin, dev hot update, no HMR in prod bundle, tsconfig fail-fast; merged.
+@gablejs/vite plugin, dev hot update, no HMR in prod bundle, tsconfig fail-fast; merged.
 
 ## Parent
 

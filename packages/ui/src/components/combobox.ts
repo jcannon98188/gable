@@ -1,5 +1,5 @@
-import { computed, html, inject, input, model, output, signal } from "@gable/core";
-import { ComboboxState, UiPopup, UiPortal, UiProps } from "@gable/ui-primitives";
+import { computed, html, inject, input, model, output, signal } from "@gablejs/core";
+import { ComboboxState, UiPopup, UiPortal, UiProps } from "@gablejs/ui-primitives";
 import * as combobox from "@zag-js/combobox";
 import { cn } from "../lib/cn.js";
 import { UiIcon } from "../lib/icon.js";

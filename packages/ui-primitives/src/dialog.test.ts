@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { html, inject, signal } from "@gable/core";
-import { mount } from "@gable/testing";
+import { html, inject, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
 import { domEvent, provideTestDom } from "./test-dom.js";
 import { DIALOG, DialogState } from "./dialog.js";
 

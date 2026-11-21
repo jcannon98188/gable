@@ -1,4 +1,4 @@
-import type { ComponentScenes } from "@gable/core/tooling";
+import type { ComponentScenes } from "@gablejs/core/tooling";
 import { ProfileCard } from "./card.js";
 
 export default {

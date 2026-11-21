@@ -1,4 +1,4 @@
-// `@gable/core/http`: a small HTTP client. Requests are cold Observables that
+// `@gablejs/core/http`: a small HTTP client. Requests are cold Observables that
 // send on subscribe and abort on unsubscribe; this entry imports RxJS (a peer dependency).
 import { Observable, map, type Subscriber } from "rxjs";
 import { INJECTOR, inject, type Injector, type Provider } from "./di.js";
@@ -384,7 +384,7 @@ export class HttpMockBackend extends HttpBackend {
 }
 
 /**
- * Providers that replace the HTTP backend with `mocks`. The Designer, `@gable/testing`'s `mountScene` and tests share it.
+ * Providers that replace the HTTP backend with `mocks`. The Designer, `@gablejs/testing`'s `mountScene` and tests share it.
  *
  * @example
  * ```ts

@@ -1,5 +1,5 @@
-import { html } from '@gable/core';
-import { UiCard, UiCardContent, UiCardDescription, UiCardHeader, UiCardTitle, UiChart } from '@gable/ui';
+import { html } from '@gablejs/core';
+import { UiCard, UiCardContent, UiCardDescription, UiCardHeader, UiCardTitle, UiChart } from '@gablejs/ui';
 
 /** Every chart type of `<ui-chart>`, drawn as SVG in the theme's `--chart-1` .. `--chart-5` colours. */
 export class ChartDemo {

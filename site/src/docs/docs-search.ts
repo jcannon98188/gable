@@ -1,6 +1,6 @@
-import { computed, effect, html, inject, signal } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
-import { Router } from "@gable/core/router";
+import { computed, effect, html, inject, signal } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
+import { Router } from "@gablejs/core/router";
 import { ApiData } from "./api-data.js";
 import { GUIDES, loadGuide, loadPackageGuide } from "./content.js";
 import { DocLink } from "./doc-link.js";

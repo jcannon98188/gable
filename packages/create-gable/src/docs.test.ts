@@ -46,6 +46,6 @@ describe("docs mirror the starter template", () => {
     expect(text).toContain("gable()");
     expect(text).toContain("useDefineForClassFields");
     expect(text).toContain("bootstrap(");
-    expect(text).toContain('"renderer": "@gable/renderer-dom"');
+    expect(text).toContain('"renderer": "@gablejs/renderer-dom"');
   });
 });

@@ -1,4 +1,4 @@
-import type { Route } from '@gable/core/router';
+import type { Route } from '@gablejs/core/router';
 
 /** `#/`, `#/active` and `#/completed`. The filter rides along as route data. */
 export const routes: Route[] = [

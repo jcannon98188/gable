@@ -1,5 +1,5 @@
-import { html, signal } from "@gable/core";
-import { RouterLink, RouterLinkActive } from "@gable/core/router";
+import { html, signal } from "@gablejs/core";
+import { RouterLink, RouterLinkActive } from "@gablejs/core/router";
 
 export class Nav {
   static meta = {

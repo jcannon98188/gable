@@ -1,6 +1,6 @@
 ---
 kind: ticket
-title: "@gable/store: withStorage feature"
+title: "@gablejs/store: withStorage feature"
 status: resolved
 tags:
   - store

@@ -1,6 +1,6 @@
-import { html, signal, computed, effect, untracked, inject, createComponent, createInjector, InjectionToken, ErrorHandler, injectHost, viewChild } from "@gable/core";
-import type { ComponentClass, ComponentRef } from "@gable/core";
-import { parseExpression } from "@gable/core/tooling";
+import { html, signal, computed, effect, untracked, inject, createComponent, createInjector, InjectionToken, ErrorHandler, injectHost, viewChild } from "@gablejs/core";
+import type { ComponentClass, ComponentRef } from "@gablejs/core";
+import { parseExpression } from "@gablejs/core/tooling";
 import { demoStyles } from "./demo-style.js";
 
 /** The sample component the visitor's expression is evaluated against. */
@@ -41,7 +41,7 @@ function probeFor(source: string): ComponentClass<object> {
 
 type Parsed = { ok: true; kind: string } | { ok: false; message: string };
 
-/** Parses with Gable's own parser (`parseExpression` from `@gable/core/tooling`), the one templates use. */
+/** Parses with Gable's own parser (`parseExpression` from `@gablejs/core/tooling`), the one templates use. */
 export function check(source: string): Parsed {
   if (source.trim() === "") return { ok: false, message: "Type an expression, or pick an example." };
   if (/[{}\n]/.test(source)) return { ok: false, message: "This demo wraps your text in {{ }} to render it, so braces and newlines are left out." };

@@ -1,7 +1,7 @@
 // How an app turns the dev-only frame overlay on for every canvas (canvas/119): `provideCanvasDebug()` in the root providers, or
 // a `debug` attribute on one `<gable-canvas>`. Free of any pixi.js import, like the host that reads it. In a production build
 // (`__GABLE_DEV__: false`) the provider list is empty and nothing reads the attribute.
-import { InjectionToken, type Provider } from "@gable/core";
+import { InjectionToken, type Provider } from "@gablejs/core";
 import { DEV } from "./dev.js";
 
 /** Options of the dev-only frame overlay: the frame budget, the rolling window, the update interval and the time source. */

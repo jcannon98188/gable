@@ -29,7 +29,7 @@ export function findImports(source: string): ImportRef[] {
 
 export const isRelative = (specifier: string): boolean => specifier.startsWith("./") || specifier.startsWith("../");
 
-/** The npm package a bare specifier belongs to (`@gable/core/hmr` is `@gable/core`), or undefined for relative and builtin ones. */
+/** The npm package a bare specifier belongs to (`@gablejs/core/hmr` is `@gablejs/core`), or undefined for relative and builtin ones. */
 export function packageOf(specifier: string): string | undefined {
   if (isRelative(specifier) || specifier.startsWith("/") || specifier.startsWith("node:")) return undefined;
   const parts = specifier.split("/");

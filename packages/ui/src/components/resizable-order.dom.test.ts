@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 import { UiResizableHandle, UiResizablePanel, UiResizablePanelGroup } from "./resizable.js";
 import { $, $$, key, pointer, settle, useDomApp } from "../test-utils.js";
 

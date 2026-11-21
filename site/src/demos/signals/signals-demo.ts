@@ -1,4 +1,4 @@
-import { html, signal, computed, effect, untracked, injectHost } from "@gable/core";
+import { html, signal, computed, effect, untracked, injectHost } from "@gablejs/core";
 import { demoStyles } from "./demo-style.js";
 
 type Key = "a" | "b" | "sum" | "product" | "parity";

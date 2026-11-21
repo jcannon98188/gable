@@ -1,4 +1,4 @@
-import { computed, html, input, signal } from "@gable/core";
+import { computed, html, input, signal } from "@gablejs/core";
 // The tokenizer behind gable-ui's ui-code-block (pure, dependency-free). The component itself needs Tailwind and the
 // shadcn theme, which the site does not use, so the site renders the tokens with its own markup and colours.
 import { normalizeLanguage, tokenize } from "../../../packages/ui/src/lib/highlight.js";

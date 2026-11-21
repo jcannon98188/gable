@@ -1,5 +1,5 @@
-import { html, signal } from '@gable/core';
-import { UiJsonViewer, UiTree, type TreeNode } from '@gable/ui';
+import { html, signal } from '@gablejs/core';
+import { UiJsonViewer, UiTree, type TreeNode } from '@gablejs/ui';
 
 /** A small file tree with a disabled folder, a lazy folder and a row action. */
 export const FILES: TreeNode[] = [

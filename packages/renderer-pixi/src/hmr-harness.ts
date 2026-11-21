@@ -1,8 +1,8 @@
 // Shared harness for the canvas HMR suites: a fake Pixi Application, a manual frame source and a DOM-hosted boot.
 import { Container } from "pixi.js";
-import { bootstrap } from "@gable/core";
-import { applyUpdate } from "@gable/core/hmr";
-import { createDomRenderer } from "@gable/renderer-dom";
+import { bootstrap } from "@gablejs/core";
+import { applyUpdate } from "@gablejs/core/hmr";
+import { createDomRenderer } from "@gablejs/renderer-dom";
 import type { ApplicationLike, FrameScheduler } from "./index.js";
 
 export function fakeApp() {

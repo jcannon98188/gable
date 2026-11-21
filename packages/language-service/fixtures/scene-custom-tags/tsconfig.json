@@ -1,5 +1,5 @@
 {
   "extends": "../tsconfig.fixture.json",
-  "compilerOptions": { "plugins": [{ "name": "@gable/language-service", "sceneTags": ["gem"] }] },
+  "compilerOptions": { "plugins": [{ "name": "@gablejs/language-service", "sceneTags": ["gem"] }] },
   "include": ["src"]
 }

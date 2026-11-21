@@ -4,7 +4,7 @@
 // `strings.raw[0]`) and converts between ranges in the literal and positions in the file.
 import { readFileSync } from "node:fs";
 import { join, isAbsolute } from "node:path";
-import { findHtmlLiterals } from "@gable/template-format";
+import { findHtmlLiterals } from "@gablejs/template-format";
 
 /** A file read once, with its `\r\n` folded to `\n` (JavaScript does the same inside template literals) and the offset maps between the two. */
 export interface SourceText {

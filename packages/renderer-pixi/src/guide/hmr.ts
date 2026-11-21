@@ -1,5 +1,5 @@
-import { hotData, html, inject, signal } from "@gable/core";
-import { Frame } from "@gable/renderer-pixi";
+import { hotData, html, inject, signal } from "@gablejs/core";
+import { Frame } from "@gablejs/renderer-pixi";
 
 /** What must survive a hot edit lives in a root service: the spawn clock and the count. */
 export class SpawnState {

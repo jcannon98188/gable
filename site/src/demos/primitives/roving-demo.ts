@@ -1,5 +1,5 @@
-import { computed, html, signal } from "@gable/core";
-import { UiRoving, UiRovingItem } from "@gable/ui-primitives";
+import { computed, html, signal } from "@gablejs/core";
+import { UiRoving, UiRovingItem } from "@gablejs/ui-primitives";
 import { primitivesStyles } from "./primitives-style.js";
 
 /**

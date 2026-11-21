@@ -1,6 +1,6 @@
 // A canvas boundary's scene as a DOM-like tree for the Designer (canvas/139). Pure: it reads the devtools hook's boundary
 // trees and shapes them for the shell; the agent supplies the hook.
-import type { BoundaryNode, BoundaryTree, PageRect, SourceInfo } from "@gable/core/devtools";
+import type { BoundaryNode, BoundaryTree, PageRect, SourceInfo } from "@gablejs/core/devtools";
 
 /** One display object, nested like an element: its owning component, where that is defined, where the node sits in its template, and its box on the page. */
 export interface SceneReportNode {

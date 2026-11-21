@@ -1,11 +1,11 @@
-# @gable/editor
+# @gablejs/editor
 
 A collaborative rich text editor. TipTap and ProseMirror provide the editing model, and a small Yjs binding of our own provides collaboration. Every feature ships as a plugin: a plugin bundles TipTap extensions (nodes, marks, commands, keymaps, input rules), toolbar items and an optional hook for state that lives next to the document in a shared `Y.Doc`.
 
 ## Install
 
 ```
-npm install @gable/editor @gable/core @gable/ui yjs
+npm install @gablejs/editor @gablejs/core @gablejs/ui yjs
 ```
 
 The package exports one entry point. `GableEditor` is headless unless you pass an `element`. `<gable-editor>` is the ready-made Gable component: a toolbar (an ARIA toolbar with arrow-key movement), a floating toolbar over the selection and presence avatars. It is styled with [gable-ui](../gable-ui-cli.md) classes and the gable-ui theme, so an app that does not use Tailwind can draw its own toolbar instead, as the demo below does.
@@ -22,7 +22,7 @@ The source below is the real demo component.
 
 ```ts
 import { Mark } from "@tiptap/core";
-import { GableEditor, corePlugin, definePlugin } from "@gable/editor";
+import { GableEditor, corePlugin, definePlugin } from "@gablejs/editor";
 
 const Highlight = Mark.create({
   name: "highlight",
@@ -68,7 +68,7 @@ Without `plugins` it uses `defaultPlugins`; spread it to extend the default. `va
 ```ts
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
-import { adaptProvider } from "@gable/editor";
+import { adaptProvider } from "@gablejs/editor";
 
 const { ydoc, awareness, synced } = adaptProvider(new WebsocketProvider(url, room, new Y.Doc()));
 ```

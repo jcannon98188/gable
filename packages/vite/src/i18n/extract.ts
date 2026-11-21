@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
-import { extractTemplateMessages, messageFromStrings, messageId, type ExtractedMessage } from "@gable/core/tooling";
+import { extractTemplateMessages, messageFromStrings, messageId, type ExtractedMessage } from "@gablejs/core/tooling";
 import { cook, lineOf, scanTemplates } from "./scan.js";
 
 /** Messages of one source file: the markers in its `html` templates and its `i18n` tagged templates. */

@@ -1,6 +1,6 @@
 ---
 kind: ticket
-title: "@gable/store: HMR state preservation and language-service checks"
+title: "@gablejs/store: HMR state preservation and language-service checks"
 status: resolved
 blocked_by: [31]
 tags:

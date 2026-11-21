@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { computed, html, inject, signal } from "@gable/core";
-import { mount } from "@gable/testing";
+import { computed, html, inject, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
 import * as select from "@zag-js/select";
 const createListCollection = select.collection;
 import { domEvent, focusNode, pressKey } from "./test-dom.js";

@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
-import { bootstrap, html, inject } from "@gable/core";
-import { whenFlushed } from "@gable/core/internal";
-import { LiveAnnouncer } from "@gable/core/renderer";
-import { Router, RouterOutlet, provideRouter, type Route } from "@gable/core/router";
+import { bootstrap, html, inject } from "@gablejs/core";
+import { whenFlushed } from "@gablejs/core/internal";
+import { LiveAnnouncer } from "@gablejs/core/renderer";
+import { Router, RouterOutlet, provideRouter, type Route } from "@gablejs/core/router";
 import { dom } from "./index.js";
 
 class Home {

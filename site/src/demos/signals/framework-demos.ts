@@ -1,4 +1,4 @@
-import { html, ErrorBoundary } from "@gable/core";
+import { html, ErrorBoundary } from "@gablejs/core";
 import { SignalsDemo } from "./signals-demo.js";
 import { RxjsDemo } from "./rxjs-demo.js";
 import { ExpressionsDemo } from "./expressions-demo.js";

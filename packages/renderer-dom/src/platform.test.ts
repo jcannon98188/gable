@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { bootstrap, html, inject } from "@gable/core";
-import { History, Location, Title } from "@gable/core/renderer";
+import { bootstrap, html, inject } from "@gablejs/core";
+import { History, Location, Title } from "@gablejs/core/renderer";
 import { dom, type DomRendererOptions } from "./index.js";
 import { createDomPlatform } from "./platform.js";
 

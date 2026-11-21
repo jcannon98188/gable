@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { html, injectHost } from "@gable/core";
-import type { HostRef } from "@gable/core";
-import { injectHost as internalInjectHost } from "@gable/core/internal";
-import { mount, type TestNode } from "@gable/testing";
+import { html, injectHost } from "@gablejs/core";
+import type { HostRef } from "@gablejs/core";
+import { injectHost as internalInjectHost } from "@gablejs/core/internal";
+import { mount, type TestNode } from "@gablejs/testing";
 
 describe("injectHost", () => {
   it("is the same function from the public and the internal entry points", () => {

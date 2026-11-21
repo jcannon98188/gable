@@ -1,5 +1,5 @@
-import { computed, html, injectHost, input, model, output, signal } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
+import { computed, html, injectHost, input, model, output, signal } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
 import { cn } from "../lib/cn.js";
 import { useHostClass } from "../lib/host-class.js";
 import { UiTree, expandableIds, type TreeNode } from "./tree.js";

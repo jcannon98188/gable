@@ -1,6 +1,6 @@
 ---
 kind: ticket
-title: "@gable/store: rxMethod"
+title: "@gablejs/store: rxMethod"
 status: resolved
 blocked_by: [31]
 tags:
@@ -31,7 +31,7 @@ rxMethod in the style of NgRx: accepts a value, signal or Observable and pipes i
 
 Implemented packages/store/src/rx-method.ts (rxMethod, exported from index.ts), tests in rx-method.test.ts, docs/store.md section. vitest packages/store and tsc pass.
 
-Housekeeping: @gable/store now declares rxjs as a peerDependency (^7.8.2, same as @gable/core; not optional because index.ts imports rxMethod statically). Lockfile updated.
+Housekeeping: @gablejs/store now declares rxjs as a peerDependency (^7.8.2, same as @gablejs/core; not optional because index.ts imports rxMethod statically). Lockfile updated.
 
 ## Answer
 

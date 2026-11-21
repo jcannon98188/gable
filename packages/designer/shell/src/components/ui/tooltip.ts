@@ -1,6 +1,6 @@
-import { computed, effect, injectHost, input } from "@gable/core";
-import { TooltipState, bindProps, delayHidden, usePresence } from "@gable/ui-primitives";
-import { currentScope } from "@gable/core/internal";
+import { computed, effect, injectHost, input } from "@gablejs/core";
+import { TooltipState, bindProps, delayHidden, usePresence } from "@gablejs/ui-primitives";
+import { currentScope } from "@gablejs/core/internal";
 import { cn } from "../../lib/ui/cn.js";
 import type { Placement } from "../../lib/ui/placement.js";
 

@@ -10,13 +10,13 @@ export default defineConfig({
   plugins: [tailwindcss()],
   resolve: {
     alias: [
-      { find: /^@gable\/core$/, replacement: pkg("core/src/index.ts") },
-      { find: /^@gable\/core\/internal$/, replacement: pkg("core/src/internal.ts") },
-      { find: /^@gable\/renderer-dom$/, replacement: pkg("renderer-dom/src/index.ts") },
-      { find: /^@gable\/ui-primitives$/, replacement: pkg("ui-primitives/src/index.ts") },
-      { find: /^@gable\/ui$/, replacement: pkg("ui/src/index.ts") },
-      { find: /^@gable\/ui\/theme\.css$/, replacement: pkg("ui/theme.css") },
-      { find: /^@gable\/editor$/, replacement: pkg("editor/src/index.ts") },
+      { find: /^@gablejs\/core$/, replacement: pkg("core/src/index.ts") },
+      { find: /^@gablejs\/core\/internal$/, replacement: pkg("core/src/internal.ts") },
+      { find: /^@gablejs\/renderer-dom$/, replacement: pkg("renderer-dom/src/index.ts") },
+      { find: /^@gablejs\/ui-primitives$/, replacement: pkg("ui-primitives/src/index.ts") },
+      { find: /^@gablejs\/ui$/, replacement: pkg("ui/src/index.ts") },
+      { find: /^@gablejs\/ui\/theme\.css$/, replacement: pkg("ui/theme.css") },
+      { find: /^@gablejs\/editor$/, replacement: pkg("editor/src/index.ts") },
     ],
   },
 });

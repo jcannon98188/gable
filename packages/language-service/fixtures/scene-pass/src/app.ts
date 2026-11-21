@@ -1,5 +1,5 @@
-import { html, output, signal } from "@gable/core";
-import { pixiElements } from "@gable/renderer-pixi/elements";
+import { html, output, signal } from "@gablejs/core";
+import { pixiElements } from "@gablejs/renderer-pixi/elements";
 import type { FederatedPointerEvent, Texture } from "pixi.js";
 
 // A renderer boundary: its own template gets the Pixi element map.

@@ -1,5 +1,5 @@
-import { computed, html, signal } from "@gable/core";
-import { mount } from "@gable/testing";
+import { computed, html, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
 import { demoStyles } from "../signals/demo-style.js";
 
 /** The component under test: a button that counts clicks. */
@@ -82,7 +82,7 @@ interface Result {
 }
 
 /**
- * Runs real `@gable/testing` tests in the page. `mount()` renders the component into the in-memory test renderer, so no
+ * Runs real `@gablejs/testing` tests in the page. `mount()` renders the component into the in-memory test renderer, so no
  * jsdom or browser is needed; `dispatch` fires the click and `flush` waits for the update. Tick the box to run the same
  * tests against the buggy component and watch them fail.
  */

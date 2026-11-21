@@ -1,5 +1,5 @@
-import { computed, html, signal } from '@gable/core';
-import { DialogTrigger, UiBindingPicker, UiButton, UiDialog, UiTooltip, type CommandItem } from '@gable/ui';
+import { computed, html, signal } from '@gablejs/core';
+import { DialogTrigger, UiBindingPicker, UiButton, UiDialog, UiTooltip, type CommandItem } from '@gablejs/ui';
 
 const SIGNALS: CommandItem[] = [
   { value: 'count', label: 'count', badge: 'number', group: 'Component' },

@@ -1,6 +1,6 @@
 import path from "node:path";
 import ts from "@typescript/typescript6";
-import { parseExpression, parseHandler } from "@gable/core/tooling";
+import { parseExpression, parseHandler } from "@gablejs/core/tooling";
 import { readConfig, type AnalyzerConfig, type RuleId, type Severity } from "./config.js";
 import { emit, type Emitted, type EventSite, type Group, type Ref, type TemplateModel } from "./emit.js";
 import { closest, findIdentifier, hasValueModel, inCallee, isFieldType, isObservableLike, isSignal, unwrap, isStoreType } from "./typeutil.js";
@@ -134,7 +134,7 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
   const isBoundary = (tag: string) => !!components.get(tag)?.boundary;
   for (const { model, add } of pendingScene) sceneRules(model, (tag) => components.has(tag), isBoundary, add, customTags);
 
-  // Expression grammar is owned by @gable/core; a rejected expression gets one diagnostic and no check code.
+  // Expression grammar is owned by @gablejs/core; a rejected expression gets one diagnostic and no check code.
   const validator = (state: FileState) => (e: Src, kind: ExprKind): boolean => {
     let verdict = state.syntax.get(e.start);
     if (!verdict) {
@@ -251,7 +251,7 @@ export function analyzeSources(rootNames: string[], options: ts.CompilerOptions,
   return { diagnostics: out, options, rootNames, overlay, files: analyzed, defaultLib, components: sceneComponents };
 }
 
-/** Why @gable/core's expression parser rejects `text`, or null when it accepts it. */
+/** Why @gablejs/core's expression parser rejects `text`, or null when it accepts it. */
 function expressionProblem(text: string, kind: ExprKind): string | null {
   try {
     if (kind === "handler") parseHandler(text);

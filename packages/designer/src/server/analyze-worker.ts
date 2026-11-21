@@ -3,7 +3,7 @@
 // `analyze-main.ts` runs it in a separate process: a type-check takes seconds and must not block the backend's server.
 import { readFileSync } from "node:fs";
 import { relative } from "node:path";
-import { analyzeProject } from "@gable/language-service";
+import { analyzeProject } from "@gablejs/language-service";
 import { hash } from "./edit/hunks.js";
 import { literalAt, sourceText } from "./source.js";
 

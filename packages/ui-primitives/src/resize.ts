@@ -1,4 +1,4 @@
-import { signal, untracked, type ReadonlySignal } from "@gable/core";
+import { signal, untracked, type ReadonlySignal } from "@gablejs/core";
 
 /** Which way a resizable group lays out its panels: side by side (`horizontal`) or stacked (`vertical`). */
 export type ResizeDirection = "horizontal" | "vertical";

@@ -1,7 +1,7 @@
 // The Designer reports a canvas boundary's scene like a DOM tree (canvas/139): nested nodes with their owner, source, template
 // position and page box, built from the devtools hook's boundary trees.
 import { describe, expect, it } from "vitest";
-import { createDevtools, type BoundaryInfo, type BoundaryNode, type BoundaryTree } from "@gable/core/devtools";
+import { createDevtools, type BoundaryInfo, type BoundaryNode, type BoundaryTree } from "@gablejs/core/devtools";
 import { pageRectFor, sceneReport } from "./agent/scene.js";
 
 const node = (id: string, parent: string | null, name: string, extra: Partial<BoundaryNode> = {}): BoundaryNode => ({

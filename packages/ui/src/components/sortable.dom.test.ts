@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
-import { getDndManager, lastAnnouncement } from "@gable/ui-primitives";
+import { html, signal } from "@gablejs/core";
+import { getDndManager, lastAnnouncement } from "@gablejs/ui-primitives";
 import { UiSortableList, type SortableRow } from "./sortable.js";
 import { $, $$, key, settle, useDomApp } from "../test-utils.js";
 

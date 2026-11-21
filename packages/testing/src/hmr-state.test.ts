@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { computed, effect, html, hotState, inject, signal, viewChildren } from "@gable/core";
-import { mount } from "@gable/testing";
-import { patchState, signalStore, withHotState, withMethods, withState } from "@gable/store";
-import { createTestRenderer } from "@gable/testing/renderer";
+import { computed, effect, html, hotState, inject, signal, viewChildren } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
+import { patchState, signalStore, withHotState, withMethods, withState } from "@gablejs/store";
+import { createTestRenderer } from "@gablejs/testing/renderer";
 
 // The nine scenarios of the HMR prototype (gable-v0/11), replayed through fixture.hotReplace.
 // A "new version" of a module is a fresh class with the same name, as a re-evaluated module would produce.
@@ -510,7 +510,7 @@ describe("hotState", () => {
   });
 });
 
-describe("@gable/store across a hot update", () => {
+describe("@gablejs/store across a hot update", () => {
   // Each version of the store module is evaluated with its own import.meta.url, as a hot update would do.
   const storeV = (file: string, t: number, extra: Record<string, unknown> = {}) =>
     class CartStore extends signalStore(

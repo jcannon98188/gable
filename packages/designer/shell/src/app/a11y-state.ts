@@ -1,7 +1,7 @@
 // Accessibility checks of the selected frame. The Preview agent runs the checker (axe-core) in the page; this asks for a run
 // when the frame connects and after its page changed (components added or removed, a hot update, a navigation), and on
 // Re-run. Nothing is cached across pages: a report always names the page it was taken on.
-import { computed, effect, inject, signal, untracked } from "@gable/core";
+import { computed, effect, inject, signal, untracked } from "@gablejs/core";
 import type { A11yCheck, A11yReport } from "../../../src/protocol.js";
 import { DesignerState } from "./designer-state.js";
 

@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { fromXliff, mergeExtracted, readCatalog, sourceCatalogJson, toXliff, type ExtractedMessage, type Messages } from "@gable/core/tooling";
+import { fromXliff, mergeExtracted, readCatalog, sourceCatalogJson, toXliff, type ExtractedMessage, type Messages } from "@gablejs/core/tooling";
 
 export const isXliff = (path: string) => /\.(?:xlf|xliff)$/i.test(path);
 

@@ -1,5 +1,5 @@
-import { html, inject, signal, viewChild } from "@gable/core";
-import { Frame, particles, pixiElements, type ParticleSet } from "@gable/renderer-pixi";
+import { html, inject, signal, viewChild } from "@gablejs/core";
+import { Frame, particles, pixiElements, type ParticleSet } from "@gablejs/renderer-pixi";
 
 /** Tier 1, components with signals: fine up to about 1,000 entities. Each entity is a component, each property a signal. */
 export class Dot {

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { ErrorHandler, effect, html, inject, signal, type ErrorContext } from "@gable/core";
-import { mount } from "@gable/testing";
+import { ErrorHandler, effect, html, inject, signal, type ErrorContext } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
 import { Subject } from "rxjs";
-import { toSignal } from "@gable/core/rxjs";
+import { toSignal } from "@gablejs/core/rxjs";
 
 describe("setup failures", () => {
   it("reports a failed child Setup, disposes its scope, renders an empty host, and siblings continue", async () => {

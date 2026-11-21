@@ -4,9 +4,9 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { computed, html, input, signal } from "@gable/core";
-import { createDevtools, type ComponentDetail } from "@gable/core/devtools";
-import { mount } from "@gable/testing";
+import { computed, html, input, signal } from "@gablejs/core";
+import { createDevtools, type ComponentDetail } from "@gablejs/core/devtools";
+import { mount } from "@gablejs/testing";
 import { FIGHT_LIMIT, SignalState } from "./agent/signal-state.js";
 import { EditService } from "./server/edit/service.js";
 import type { EditResult } from "./server/edit/types.js";
@@ -40,7 +40,7 @@ describe("signal values", () => {
   });
 });
 
-const SCENES = `import type { ComponentScenes } from '@gable/core/tooling';
+const SCENES = `import type { ComponentScenes } from '@gablejs/core/tooling';
 import { TodoList } from './todo-list.js';
 
 const base = { inputs: { title: 'Todos' } };

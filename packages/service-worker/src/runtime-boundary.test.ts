@@ -11,7 +11,7 @@ describe("runtime boundary checker", () => {
 
   it("allows core's public entry, by package name or relative path, and runtime's own modules", () => {
     const source = [
-      `import { route } from "@gable/service-worker/core";`,
+      `import { route } from "@gablejs/service-worker/core";`,
       `import type { WorkerScope } from "../core/index.js";`,
       `export { config } from "./config.js";`,
       `import "./polyfill.js";`,
@@ -24,8 +24,8 @@ describe("runtime boundary checker", () => {
     expect(check(`import { x } from "../../core/index.js";`, "runtime/strategies/table.ts")).toEqual([]);
   });
 
-  it("allows packages outside @gable/service-worker", () => {
-    expect(check(`import { signal } from "@gable/core";\nimport x from "some-lib";`)).toEqual([]);
+  it("allows packages outside @gablejs/service-worker", () => {
+    expect(check(`import { signal } from "@gablejs/core";\nimport x from "some-lib";`)).toEqual([]);
   });
 
   it("rejects core internals, whatever the import form", () => {
@@ -48,14 +48,14 @@ describe("runtime boundary checker", () => {
   it("rejects the app side and other package subpaths", () => {
     const source = [
       `import { x } from "../index.js";`,
-      `import { y } from "@gable/service-worker";`,
-      `import { z } from "@gable/service-worker/core/routing";`,
+      `import { y } from "@gablejs/service-worker";`,
+      `import { z } from "@gablejs/service-worker/core/routing";`,
       `import { w } from "../testing/worker-scope.js";`,
     ].join("\n");
     expect(check(source)).toEqual([
       { file: "runtime/worker.ts", specifier: "../index.js" },
-      { file: "runtime/worker.ts", specifier: "@gable/service-worker" },
-      { file: "runtime/worker.ts", specifier: "@gable/service-worker/core/routing" },
+      { file: "runtime/worker.ts", specifier: "@gablejs/service-worker" },
+      { file: "runtime/worker.ts", specifier: "@gablejs/service-worker/core/routing" },
       { file: "runtime/worker.ts", specifier: "../testing/worker-scope.js" },
     ]);
   });

@@ -1,4 +1,4 @@
-import { RouterLink, RouterLinkActive } from "@gable/core/router";
+import { RouterLink, RouterLinkActive } from "@gablejs/core/router";
 
 // The template checker (gable-check) learns which selector an imported class answers to from its `static meta`
 // literal. Core's published typings widen the router directives' selectors to `string`, so it reports

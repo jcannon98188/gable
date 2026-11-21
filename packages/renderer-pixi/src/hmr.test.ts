@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GableCanvas } from "./index.js";
 import { boot, fakeApp, live, manualScheduler, update } from "./hmr-harness.js";
-import { html } from "@gable/core";
+import { html } from "@gablejs/core";
 
 afterEach(() => {
   while (live.length) live.pop()!.destroy();

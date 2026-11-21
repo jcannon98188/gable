@@ -1,6 +1,6 @@
 // The project and its dev server, as the backend runs them (src/server/project-api.ts): opening another project, recent
 // projects and the folder lister, installing what the Preview agent needs, and the dev server's log and restart.
-import { computed, effect, inject, signal, untracked } from "@gable/core";
+import { computed, effect, inject, signal, untracked } from "@gablejs/core";
 import type { ProjectInfo } from "../../../src/server/backend.js";
 import type { FolderListing, RecentProject } from "../../../src/server/projects.js";
 import { ChromeState } from "./chrome-state.js";

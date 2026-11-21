@@ -1,8 +1,8 @@
 // mountWithScene (canvas/127): one `mountApp` fixture for a DOM page with a canvas in it. `fixture.root` and the usual
 // queries look at the DOM tree (the in-memory test renderer), `fixture.scene` at the scene (the scene test renderer),
 // and the two are joined the way production joins them: services and signals shared through DI.
-import type { ComponentClass } from "@gable/core";
-import { mountApp, type AppFixture, type MountAppOptions } from "@gable/testing";
+import type { ComponentClass } from "@gablejs/core";
+import { mountApp, type AppFixture, type MountAppOptions } from "@gablejs/testing";
 import type { TestAssets } from "./assets.js";
 import type { SceneTestRenderer } from "./renderer.js";
 

@@ -1,8 +1,8 @@
 // Error handling of element bindings (canvas/136 inlined the guard of errors.ts into applyBindings; this pins that nothing changed):
 // a throwing expression is reported once per failure episode and keeps the last good value, (the renderer.setProperty case is pinned in renderer-dom/src/binding-errors.test.ts).
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
-import { mount } from "@gable/testing";
+import { html, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
 
 class Probe {
   static meta = { selector: "x-probe", template: html`<p [attr.title]="read()" [value]="read()">x</p>` };

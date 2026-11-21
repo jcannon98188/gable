@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { bootstrap } from "@gable/core";
-import { dom } from "@gable/renderer-dom";
+import { bootstrap } from "@gablejs/core";
+import { dom } from "@gablejs/renderer-dom";
 import { Playground } from "./playground.js";
 import { STARTER, SUGGESTIONS } from "./samples.js";
 

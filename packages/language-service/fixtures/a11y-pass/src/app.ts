@@ -1,4 +1,4 @@
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 
 export class Panel {
   static meta = { selector: "x-panel", template: html`<i></i>` };

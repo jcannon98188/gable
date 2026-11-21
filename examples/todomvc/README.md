@@ -35,7 +35,7 @@ src/
 
 ## Build
 
-`@gable/*` is not published to npm yet, so it is installed from tarballs in `vendor/` (gitignored), packed from this repository.
+`@gablejs/*` is not published to npm yet, so it is installed from tarballs in `vendor/` (gitignored), packed from this repository.
 `npm run pack:local` builds the workspace, packs every publishable package into `vendor/` and keeps this app's
 `file:` dependencies and `overrides` in `package.json` pointing at them. Re-run it after changing a package.
 

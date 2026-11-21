@@ -21,7 +21,7 @@ const manifest = (dir: string, value: object) => write(join(dir, "package.json")
 /** A project with a fake `vite` whose server answers on the preview port; `/__die` makes it exit with code 3. */
 function fakeProject(behaviour: "serve" | "fail" = "serve"): string {
   const dir = temp();
-  manifest(dir, { name: "fake-app", dependencies: { "@gable/core": "*" }, devDependencies: { vite: "*" } });
+  manifest(dir, { name: "fake-app", dependencies: { "@gablejs/core": "*" }, devDependencies: { vite: "*" } });
   manifest(join(dir, "node_modules", "vite"), { name: "vite", version: "9.9.9", bin: { vite: "bin/vite.js" } });
   write(
     join(dir, "node_modules", "vite", "bin", "vite.js"),
@@ -35,7 +35,7 @@ http.createServer((req, res) => {
 }).listen(port, "localhost", () => console.log("\\u001b[32mVITE ready\\u001b[39m on " + port + " root=" + process.argv[2]));
 `,
   );
-  manifest(join(dir, "node_modules", "@gable", "core"), { name: "@gable/core", version: "1.2.3", exports: { ".": "./index.js", "./designer": "./designer.js" } });
+  manifest(join(dir, "node_modules", "@gablejs", "core"), { name: "@gablejs/core", version: "1.2.3", exports: { ".": "./index.js", "./designer": "./designer.js" } });
   return dir;
 }
 
@@ -130,7 +130,7 @@ describe("the project check", () => {
 
   it("offers the package manager's install when listed dependencies are not installed", () => {
     const dir = temp();
-    manifest(dir, { dependencies: { "@gable/core": "^1" }, devDependencies: { vite: "^8" } });
+    manifest(dir, { dependencies: { "@gablejs/core": "^1" }, devDependencies: { vite: "^8" } });
     const check = checkProject(dir);
     expect(check.agent).toMatchObject({ found: false, listed: true });
     expect(check.agent.problem).toMatch(/Preview agent not installed/);
@@ -139,7 +139,7 @@ describe("the project check", () => {
     expect(check.problem).toBeNull();
   });
 
-  it("is satisfied by a @gable/core with the designer entry and a vite", () => {
+  it("is satisfied by a @gablejs/core with the designer entry and a vite", () => {
     const check = checkProject(fakeProject());
     expect(check).toMatchObject({ install: null, problem: null, vite: { found: true, version: "9.9.9" }, agent: { found: true, version: "1.2.3", problem: null } });
   });
@@ -150,7 +150,7 @@ describe("the project check", () => {
     expect(checkProject(notGable)).toMatchObject({ install: null, problem: expect.stringMatching(/not a Gable app/) });
 
     const old = fakeProject();
-    manifest(join(old, "node_modules", "@gable", "core"), { name: "@gable/core", version: "0.0.1", exports: { ".": "./index.js" } });
+    manifest(join(old, "node_modules", "@gablejs", "core"), { name: "@gablejs/core", version: "0.0.1", exports: { ".": "./index.js" } });
     const check = checkProject(old);
     expect(check.install).toBeNull();
     expect(check.agent.found).toBe(false);
@@ -234,7 +234,7 @@ describe("switching projects in the backend", () => {
     const data = temp("designer-data-");
     const first = fakeProject();
     const second = fakeProject();
-    manifest(second, { name: "second-app", dependencies: { "@gable/core": "*" }, devDependencies: { vite: "*" } });
+    manifest(second, { name: "second-app", dependencies: { "@gablejs/core": "*" }, devDependencies: { vite: "*" } });
     const backend = await startBackend({ root: first, dataDir: data, mcpSessionDir: data });
     const api = async (path: string, body?: unknown) => {
       const res = await fetch(backend.url + path, {

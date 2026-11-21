@@ -1,4 +1,4 @@
-# @gable/service-worker
+# @gablejs/service-worker
 
 Service worker support for Gable apps: offline caching, app-controlled updates, push and background sync. It is web-only, because a service worker is a browser feature. The design is in [ADR 0022](../adr/0021-service-worker-support-is-one-layered-package-and-web-only.md).
 
@@ -16,7 +16,7 @@ The starter then has everything below, plus an update banner. [Getting started](
 
 An existing app takes four steps:
 
-1. Install the package next to `@gable/vite`: `npm install @gable/service-worker`.
+1. Install the package next to `@gablejs/vite`: `npm install @gablejs/service-worker`.
 2. Add [`gableServiceWorker()`](./vite.md#gableserviceworker) to `vite.config.ts`: `plugins: [gable(), gableServiceWorker()]`.
 3. Write `gable.sw.json` in the project root (see [The default worker](#the-default-worker-gableswjson)). This one caches the whole app and serves it offline:
 
@@ -30,7 +30,7 @@ An existing app takes four steps:
 4. Register the worker and handle updates in the app:
 
    ```ts
-   import { provideServiceWorker } from "@gable/service-worker";
+   import { provideServiceWorker } from "@gablejs/service-worker";
 
    bootstrap(Root, { renderer: dom(), target: "#app", providers: provideServiceWorker({ url: "/sw.js" }) });
    ```
@@ -45,9 +45,9 @@ The package has three entry points, one per layer:
 
 | Entry point | Layer | Who uses it |
 | --- | --- | --- |
-| `@gable/service-worker` | The app side: `provideServiceWorker`, `SwUpdates`, `SwPush`, `SwRegistration`. | Every app with a worker. |
-| `@gable/service-worker/runtime` | The default worker, driven by `gable.sw.json`, with `extend` for additions. | The worker file `gableServiceWorker()` generates; apps that extend it. |
-| `@gable/service-worker/core` | The authoring API: routing, caching strategies, a versioned precache, lifecycle hooks, the message protocol, push and background sync. | Custom workers, and extensions of the default one. |
+| `@gablejs/service-worker` | The app side: `provideServiceWorker`, `SwUpdates`, `SwPush`, `SwRegistration`. | Every app with a worker. |
+| `@gablejs/service-worker/runtime` | The default worker, driven by `gable.sw.json`, with `extend` for additions. | The worker file `gableServiceWorker()` generates; apps that extend it. |
+| `@gablejs/service-worker/core` | The authoring API: routing, caching strategies, a versioned precache, lifecycle hooks, the message protocol, push and background sync. | Custom workers, and extensions of the default one. |
 
 The runtime is built on core's public exports only; a test fails if it imports anything else from the package. The app side never imports the runtime, so an app's bundle carries no worker code. The app side talks to workers only through the [message protocol](#the-worker-app-message-protocol), so it works the same with the default worker, an extended one and one written from scratch.
 
@@ -97,8 +97,8 @@ Point `gableServiceWorker({ entry: "src/sw.ts" })` at a module whose default exp
 
 ```ts
 // src/sw.ts
-import { backgroundSync, networkOnly } from "@gable/service-worker/core";
-import { defineWorker } from "@gable/service-worker/runtime";
+import { backgroundSync, networkOnly } from "@gablejs/service-worker/core";
+import { defineWorker } from "@gablejs/service-worker/runtime";
 import config from "../gable.sw.json";
 
 export default defineWorker({
@@ -123,8 +123,8 @@ A custom worker is a module whose default export is a function `(self, manifest)
 
 ```ts
 // src/sw.ts
-import { createFetchRouter, createPrecache, lifecycle, type WorkerScope } from "@gable/service-worker/core";
-import type { AssetManifest } from "@gable/service-worker/runtime";
+import { createFetchRouter, createPrecache, lifecycle, type WorkerScope } from "@gablejs/service-worker/core";
+import type { AssetManifest } from "@gablejs/service-worker/runtime";
 
 export default function worker(self: WorkerScope, manifest: AssetManifest): void {
   const precache = createPrecache(self, { version: manifest.version, urls: manifest.files, hashes: manifest.hashes });
@@ -140,7 +140,7 @@ The app-side services work with it unchanged, as long as it keeps the [protocol]
 ### Routing, caching strategies and the precache
 
 ```ts
-import { cacheFirst, createFetchRouter, createPrecache, networkFirst, type WorkerScope } from "@gable/service-worker/core";
+import { cacheFirst, createFetchRouter, createPrecache, networkFirst, type WorkerScope } from "@gablejs/service-worker/core";
 
 declare const self: WorkerScope;
 const precache = createPrecache(self, { version: "3f9a1c", urls: ["/", "/assets/app.3f9a1c.js"] });
@@ -156,14 +156,14 @@ createFetchRouter(self)
 
 - A fetch router tries routes in order and the first match answers. A route matches by URL pattern (a same-origin path such as `/users/:id` or `/assets/*`, an absolute URL pattern for another origin, a RegExp or a predicate), by method (GET unless given) and by request destination. Unmatched requests go to the network. A handler that throws is a network error, not a fall-through. In a path pattern `:name` captures one segment and `*` matches any run of characters, slashes included, so `/assets/*` also matches `/assets/img/logo.png`. That is not how `gable.sw.json`'s globs read it: there `*` stays within one segment and `**` crosses segments.
 - The strategies are `cacheFirst`, `networkFirst` (with an optional network timeout), `staleWhileRevalidate` and `networkOnly`. The caching ones read and write one named cache and store only status 200 responses unless `cacheable` says otherwise; writes happen through the fetch event's `waitUntil`, so the page does not wait for them.
-- A precache installs one release into its own cache, `gable-precache:<version>`. The version counts as installed only once every file is stored, so a failed or interrupted install is never served, and the running version keeps serving its own files while a new one installs. Its requests revalidate with the server (`cache: "no-cache"`), so the HTTP cache cannot hand it an older release's file. Activation removes the caches of other versions. A manifest can also give `hashes`, a content hash by URL (the first 16 hex digits of the file's SHA-256, as `@gable/vite` emits them): each fetched file is checked against its hash, and a mismatch fails the install atomically like any other failed file. Files without an entry are not verified. Verification needs `crypto.subtle`, which service workers have in browsers; where it is missing, as in the AgniJS and QuickJS engine test suites, files are stored unverified.
+- A precache installs one release into its own cache, `gable-precache:<version>`. The version counts as installed only once every file is stored, so a failed or interrupted install is never served, and the running version keeps serving its own files while a new one installs. Its requests revalidate with the server (`cache: "no-cache"`), so the HTTP cache cannot hand it an older release's file. Activation removes the caches of other versions. A manifest can also give `hashes`, a content hash by URL (the first 16 hex digits of the file's SHA-256, as `@gablejs/vite` emits them): each fetched file is checked against its hash, and a mismatch fails the install atomically like any other failed file. Files without an entry are not verified. Verification needs `crypto.subtle`, which service workers have in browsers; where it is missing, as in the AgniJS and QuickJS engine test suites, files are stored unverified.
 
 ### Lifecycle hooks
 
 `lifecycle(self, { version, install, activate, update })` runs typed hooks at a version's lifecycle steps and keeps the app informed:
 
 ```ts
-import { lifecycle } from "@gable/service-worker/core";
+import { lifecycle } from "@gablejs/service-worker/core";
 
 lifecycle(self, {
   version: "3f9c2a",
@@ -208,7 +208,7 @@ From the app to a waiting worker:
 `onPush` and `onNotificationClick` handle the worker's push and notification-click events with typed handlers. Each also forwards its event to the app's open pages with the protocol's `push` or `notification-click` message, which `SwPush` exposes:
 
 ```ts
-import { onNotificationClick, onPush } from "@gable/service-worker/core";
+import { onNotificationClick, onPush } from "@gablejs/service-worker/core";
 
 onPush(self, {
   version: "3f9c2a",
@@ -235,7 +235,7 @@ onNotificationClick(self, {
 `backgroundSync(self, { tag, version, sync })` registers one tag and handles its sync events:
 
 ```ts
-import { backgroundSync } from "@gable/service-worker/core";
+import { backgroundSync } from "@gablejs/service-worker/core";
 
 const outbox = backgroundSync(self, { tag: "outbox", version: "3f9c2a", sync: () => sendQueuedMessages() });
 
@@ -269,10 +269,10 @@ async function send(message: Message) {
 
 ## App-side services
 
-`provideServiceWorker({ url })` sets the app up; injecting one of the services registers the worker. Registration happens only in a production build (`@gable/vite` defines `__GABLE_DEV__` as `false` on `vite build`). In development the services do nothing, so the dev server's HMR is never served stale code. Set `enabled` to override that either way. A build made without `@gable/vite` must define `__GABLE_DEV__` as `false` itself, or pass `enabled: true`; otherwise the worker never registers. `scope` and `type` pass through to `navigator.serviceWorker.register`; `sw.js` from `gableServiceWorker()` is a classic script, so leave `type` unset for it.
+`provideServiceWorker({ url })` sets the app up; injecting one of the services registers the worker. Registration happens only in a production build (`@gablejs/vite` defines `__GABLE_DEV__` as `false` on `vite build`). In development the services do nothing, so the dev server's HMR is never served stale code. Set `enabled` to override that either way. A build made without `@gablejs/vite` must define `__GABLE_DEV__` as `false` itself, or pass `enabled: true`; otherwise the worker never registers. `scope` and `type` pass through to `navigator.serviceWorker.register`; `sw.js` from `gableServiceWorker()` is a classic script, so leave `type` unset for it.
 
 ```ts
-import { provideServiceWorker } from "@gable/service-worker";
+import { provideServiceWorker } from "@gablejs/service-worker";
 
 bootstrap(Root, { renderer: dom(), target: "#app", providers: provideServiceWorker({ url: "/sw.js" }) });
 ```
@@ -334,12 +334,12 @@ export class NotifyButton {
 
 ## The Vite plugin
 
-[`gableServiceWorker()`](./vite.md#gableserviceworker) from `@gable/vite` runs in `vite build` only and emits two files into the output directory:
+[`gableServiceWorker()`](./vite.md#gableserviceworker) from `@gablejs/vite` runs in `vite build` only and emits two files into the output directory:
 
 - `sw-manifest.json`, the asset manifest `{ version, files, hashes }`: every emitted file (the public directory's included, source maps left out) as a path from the origin's root, each file's content hash, and the release version.
 - `sw.js`, the worker: one classic script with the manifest built in, at a fixed URL so the browser sees each release as an update. Register it with `provideServiceWorker({ url: "/sw.js" })`, with `base` prefixed when it is not `/`.
 
-Its options are `config` (default `"gable.sw.json"`), `entry` (a custom worker module in place of the default worker, for the extend and replace paths), `fileName` and `manifestFileName`. `@gable/service-worker` is an optional peer of `@gable/vite`, and `gable()` is unchanged, so apps without the plugin pay nothing. The runtime's `AssetManifest` type is `{ version, files }`; the emitted manifest adds `hashes`, typed as `EmittedAssetManifest` in `@gable/vite`.
+Its options are `config` (default `"gable.sw.json"`), `entry` (a custom worker module in place of the default worker, for the extend and replace paths), `fileName` and `manifestFileName`. `@gablejs/service-worker` is an optional peer of `@gablejs/vite`, and `gable()` is unchanged, so apps without the plugin pay nothing. The runtime's `AssetManifest` type is `{ version, files }`; the emitted manifest adds `hashes`, typed as `EmittedAssetManifest` in `@gablejs/vite`.
 
 ## Testing
 
@@ -355,7 +355,7 @@ What v1 does not do, as of this release:
 - **Production builds only.** The dev server has no worker. Test worker behaviour with `vite build` and `vite preview`.
 - **Activation and other tabs.** Activating a release removes the previous release's caches (`gable-precache:`, `gable-lazy:`) while other open tabs may still run the old release's code. Such a tab is controlled by the new worker, which serves only the new release's files, so a chunk the old code loads later goes to the network, and fails offline or once the server no longer has it. Reload every tab after `activateUpdate()`, or have each tab reload when `versions` reports `version-activated`.
 - **Navigation fallback.** With the default `exclude` (`["/**/*.*"]`), the fallback answers every same-origin navigation whose path has no file extension, including paths such as `/api/report` opened in a tab. Data groups never see the navigations it answers, so list such paths in `exclude` to leave them to the network and to data groups.
-- **Builds without the Vite plugin.** `@gable/vite` defines `__GABLE_DEV__` as `false` in production builds. Another bundler must define it as `false` too, or the app must pass `enabled: true` to `provideServiceWorker()`; otherwise the worker never registers.
+- **Builds without the Vite plugin.** `@gablejs/vite` defines `__GABLE_DEV__` as `false` in production builds. Another bundler must define it as `false` too, or the app must pass `enabled: true` to `provideServiceWorker()`; otherwise the worker never registers.
 - **No carry-over between releases.** Each release downloads all its prefetch and lazy files again, even unchanged ones; the runtime uses the manifest's per-file hashes only to verify prefetch files, not to skip downloads, and lazy files are not verified.
 - **Caching.** No maximum age or size for data caches. Asset groups cannot list files on other origins (a `performance` data group covers them). Precached files match by exact URL, with no ignore-search or directory-index matching beyond the navigation fallback. The precache does not reject redirected responses, so serve build files directly.
 - **Push.** `notificationclose` and periodic background sync are not handled, and a notification click opens a new window rather than focusing an open one.

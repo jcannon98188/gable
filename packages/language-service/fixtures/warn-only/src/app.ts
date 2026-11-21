@@ -1,4 +1,4 @@
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 
 export class Bare {
   static meta = { selector: "bare-view", template: html`<p>{{ count }}</p>` };

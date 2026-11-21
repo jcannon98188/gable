@@ -3,8 +3,8 @@
 //   node scripts/pack-local.mjs [app-dir] [--no-build] [--no-update]
 //
 // app-dir defaults to examples/todomvc. Steps: build the workspace, delete stale tarballs from <app>/vendor,
-// `npm pack` every non-private package there, and rewrite the app's package.json so each @gable/* dependency is
-// `file:vendor/<tarball>` and `overrides` pins every @gable/* package the app (transitively) needs, because the
+// `npm pack` every non-private package there, and rewrite the app's package.json so each @gablejs/* dependency is
+// `file:vendor/<tarball>` and `overrides` pins every @gablejs/* package the app (transitively) needs, because the
 // packages depend on each other at the lockstep version. With --no-update the package.json is left alone and the
 // entries to add are printed instead.
 import { execSync } from "node:child_process";
@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 
-/** Non-private workspace packages (and private ones flagged `"gablePack": true`, like @gable/ui): `{ name, dir }`. */
+/** Non-private workspace packages (and private ones flagged `"gablePack": true`, like @gablejs/ui): `{ name, dir }`. */
 export function publishablePackages(repo = root) {
   const packagesDir = join(repo, "packages");
   return readdirSync(packagesDir)
@@ -30,8 +30,8 @@ export const tarballName = (name, version) => `${name.replace(/^@/, "").replace(
 
 /**
  * The file name each package is stored under in vendor/: what `npm pack` produces, except that an unscoped package whose
- * tarball name would equal a scoped one gets `-cli` appended. `@gable/ui` and the `gable-ui` CLI both pack to
- * `gable-ui-<version>.tgz`; the CLI is stored as `gable-ui-cli-<version>.tgz`. Throws on any other collision.
+ * tarball name would equal a scoped one gets `-cli` appended (no two packages collide today: `@gablejs/ui` packs to
+ * `gablejs-ui-<version>.tgz` and the `gable-ui` CLI to `gable-ui-<version>.tgz`). Throws on any other collision.
  */
 export function vendorNames(packages) {
   const scoped = new Set(packages.filter((p) => p.name.startsWith("@")).map((p) => tarballName(p.name, p.manifest.version)));
@@ -49,8 +49,8 @@ export function vendorNames(packages) {
 
 /**
  * The dependency and overrides entries that make `manifest` install `packed` (name to tarball file) from `vendor/`.
- * Every packed @gable/* package is overridden (npm ignores overrides for packages not in the tree), so the ones the
- * app only reaches transitively, such as @gable/template-format, resolve to the same tarballs.
+ * Every packed @gablejs/* package is overridden (npm ignores overrides for packages not in the tree), so the ones the
+ * app only reaches transitively, such as @gablejs/template-format, resolve to the same tarballs.
  */
 export function localEntries(manifest, packed, vendorSpec = "vendor") {
   const spec = (name) => `file:${vendorSpec}/${packed.get(name)}`;
@@ -60,7 +60,7 @@ export function localEntries(manifest, packed, vendorSpec = "vendor") {
       if (packed.has(name)) dependencies[field] = { ...dependencies[field], [name]: spec(name) };
     }
   }
-  const overrides = Object.fromEntries([...packed.keys()].filter((n) => n.startsWith("@gable/")).sort().map((name) => [name, spec(name)]));
+  const overrides = Object.fromEntries([...packed.keys()].filter((n) => n.startsWith("@gablejs/")).sort().map((name) => [name, spec(name)]));
   return { dependencies, overrides };
 }
 
@@ -89,7 +89,7 @@ export function packLocal({ app, build = true, update = true, log = console.log 
     manifest.overrides = { ...manifest.overrides, ...overrides };
     writeFileSync(file, JSON.stringify(manifest, null, 2) + "\n");
     log(`Updated ${file}. Next: cd "${app}" && npm install`);
-    log("If npm reports an EINTEGRITY error for a refreshed tarball, delete the app's package-lock.json and node_modules/@gable and install again.");
+    log("If npm reports an EINTEGRITY error for a refreshed tarball, delete the app's package-lock.json and node_modules/@gablejs and install again.");
   } else {
     log(`Add to ${file}:\n${JSON.stringify({ ...dependencies, overrides }, null, 2)}`);
   }

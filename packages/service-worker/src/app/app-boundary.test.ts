@@ -19,7 +19,7 @@ describe("app-side boundary", () => {
     expect(files).toContain("app/registration.ts");
     const offenders = files.flatMap((file) =>
       specifiers(readFileSync(join(src, file), "utf8"))
-        .filter((s) => /(^|\/)runtime(\/|$|\.)/.test(s) || s.startsWith("@gable/service-worker/runtime"))
+        .filter((s) => /(^|\/)runtime(\/|$|\.)/.test(s) || s.startsWith("@gablejs/service-worker/runtime"))
         .map((s) => `${file}: ${s}`),
     );
     expect(offenders).toEqual([]);

@@ -30,9 +30,9 @@ describe.skipIf(!browser)("<gable-canvas> in a real browser", () => {
       root: here("../browser-page"),
       resolve: {
         alias: [
-          { find: /^@gable\/core$/, replacement: here("../../core/src/index.ts") },
-          { find: /^@gable\/core\/renderer$/, replacement: here("../../core/src/renderer.ts") },
-          { find: /^@gable\/renderer-dom$/, replacement: here("../../renderer-dom/src/index.ts") },
+          { find: /^@gablejs\/core$/, replacement: here("../../core/src/index.ts") },
+          { find: /^@gablejs\/core\/renderer$/, replacement: here("../../core/src/renderer.ts") },
+          { find: /^@gablejs\/renderer-dom$/, replacement: here("../../renderer-dom/src/index.ts") },
         ],
       },
       build: {

@@ -2,7 +2,7 @@
 // changes them, with add, edit, delete and clear. Everything shown is read from the page (and, for cookies, over CDP when
 // the backend has it: HttpOnly cookies and attributes); nothing is kept by the Designer. Its own keys in the frame's
 // storage are left out and counted.
-import { computed, html, inject, signal } from "@gable/core";
+import { computed, html, inject, signal } from "@gablejs/core";
 import type { CookieRow, CookieWrite, SameSite, StorageArea } from "../../../src/storage.js";
 import { UiButton } from "../components/ui/button.js";
 import { UiDialog } from "../components/ui/dialog.js";

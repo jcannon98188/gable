@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mount } from "@gable/testing";
+import { mount } from "@gablejs/testing";
 import { RouterDemo } from "./router-demo.js";
 import { LAZY_DELAY_MS } from "./mini-app.js";
 

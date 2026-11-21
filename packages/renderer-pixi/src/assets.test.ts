@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { createInjector, createComponent, html, inject, whenFlushed } from "@gable/core";
-import { createDomRenderer } from "@gable/renderer-dom";
+import { createInjector, createComponent, html, inject, whenFlushed } from "@gablejs/core";
+import { createDomRenderer } from "@gablejs/renderer-dom";
 import { Assets, provideAssets, type AssetsBackend, type BundleHandle } from "./assets.js";
 
 /** A scripted backend: loads settle when the test says so. */

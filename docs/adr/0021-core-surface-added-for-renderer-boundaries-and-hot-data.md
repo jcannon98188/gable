@@ -1,6 +1,6 @@
 # Core surface added for renderer boundaries, hot data and the canvas frame loop
 
-ADR 0019 let a component build its template with another renderer, and ADR 0020 put the canvas frame loop in Gable. Building the canvas binding added a small public surface to `@gable/core`. This records it.
+ADR 0019 let a component build its template with another renderer, and ADR 0020 put the canvas frame loop in Gable. Building the canvas binding added a small public surface to `@gablejs/core`. This records it.
 
 ## Decisions
 

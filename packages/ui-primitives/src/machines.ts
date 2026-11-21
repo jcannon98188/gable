@@ -1,4 +1,4 @@
-import { input } from "@gable/core";
+import { input } from "@gablejs/core";
 import * as accordion from "@zag-js/accordion";
 import * as avatar from "@zag-js/avatar";
 import * as checkbox from "@zag-js/checkbox";

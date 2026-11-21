@@ -1,4 +1,4 @@
-import { html, signal, model, output } from "@gable/core";
+import { html, signal, model, output } from "@gablejs/core";
 
 export class Child {
   static meta = { selector: "x-child", template: html`<i></i>` };

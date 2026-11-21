@@ -1,5 +1,5 @@
-import { computed, html, inject } from "@gable/core";
-import { Assets, provideAssets } from "@gable/renderer-pixi";
+import { computed, html, inject } from "@gablejs/core";
+import { Assets, provideAssets } from "@gablejs/renderer-pixi";
 
 /** Declared once, in the app's root providers. Import single files normally so Vite hashes their URLs. */
 export const assetProviders = provideAssets({

@@ -1,5 +1,5 @@
-import { InjectionToken, html, lazy, signal } from "@gable/core";
-import type { ComponentMeta } from "@gable/core";
+import { InjectionToken, html, lazy, signal } from "@gablejs/core";
+import type { ComponentMeta } from "@gablejs/core";
 
 const GREETING = new InjectionToken<string>("greeting");
 const shared = { selector: "x-shared", template: html`<i></i>` };

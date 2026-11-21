@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
-import { expectNoA11yViolations } from "@gable/testing/a11y";
+import { html, signal } from "@gablejs/core";
+import { expectNoA11yViolations } from "@gablejs/testing/a11y";
 import { UiChart, type ChartType, type ChartZoom } from "./chart.js";
 import { $, $$, key, settle, useDomApp } from "../test-utils.js";
 

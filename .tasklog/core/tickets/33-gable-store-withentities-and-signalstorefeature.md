@@ -1,6 +1,6 @@
 ---
 kind: ticket
-title: "@gable/store: withEntities and signalStoreFeature"
+title: "@gablejs/store: withEntities and signalStoreFeature"
 status: resolved
 blocked_by: [31]
 tags:
@@ -34,4 +34,4 @@ Added packages/store/src/entities.ts, signal-store-feature.ts, entities.test.ts;
 
 ## Answer
 
-withEntities (default and named collections), 14 updaters with selectId/collection config, entityConfig helper, type<T>() token and signalStoreFeature (1-5 features, optional typed input requirements) added to @gable/store with runtime and expectTypeOf tests and docs. vitest and tsc pass. Limitation: update* updaters on named collections need entityConfig for typing.
+withEntities (default and named collections), 14 updaters with selectId/collection config, entityConfig helper, type<T>() token and signalStoreFeature (1-5 features, optional typed input requirements) added to @gablejs/store with runtime and expectTypeOf tests and docs. vitest and tsc pass. Limitation: update* updaters on named collections need entityConfig for typing.

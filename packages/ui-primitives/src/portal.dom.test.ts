@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { bootstrap, html, inject, signal, ErrorHandler } from "@gable/core";
-import { whenFlushed } from "@gable/core/internal";
-import { createDomRenderer } from "@gable/renderer-dom";
+import { bootstrap, html, inject, signal, ErrorHandler } from "@gablejs/core";
+import { whenFlushed } from "@gablejs/core/internal";
+import { createDomRenderer } from "@gablejs/renderer-dom";
 import { DIALOG, DialogState } from "./dialog.js";
 import { UiPortal } from "./portal.js";
 

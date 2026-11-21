@@ -24,7 +24,7 @@ created: 2026-11-05 06:25
 ---
 Resolved with the user (grilled; every recommendation accepted).
 
-**Package**: forms is a separate optional entry point (`gable/forms` or `@gable/forms`, final name with Public package layout), built only on public core APIs (signal, computed, effect, toSignal). Renderer-specific control bindings ship with each renderer.
+**Package**: forms is a separate optional entry point (`gable/forms` or `@gablejs/forms`, final name with Public package layout), built only on public core APIs (signal, computed, effect, toSignal). Renderer-specific control bindings ship with each renderer.
 **Shape**: model-first. `form(model, schema?)` derives a typed field tree from a writable model signal. Every node is a WritableSignal: `form()` is the whole value, `form.email()` just that field; reads are fine-grained (child reads are computeds over the parent slice, `===` equality keeps siblings quiet) and child writes update the parent immutably. The root model is canonical. `[(model)]="form.email"` works directly.
 **State namespace**: per-field state lives under one reserved `state` property (`form.email.state.errors()`, `touched`, `dirty`, `pending`, `valid`, `disabled`, `readonly`, `submitting`, `submitted`, `key`); `state` is the only forbidden model key (dev runtime throws, language service flags it).
 **Errors**: validators are pure functions returning nothing or an error object `{ kind, message?, ...data }`; `state.errors()` is an array of them (own), `state.allErrors()` is `{ path, error }[]` for the subtree. No display policy in forms; views combine touched/submitted with errors in a view model.
@@ -45,6 +45,6 @@ Resolved with the user (grilled; every recommendation accepted).
 
 created: 2026-11-05 06:58
 ---
-From Public package layout and versioning: forms ships as the @gable/core/forms entry point.
+From Public package layout and versioning: forms ships as the @gablejs/core/forms entry point.
 ---
 <!-- COMMENTS:END -->

@@ -3,7 +3,7 @@
 
 import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
-import { fromXliff, readCatalog } from "@gable/core/tooling";
+import { fromXliff, readCatalog } from "@gablejs/core/tooling";
 import type { I18nCheckConfig } from "./config.js";
 
 const cache = new Map<string, { mtime: number; ids: Set<string> | null }>();

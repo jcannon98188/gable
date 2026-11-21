@@ -1,5 +1,5 @@
-import { computed, html, inject, input, model, output } from "@gable/core";
-import { ToggleGroupState, UiProps } from "@gable/ui-primitives";
+import { computed, html, inject, input, model, output } from "@gablejs/core";
+import { ToggleGroupState, UiProps } from "@gablejs/ui-primitives";
 import { cn } from "../../lib/ui/cn.js";
 import { toggleVariants, type ToggleSize, type ToggleVariant } from "./toggle.js";
 

@@ -1,7 +1,7 @@
 import { isObservable, Subject, Subscription, type Observable } from "rxjs";
-import { toObservable } from "@gable/core/rxjs";
-import type { ReadonlySignal } from "@gable/core";
-import { createScope, currentScope, reportError, runInScope, type Scope } from "@gable/core/internal";
+import { toObservable } from "@gablejs/core/rxjs";
+import type { ReadonlySignal } from "@gablejs/core";
+import { createScope, currentScope, reportError, runInScope, type Scope } from "@gablejs/core/internal";
 
 /** Options for {@link rxMethod}. */
 export interface RxMethodOptions {

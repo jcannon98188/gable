@@ -1,5 +1,5 @@
 {
-  "name": "@gable/prettier-plugin",
+  "name": "@gablejs/prettier-plugin",
   "version": "0.0.0",
   "description": "Prettier plugin that formats the html template literals in Gable components.",
   "license": "MIT",
@@ -27,7 +27,7 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@gable/template-format": "0.0.0"
+    "@gablejs/template-format": "0.0.0"
   },
   "peerDependencies": {
     "prettier": "^3.0.0"

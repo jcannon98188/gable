@@ -1,6 +1,6 @@
-import { html, signal } from '@gable/core';
-import { form, required } from '@gable/core/forms';
-import { UiCalendar, UiDatePicker, type DateRange } from '@gable/ui';
+import { html, signal } from '@gablejs/core';
+import { form, required } from '@gablejs/core/forms';
+import { UiCalendar, UiDatePicker, type DateRange } from '@gablejs/ui';
 import { fr } from 'date-fns/locale';
 
 /** Calendar and date picker: single, range, min/max and disabled days, a locale, and a `[field]`-bound picker. */

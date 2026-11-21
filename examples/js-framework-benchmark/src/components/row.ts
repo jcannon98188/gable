@@ -1,4 +1,4 @@
-import { computed, html, inject, input } from '@gable/core';
+import { computed, html, inject, input } from '@gablejs/core';
 import type { Row } from '../data.js';
 import { RowStore } from '../services/row-store.js';
 

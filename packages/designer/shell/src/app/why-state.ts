@@ -2,7 +2,7 @@
 // agent asks the devtools hook (`whyNode`, `why`); the hook records which signal writes made each effect run while the
 // Designer is connected. This service refetches (debounced) when the selection or a flush changes and the tab is open, and
 // keeps the canvas flash ("Highlight updates") on across frame reloads.
-import { computed, effect, inject, signal, untracked } from "@gable/core";
+import { computed, effect, inject, signal, untracked } from "@gablejs/core";
 import { ChromeState } from "./chrome-state.js";
 import { DesignerState } from "./designer-state.js";
 import type { WhyShown } from "../../../src/why.js";

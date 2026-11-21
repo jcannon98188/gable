@@ -1,4 +1,4 @@
-import { input } from "@gable/core";
+import { input } from "@gablejs/core";
 import { cn } from "../../lib/ui/cn.js";
 import { useHostClass } from "../../lib/ui/host-class.js";
 

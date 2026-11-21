@@ -2,7 +2,7 @@
 // lister for the Open project dialog, and the check of what a project needs before its preview can be inspected.
 //
 // The Preview agent has two halves. The Designer's half is injected by its Vite plugin and needs nothing from the project.
-// The app's half is `installDesigner` from `@gable/core/designer`, which comes with the project's own `@gable/core`; it is
+// The app's half is `installDesigner` from `@gablejs/core/designer`, which comes with the project's own `@gablejs/core`; it is
 // "not installed" when that package cannot be found from the project (its dependencies were never installed) or is a
 // version without the designer entry. Installing runs the project's own package manager, so the lockfile decides versions.
 import { spawn } from "node:child_process";
@@ -147,7 +147,7 @@ export function checkProject(root: string): ProjectCheck {
   const listed = (name: string) => [manifest.dependencies, manifest.devDependencies, manifest.peerDependencies].some((d) => !!d && typeof d === "object" && name in d);
   const packageManager = detectPackageManager(root);
   const vitePkg = findPackage(root, "vite");
-  const corePkg = findPackage(root, "@gable/core");
+  const corePkg = findPackage(root, "@gablejs/core");
   const exportsDesigner = (() => {
     const exp = corePkg?.json.exports;
     return !!exp && typeof exp === "object" && "./designer" in exp;
@@ -156,17 +156,17 @@ export function checkProject(root: string): ProjectCheck {
   const agent = {
     found: !!corePkg && exportsDesigner,
     version: str(corePkg?.json.version),
-    listed: listed("@gable/core"),
+    listed: listed("@gablejs/core"),
     problem: !corePkg
-      ? "Preview agent not installed: @gable/core cannot be found from the project."
+      ? "Preview agent not installed: @gablejs/core cannot be found from the project."
       : !exportsDesigner
-        ? `Preview agent not installed: @gable/core ${str(corePkg.json.version) ?? ""} has no designer entry (@gable/core/designer). Update @gable/core.`
+        ? `Preview agent not installed: @gablejs/core ${str(corePkg.json.version) ?? ""} has no designer entry (@gablejs/core/designer). Update @gablejs/core.`
         : null,
   };
   let install: string[] | null = null;
   let problem: string | null = null;
   if (!packageJson) problem = "The folder has no package.json.";
-  else if (!agent.listed && !corePkg) problem = "package.json does not list @gable/core, so this is not a Gable app.";
+  else if (!agent.listed && !corePkg) problem = "package.json does not list @gablejs/core, so this is not a Gable app.";
   else if (!vite.listed && !vitePkg) problem = "package.json does not list vite; the Designer runs the project's own Vite.";
   else if ((!vitePkg && vite.listed) || (!corePkg && agent.listed)) install = [packageManager, "install"];
   else if (!exportsDesigner) problem = agent.problem;

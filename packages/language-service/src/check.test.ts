@@ -254,7 +254,7 @@ describe("gable-check", () => {
         expect(fixedSource).toContain("<p>{{ countText() }}</p>");
         expect(fixedSource).toContain("readonly labelText = computed(() => this.label(this.count()));");
         expect(fixedSource).toContain("readonly shoutText = computed(() => this.shout());");
-        expect(fixedSource).toContain('import { html, signal, computed } from "@gable/core";');
+        expect(fixedSource).toContain('import { html, signal, computed } from "@gablejs/core";');
       });
 
       it("names an extracted signal after the binding it feeds", () => {
@@ -265,7 +265,7 @@ describe("gable-check", () => {
       it("turns an Observable into a signal for the derived value", () => {
         expect(fixedSource).toContain("readonly user = toSignal(this.user$);");
         expect(fixedSource).toContain(`readonly userText = computed(() => this.user()?.name + '!');`);
-        expect(fixedSource).toContain('import { toSignal } from "@gable/core/rxjs";');
+        expect(fixedSource).toContain('import { toSignal } from "@gablejs/core/rxjs";');
       });
 
       it("extracts a rows view model for a loop over a plain signal read", () => {

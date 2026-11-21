@@ -207,7 +207,7 @@ describe("component-meta", () => {
       let after: Array<{ rule: string }> = [];
       await main(["--project", copy, "--fix", "--format", "json"], { stdout: (s) => (after = JSON.parse(s)), stderr: () => {} });
       const source = readFileSync(`${copy}/src/app.ts`, "utf8");
-      expect(source).toContain('import { html, signal, type ComponentMeta } from "@gable/core";');
+      expect(source).toContain('import { html, signal, type ComponentMeta } from "@gablejs/core";');
       expect(source.match(/ satisfies ComponentMeta/g)).toHaveLength(3);
       expect(after).toEqual([]);
     } finally {

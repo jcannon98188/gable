@@ -1,4 +1,4 @@
-import { signal, type ReadonlySignal } from "@gable/core";
+import { signal, type ReadonlySignal } from "@gablejs/core";
 import { announce, dndMessages, type DndPosition } from "./dnd-announce.js";
 
 /*

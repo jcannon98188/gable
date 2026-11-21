@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createComponent, createInjector, flushSync, html, signal } from "@gable/core";
+import { createComponent, createInjector, flushSync, html, signal } from "@gablejs/core";
 import { createSceneTestRenderer } from "../testing.js";
 
 // Declarative hit-* children through the scene test renderer (canvas/130). The host component has its own template

@@ -30,7 +30,7 @@ describe("tsconfig fail-fast", () => {
 
   it("rejects useDefineForClassFields: false, naming the file and the fix", async () => {
     const root = project({ "tsconfig.json": `{ "compilerOptions": { "useDefineForClassFields": false } }` });
-    await expect(resolve(root)).rejects.toThrow(/@gable\/vite.*tsconfig\.json.*useDefineForClassFields.*true/s);
+    await expect(resolve(root)).rejects.toThrow(/@gablejs\/vite.*tsconfig\.json.*useDefineForClassFields.*true/s);
   });
 
   it("rejects decorators and decorator metadata", async () => {

@@ -1,6 +1,6 @@
-import { computed, effect, signal, untracked, type ReadonlySignal } from "@gable/core";
-import { currentScope, injectHost } from "@gable/core/internal";
-import type { Renderer } from "@gable/core/renderer";
+import { computed, effect, signal, untracked, type ReadonlySignal } from "@gablejs/core";
+import { currentScope, injectHost } from "@gablejs/core/internal";
+import type { Renderer } from "@gablejs/core/renderer";
 
 /** Options for `useCarousel`. `count` is required; every value is a getter so it may read signals. */
 export interface CarouselOptions {

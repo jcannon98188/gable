@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { bootstrap } from "@gable/core";
-import { whenFlushed } from "@gable/core/internal";
+import { bootstrap } from "@gablejs/core";
+import { whenFlushed } from "@gablejs/core/internal";
 import { dom } from "./index.js";
 import { App } from "../sample/app.js";
 

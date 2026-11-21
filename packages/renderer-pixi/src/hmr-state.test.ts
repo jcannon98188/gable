@@ -3,7 +3,7 @@
 // page-level services (boundary services such as Frame are not injectable from projected content, ADR 0019).
 import { Sprite, type Container } from "pixi.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { InjectionToken, flushSync, html, inject, onCleanup, signal } from "@gable/core";
+import { InjectionToken, flushSync, html, inject, onCleanup, signal } from "@gablejs/core";
 import { GableCanvas } from "./index.js";
 import { boot, fakeApp, live, manualScheduler, update } from "./hmr-harness.js";
 

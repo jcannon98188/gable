@@ -1,11 +1,11 @@
-# @gable/renderer-pixi
+# @gablejs/renderer-pixi
 
 Gable canvas renderer on PixiJS: scene elements, hit areas, gestures, assets, particles and accessibility mirroring.
 
 ## Install
 
 ```sh
-npm install @gable/renderer-pixi
+npm install @gablejs/renderer-pixi
 ```
 
 ## Documentation

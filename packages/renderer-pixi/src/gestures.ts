@@ -5,7 +5,7 @@
 //
 // The Pointer service is read through an effect, so a gesture sees the pointer as of the last effect flush (once per
 // frame): moves within a frame coalesce to the latest position, which is what a per-frame game wants.
-import { effect, inject, onCleanup, signal, untracked, type ReadonlySignal } from "@gable/core";
+import { effect, inject, onCleanup, signal, untracked, type ReadonlySignal } from "@gablejs/core";
 import { Frame } from "./frame.js";
 import { Pointer, type PointerPoint } from "./pointer.js";
 

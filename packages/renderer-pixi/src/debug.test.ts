@@ -2,9 +2,9 @@
 // Canvas devtools (canvas/139): the frame overlay, the scene boundary the devtools hook reports, and the production build.
 import { Container } from "pixi.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { bootstrap, flushSync, html, inject, signal } from "@gable/core";
-import { createDevtools, type BoundaryTree, type DevtoolsInstance } from "@gable/core/devtools";
-import { createDomRenderer } from "@gable/renderer-dom";
+import { bootstrap, flushSync, html, inject, signal } from "@gablejs/core";
+import { createDevtools, type BoundaryTree, type DevtoolsInstance } from "@gablejs/core/devtools";
+import { createDomRenderer } from "@gablejs/renderer-dom";
 import { Frame, GableCanvas, pixiRenderer, provideCanvasDebug, type ApplicationLike, type FrameScheduler, type PixiRendererOptions } from "./index.js";
 import { FrameOverlay, FrameStats, countObjects, sceneNodes } from "./debug.js";
 

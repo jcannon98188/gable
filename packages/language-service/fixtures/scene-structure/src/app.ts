@@ -1,5 +1,5 @@
-import { html } from "@gable/core";
-import { pixiElements } from "@gable/renderer-pixi/elements";
+import { html } from "@gablejs/core";
+import { pixiElements } from "@gablejs/renderer-pixi/elements";
 
 // Where scene tags may go: shape tags only inside <graphics>, text only inside <text> and <bitmap-text> (the renderer throws at runtime; this finds it in the editor).
 export class Shapes {

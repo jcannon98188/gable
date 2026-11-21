@@ -1,7 +1,7 @@
 // The canvas: the frame toolbar, the environment row, and a dot-grid board of frames side by side. A frame is an iframe sized in CSS
 // pixels and scaled as a whole (fit-to-screen, or a fixed zoom), so a 1920px desktop and a 390px phone can be seen together.
-import { computed, effect, html, inject, input, signal, untracked, viewChild } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
+import { computed, effect, html, inject, input, signal, untracked, viewChild } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
 import { TEXT_SCALES, clampTextScale, unsupported } from "../../../src/devices.js";
 import { UiButton } from "../components/ui/button.js";
 import { UiIcon } from "../lib/ui/icon.js";

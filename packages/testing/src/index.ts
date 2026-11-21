@@ -1,20 +1,20 @@
-import { COMPONENT_OVERRIDES, DEFER_BLOCKS, flushSync, hasPendingFlush, instantiate, whenFlushed, type DeferHandle, type MountedComponent } from "@gable/core/internal";
-import { ErrorHandler, type InputValues, I18n, provideI18n, type I18nOptions, type Injector, type ComponentClass, type ErrorContext, type ErrorSource, type LazyEntry, type Provider } from "@gable/core";
-import { applyUpdate, type HotResult } from "@gable/core/hmr";
+import { COMPONENT_OVERRIDES, DEFER_BLOCKS, flushSync, hasPendingFlush, instantiate, whenFlushed, type DeferHandle, type MountedComponent } from "@gablejs/core/internal";
+import { ErrorHandler, type InputValues, I18n, provideI18n, type I18nOptions, type Injector, type ComponentClass, type ErrorContext, type ErrorSource, type LazyEntry, type Provider } from "@gablejs/core";
+import { applyUpdate, type HotResult } from "@gablejs/core/hmr";
 import { createTestInjector, httpTesting } from "./injector.js";
-import { HttpBackend, mockHttp } from "@gable/core/http";
+import { HttpBackend, mockHttp } from "@gablejs/core/http";
 import { HttpTestingBackend } from "./http.js";
-import type { Renderer } from "@gable/core/renderer";
-import { applySceneState, type ComponentScenes } from "@gable/core/tooling";
-import { Router, provideRouter, type NavigateOptions, type NavigationOutcome, type Route, type RouterAccessibilityOptions } from "@gable/core/router";
+import type { Renderer } from "@gablejs/core/renderer";
+import { applySceneState, type ComponentScenes } from "@gablejs/core/tooling";
+import { Router, provideRouter, type NavigateOptions, type NavigationOutcome, type Route, type RouterAccessibilityOptions } from "@gablejs/core/router";
 import type { TestPlatform } from "./platform.js";
 import { createTestRenderer, type TestRenderer, createTestRoot, query, queryAll, serialize, textContent, type TestNode } from "./renderer.js";
 
 export type { TestNode, TestRenderer } from "./renderer.js";
 export { createTestPlatform } from "./platform.js";
 export type { TestPlatform } from "./platform.js";
-export type { DeferHandle as DeferBlock, DeferState } from "@gable/core/internal";
-export type { HotResult } from "@gable/core/hmr";
+export type { DeferHandle as DeferBlock, DeferState } from "@gablejs/core/internal";
+export type { HotResult } from "@gablejs/core/hmr";
 
 /** One failure delivered to the ErrorHandler. */
 export interface ErrorReport {
@@ -40,7 +40,7 @@ export interface MountOptions<T extends object = object> {
   providers?: Provider[];
   /**
    * Starts the in-memory `I18n` service in a locale with catalogs, e.g. `{ locale: "fr", catalogs: { fr: { [id]: "Bonjour" } } }`
-   * (see `messageId` in `@gable/core/i18n`, or use explicit `@@id`s). Missing translations are collected in
+   * (see `messageId` in `@gablejs/core/i18n`, or use explicit `@@id`s). Missing translations are collected in
    * `fixture.i18n.missing` instead of warning on the console.
    */
   i18n?: I18nOptions;
@@ -385,7 +385,7 @@ export function mountScene<T extends object>(scenes: ComponentScenes<T>, name: s
   return fixture;
 }
 
-export type { ComponentScenes, Scene } from "@gable/core/tooling";
+export type { ComponentScenes, Scene } from "@gablejs/core/tooling";
 
 export { createTestInjector } from "./injector.js";
 export { HttpTestingBackend, TestRequest } from "./http.js";

@@ -10,7 +10,7 @@ import { buildPlugin } from "../build-plugin.mjs";
 const tsserverJs = createRequire(import.meta.url).resolve("@typescript/old/lib/tsserver.js");
 
 /** Installs the bundled plugin where tsserver's plugin probe finds it. */
-export async function installPlugin(probe: string, name = "@gable/language-service") {
+export async function installPlugin(probe: string, name = "@gablejs/language-service") {
   const dir = path.join(probe, "node_modules", ...name.split("/"));
   mkdirSync(dir, { recursive: true });
   writeFileSync(path.join(dir, "package.json"), JSON.stringify({ name, version: "0.0.0", main: "index.cjs" }));

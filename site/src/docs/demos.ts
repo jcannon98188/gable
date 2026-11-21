@@ -1,4 +1,4 @@
-import type { ComponentClass } from "@gable/core";
+import type { ComponentClass } from "@gablejs/core";
 
 /** One live demo a markdown page can embed with a ```` ```demo <name> ```` fence. */
 export interface DemoEntry {
@@ -88,7 +88,7 @@ export const DEMOS: Readonly<Record<string, DemoEntry>> = {
   }),
   testing: defineDemo({
     title: "Tests running live",
-    description: "Real @gable/testing tests mount a component into the in-memory renderer, with pass and fail output.",
+    description: "Real @gablejs/testing tests mount a component into the in-memory renderer, with pass and fail output.",
     file: "testing/testing-demo.ts",
     load: () => import("../demos/testing/testing-demo.js").then((m) => m.TestingDemo),
   }),
@@ -118,13 +118,13 @@ export const DEMOS: Readonly<Record<string, DemoEntry>> = {
   }),
   "ui-variants": defineDemo({
     title: "Variants and cn",
-    description: "The class string @gable/ui's buttonVariants and cn compute for a variant, size and your own class.",
+    description: "The class string @gablejs/ui's buttonVariants and cn compute for a variant, size and your own class.",
     file: "ui/variants-demo.ts",
     load: () => import("../demos/ui/variants-demo.js").then((m) => m.VariantsDemo),
   }),
   editor: defineDemo({
     title: "Rich text editor",
-    description: "A real @gable/editor editor: stock formatting plugins plus two plugins written for this page, with a hand-built toolbar.",
+    description: "A real @gablejs/editor editor: stock formatting plugins plus two plugins written for this page, with a hand-built toolbar.",
     file: "editor/editor-demo.ts",
     load: () => import("../demos/editor/editor-demo.js").then((m) => m.EditorDemo),
   }),

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { html, inject, signal } from "@gable/core";
-import { mount } from "@gable/testing";
+import { html, inject, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
 import { domEvent, focusNode, pressKey, provideTestDom } from "./test-dom.js";
 import { TABS, TabsState } from "./tabs.js";
 

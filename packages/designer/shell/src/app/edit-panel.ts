@@ -1,6 +1,6 @@
 // The Content tab: text, attributes and bindings of the selected element, visibility and list wrapping, and structure (move,
 // delete). Dynamic expressions the Designer cannot edit safely are shown read-only in amber with the reason.
-import { computed, html, inject, signal } from "@gable/core";
+import { computed, html, inject, signal } from "@gablejs/core";
 import { UiButton } from "../components/ui/button.js";
 import { PopoverTrigger, UiPopover } from "../components/ui/popover.js";
 import { UiTooltip } from "../components/ui/tooltip.js";

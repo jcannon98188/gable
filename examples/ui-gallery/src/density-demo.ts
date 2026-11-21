@@ -1,5 +1,5 @@
-import { html, signal } from '@gable/core';
-import { form, required } from '@gable/core/forms';
+import { html, signal } from '@gablejs/core';
+import { form, required } from '@gablejs/core/forms';
 import {
   MenuTrigger,
   UiButton,
@@ -15,7 +15,7 @@ import {
   UiToggle,
   UiToggleGroup,
   type MenuEntry,
-} from '@gable/ui';
+} from '@gablejs/ui';
 
 /**
  * Compact density, Field layouts and the clearable input (ui/76, ui/78, ui/83): the same controls at the default

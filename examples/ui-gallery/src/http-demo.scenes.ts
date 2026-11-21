@@ -1,4 +1,4 @@
-import type { ComponentScenes } from '@gable/core/tooling';
+import type { ComponentScenes } from '@gablejs/core/tooling';
 import './styles.css';
 import { UserList, type User } from './http-demo.js';
 
@@ -9,7 +9,7 @@ const users: User[] = [
 ];
 
 // One file, two modes: the Designer's component mode mounts `UserList` alone in each situation, and page mode applies the
-// same scenario to the real page (`/http.html`). `@gable/testing`'s `mountScene` runs them too (`http-demo.test.ts`).
+// same scenario to the real page (`/http.html`). `@gablejs/testing`'s `mountScene` runs them too (`http-demo.test.ts`).
 export default {
   component: UserList,
   scenes: {

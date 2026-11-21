@@ -26,7 +26,7 @@ Imported from backlog.md without a description.
 
 ## Answer
 
-Formatter and Prettier plugin merged as @gable/template-format and @gable/prettier-plugin. Verified on merged integration (152 tests).
+Formatter and Prettier plugin merged as @gablejs/template-format and @gablejs/prettier-plugin. Verified on merged integration (152 tests).
 
 ## Parent
 

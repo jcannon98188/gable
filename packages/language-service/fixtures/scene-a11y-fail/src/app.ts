@@ -1,5 +1,5 @@
-import { html, signal } from "@gable/core";
-import { pixiElements } from "@gable/renderer-pixi/elements";
+import { html, signal } from "@gablejs/core";
+import { pixiElements } from "@gablejs/renderer-pixi/elements";
 
 // Scene nodes with an activation listener (down, up, tap, click) and no [a11y]; hover and tracking listeners (over, out, enter, leave, move) are not flagged. Each flagged one is marked `BAD:` in the template.
 export class Board {

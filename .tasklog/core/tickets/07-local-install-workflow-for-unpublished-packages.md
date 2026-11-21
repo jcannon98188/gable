@@ -30,7 +30,7 @@ Packages are not on npm, so examples/todomvc installs from npm-packed tarballs i
 
 ## Implementation notes
 
-Validation: npm run pack:local into a temp app rewrote deps/overrides; --no-update printed entries; create-gable --local scaffold from packed tarballs then npm install, npm run check and npm run build succeeded; npx vitest run packages/create-gable: 15 passed. examples/todomvc/package.json not rewritten (script would add overrides for all @gable/* packages).
+Validation: npm run pack:local into a temp app rewrote deps/overrides; --no-update printed entries; create-gable --local scaffold from packed tarballs then npm install, npm run check and npm run build succeeded; npx vitest run packages/create-gable: 15 passed. examples/todomvc/package.json not rewritten (script would add overrides for all @gablejs/* packages).
 
 ## Answer
 

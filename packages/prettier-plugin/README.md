@@ -1,11 +1,11 @@
-# @gable/prettier-plugin
+# @gablejs/prettier-plugin
 
 Prettier plugin that formats the html template literals in Gable components.
 
 ## Install
 
 ```sh
-npm install @gable/prettier-plugin
+npm install @gablejs/prettier-plugin
 ```
 
 ## Documentation

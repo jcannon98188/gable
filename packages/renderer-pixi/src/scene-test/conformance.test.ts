@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defineRendererConformance } from "@gable/testing/renderer";
+import { defineRendererConformance } from "@gablejs/testing/renderer";
 import { createSceneTestRenderer, type SceneNode } from "../testing.js";
 
 // The Renderer contract's own vocabulary is DOM-flavoured (`p`, `div`, classes, styles, text in elements), so the contract

@@ -1,4 +1,4 @@
-// The HMR runtime (`@gable/core/hmr`). Dev only: importing it installs the core's dev hooks, so an app that
+// The HMR runtime (`@gablejs/core/hmr`). Dev only: importing it installs the core's dev hooks, so an app that
 // never imports it (every production build) carries none of this. No semver promise.
 import { devtools, hooks, type ComponentBegin, type HmrChange, type DevHooks, type InjectorOps, type Region, type RouterOps, type ServiceBegin, type Swap } from "./dev-hooks.js";
 import { registerComponentStyles } from "./component.js";

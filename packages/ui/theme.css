@@ -4,8 +4,8 @@
  *
  *   @import "tailwindcss";
  *   @import "tw-animate-css";
- *   @import "@gable/ui/theme.css";
- *   @source "../node_modules/@gable/ui/dist";   // so Tailwind sees the classes inside the components
+ *   @import "@gablejs/ui/theme.css";
+ *   @source "../node_modules/@gablejs/ui/dist";   // so Tailwind sees the classes inside the components
  *
  * Dark mode: add the `dark` class to <html>.
  */

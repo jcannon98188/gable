@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { html, inject, signal } from "@gable/core";
-import { mount, type TestNode } from "@gable/testing";
-import { createTestRenderer, serialize } from "@gable/testing/renderer";
+import { html, inject, signal } from "@gablejs/core";
+import { mount, type TestNode } from "@gablejs/testing";
+import { createTestRenderer, serialize } from "@gablejs/testing/renderer";
 import { domEvent, provideTestDom } from "./test-dom.js";
 import { DIALOG, DialogState } from "./dialog.js";
 import { UiPortal } from "./portal.js";

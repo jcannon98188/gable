@@ -20,7 +20,7 @@ The reference must be generated from the packages' public exports and TSDoc so i
 
 - [x] #1 A build script (site/scripts) reads each publishable package's entry points and exports, and emits site/src/generated/api/<package>.json plus an index
 - [x] #2 Output covers classes, functions, interfaces, types, constants, with signatures, TSDoc summary/remarks/params/returns/examples, deprecations and the entry point (subpath) each symbol is exported from
-- [x] #3 Handles every package's exports map (subpaths like @gable/core/rxjs, @gable/core/tooling) and reports undocumented public symbols
+- [x] #3 Handles every package's exports map (subpaths like @gablejs/core/rxjs, @gablejs/core/tooling) and reports undocumented public symbols
 - [x] #4 Unit tests over a small fixture package; run as part of site build and check
 
 ## Answer

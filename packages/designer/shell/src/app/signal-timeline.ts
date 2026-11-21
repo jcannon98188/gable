@@ -1,6 +1,6 @@
 // The drawer's State timeline tab (designer/74): the selected frame's recorded signal writes, newest first, a slider to scrub
 // through the states, Replay, Live, Pause/Record and Clear. Choosing a step (row, slider) travels the frame's app there.
-import { computed, effect, html, inject, signal, untracked } from "@gable/core";
+import { computed, effect, html, inject, signal, untracked } from "@gablejs/core";
 import { UiButton } from "../components/ui/button.js";
 import { UiSlider } from "../components/ui/slider.js";
 import { SignalTimeline } from "./signal-timeline-state.js";

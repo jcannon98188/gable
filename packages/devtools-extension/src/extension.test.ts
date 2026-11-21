@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { computed, effect, html, signal } from "@gable/core";
-import { mount } from "@gable/testing";
-import { createDevtools, type DevtoolsInstance } from "@gable/core/devtools";
+import { computed, effect, html, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
+import { createDevtools, type DevtoolsInstance } from "@gablejs/core/devtools";
 import {
   FROM_PAGE,
   PORT_CONTENT,

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
-import { email, form, minLength, required } from "@gable/core/forms";
+import { html, signal } from "@gablejs/core";
+import { email, form, minLength, required } from "@gablejs/core/forms";
 import { UiButton } from "./button.js";
 import { UiField, UiFieldControl, UiForm } from "./form.js";
 import { UiInput } from "./input.js";

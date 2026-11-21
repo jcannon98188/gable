@@ -7,7 +7,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { afterAll, describe, expect, it } from "vitest";
-import type { WhyNode, WhyRun } from "@gable/core/devtools";
+import type { WhyNode, WhyRun } from "@gablejs/core/devtools";
 import type { ControlRequest, WhyResult } from "./control-protocol.js";
 import { bindingTitle, causeText, dependencyRows, runText, summarizeWhy } from "./why.js";
 import { EditService } from "./server/edit/service.js";

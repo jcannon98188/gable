@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { html, type ComponentClass } from "@gable/core";
-import { createSceneTestRenderer, mountWithScene } from "@gable/renderer-pixi/testing";
+import { html, type ComponentClass } from "@gablejs/core";
+import { createSceneTestRenderer, mountWithScene } from "@gablejs/renderer-pixi/testing";
 import { Dot, PoseDot, Sparks } from "./perf.js";
 
 function mount(template: ReturnType<typeof html>, imports: ComponentClass[]) {

@@ -1,7 +1,7 @@
 // Benchmark page. Query: ?style=signals|shared|ref|particles &n=5000 &warm=120 &frames=600
 // Publishes window.__result when the measured frames are done. One configuration per page load.
-import { bootstrap } from "@gable/core";
-import { createDomRenderer } from "@gable/renderer-dom";
+import { bootstrap } from "@gablejs/core";
+import { createDomRenderer } from "@gablejs/renderer-dom";
 import { Application } from "pixi.js";
 import { benchApp, H, makeSeeds, registerRock, STYLES, W, type Style } from "./entities.js";
 import { Recorder, summarizeSeries } from "./measure.js";

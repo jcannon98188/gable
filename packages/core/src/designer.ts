@@ -1,4 +1,4 @@
-// The design-tooling layer (`@gable/core/designer`). Dev only: nothing imports this file except behind `if (DEV)` or from a
+// The design-tooling layer (`@gablejs/core/designer`). Dev only: nothing imports this file except behind `if (DEV)` or from a
 // tool that installs it, so a production build never carries it. It fills the runtime's `design` slot (see `dev-hooks.ts`)
 // and exposes `globalThis.__GABLE_DESIGNER_HOOK__` to the Designer's preview agent. It is separate from the devtools
 // hook on purpose: it sees template nodes and intercepts event listeners, which an inspection protocol should not offer.

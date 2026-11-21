@@ -1,7 +1,7 @@
-// The template interpreter and keyed list diffing, through @gable/testing's
+// The template interpreter and keyed list diffing, through @gablejs/testing's
 // in-memory renderer (the same path the suites use; no DOM).
-import { computed, html, signal } from "@gable/core";
-import { mount } from "@gable/testing";
+import { computed, html, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
 
 interface Row {
   id: number;

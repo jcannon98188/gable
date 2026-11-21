@@ -50,7 +50,7 @@ jobs:
           if [ -d ../../../gable-base/packages/renderer-pixi/src ]; then
             node scripts/run.mjs --src ../../../gable-base --reps 5 --out results/baseline.json
           else
-            echo "The base commit has no @gable/renderer-pixi, so there is nothing to compare against."
+            echo "The base commit has no @gablejs/renderer-pixi, so there is nothing to compare against."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Measure this commit

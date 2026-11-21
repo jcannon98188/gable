@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { mount } from "@gable/testing";
+import { mount } from "@gablejs/testing";
 import { SignalsDemo } from "./signals-demo.js";
 import { RxjsDemo, StreamHub } from "./rxjs-demo.js";
 import { ExpressionsDemo, check } from "./expressions-demo.js";

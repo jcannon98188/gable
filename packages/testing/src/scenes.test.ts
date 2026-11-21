@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { InjectionToken, computed, html, inject, input, signal } from "@gable/core";
-import { Http } from "@gable/core/http";
-import { toSignal } from "@gable/core/rxjs";
+import { InjectionToken, computed, html, inject, input, signal } from "@gablejs/core";
+import { Http } from "@gablejs/core/http";
+import { toSignal } from "@gablejs/core/rxjs";
 import { map } from "rxjs";
-import type { ComponentScenes } from "@gable/core/tooling";
+import type { ComponentScenes } from "@gablejs/core/tooling";
 import { mountScene } from "./index.js";
 
 const GREETING = new InjectionToken<string>("Greeting");

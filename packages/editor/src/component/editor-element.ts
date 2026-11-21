@@ -1,6 +1,6 @@
-import { computed, effect, html, input, model, signal, untracked, viewChild } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
-import { UiIcon, UiToggle } from "@gable/ui";
+import { computed, effect, html, input, model, signal, untracked, viewChild } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
+import { UiIcon, UiToggle } from "@gablejs/ui";
 import type { Editor } from "@tiptap/core";
 import type * as Y from "yjs";
 import { GableEditor } from "../editor.js";

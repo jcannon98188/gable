@@ -1,5 +1,5 @@
-import { computed, contentChild, effect, html, inject, input, model, signal } from "@gable/core";
-import { DialogState, UiDialogBackdrop, UiDialogContent, UiDialogDescription, UiDialogTitle, UiDrawerDrag, UiPortal } from "@gable/ui-primitives";
+import { computed, contentChild, effect, html, inject, input, model, signal } from "@gablejs/core";
+import { DialogState, UiDialogBackdrop, UiDialogContent, UiDialogDescription, UiDialogTitle, UiDrawerDrag, UiPortal } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 import { DialogTrigger } from "./dialog.js";
 
@@ -35,7 +35,7 @@ const SIDES: Record<DrawerSide, string> = {
  * from scrolled content only once it is back at the top. Mark elements `data-drawer-no-drag` to exclude them.
  *
  * The trigger is the same `dialogTrigger` directive `<ui-dialog>` uses (import `DialogTrigger` from the dialog component).
- * The drag logic is `DrawerDragEngine` / `uiDrawerDrag` in `@gable/ui-primitives`.
+ * The drag logic is `DrawerDragEngine` / `uiDrawerDrag` in `@gablejs/ui-primitives`.
  */
 export class UiDrawer {
   static meta = {

@@ -1,6 +1,6 @@
-import { computed, createComponent, createInjector, effect, ErrorHandler, html, inject, input, RENDERER, signal, untracked, viewChild } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
-import type { Renderer } from "@gable/core/renderer";
+import { computed, createComponent, createInjector, effect, ErrorHandler, html, inject, input, RENDERER, signal, untracked, viewChild } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
+import type { Renderer } from "@gablejs/core/renderer";
 import { DocCode } from "./doc-code.js";
 import { demoByName } from "./demos.js";
 

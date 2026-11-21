@@ -1,5 +1,5 @@
-import { computed, html, signal } from '@gable/core';
-import { UiSwatchGrid, type SwatchItem } from '@gable/ui';
+import { computed, html, signal } from '@gablejs/core';
+import { UiSwatchGrid, type SwatchItem } from '@gablejs/ui';
 
 const COLORS: SwatchItem[] = [
   { value: 'slate-500', label: 'Slate 500', color: '#64748b' },

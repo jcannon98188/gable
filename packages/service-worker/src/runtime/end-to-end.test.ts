@@ -2,7 +2,7 @@
 // built by defineWorker() from a config and hand-written asset manifests installs, serves offline, is offered to the
 // app as an update by SwUpdates, takes over on activateUpdate(), and forwards pushes and clicks to SwPush.
 import { afterEach, describe, expect, it } from "vitest";
-import { createInjector, type Injector } from "@gable/core";
+import { createInjector, type Injector } from "@gablejs/core";
 import { SW_PROTOCOL } from "../core/index.js";
 import { createBrowser, type InMemoryBrowser, type WorkerScript } from "../testing/browser.js";
 import type { Network } from "../testing/worker-scope.js";

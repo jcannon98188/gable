@@ -3,7 +3,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { HmrEntry } from "@gable/core/devtools";
+import type { HmrEntry } from "@gablejs/core/devtools";
 import { afterAll, describe, expect, it } from "vitest";
 import { CompileChecks, checkFile, type CompileError } from "./server/compile-check.js";
 import { isStale, modulePath, rolledBack, staleCanvas, staleNote } from "../shell/src/app/stale-canvas.js";
@@ -12,7 +12,7 @@ import { classListWritable, conditionalClasses } from "../shell/src/app/tailwind
 const dirs: string[] = [];
 afterAll(() => dirs.forEach((d) => rmSync(d, { recursive: true, force: true })));
 
-const component = (template: string) => `import { html, signal } from "@gable/core";
+const component = (template: string) => `import { html, signal } from "@gablejs/core";
 
 export class Demo {
   static meta = {

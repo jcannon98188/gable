@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { bootstrap, html, signal } from "@gable/core";
-import { whenFlushed } from "@gable/core/internal";
-import { email, form, required } from "@gable/core/forms";
+import { bootstrap, html, signal } from "@gablejs/core";
+import { whenFlushed } from "@gablejs/core/internal";
+import { email, form, required } from "@gablejs/core/forms";
 import { dom } from "./index.js";
 
 describe("[field] on the DOM renderer", () => {

@@ -3,8 +3,8 @@
 // the shell, and the shell does what a click would do. The backend sends commands down a dedicated SSE stream
 // (`/api/shell/channel`) and the shell answers each with a POST to `/api/shell/reply`, both token-checked like the rest of
 // `/api/`. Types only: the shell imports this file without pulling in server code.
-import type { ComponentDetail, HistoryInfo, HmrEntry, RouterInfo, TravelResult, TreeNode } from "@gable/core/devtools";
-import type { DesignNode } from "@gable/core/designer";
+import type { ComponentDetail, HistoryInfo, HmrEntry, RouterInfo, TravelResult, TreeNode } from "@gablejs/core/devtools";
+import type { DesignNode } from "@gablejs/core/designer";
 import type { ColorScheme } from "./devices.js";
 import type { A11yReport, A11yTreeReport, FocusOrderReport, FocusStepResult, HttpLogEntry, PageScenarioInfo, PerfReport, SceneInfo, SceneStateReport, SignalPin, SignalWriteResult } from "./protocol.js";
 import type { NetworkCommand, NetworkCommandResult } from "./network.js";

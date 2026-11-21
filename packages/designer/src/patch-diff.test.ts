@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parseTemplateTree } from "@gable/template-format";
+import { parseTemplateTree } from "@gablejs/template-format";
 import { describe, expect, it } from "vitest";
 import { unifiedDiff } from "./server/edit/diff.js";
 import { EditService } from "./server/edit/service.js";
@@ -83,7 +83,7 @@ describe("unifiedDiff", () => {
   });
 });
 
-const SOURCE = `import { html } from "@gable/core";
+const SOURCE = `import { html } from "@gablejs/core";
 
 export class Counter {
   static meta = {

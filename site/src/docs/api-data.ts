@@ -1,4 +1,4 @@
-import { InjectionToken, inject, signal } from "@gable/core";
+import { InjectionToken, inject, signal } from "@gablejs/core";
 import type { ApiIndex, ApiPackage } from "./api-types.js";
 
 /** Where the generated reference comes from. Tests provide a fixture; the app reads site/src/generated/api. */

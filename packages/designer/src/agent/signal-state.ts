@@ -1,7 +1,7 @@
 // Signal editing for the Preview agent: checked writes, pins, and the mounted Component's state as a Scene could hold it.
-// All reads and writes go through the devtools hook of @gable/core (`signalJson`, `setSignal`), so a pin or a poke is exactly what
+// All reads and writes go through the devtools hook of @gablejs/core (`signalJson`, `setSignal`), so a pin or a poke is exactly what
 // the Inspector's raw edit does, plus a shape check against the value the signal holds now.
-import type { DevtoolsEvent, DevtoolsMethods, GableDevtoolsHook, SignalInfo } from "@gable/core/devtools";
+import type { DevtoolsEvent, DevtoolsMethods, GableDevtoolsHook, SignalInfo } from "@gablejs/core/devtools";
 import type { SceneStateField, SceneStateReport, SignalPin, SignalWriteResult } from "../protocol.js";
 import { parseValue, shapeProblems } from "../signal-value.js";
 

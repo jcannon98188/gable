@@ -2,10 +2,10 @@
 // The Scene panel (canvas/139): the display-object tree of a canvas boundary with source locations and the last flush's effects,
 // read through the same devtools hook methods the other tabs use.
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { flushSync, html, signal } from "@gable/core";
-import { mount, type TestNode } from "@gable/testing";
-import { createDesigner, type DesignerInstance } from "@gable/core/designer";
-import { createDevtools, type BoundarySpec, type DevtoolsEvent, type DevtoolsInstance } from "@gable/core/devtools";
+import { flushSync, html, signal } from "@gablejs/core";
+import { mount, type TestNode } from "@gablejs/testing";
+import { createDesigner, type DesignerInstance } from "@gablejs/core/designer";
+import { createDevtools, type BoundarySpec, type DevtoolsEvent, type DevtoolsInstance } from "@gablejs/core/devtools";
 import type { Client, Status } from "./panel/client.js";
 import { createPanel, TABS } from "./panel/model.js";
 import { render } from "./panel/view.js";

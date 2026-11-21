@@ -5,7 +5,7 @@
 All of these rules are warnings by default: they report but do not fail `gable-check`. Set a rule to `"error"` to fail CI on it, or `"off"` to silence it, under `rules` in the plugin entry of `tsconfig.json`:
 
 ```json
-{ "name": "@gable/language-service", "rules": { "a11y-heading-order": "off", "a11y-img-alt": "error" } }
+{ "name": "@gablejs/language-service", "rules": { "a11y-heading-order": "off", "a11y-img-alt": "error" } }
 ```
 
 | Rule | Reports |
@@ -22,11 +22,11 @@ These rules cover what can be seen statically. They do not replace testing with 
 
 ## Live announcements and focus at runtime
 
-`LiveAnnouncer` speaks a message to screen readers without moving focus. Inject it from `@gable/core/renderer` in a component or service (a toast, a "3 results" status, a form error summary):
+`LiveAnnouncer` speaks a message to screen readers without moving focus. Inject it from `@gablejs/core/renderer` in a component or service (a toast, a "3 results" status, a form error summary):
 
 ```ts
-import { inject } from '@gable/core';
-import { LiveAnnouncer } from '@gable/core/renderer';
+import { inject } from '@gablejs/core';
+import { LiveAnnouncer } from '@gablejs/core/renderer';
 
 class Cart {
   #live = inject(LiveAnnouncer);

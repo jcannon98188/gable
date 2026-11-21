@@ -8,13 +8,13 @@ export const here = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
 /** Workspace packages resolve from source, like the other packages' tests. */
 export const sourceAliases = [
-  { find: /^@gable\/core$/, replacement: here("../../core/src/index.ts") },
-  { find: /^@gable\/core\/renderer$/, replacement: here("../../core/src/renderer.ts") },
-  { find: /^@gable\/core\/hmr$/, replacement: here("../../core/src/hmr.ts") },
-  { find: /^@gable\/renderer-dom$/, replacement: here("../../renderer-dom/src/index.ts") },
-  { find: /^@gable\/service-worker$/, replacement: here("../../service-worker/src/index.ts") },
-  { find: /^@gable\/service-worker\/core$/, replacement: here("../../service-worker/src/core/index.ts") },
-  { find: /^@gable\/service-worker\/runtime$/, replacement: here("../../service-worker/src/runtime/index.ts") },
+  { find: /^@gablejs\/core$/, replacement: here("../../core/src/index.ts") },
+  { find: /^@gablejs\/core\/renderer$/, replacement: here("../../core/src/renderer.ts") },
+  { find: /^@gablejs\/core\/hmr$/, replacement: here("../../core/src/hmr.ts") },
+  { find: /^@gablejs\/renderer-dom$/, replacement: here("../../renderer-dom/src/index.ts") },
+  { find: /^@gablejs\/service-worker$/, replacement: here("../../service-worker/src/index.ts") },
+  { find: /^@gablejs\/service-worker\/core$/, replacement: here("../../service-worker/src/core/index.ts") },
+  { find: /^@gablejs\/service-worker\/runtime$/, replacement: here("../../service-worker/src/runtime/index.ts") },
 ];
 
 /** A scratch copy of the sample app (so tests can edit files), and the Vite config that serves or builds it. */

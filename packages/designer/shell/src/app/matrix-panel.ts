@@ -3,7 +3,7 @@
 // browser against the project's own dev server (see src/server/matrix.ts); nothing is simulated, and nothing is written into
 // the project. Opening a cell shows the current picture, the baseline, the pixel diff, and the rendered markup's diff with
 // gable-ui's code block (a unified diff).
-import { computed, effect, html, inject, signal, untracked } from "@gable/core";
+import { computed, effect, html, inject, signal, untracked } from "@gablejs/core";
 import { cellId, type CellKey, type MatrixCell } from "../../../src/matrix.js";
 import { UiButton } from "../components/ui/button.js";
 import { UiCodeBlock } from "../components/ui/code-block.js";

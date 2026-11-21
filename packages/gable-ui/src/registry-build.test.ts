@@ -21,12 +21,12 @@ describe("buildRegistry from sources", () => {
     const byName = Object.fromEntries(items.map((i) => [i.name, i]));
     expect(byName.button).toMatchObject({
       description: "A button.",
-      dependencies: { "@gable/core": "~1.2.3" }, // the commented-out import is ignored; @gable/* follows the lockstep version
+      dependencies: { "@gablejs/core": "~1.2.3" }, // the commented-out import is ignored; @gablejs/* follows the lockstep version
       registryDependencies: ["variants"],
       files: [{ path: "components/button.ts" }],
     });
     expect(byName.dialog!.registryDependencies).toEqual(["button", "cn"]);
-    expect(byName.dialog!.dependencies).toEqual({ "@gable/core": "~1.2.3" }); // a subpath import is the package
+    expect(byName.dialog!.dependencies).toEqual({ "@gablejs/core": "~1.2.3" }); // a subpath import is the package
     expect(byName.cn!.dependencies).toEqual({ clsx: "^2.1.1", "tailwind-merge": "^3.7.0" });
   });
 
@@ -61,15 +61,15 @@ describe("buildRegistry from sources", () => {
 
 describe("buildRegistry with registry-meta.ts", () => {
   const meta = `export const registryMeta = {
-  button: { description: "From meta", dependencies: ["@gable/core"], registryDependencies: ["variants"], cssVars: { light: { "--x": "1" }, dark: { "--x": "2" } } },
-  dialog: { files: ["components/dialog.ts"], dependencies: { "@gable/core": "^9.0.0" }, registryDependencies: ["button"] },
+  button: { description: "From meta", dependencies: ["@gablejs/core"], registryDependencies: ["variants"], cssVars: { light: { "--x": "1" }, dark: { "--x": "2" } } },
+  dialog: { files: ["components/dialog.ts"], dependencies: { "@gablejs/core": "^9.0.0" }, registryDependencies: ["button"] },
 };\n`;
 
   it("takes what the meta states and still infers what it leaves out, warning about the gaps", async () => {
     const { items, warnings } = await buildRegistry({ uiDir: tree({ ...MINI_UI, "src/registry-meta.ts": meta }), version: "1.0.0" });
     const byName = Object.fromEntries(items.map((i) => [i.name, i]));
     expect(byName.button).toMatchObject({ description: "From meta", cssVars: { light: { "--x": "1" } } });
-    expect(byName.dialog!.dependencies).toEqual({ "@gable/core": "^9.0.0" });
+    expect(byName.dialog!.dependencies).toEqual({ "@gablejs/core": "^9.0.0" });
     expect(byName.dialog!.registryDependencies).toEqual(["button"]);
     expect(warnings).toContain('dialog: imports item "cn" but registry-meta.ts does not list it.');
     expect(byName.variants!.registryDependencies).toEqual(["cn"]); // no meta entry: inferred
@@ -91,6 +91,6 @@ describe("buildRegistry from packages/ui", () => {
     for (const item of items) for (const dep of item.registryDependencies) expect(names.has(dep)).toBe(true);
     const button = items.find((i) => i.name === "button")!;
     expect(button.registryDependencies).toEqual(expect.arrayContaining(["host-class", "variants"]));
-    expect(items.find((i) => i.name === "select")!.dependencies).toHaveProperty("@gable/ui-primitives");
+    expect(items.find((i) => i.name === "select")!.dependencies).toHaveProperty("@gablejs/ui-primitives");
   });
 });

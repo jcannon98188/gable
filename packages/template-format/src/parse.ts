@@ -1,4 +1,4 @@
-import { VOID } from "@gable/core/tooling";
+import { VOID } from "@gablejs/core/tooling";
 /**
  * A tolerant, structure-preserving parser for Gable template bodies: the formatter's parser, and the position authority
  * for the Designer (every item carries its source offsets, so edits can be minimal text patches).

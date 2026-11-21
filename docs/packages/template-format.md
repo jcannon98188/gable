@@ -1,14 +1,14 @@
-# @gable/template-format
+# @gablejs/template-format
 
-The formatter for Gable templates. It lays out the `html` tagged template literals in your components and leaves every other byte of the file alone. It has no Prettier dependency: it is a pure function over the template text, and it is what both the `gable-format` command and [`@gable/prettier-plugin`](./prettier-plugin.md) call. The output is deterministic and idempotent, so formatting twice changes nothing.
+The formatter for Gable templates. It lays out the `html` tagged template literals in your components and leaves every other byte of the file alone. It has no Prettier dependency: it is a pure function over the template text, and it is what both the `gable-format` command and [`@gablejs/prettier-plugin`](./prettier-plugin.md) call. The output is deterministic and idempotent, so formatting twice changes nothing.
 
 ## Install
 
 ```
-npm install -D @gable/template-format
+npm install -D @gablejs/template-format
 ```
 
-Most apps get it through `@gable/prettier-plugin` and format with Prettier. Install this package directly when you want the `gable-format` command, or to format templates from your own tooling.
+Most apps get it through `@gablejs/prettier-plugin` and format with Prettier. Install this package directly when you want the `gable-format` command, or to format templates from your own tooling.
 
 ## Try it
 
@@ -50,7 +50,7 @@ cat src/app.ts | npx gable-format --stdin
 ## From code
 
 ```ts
-import { formatTemplate, formatTemplateLiterals } from "@gable/template-format";
+import { formatTemplate, formatTemplateLiterals } from "@gablejs/template-format";
 
 // A whole TS or JS source: only the html literals change.
 const out = formatTemplateLiterals(source, { printWidth: 100 });
@@ -73,7 +73,7 @@ The package also exports `formatTemplateLiteral` (the replacement body for one l
 
 ## Where it is used
 
-- [`@gable/prettier-plugin`](./prettier-plugin.md) formats `html` literals inside Prettier runs, using Prettier's `tabWidth`, `useTabs` and `printWidth`.
+- [`@gablejs/prettier-plugin`](./prettier-plugin.md) formats `html` literals inside Prettier runs, using Prettier's `tabWidth`, `useTabs` and `printWidth`.
 - The starter from [`create-gable`](./create-gable.md) sets that plugin up for you.
 
 Every exported symbol is documented in the [API reference](/docs/template-format/api).

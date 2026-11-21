@@ -34,22 +34,22 @@ export interface ScaffoldOptions {
   /** Package manager whose commands the README shows. Default npm. */
   packageManager?: PackageManager;
   /**
-   * Adds a service worker (`@gable/service-worker`): the dependency, the `gableServiceWorker()` Vite plugin, a
+   * Adds a service worker (`@gablejs/service-worker`): the dependency, the `gableServiceWorker()` Vite plugin, a
    * `gable.sw.json`, the registration in `src/main.ts` and an update banner. Default false, and the starter then has
    * none of it.
    */
   serviceWorker?: boolean;
-  /** A directory of `@gable/*` tarballs (see `npm run pack:local`): the starter then installs from them instead of the registry. */
+  /** A directory of `@gablejs/*` tarballs (see `npm run pack:local`): the starter then installs from them instead of the registry. */
   localDir?: string;
 }
 
-/** True when `dir` holds a tarball for `name` (`@gable/core` is `gable-core-<version>.tgz`). */
+/** True when `dir` holds a tarball for `name` (`@gablejs/core` is `gable-core-<version>.tgz`). */
 function tarballFor(files: string[], name: string): string | undefined {
   const prefix = name.replace(/^@/, "").replace("/", "-") + "-";
   return files.find((f) => f.startsWith(prefix) && f.endsWith(".tgz") && /^\d/.test(f.slice(prefix.length)));
 }
 
-/** Points every `@gable/*` dependency in the manifest text at a tarball in `dir` and pins every tarball under `overrides`, since the packages depend on each other. */
+/** Points every `@gablejs/*` dependency in the manifest text at a tarball in `dir` and pins every tarball under `overrides`, since the packages depend on each other. */
 function localizeManifest(text: string, dir: string): string {
   if (!existsSync(dir) || !statSync(dir).isDirectory()) throw new Error(`--local: ${dir} is not a directory.`);
   const files = readdirSync(dir);
@@ -57,7 +57,7 @@ function localizeManifest(text: string, dir: string): string {
   const manifest = JSON.parse(text);
   for (const field of ["dependencies", "devDependencies"]) {
     for (const dep of Object.keys(manifest[field] ?? {})) {
-      if (!dep.startsWith("@gable/")) continue;
+      if (!dep.startsWith("@gablejs/")) continue;
       const file = tarballFor(files, dep);
       if (!file) throw new Error(`--local: no tarball for ${dep} in ${dir}. Run "npm run pack:local <app-dir>" in the Gable repository first.`);
       manifest[field][dep] = spec(file);
@@ -66,7 +66,7 @@ function localizeManifest(text: string, dir: string): string {
   manifest.overrides = Object.fromEntries(
     files.flatMap((file) => {
       const match = /^gable-(.+?)-\d[^/]*\.tgz$/.exec(file);
-      return match ? [[`@gable/${match[1]}`, spec(file)]] : [];
+      return match ? [[`@gablejs/${match[1]}`, spec(file)]] : [];
     }),
   );
   return JSON.stringify(manifest, null, 2) + "\n";
@@ -90,7 +90,7 @@ export function scaffold(options: ScaffoldOptions): string[] {
   const localDir = options.localDir ? resolve(options.localDir) : undefined;
   const fill = (text: string) => text.replace(/\{\{(\w+)\}\}/g, (match, key: string) => values[key] ?? match);
   let manifest = fill(readFileSync(join(templateDir, "package.json"), "utf8"));
-  if (options.serviceWorker) manifest = withDependency(manifest, "@gable/service-worker", `~${values.version}`);
+  if (options.serviceWorker) manifest = withDependency(manifest, "@gablejs/service-worker", `~${values.version}`);
   if (localDir) manifest = localizeManifest(manifest, localDir); // fails before anything is written
   const written = new Set<string>();
   const copy = (from: string, to: string, rel: string) => {
@@ -124,9 +124,9 @@ Copies the Gable starter into a new directory. Asks for a project name when none
 is given.
 
 Options:
-  --service-worker  Add a service worker (@gable/service-worker): offline caching of the
+  --service-worker  Add a service worker (@gablejs/service-worker): offline caching of the
                     production build and an update banner that applies new versions.
-  --local <dir>     Install @gable/* from the tarballs in <dir> (made by "npm run pack:local"
+  --local <dir>     Install @gablejs/* from the tarballs in <dir> (made by "npm run pack:local"
                     in the Gable repository) instead of the registry. For unpublished builds.
 `;
 

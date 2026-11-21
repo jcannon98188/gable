@@ -16,7 +16,7 @@ const ok = (r: EditResult) => {
   return r;
 };
 
-const SCENES = `import type { ComponentScenes } from '@gable/core/tooling';
+const SCENES = `import type { ComponentScenes } from '@gablejs/core/tooling';
 import { App } from './app.js';
 
 export default {

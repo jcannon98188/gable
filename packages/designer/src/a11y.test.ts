@@ -2,7 +2,7 @@
 import { createRequire } from "node:module";
 import axeCore from "axe-core";
 import { describe, expect, it } from "vitest";
-import type { DesignNode } from "@gable/core/designer";
+import type { DesignNode } from "@gablejs/core/designer";
 import { PAGE_RULES, RUN_CONTEXT, runOptions, toReport, type AxeLike, type AxeResults } from "./agent/a11y.js";
 import { sortChecks } from "../shell/src/app/a11y-state.js";
 import { axeModule } from "./server/vite-plugin.js";

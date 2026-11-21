@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createComponent, createInjector, flushSync, html } from "@gable/core";
+import { createComponent, createInjector, flushSync, html } from "@gablejs/core";
 import { createSceneTestRenderer } from "./testing.js";
 import { createDrag, createLongPress, type DragEvent, type DragHandle, type LongPressEvent, type LongPressHandle } from "./gestures.js";
 

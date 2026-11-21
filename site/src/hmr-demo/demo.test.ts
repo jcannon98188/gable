@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { mount } from "@gable/testing";
-import { createTestRenderer, createTestRoot, type TestNode } from "@gable/testing/renderer";
+import { mount } from "@gablejs/testing";
+import { createTestRenderer, createTestRoot, type TestNode } from "@gablejs/testing/renderer";
 import { HmrDemo } from "./demo.js";
 import { DemoSession } from "./session.js";
 import { EDITS, INITIAL_SOURCE, diffLines } from "./source.js";
 
-// These run the real `@gable/core/hmr` runtime (through DemoSession) against the in-memory test renderer.
+// These run the real `@gablejs/core/hmr` runtime (through DemoSession) against the in-memory test renderer.
 
 const edit = (id: string) => EDITS.find((e) => e.id === id)!;
 const find = (node: TestNode, pick: (n: TestNode) => boolean): TestNode | undefined => (pick(node) ? node : node.children.map((c) => find(c, pick)).find(Boolean));
@@ -25,7 +25,7 @@ function start() {
   return { root, session, click, count: () => live(session.instance).count(), text: () => textOf(root) };
 }
 
-describe("DemoSession (the real @gable/core/hmr runtime)", () => {
+describe("DemoSession (the real @gablejs/core/hmr runtime)", () => {
   it("mounts the original source", async () => {
     const d = start();
     expect(d.text()).toContain("Count: 0");

@@ -1,6 +1,6 @@
-import { html, signal } from '@gable/core';
-import { form, required, minLength } from '@gable/core/forms';
-import { UiInputOtp } from '@gable/ui';
+import { html, signal } from '@gablejs/core';
+import { form, required, minLength } from '@gablejs/core/forms';
+import { UiInputOtp } from '@gablejs/ui';
 
 /** Input OTP: a plain model, grouped with a separator, alphanumeric and masked, and bound to a form field. */
 export class OtpDemo {

@@ -3,7 +3,7 @@
 // element; and every definition with its context, read-only ones (a package's theme.css) marked as overridden on edit.
 // `ElementTokens` is the Style tab's (and this tab's) list of the tokens the selected element reads.
 // All reading happens in the backend (tokens-state.ts); this only shows it and turns a typed value into an edit.
-import { computed, effect, html, inject, signal, untracked } from "@gable/core";
+import { computed, effect, html, inject, signal, untracked } from "@gablejs/core";
 import type { TokenDef, TokenInfo, TokenKind, TokenUsage, TokenValue } from "../../../src/server/tokens/types.js";
 import { UiButton } from "../components/ui/button.js";
 import { UiToggleGroup, type ToggleGroupItem } from "../components/ui/toggle-group.js";
@@ -25,7 +25,7 @@ const KINDS: Array<{ id: TokenKind; title: string }> = [
 
 const where = (v: TokenValue | null) => (v ? v.at : "");
 const contextOf = (atRules: string[], selector: string | null) => [...atRules, ...(selector !== null ? [selector] : [])].join(" ");
-/** `@gable/ui` for `@gable/ui/theme.css`, `pkg` for `pkg/x.css`. */
+/** `@gablejs/ui` for `@gablejs/ui/theme.css`, `pkg` for `pkg/x.css`. */
 const packageOf = (file: string) => {
   const parts = file.split("/");
   return (parts[0]!.startsWith("@") ? parts.slice(0, 2) : parts.slice(0, 1)).join("/");

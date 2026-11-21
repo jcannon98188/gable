@@ -1,5 +1,5 @@
-import { computed, contentChildren, effect, html, input, model, signal, untracked } from "@gable/core";
-import { UiProps, bindProps, useCarousel } from "@gable/ui-primitives";
+import { computed, contentChildren, effect, html, input, model, signal, untracked } from "@gablejs/core";
+import { UiProps, bindProps, useCarousel } from "@gablejs/ui-primitives";
 import { UiIcon } from "../lib/icon.js";
 import { cn } from "../lib/cn.js";
 import { useHostClass } from "../lib/host-class.js";

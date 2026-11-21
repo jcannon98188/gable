@@ -1,6 +1,6 @@
 // The Designer's driven refactor check (e2e/refactor-check.mjs) and src/refactor.test.ts run against this app: a component used
 // twice in a template (rename, find uses) and a section that reads two signals (extract with props).
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 import { Badge } from "./badge.js";
 
 export class RefactorApp {

@@ -19,7 +19,7 @@ async function run(cwd: string, args: string[], env: Record<string, string> = {}
 /** A fresh Vite project like the create-gable starter: package.json, vite config with Tailwind, an entry, a stylesheet. */
 function viteProject(extra: Record<string, string> = {}): string {
   return writeTree(tempDir("gable-ui-app-"), {
-    "package.json": JSON.stringify({ name: "app", private: true, type: "module", dependencies: { "@gable/core": "~0.0.0" }, devDependencies: { vite: "^8.3.6" } }, null, 2) + "\n",
+    "package.json": JSON.stringify({ name: "app", private: true, type: "module", dependencies: { "@gablejs/core": "~0.0.0" }, devDependencies: { vite: "^8.3.6" } }, null, 2) + "\n",
     "vite.config.ts": `import tailwindcss from "@tailwindcss/vite";\nimport { defineConfig } from "vite";\nexport default defineConfig({ plugins: [tailwindcss()] });\n`,
     "index.html": `<div id="app"></div><script type="module" src="/src/main.ts"></script>\n`,
     "src/main.ts": `import "./global.css";\n`,
@@ -90,7 +90,7 @@ describe("gable-ui init then add, end to end in a Vite project", () => {
     expect(button).not.toContain('"../lib/');
     expect(text(app, "src/lib/ui/variants.ts")).toContain('from "./cn.js"');
     const deps = JSON.parse(text(app, "package.json")).dependencies;
-    expect(deps).toMatchObject({ "@gable/core": "~0.0.0", clsx: expect.any(String), "tailwind-merge": expect.any(String) });
+    expect(deps).toMatchObject({ "@gablejs/core": "~0.0.0", clsx: expect.any(String), "tailwind-merge": expect.any(String) });
     expect(deps).not.toHaveProperty("lucide"); // button does not draw icons
     expect(result.installs).toHaveLength(1);
   });
@@ -100,7 +100,7 @@ describe("gable-ui init then add, end to end in a Vite project", () => {
     expect(result.code, result.err).toBe(0);
     expect(result.out).toContain("created src/components/ui/dialog.ts");
     expect(existsSync(join(app, "src/lib/ui/icon.ts"))).toBe(true);
-    expect(JSON.parse(text(app, "package.json")).dependencies).toMatchObject({ lucide: expect.any(String), "@gable/ui-primitives": expect.any(String) });
+    expect(JSON.parse(text(app, "package.json")).dependencies).toMatchObject({ lucide: expect.any(String), "@gablejs/ui-primitives": expect.any(String) });
     const copied = ["src/components/ui", "src/lib/ui"].flatMap((d) => readdirSync(join(app, d)).map((f) => join(d, f)));
     expect(copied.length).toBeGreaterThan(8);
     for (const file of copied) {
@@ -169,17 +169,17 @@ describe("gable-ui options", () => {
     expect(result.err).toMatch(/vite\.config\.ts does not use @tailwindcss\/vite/);
   });
 
-  it("with --local points added @gable/* packages at tarballs", async () => {
-    const tarballs = writeTree(tempDir(), { "gable-core-0.0.0.tgz": "", "gable-ui-primitives-0.0.0.tgz": "", "gable-renderer-dom-0.0.0.tgz": "" });
+  it("with --local points added @gablejs/* packages at tarballs", async () => {
+    const tarballs = writeTree(tempDir(), { "gablejs-core-0.0.0.tgz": "", "gablejs-ui-primitives-0.0.0.tgz": "", "gablejs-renderer-dom-0.0.0.tgz": "" });
     dirs.push(tarballs);
     const app = project();
     await run(app, ["init", "--registry", registry, "--no-install"]);
     const result = await run(app, ["add", "select", "--no-install", "--local", tarballs]);
     expect(result.code, result.err).toBe(0);
     const manifest = JSON.parse(text(app, "package.json"));
-    expect(manifest.dependencies["@gable/ui-primitives"]).toBe(`file:${join(tarballs, "gable-ui-primitives-0.0.0.tgz").replace(/\\/g, "/")}`);
-    expect(manifest.dependencies["@gable/core"]).toBe("~0.0.0"); // already there: untouched
-    expect(Object.keys(manifest.overrides)).toEqual(["@gable/core", "@gable/renderer-dom", "@gable/ui-primitives"]);
+    expect(manifest.dependencies["@gablejs/ui-primitives"]).toBe(`file:${join(tarballs, "gablejs-ui-primitives-0.0.0.tgz").replace(/\\/g, "/")}`);
+    expect(manifest.dependencies["@gablejs/core"]).toBe("~0.0.0"); // already there: untouched
+    expect(Object.keys(manifest.overrides)).toEqual(["@gablejs/core", "@gablejs/renderer-dom", "@gablejs/ui-primitives"]);
   });
 
   it("reads components straight from a gable-ui source tree", async () => {

@@ -25,7 +25,7 @@ Imported from backlog.md without a description.
 
 ## Answer
 
-Monorepo skeleton merged on integration/gable-v0: npm workspaces, empty @gable/core and @gable/testing, Vitest, tsc builds, Changesets fixed lockstep, CI workflow. Verified: install, build and 2 smoke tests pass; lockstep bump checked. CI workflow itself not run (local).
+Monorepo skeleton merged on integration/gable-v0: npm workspaces, empty @gablejs/core and @gablejs/testing, Vitest, tsc builds, Changesets fixed lockstep, CI workflow. Verified: install, build and 2 smoke tests pass; lockstep bump checked. CI workflow itself not run (local).
 
 ## Parent
 

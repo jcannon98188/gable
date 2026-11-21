@@ -1,4 +1,4 @@
-import { computed, html, input } from "@gable/core";
+import { computed, html, input } from "@gablejs/core";
 import { DocCode } from "./doc-code.js";
 import { DocDemo } from "./doc-demo.js";
 import { DocInline } from "./doc-inline.js";

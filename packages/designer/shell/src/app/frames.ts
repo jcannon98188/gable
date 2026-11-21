@@ -1,7 +1,7 @@
 // The frames on the canvas. Each frame is one iframe with its own app instance, so each has its own PreviewClient (its own
 // nonce, its own agent). The set owns the selected frame (the one the panels inspect, and the one Tailwind mode will read
 // its width and breakpoint from), fit-to-screen scaling, saved device presets and the emulation each frame asks for.
-import { computed, signal } from "@gable/core";
+import { computed, signal } from "@gablejs/core";
 import {
   BUILTIN_PRESETS,
   EMPTY_SETTINGS,

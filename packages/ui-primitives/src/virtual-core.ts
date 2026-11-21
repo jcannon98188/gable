@@ -1,4 +1,4 @@
-import { computed, signal, untracked, type ReadonlySignal } from "@gable/core";
+import { computed, signal, untracked, type ReadonlySignal } from "@gablejs/core";
 
 /*
  * The renderer-neutral engine of virtual scrolling: which items of a long list are in view, where they sit, and how

@@ -1,8 +1,8 @@
-import { ErrorBoundary, html, lazy } from "@gable/core";
+import { ErrorBoundary, html, lazy } from "@gablejs/core";
 import "./hmr-demo/demo.css";
 
 /**
- * The HMR section. The demo is the real thing: `HmrDemo` mounts a component, runs `@gable/core/hmr` on it in the page and
+ * The HMR section. The demo is the real thing: `HmrDemo` mounts a component, runs `@gablejs/core/hmr` on it in the page and
  * is a lazy chunk, loaded when it nears the viewport, so the HMR runtime stays out of the first load. The error boundary
  * keeps a demo that fails to start from affecting the rest of the page.
  */

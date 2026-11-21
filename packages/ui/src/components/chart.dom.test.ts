@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 import { UiChart, niceScale, type ChartType } from "./chart.js";
 import { $, $$, key, settle, useDomApp } from "../test-utils.js";
 
@@ -142,7 +142,7 @@ describe("Chart interaction", () => {
   });
 
   it("has no axe violations for any chart type", async () => {
-    const { expectNoA11yViolations } = await import("@gable/testing/a11y");
+    const { expectNoA11yViolations } = await import("@gablejs/testing/a11y");
     const app = await boot(App);
     for (const kind of ["bar", "line", "area", "pie", "donut"] as const) {
       app.kind.set(kind);

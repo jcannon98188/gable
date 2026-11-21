@@ -1,6 +1,6 @@
-import { computed, effect, signal, untracked, type ReadonlySignal } from "@gable/core";
-import { currentScope, injectHost, whenFlushed } from "@gable/core/internal";
-import type { Renderer } from "@gable/core/renderer";
+import { computed, effect, signal, untracked, type ReadonlySignal } from "@gablejs/core";
+import { currentScope, injectHost, whenFlushed } from "@gablejs/core/internal";
+import type { Renderer } from "@gablejs/core/renderer";
 import type { PropBag } from "./props.js";
 import { createVirtualizer, type ScrollAlign, type VirtualItem, type Virtualizer, type VirtualizerOptions } from "./virtual-core.js";
 

@@ -1,11 +1,11 @@
-# @gable/prettier-plugin
+# @gablejs/prettier-plugin
 
-A Prettier plugin that formats the `html` template literals in your components. Prettier keeps formatting everything else exactly as it does without the plugin; only literals tagged `html` are handed to [`@gable/template-format`](./template-format.md). Prettier's built-in HTML embedding is switched off for those literals, and its CSS, GraphQL and Markdown embeds keep working.
+A Prettier plugin that formats the `html` template literals in your components. Prettier keeps formatting everything else exactly as it does without the plugin; only literals tagged `html` are handed to [`@gablejs/template-format`](./template-format.md). Prettier's built-in HTML embedding is switched off for those literals, and its CSS, GraphQL and Markdown embeds keep working.
 
 ## Install
 
 ```
-npm install -D prettier @gable/prettier-plugin
+npm install -D prettier @gablejs/prettier-plugin
 ```
 
 Prettier 3 or newer is a peer dependency.
@@ -16,7 +16,7 @@ List the plugin in your Prettier config:
 
 ```json
 {
-  "plugins": ["@gable/prettier-plugin"],
+  "plugins": ["@gablejs/prettier-plugin"],
   "printWidth": 100
 }
 ```
@@ -44,6 +44,6 @@ Set Prettier as the default formatter so saving a file formats its templates. In
 
 ## Without Prettier
 
-Use the `gable-format` command from [`@gable/template-format`](./template-format.md), which does the same job with no Prettier dependency. See [Manual setup](../manual-setup.md) for adding the plugin to an existing app.
+Use the `gable-format` command from [`@gablejs/template-format`](./template-format.md), which does the same job with no Prettier dependency. See [Manual setup](../manual-setup.md) for adding the plugin to an existing app.
 
 Every exported symbol is documented in the [API reference](/docs/prettier-plugin/api).

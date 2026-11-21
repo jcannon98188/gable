@@ -1,5 +1,5 @@
-import { computed, signal, untracked, type ReadonlySignal } from "@gable/core";
-import { FocusManager, History, LiveAnnouncer, Location, Meta, Title } from "@gable/core/renderer";
+import { computed, signal, untracked, type ReadonlySignal } from "@gablejs/core";
+import { FocusManager, History, LiveAnnouncer, Location, Meta, Title } from "@gablejs/core/renderer";
 
 interface Entry {
   href: string;

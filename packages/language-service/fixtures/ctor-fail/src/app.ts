@@ -1,4 +1,4 @@
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 
 export class Counter {
   static meta = { selector: "x-counter", template: html`<p>{{ n() }}</p>` };

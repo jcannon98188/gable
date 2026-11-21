@@ -1,5 +1,5 @@
-import { html, inject } from '@gable/core';
-import { ToastService, UiButton, UiToaster } from '@gable/ui';
+import { html, inject } from '@gablejs/core';
+import { ToastService, UiButton, UiToaster } from '@gablejs/ui';
 
 /** The toast service and `<ui-toaster>`: one region in the app, `ToastService` injected wherever a toast is needed. */
 export class ToastDemo {

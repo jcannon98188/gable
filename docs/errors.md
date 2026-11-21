@@ -26,7 +26,7 @@ All sources go to one token, `ErrorHandler`, resolved from the failing component
 Replace it with a provider. To add a reporter and keep the console output, decorate the previous handler:
 
 ```ts
-import { ErrorHandler, inject, type ErrorContext } from "@gable/core";
+import { ErrorHandler, inject, type ErrorContext } from "@gablejs/core";
 import * as Sentry from "@sentry/browser";
 
 class SentryErrorHandler extends ErrorHandler {
@@ -65,7 +65,7 @@ Gable has no separate production error path: the same handler runs in both. Diff
 `ErrorBoundary` (selector `gable-error-boundary`) renders its content normally. When something below it fails, it swaps the content for fallback content (the `fallback` slot):
 
 ```ts
-import { ErrorBoundary, html, viewChild } from "@gable/core";
+import { ErrorBoundary, html, viewChild } from "@gablejs/core";
 
 class Page {
   static meta = {

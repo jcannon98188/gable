@@ -53,7 +53,7 @@ function declTarget(pkgDir, target) {
 }
 
 /**
- * Entry points of a package: [{ path: "@gable/core/rxjs", file: <abs .d.ts> }].
+ * Entry points of a package: [{ path: "@gablejs/core/rxjs", file: <abs .d.ts> }].
  * Returns { entries, skipped } where skipped is a reason when the package exposes no declarations.
  */
 export function resolveEntryPoints(pkgDir, pkg) {
@@ -588,9 +588,9 @@ function resolveSee(entryPoints) {
  * here; it is reported as skipped with the generic "no exports/types" reason so the omission stays visible.
  */
 export const SKIP = {
-  "@gable/designer":
+  "@gablejs/designer":
     "application, not a library: a private CLI (gable-designer), Tauri shell and dev-only preview agent with no entry module and no importers",
-  "@gable/devtools-extension": "application, not a library: a Manifest V3 browser extension bundle",
+  "@gablejs/devtools-extension": "application, not a library: a Manifest V3 browser extension bundle",
   "gable-vscode": "application, not a library: a VS Code extension (TypeScript server plugin and grammar)",
 };
 

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { computed, effect, signal } from "@gable/core";
-import { toSignal } from "@gable/core/rxjs";
+import { computed, effect, signal } from "@gablejs/core";
+import { toSignal } from "@gablejs/core/rxjs";
 import { Subject } from "rxjs";
-import { createScope, runInScope, whenFlushed } from "@gable/core/internal";
+import { createScope, runInScope, whenFlushed } from "@gablejs/core/internal";
 
 describe("scheduler", () => {
   it("flushes parents before children regardless of creation order", async () => {

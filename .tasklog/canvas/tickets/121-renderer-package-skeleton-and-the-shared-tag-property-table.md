@@ -16,7 +16,7 @@ ordinal: 240000
 
 ## Question
 
-canvas/117 chose one package, @gable/renderer-pixi, with entry points '.', '/testing' and '/elements'. The shared tag and property table (canvas/112: tags, Pixi property names, dotted axis paths, point-like props, event names and types, static attribute conversion) is the single source of truth for the Pixi renderer, the scene test renderer and the language-service element map, so it comes first.
+canvas/117 chose one package, @gablejs/renderer-pixi, with entry points '.', '/testing' and '/elements'. The shared tag and property table (canvas/112: tags, Pixi property names, dotted axis paths, point-like props, event names and types, static attribute conversion) is the single source of truth for the Pixi renderer, the scene test renderer and the language-service element map, so it comes first.
 
 ## Acceptance criteria
 

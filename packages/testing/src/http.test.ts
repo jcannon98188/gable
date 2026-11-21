@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Observable, firstValueFrom, map, of } from "rxjs";
-import { createInjector, html, inject, type Provider } from "@gable/core";
-import { toSignal } from "@gable/core/rxjs";
-import { Http, HttpBackend, HttpError, mockHttp, withInterceptors, type HttpInterceptor, type HttpMock } from "@gable/core/http";
-import { createTestInjector, httpTesting, mount } from "@gable/testing";
+import { createInjector, html, inject, type Provider } from "@gablejs/core";
+import { toSignal } from "@gablejs/core/rxjs";
+import { Http, HttpBackend, HttpError, mockHttp, withInterceptors, type HttpInterceptor, type HttpMock } from "@gablejs/core/http";
+import { createTestInjector, httpTesting, mount } from "@gablejs/testing";
 
 function setup(providers: Provider[] = []) {
   const injector = createTestInjector(providers);

@@ -4,7 +4,7 @@
 //   flush  = end of advance to start of render (flushSync plus the renderer's own per-frame redraw work)
 //   render = duration of Application.render (Pixi's submit)
 // Shared by the browser page and the Node microbench. Install before the boundary mounts, uninstall after.
-import { Frame, type ApplicationLike, type FrameScheduler } from "@gable/renderer-pixi";
+import { Frame, type ApplicationLike, type FrameScheduler } from "@gablejs/renderer-pixi";
 
 export interface Series {
   hooks: number[];

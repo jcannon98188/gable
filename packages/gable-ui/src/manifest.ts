@@ -12,7 +12,7 @@ export function detectPackageManager(cwd: string, userAgent?: string): PackageMa
   return (/^(npm|pnpm|yarn|bun)\//.exec(userAgent ?? "")?.[1] as PackageManager | undefined) ?? "npm";
 }
 
-/** `gable-core-0.0.0.tgz` for `@gable/core`, found in `files`. */
+/** `gablejs-core-0.0.0.tgz` for `@gablejs/core`, found in `files`. */
 function tarballFor(files: string[], name: string): string | undefined {
   const prefix = name.replace(/^@/, "").replace("/", "-") + "-";
   return files.find((f) => f.startsWith(prefix) && f.endsWith(".tgz") && /^\d/.test(f.slice(prefix.length)));
@@ -31,7 +31,7 @@ export interface MergeResult {
 
 /**
  * Adds the requested packages to a package.json text unless the project already lists them (in either dependency field).
- * With `localDir`, every added `@gable/*` package points at its tarball in that directory (as `create-gable --local` does)
+ * With `localDir`, every added `@gablejs/*` package points at its tarball in that directory (as `create-gable --local` does)
  * and `overrides` pins every tarball there, since the packages depend on each other at the lockstep version.
  */
 export function mergeDependencies(text: string, request: DependencyRequest, localDir?: string): MergeResult {
@@ -44,7 +44,7 @@ export function mergeDependencies(text: string, request: DependencyRequest, loca
     for (const [name, wanted] of Object.entries(request[field] ?? {})) {
       if (existing(name)) continue;
       let range = wanted;
-      if (localDir && name.startsWith("@gable/")) {
+      if (localDir && name.startsWith("@gablejs/")) {
         const file = tarballFor(files, name);
         if (!file) throw new Error(`--local: no tarball for ${name} in ${localDir}. Run "npm run pack:local <app-dir>" in the Gable repository first.`);
         range = spec(file);
@@ -53,11 +53,11 @@ export function mergeDependencies(text: string, request: DependencyRequest, loca
       added.push(`${name}@${range}`);
     }
   }
-  if (localDir && added.some((a) => a.includes("@gable/"))) {
+  if (localDir && added.some((a) => a.includes("@gablejs/"))) {
     const overrides = { ...manifest.overrides };
     for (const file of files) {
       const match = /^gable-(.+?)-\d[^/]*\.tgz$/.exec(file);
-      if (match) overrides[`@gable/${match[1]}`] = spec(file);
+      if (match) overrides[`@gablejs/${match[1]}`] = spec(file);
     }
     manifest.overrides = Object.fromEntries(Object.entries(overrides).sort(([a], [b]) => a.localeCompare(b)));
   }

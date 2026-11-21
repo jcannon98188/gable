@@ -1,4 +1,4 @@
-import type { Type } from "@gable/core";
+import type { Type } from "@gablejs/core";
 import { useMachine, type MachineBinding } from "./machine.js";
 import { uniqueId } from "./id.js";
 

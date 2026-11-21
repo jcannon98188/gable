@@ -1,5 +1,5 @@
-import { html, signal } from '@gable/core';
-import { MenuTrigger, UiButton, UiButtonGroup, UiButtonGroupText, UiDropdownMenu, UiIcon, UiToggleGroup, type MenuEntry, type ToggleGroupItem } from '@gable/ui';
+import { html, signal } from '@gablejs/core';
+import { MenuTrigger, UiButton, UiButtonGroup, UiButtonGroupText, UiDropdownMenu, UiIcon, UiToggleGroup, type MenuEntry, type ToggleGroupItem } from '@gablejs/ui';
 
 /** Button group (ui/73): horizontal and vertical groups, a text addon and the split-button recipe. */
 export class ButtonGroupDemo {

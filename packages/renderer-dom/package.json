@@ -1,5 +1,5 @@
 {
-  "name": "@gable/renderer-dom",
+  "name": "@gablejs/renderer-dom",
   "version": "0.0.0",
   "description": "The DOM renderer for Gable: puts a Gable app in a browser.",
   "license": "MIT",
@@ -27,11 +27,11 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "peerDependencies": {
-    "@gable/core": "~0.0.0"
+    "@gablejs/core": "~0.0.0"
   },
   "devDependencies": {
-    "@gable/core": "0.0.0",
-    "@gable/testing": "0.0.0",
+    "@gablejs/core": "0.0.0",
+    "@gablejs/testing": "0.0.0",
     "jsdom": "^27.0.0",
     "vite": "^8.3.6"
   },

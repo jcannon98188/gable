@@ -2,8 +2,8 @@
 // iframe). Plain JSON over postMessage, versioned, and bound to one session by a nonce: both sides check `origin`,
 // `source` and the nonce on every message, so a page that happens to be framed (or a script in the preview) cannot
 // drive the shell, and the agent never answers anyone but the window that opened it.
-import type { ComponentDetail, DevtoolsEvent, DevtoolsMethods, HmrEntry, WhyNode } from "@gable/core/devtools";
-import type { DesignNode } from "@gable/core/designer";
+import type { ComponentDetail, DevtoolsEvent, DevtoolsMethods, HmrEntry, WhyNode } from "@gablejs/core/devtools";
+import type { DesignNode } from "@gablejs/core/designer";
 import type { SceneReport } from "./agent/scene.js";
 import type { NetworkMethods } from "./network.js";
 import type { StorageMethods } from "./storage.js";

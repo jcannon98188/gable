@@ -1,5 +1,5 @@
-import { computed, html, signal } from '@gable/core';
-import { UiButton, UiCommand, UiCommandDialog, type CommandItem } from '@gable/ui';
+import { computed, html, signal } from '@gablejs/core';
+import { UiButton, UiCommand, UiCommandDialog, type CommandItem } from '@gablejs/ui';
 
 const COMMANDS: CommandItem[] = [
   { value: 'calendar', label: 'Calendar', group: 'Suggestions' },

@@ -1,5 +1,5 @@
-import { computed, effect, html, input, signal } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
+import { computed, effect, html, input, signal } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
 import type { Editor } from "@tiptap/core";
 import { getComments, type CommentThread } from "../plugins/comments.js";
 

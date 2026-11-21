@@ -1,6 +1,6 @@
-import { effect, input, signal, untracked, type ReadonlySignal } from "@gable/core";
-import { currentScope, injectHost } from "@gable/core/internal";
-import type { Renderer } from "@gable/core/renderer";
+import { effect, input, signal, untracked, type ReadonlySignal } from "@gablejs/core";
+import { currentScope, injectHost } from "@gablejs/core/internal";
+import type { Renderer } from "@gablejs/core/renderer";
 
 /** Which arrow keys move focus in a roving group: Left and Right, Up and Down, or all four. */
 export type RovingOrientation = "horizontal" | "vertical" | "both";

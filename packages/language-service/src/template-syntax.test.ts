@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { checkTemplateSyntax } from "./analyze.js";
 
-const component = (template: string) => `import { html } from "@gable/core";
+const component = (template: string) => `import { html } from "@gablejs/core";
 
 export class Demo {
   static meta = {

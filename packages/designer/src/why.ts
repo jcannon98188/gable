@@ -1,7 +1,7 @@
 // Shared by the shell's "Why did this update" tab (designer/75) and the MCP tools: turns the devtools hook's `why` report into
 // the words and rows both show. The facts are the hook's (the signal writes behind each effect run, the dependency tree);
 // nothing here adds to them.
-import type { WhyCause, WhyDependency, WhyNode, WhyRun } from "@gable/core/devtools";
+import type { WhyCause, WhyDependency, WhyNode, WhyRun } from "@gablejs/core/devtools";
 import type { WhyElementReport } from "./protocol.js";
 
 /** `qty 2 → 3`, `qty 2 → 3 via total, big`; `by the Designer` when a tool made the write. */

@@ -16,7 +16,7 @@ export interface PrecacheManifest {
   /**
    * The content hash of each file, by URL as listed in {@link urls}, which `install()` checks every fetched file against:
    * a file whose bytes do not hash to its entry fails the install. A hash is the first hex digits of the file's
-   * SHA-256 digest, as `@gable/vite` emits them (16 digits), compared without regard to case. Files without an entry
+   * SHA-256 digest, as `@gablejs/vite` emits them (16 digits), compared without regard to case. Files without an entry
    * are not verified, and entries for URLs not in {@link urls} are ignored.
    *
    * This is what keeps the cache to one release when a deploy lands mid-install: a file the server already answers

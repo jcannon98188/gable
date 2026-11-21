@@ -1,7 +1,7 @@
-import { computed, html, I18n, inject, input, signal } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
-import { LiveAnnouncer } from "@gable/core/renderer";
-import { UiDrawerDrag, UiPortal, UiPresence } from "@gable/ui-primitives";
+import { computed, html, I18n, inject, input, signal } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
+import { LiveAnnouncer } from "@gablejs/core/renderer";
+import { UiDrawerDrag, UiPortal, UiPresence } from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 import { UiIcon } from "../lib/icon.js";
 

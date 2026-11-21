@@ -3,7 +3,7 @@
 // default worker is, and as a custom worker on createAppChannel() alone, which proves the services rely on the
 // message protocol and nothing else.
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createInjector, ErrorHandler, type Injector } from "@gable/core";
+import { createInjector, ErrorHandler, type Injector } from "@gablejs/core";
 import { createAppChannel, lifecycle, SW_PROTOCOL, type WorkerScope } from "../core/index.js";
 import { createBrowser, type InMemoryBrowser, type InMemoryPage, type WorkerScript } from "../testing/browser.js";
 import {

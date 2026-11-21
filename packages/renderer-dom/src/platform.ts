@@ -1,4 +1,4 @@
-import { FocusManager, History, Location, LiveAnnouncer, Meta, Title, mergeMeta, metaEntries, type MetaEntry, type FocusTarget, type MetaTags, type Politeness } from "@gable/core/renderer";
+import { FocusManager, History, Location, LiveAnnouncer, Meta, Title, mergeMeta, metaEntries, type MetaEntry, type FocusTarget, type MetaTags, type Politeness } from "@gablejs/core/renderer";
 
 /**
  * How the DOM platform maps the browser URL to app routes. Accepted by `dom()` and {@link createDomRenderer}.

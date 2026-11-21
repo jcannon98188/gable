@@ -1,4 +1,4 @@
-// `import sheet from "./hero.json?family"` must type-check: @gable/vite ships `client.d.ts` (`/// <reference types="@gable/vite/client" />`).
+// `import sheet from "./hero.json?family"` must type-check: @gablejs/vite ships `client.d.ts` (`/// <reference types="@gablejs/vite/client" />`).
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -25,7 +25,7 @@ function typecheck(source: string): { ok: boolean; output: string } {
   }
 }
 
-describe("@gable/vite client types", () => {
+describe("@gablejs/vite client types", () => {
   const clientTypes = join(pkgDir, "client.d.ts").replace(/\\/g, "/");
 
   it("types a ?family import as a URL string once the client types are referenced", () => {
@@ -40,7 +40,7 @@ describe("@gable/vite client types", () => {
     expect(result.output).toContain("?family");
   }, 60_000);
 
-  it("is exported as @gable/vite/client and shipped in the package", () => {
+  it("is exported as @gablejs/vite/client and shipped in the package", () => {
     const pkg = JSON.parse(readFileSync(join(pkgDir, "package.json"), "utf8"));
     expect(pkg.exports["./client"]).toEqual({ types: "./client.d.ts" });
     expect(pkg.files).toContain("client.d.ts");

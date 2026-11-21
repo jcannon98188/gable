@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "@gable/ui/theme.css";
+@import "@gablejs/ui/theme.css";
 
 /* The fixture's own tokens: a light value with a .dark pair, an OS-dark value and a theme switch. */
 :root {

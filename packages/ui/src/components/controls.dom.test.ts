@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 import { UiCheckbox } from "./checkbox.js";
 import { UiSwitch } from "./switch.js";
 import { $, key, settle, useDomApp } from "../test-utils.js";

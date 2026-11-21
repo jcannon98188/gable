@@ -1,5 +1,5 @@
-import { html, signal } from '@gable/core';
-import { MenuTrigger, UiButton, UiContextMenu, UiDropdownMenu, UiRangeSlider, type MenuEntry } from '@gable/ui';
+import { html, signal } from '@gablejs/core';
+import { MenuTrigger, UiButton, UiContextMenu, UiDropdownMenu, UiRangeSlider, type MenuEntry } from '@gablejs/ui';
 
 const flip = (list: MenuEntry[], value: string, checked: boolean): MenuEntry[] =>
   list.map((entry) => (entry.type === 'checkbox' && entry.value === value ? { ...entry, checked } : entry.type === 'submenu' ? { ...entry, entries: flip(entry.entries, value, checked) } : entry));

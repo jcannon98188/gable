@@ -43,9 +43,9 @@ async function renderScenes(): Promise<Record<string, Image>> {
     root: here("../browser-page"),
     resolve: {
       alias: [
-        { find: /^@gable\/core$/, replacement: here("../../core/src/index.ts") },
-        { find: /^@gable\/core\/renderer$/, replacement: here("../../core/src/renderer.ts") },
-        { find: /^@gable\/renderer-dom$/, replacement: here("../../renderer-dom/src/index.ts") },
+        { find: /^@gablejs\/core$/, replacement: here("../../core/src/index.ts") },
+        { find: /^@gablejs\/core\/renderer$/, replacement: here("../../core/src/renderer.ts") },
+        { find: /^@gablejs\/renderer-dom$/, replacement: here("../../renderer-dom/src/index.ts") },
       ],
     },
     build: { write: false, minify: false, lib: { entry: here("../browser-page/golden.ts"), formats: ["iife"], name: "Page" } },

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { computed, html, signal } from "@gable/core";
-import { form, email, max, maxLength, min, minLength, pattern, required, requiredTrue, validate, apply, applyWhen, disabled, type Path } from "@gable/core/forms";
-import { mount } from "@gable/testing";
+import { computed, html, signal } from "@gablejs/core";
+import { form, email, max, maxLength, min, minLength, pattern, required, requiredTrue, validate, apply, applyWhen, disabled, type Path } from "@gablejs/core/forms";
+import { mount } from "@gablejs/testing";
 
 /** A component whose only job is to own a form, so tests go through the Fixture. */
 function host<F>(make: () => F) {

@@ -1,8 +1,8 @@
 // State history (time travel) in the devtools layer: what is recorded, how steps group, travel back and forward, the bounds.
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { effect, html, inject, model, signal } from "@gable/core";
-import { mount } from "@gable/testing";
-import { createDevtools, type DevtoolsEvent, type DevtoolsInstance, type HistoryInfo, type TravelResult } from "@gable/core/devtools";
+import { effect, html, inject, model, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
+import { createDevtools, type DevtoolsEvent, type DevtoolsInstance, type HistoryInfo, type TravelResult } from "@gablejs/core/devtools";
 import { MAX_HISTORY_STEPS, MAX_HISTORY_WRITES } from "./signal-history.js";
 
 let dt: DevtoolsInstance;

@@ -1,4 +1,4 @@
-import { computed, effect, html, injectHost, signal, untracked, viewChild } from "@gable/core";
+import { computed, effect, html, injectHost, signal, untracked, viewChild } from "@gablejs/core";
 import { DemoSession, type Outcome } from "./session.js";
 import { EDITS, INITIAL_SOURCE, diffLines, type DemoEdit, type DiffLine } from "./source.js";
 
@@ -12,7 +12,7 @@ const LABELS: Record<Outcome["status"], string> = {
 
 /**
  * The live HMR demo. A real Gable component (the Counter in the source pane) is mounted with its own `bootstrap` into
- * the stage; Save evaluates the pane's text and hands it to the real `@gable/core/hmr` runtime, which swaps the class
+ * the stage; Save evaluates the pane's text and hands it to the real `@gablejs/core/hmr` runtime, which swaps the class
  * in place and moves the state across. This module (and the runtime it pulls in) is a lazy chunk: the page only loads
  * it when the demo scrolls into view.
  */

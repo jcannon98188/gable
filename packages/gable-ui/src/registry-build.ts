@@ -7,7 +7,7 @@ import type { ItemType, RegistryIndex, RegistryItem } from "./types.js";
 export interface BuildOptions {
   /** The packages/ui directory: `src/components`, `src/lib`, `theme.css`, `package.json`, optionally `src/registry-meta.ts`. */
   uiDir: string;
-  /** The lockstep version stamped on the index and on `@gable/*` dependency ranges. */
+  /** The lockstep version stamped on the index and on `@gablejs/*` dependency ranges. */
   version: string;
 }
 
@@ -77,7 +77,7 @@ export async function buildRegistry({ uiDir, version }: BuildOptions): Promise<B
   const meta = await loadMeta(uiDir, warnings);
 
   const range = (pkg: string): string => {
-    if (pkg.startsWith("@gable/")) return `~${version}`;
+    if (pkg.startsWith("@gablejs/")) return `~${version}`;
     const found = uiManifest.dependencies?.[pkg];
     if (!found) throw new Error(`The sources import "${pkg}", which is not in ${join(uiDir, "package.json")} dependencies.`);
     return found;

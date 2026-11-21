@@ -1,6 +1,6 @@
 // The bottom drawer: the selected element's source and the last patch, the project's problems, the hot-update timeline,
 // accessibility, performance, the network (network-panel.ts) and storage (storage-panel.ts). The tab strip stays when the drawer is closed, so its badges can still be read.
-import { computed, effect, html, inject, signal, untracked } from "@gable/core";
+import { computed, effect, html, inject, signal, untracked } from "@gablejs/core";
 import { CPU_RATES, NETWORK_PROFILES, type Throttle } from "../../../src/devices.js";
 import type { PerfElement, PerfMetric } from "../../../src/protocol.js";
 import { UiButton } from "../components/ui/button.js";

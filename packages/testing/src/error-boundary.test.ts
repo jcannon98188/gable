@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ErrorBoundary, effect, html, signal, viewChild } from "@gable/core";
-import { mount } from "@gable/testing";
+import { ErrorBoundary, effect, html, signal, viewChild } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
 
 describe("ErrorBoundary", () => {
   it("shows the fallback on a setup error, still reports it, and resets to rebuilt content", async () => {

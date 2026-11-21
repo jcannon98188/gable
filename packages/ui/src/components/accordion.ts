@@ -1,5 +1,5 @@
-import { computed, contentChildren, effect, html, inject, input, model, signal } from "@gable/core";
-import { AccordionState, UiPopup, UiProps, bindProps } from "@gable/ui-primitives";
+import { computed, contentChildren, effect, html, inject, input, model, signal } from "@gablejs/core";
+import { AccordionState, UiPopup, UiProps, bindProps } from "@gablejs/ui-primitives";
 import { UiIcon } from "../lib/icon.js";
 
 /**

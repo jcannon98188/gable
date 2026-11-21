@@ -5,7 +5,7 @@ Measures Gable's headline feature: how long a hot update takes, and whether stat
 ## Run
 
 ```
-npm run pack:local -- examples/hmr-benchmark   # from the repo root: builds and packs @gable/* into vendor/
+npm run pack:local -- examples/hmr-benchmark   # from the repo root: builds and packs @gablejs/* into vendor/
 cd examples/hmr-benchmark
 npm install
 npm run bench                                   # or: node bench.mjs [--sizes 500,2000] [--iterations 10]

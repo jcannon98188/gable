@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { bootstrap, computed, ErrorHandler, html, inject, signal } from "@gable/core";
-import { whenFlushed } from "@gable/core/internal";
-import { createDomRenderer } from "@gable/renderer-dom";
+import { bootstrap, computed, ErrorHandler, html, inject, signal } from "@gablejs/core";
+import { whenFlushed } from "@gablejs/core/internal";
+import { createDomRenderer } from "@gablejs/renderer-dom";
 import * as combobox from "@zag-js/combobox";
 import { COMBOBOX, ComboboxState, MENU, MenuState, type Item } from "./items-proto.fixtures.js";
 

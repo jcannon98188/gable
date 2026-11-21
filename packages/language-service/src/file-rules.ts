@@ -87,7 +87,7 @@ export function templateRules(model: TemplateModel, checker: ts.TypeChecker, rep
       if (!imported.has(selector)) imported.set(selector, importsSelector(model.classNode, checker, selector));
       if (!imported.get(selector)) {
         const cls = name[0]!.toUpperCase() + name.slice(1);
-        report(at, name.length, "router-link-import", `${name} is not imported in ${model.className}: add ${cls} (from @gable/core/router) to meta.imports`);
+        report(at, name.length, "router-link-import", `${name} is not imported in ${model.className}: add ${cls} (from @gablejs/core/router) to meta.imports`);
       }
     }
   });

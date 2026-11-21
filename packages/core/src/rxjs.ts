@@ -1,4 +1,4 @@
-// `@gable/core/rxjs`: the RxJS side of Gable. This is the only entry that
+// `@gablejs/core/rxjs`: the RxJS side of Gable. This is the only entry that
 // imports RxJS (a peer dependency); the signal core and templates never do.
 import { Observable, Subscription, type Subscriber, asyncScheduler, type SchedulerAction, type SchedulerLike } from "rxjs";
 import { effect, runAfterFlush, untracked, type ReadonlySignal } from "./signals.js";

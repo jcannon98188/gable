@@ -1,9 +1,9 @@
 // Edit state: the selected element's editable model, the palette, and the undo history. Every edit is a request to the backend,
 // which patches the source file; the project's Vite then hot-updates the canvas and this state reselects the same element.
-import { computed, effect, inject, signal, untracked } from "@gable/core";
+import { computed, effect, inject, signal, untracked } from "@gablejs/core";
 import { ToastService } from "../components/ui/toast.js";
 import type { DescribeResult, EditOp, EditResult, HistoryInfo, NodeModel, PaletteEntry, TargetRef } from "../../../src/server/edit/types.js";
-import type { DesignNode } from "@gable/core/designer";
+import type { DesignNode } from "@gablejs/core/designer";
 import { DesignerState } from "./designer-state.js";
 
 export class EditState {

@@ -1,7 +1,7 @@
 // The Designer's driven performance check (e2e/perf-check.mjs) runs against this app. It is slow ON PURPOSE: a banner
 // that appears late pushes the content down (a layout shift), and a busy loop blocks the main thread once the page has
 // painted (a long task). The paragraph is the largest text, so it is the LCP element. Do not fix them.
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 
 export class PerfApp {
   static meta = {

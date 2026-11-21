@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { html } from "@gable/core";
-import { createDrag } from "@gable/renderer-pixi";
-import { createSceneTestRenderer, mountWithScene } from "@gable/renderer-pixi/testing";
+import { html } from "@gablejs/core";
+import { createDrag } from "@gablejs/renderer-pixi";
+import { createSceneTestRenderer, mountWithScene } from "@gablejs/renderer-pixi/testing";
 import { Runner } from "./frame.js";
 
 describe("guide: known behaviours", () => {

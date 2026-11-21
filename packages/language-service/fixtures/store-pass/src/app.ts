@@ -1,5 +1,5 @@
-import { html, inject } from "@gable/core";
-import { patchState, signalStore, withComputed, withMethods, withState } from "@gable/store";
+import { html, inject } from "@gablejs/core";
+import { patchState, signalStore, withComputed, withMethods, withState } from "@gablejs/store";
 
 export class CartStore extends signalStore(
   withState({ items: 0 }),

@@ -1,6 +1,6 @@
 // The Pointer service (canvas/113): where the pointer is, which buttons are down and whether it is over the canvas, as
 // signals. Driven by the stage's federated pointer events. Free of any pixi.js import.
-import { signal, type WritableSignal } from "@gable/core";
+import { signal, type WritableSignal } from "@gablejs/core";
 
 /** A point in scene coordinates. */
 export interface PointerPoint {

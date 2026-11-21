@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { html } from "@gable/core";
-import { createSceneTestRenderer, mountWithScene } from "@gable/renderer-pixi/testing";
+import { html } from "@gablejs/core";
+import { createSceneTestRenderer, mountWithScene } from "@gablejs/renderer-pixi/testing";
 import { Hud, Score } from "./a11y.js";
 
 function mount() {

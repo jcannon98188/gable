@@ -1,7 +1,7 @@
-import { computed, effect, html, inject, signal, untracked, viewChild, ErrorBoundary, ErrorHandler } from "@gable/core";
-import { provideRouter, Router, RouterOutlet, type NavigationEvent } from "@gable/core/router";
+import { computed, effect, html, inject, signal, untracked, viewChild, ErrorBoundary, ErrorHandler } from "@gablejs/core";
+import { provideRouter, Router, RouterOutlet, type NavigationEvent } from "@gablejs/core/router";
 import { DemoLink as RouterLink, DemoLinkActive as RouterLinkActive } from "./links.js";
-import { toSignal } from "@gable/core/rxjs";
+import { toSignal } from "@gablejs/core/rxjs";
 import { scan } from "rxjs";
 import { MemoryNav, memoryPlatform } from "./memory-nav.js";
 import { MiniErrors, Session, routes } from "./mini-app.js";
@@ -76,7 +76,7 @@ export class RouterDemo {
 </div>
 </div>
 <p class="rd-note" role="status">{{ last() }}</p>
-<p class="rd-note">The router, route table, guard and lazy loading are the real <span class="mono">@gable/core/router</span>. The history stack is in memory, and the 900 ms delay on /reports is artificial so the load is visible.</p>
+<p class="rd-note">The router, route table, guard and lazy loading are the real <span class="mono">@gablejs/core/router</span>. The history stack is in memory, and the 900 ms delay on /reports is artificial so the load is visible.</p>
 <div slot="fallback" class="rd-fallback" role="alert">
 <p>The demo hit an error and stopped. The rest of the page is fine.</p>
 <button type="button" class="rd-btn" (click)="reset()">Restart the demo</button>

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
-import { mount } from "@gable/testing";
-import { update } from "@gable/core/hmr";
-import { acceptLine } from "@gable/vite";
+import { html, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
+import { update } from "@gablejs/core/hmr";
+import { acceptLine } from "@gablejs/vite";
 
 describe("a module that failed to re-evaluate", () => {
   it("rolls the whole Vite batch back and reports it as an hmr error", async () => {

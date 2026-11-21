@@ -11,7 +11,7 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Container, Sprite } from "pixi.js";
 import { describe, expect, it, vi } from "vitest";
-import { flushSync, html, inject, onCleanup, signal } from "@gable/core";
+import { flushSync, html, inject, onCleanup, signal } from "@gablejs/core";
 import { GableCanvas } from "../src/index.js";
 import { boot, fakeApp, live, manualScheduler, update } from "../src/hmr-harness.js";
 
@@ -88,7 +88,7 @@ describe("canvas HMR soak", () => {
           hook = (() => { const id = setInterval(() => {}, 600000); tick(1); onCleanup(() => { clearInterval(id); tick(-1); }); return id; })();
         }`,
       );
-    const { input } = await import("@gable/core");
+    const { input } = await import("@gablejs/core");
     const makeRock = (n: number) => rock(n)(inject, input, Pool, rockTemplate, onCleanup, (d: number) => (hooks += d)) as new () => object;
     const makeHost = (n: number, RockClass: new () => object, PoolClass: new () => object) =>
       new Function(

@@ -6,7 +6,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
 import { chromium } from "playwright";
-import { gable } from "@gable/vite";
+import { gable } from "@gablejs/vite";
 import { EDITS, generateApp } from "./gen.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));

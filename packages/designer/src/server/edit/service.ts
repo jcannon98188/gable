@@ -3,7 +3,7 @@
 // written back, and the project's Vite shows the result by HMR.
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
-import { parseTemplateTree } from "@gable/template-format";
+import { parseTemplateTree } from "@gablejs/template-format";
 import { sourceText, type SourceText } from "../source.js";
 import { setCssDeclaration } from "./css.js";
 import { planTokenEdit } from "../tokens/patch.js";

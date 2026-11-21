@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { computed, html, signal } from "@gable/core";
-import { mount } from "@gable/testing";
+import { computed, html, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
 import { UiProps } from "./machines.js";
 import { createVirtualizer } from "./virtual-core.js";
 import { useVirtualizer } from "./virtual.js";

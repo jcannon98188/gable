@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { preview } from "@gable/core/devtools";
+import { preview } from "@gablejs/core/devtools";
 import { previewValue } from "../shell/src/app/panels.js";
 
 // The Inspector hands the JSON viewer a plain value rebuilt from the agent's Preview.

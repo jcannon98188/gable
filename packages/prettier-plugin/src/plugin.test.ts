@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import * as prettier from "prettier";
 import * as gable from "./index.js";
 
-const sample = `import { html, signal } from "@gable/core";
+const sample = `import { html, signal } from "@gablejs/core";
 
 export class Counter {
     static meta = {
@@ -18,7 +18,7 @@ export class Counter {
 const run = (code: string, filepath = "counter.ts", extra: object = {}) =>
   prettier.format(code, { filepath, plugins: [gable], ...extra });
 
-describe("@gable/prettier-plugin", () => {
+describe("@gablejs/prettier-plugin", () => {
   it("formats html literals with gable's formatter and the rest with Prettier", async () => {
     const out = await run(sample);
     expect(out).toContain("  static meta = {");

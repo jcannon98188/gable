@@ -1,9 +1,9 @@
-import { bootstrap, computed, html, signal, untracked, type ComponentClass, type ComponentRef } from "@gable/core";
-import { applyUpdate, registerModule, type HotResult } from "@gable/core/hmr";
-import type { Renderer } from "@gable/core/renderer";
+import { bootstrap, computed, html, signal, untracked, type ComponentClass, type ComponentRef } from "@gablejs/core";
+import { applyUpdate, registerModule, type HotResult } from "@gablejs/core/hmr";
+import type { Renderer } from "@gablejs/core/renderer";
 import { INITIAL_SOURCE } from "./source.js";
 
-// The page side of the live HMR demo. It runs the real `@gable/core/hmr` runtime, the same module a Vite dev server
+// The page side of the live HMR demo. It runs the real `@gablejs/core/hmr` runtime, the same module a Vite dev server
 // drives: the first evaluation of the source is registered with `registerModule`, every Save evaluates the new source
 // and hands it to `applyUpdate`. Nothing here is simulated; the readout is computed from the live component instances.
 

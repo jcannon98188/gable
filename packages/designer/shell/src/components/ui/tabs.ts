@@ -1,5 +1,5 @@
-import { computed, contentChildren, effect, html, inject, input, model, signal } from "@gable/core";
-import { TABS, TabsState, bindProps } from "@gable/ui-primitives";
+import { computed, contentChildren, effect, html, inject, input, model, signal } from "@gablejs/core";
+import { TABS, TabsState, bindProps } from "@gablejs/ui-primitives";
 
 /**
  * One panel of `<ui-tabs>`: `<ui-tab value="account" label="Account">...</ui-tab>`.

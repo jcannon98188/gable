@@ -1,5 +1,5 @@
-import { lazy } from "@gable/core";
-import type { Route } from "@gable/core/router";
+import { lazy } from "@gablejs/core";
+import type { Route } from "@gablejs/core/router";
 import { SiteRoot } from "./root.js";
 
 /** The marketing page at `/`, the docs under `/docs`. Unknown URLs go home. */

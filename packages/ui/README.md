@@ -1,11 +1,11 @@
-# @gable/ui
+# @gablejs/ui
 
 gable-ui: shadcn-style Tailwind components for Gable (buttons, forms, overlays, menus, navigation, data display).
 
 ## Install
 
 ```sh
-npm install @gable/ui
+npm install @gablejs/ui
 ```
 
 ## Documentation

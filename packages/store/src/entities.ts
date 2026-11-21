@@ -116,7 +116,7 @@ function keys(collection?: string) {
 
 function idOf(entity: unknown, config?: Cfg): EntityId {
   const id = config?.selectId ? config.selectId(entity as never) : (entity as { id?: EntityId }).id;
-  if (id === undefined) throw new Error("@gable/store: entity has no id. Give it an `id` or pass `selectId`.");
+  if (id === undefined) throw new Error("@gablejs/store: entity has no id. Give it an `id` or pass `selectId`.");
   return id;
 }
 

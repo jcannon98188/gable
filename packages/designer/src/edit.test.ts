@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { formatTemplateLiterals, parseTemplateTree } from "@gable/template-format";
+import { formatTemplateLiterals, parseTemplateTree } from "@gablejs/template-format";
 import { describe, expect, it } from "vitest";
 import { setCssDeclaration } from "./server/edit/css.js";
 import { applyHunks } from "./server/edit/hunks.js";
@@ -10,8 +10,8 @@ import { EditService } from "./server/edit/service.js";
 import { elementsOf } from "./server/edit/template.js";
 import type { EditResult, TargetRef } from "./server/edit/types.js";
 
-const TPL = (body: string) => `import { html } from "@gable/core";
-import { signal } from "@gable/core";
+const TPL = (body: string) => `import { html } from "@gablejs/core";
+import { signal } from "@gablejs/core";
 
 export class Counter {
   static meta = {

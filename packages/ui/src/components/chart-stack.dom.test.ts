@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
+import { html, signal } from "@gablejs/core";
 import { UiChart, type ChartType } from "./chart.js";
 import { $, $$, settle, useDomApp } from "../test-utils.js";
 
@@ -109,7 +109,7 @@ describe("Chart enter animation", () => {
   });
 
   it("has no axe violations with stacked bars and a hidden series", async () => {
-    const { expectNoA11yViolations } = await import("@gable/testing/a11y");
+    const { expectNoA11yViolations } = await import("@gablejs/testing/a11y");
     await boot(StackApp);
     legendButtons()[1].click();
     await settle();

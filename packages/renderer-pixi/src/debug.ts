@@ -1,7 +1,7 @@
 // Dev-only canvas devtools (canvas/119): the frame statistics and overlay, and the scene boundary the devtools hook reports.
 // Nothing here is reached in a production build: the renderer only touches it behind `if (DEV)`, so a bundler drops it
 // (`define: { __GABLE_DEV__: false }`). Free of any pixi.js import: nodes are read through the few members used below.
-import type { BoundaryNodeSpec, BoundarySpec, GableDevtoolsHook, PageRect } from "@gable/core/devtools";
+import type { BoundaryNodeSpec, BoundarySpec, GableDevtoolsHook, PageRect } from "@gablejs/core/devtools";
 import type { CanvasDebugOptions } from "./canvas-debug.js";
 
 const DEFAULT_BUDGET_MS = 1000 / 60;

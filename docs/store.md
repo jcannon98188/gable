@@ -1,10 +1,10 @@
-# @gable/store
+# @gablejs/store
 
-A SignalStore-style state container built on core signals, `computed`, `inject()` and scopes. It adds nothing to `@gable/core`.
+A SignalStore-style state container built on core signals, `computed`, `inject()` and scopes. It adds nothing to `@gablejs/core`.
 
 ```ts
-import { effect, inject } from '@gable/core';
-import { patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@gable/store';
+import { effect, inject } from '@gablejs/core';
+import { patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@gablejs/store';
 
 export class TodoStore extends signalStore(
   withState({ todos: [] as Todo[], filter: 'all' as Filter, user: { name: 'Ada' } }),
@@ -184,7 +184,7 @@ State keys have no `set`/`update` in their types, so ordinary direct writes are 
 `withEntities` adds a collection: state `ids` and `entityMap`, and a computed `entities` (in `ids` order). Change it by passing updaters to `patchState`.
 
 ```ts
-import { addEntity, entityConfig, patchState, removeEntity, signalStore, type, updateEntity, withEntities, withMethods } from "@gable/store";
+import { addEntity, entityConfig, patchState, removeEntity, signalStore, type, updateEntity, withEntities, withMethods } from "@gablejs/store";
 
 class TodoStore extends signalStore(
   withEntities<Todo>(),

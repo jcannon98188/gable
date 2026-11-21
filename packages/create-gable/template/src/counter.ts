@@ -1,4 +1,4 @@
-import { computed, html, inject, signal } from "@gable/core";
+import { computed, html, inject, signal } from "@gablejs/core";
 import { CounterStore } from "./counter-store.js";
 
 export class Counter {

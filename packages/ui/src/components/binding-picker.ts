@@ -1,4 +1,4 @@
-import { computed, html, injectHost, input, model, output } from "@gable/core";
+import { computed, html, injectHost, input, model, output } from "@gablejs/core";
 import type { Placement } from "../lib/placement.js";
 import { UiButton } from "./button.js";
 import { UiCommand, type CommandItem } from "./command.js";

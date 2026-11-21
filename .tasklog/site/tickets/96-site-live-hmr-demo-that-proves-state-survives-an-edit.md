@@ -16,7 +16,7 @@ The HMR section of the marketing page only describes the behaviour (a static bef
 
 ## Acceptance criteria
 
-- [x] #1 A live Counter-style component runs in the page; visitors change its state, edit its source (template, computed, added field) and Save, and the state persists across the swap using the real @gable/core/hmr applyUpdate
+- [x] #1 A live Counter-style component runs in the page; visitors change its state, edit its source (template, computed, added field) and Save, and the state persists across the swap using the real @gablejs/core/hmr applyUpdate
 - [x] #2 One-click suggested edits plus free editing; a broken edit shows an error and leaves the running component untouched (rollback)
 - [x] #3 Shows what carried over: fields transferred by name and kind, new fields initialised, removed fields dropped; Reset restores the original source
 - [x] #4 Production site build keeps this working (dev hooks enabled for the site bundle), site tests/check/build pass
@@ -27,4 +27,4 @@ The HMR section of the marketing page only describes the behaviour (a static bef
 
 ## Answer
 
-Added a live HMR demo to the site HMR section: site/src/hmr-demo/{session,source,demo}.ts + demo.css, hmr.ts reworked (copy kept, demo lazy via @defer on viewport inside an ErrorBoundary). The visitor's source (plain JS) is evaluated with new Function and applied with the real @gable/core/hmr applyUpdate; readout derived from live instances plus the devtools hmrLog. vite.config.ts re-enables __GABLE_DEV__ for the build (site-keep-dev-hooks plugin). 15 new tests in hmr-demo/demo.test.ts; site tests, check (own files), builds, typecheck:tests pass. Verified in a real browser on dev server and vite preview build: count stays 7 across each edit, rollback on both break edits, dark/light. Not verified: mobile width visually, keyboard-only walkthrough, prefers-reduced-motion. Cost: dev code in main bundle (+~2.6 kB gzip main, more in shared chunk), demo chunk 8.4 kB gzip.
+Added a live HMR demo to the site HMR section: site/src/hmr-demo/{session,source,demo}.ts + demo.css, hmr.ts reworked (copy kept, demo lazy via @defer on viewport inside an ErrorBoundary). The visitor's source (plain JS) is evaluated with new Function and applied with the real @gablejs/core/hmr applyUpdate; readout derived from live instances plus the devtools hmrLog. vite.config.ts re-enables __GABLE_DEV__ for the build (site-keep-dev-hooks plugin). 15 new tests in hmr-demo/demo.test.ts; site tests, check (own files), builds, typecheck:tests pass. Verified in a real browser on dev server and vite preview build: count stays 7 across each edit, rollback on both break edits, dark/light. Not verified: mobile width visually, keyboard-only walkthrough, prefers-reduced-motion. Cost: dev code in main bundle (+~2.6 kB gzip main, more in shared chunk), demo chunk 8.4 kB gzip.

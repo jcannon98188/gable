@@ -1,7 +1,7 @@
 // Refactors from the canvas (designer/80): Rename component and Find uses. Both read and write the project's source through the
 // backend (`/api/refactor/uses`, and the `renameComponent` op of `/api/edit/apply`); the Designer keeps no model. A rename is one
 // undo step over every file it touches. Extract with props lives in the Extract dialog (dialogs.ts).
-import { computed, effect, html, inject, signal, untracked } from "@gable/core";
+import { computed, effect, html, inject, signal, untracked } from "@gablejs/core";
 import type { FindUsesResult, Use } from "../../../src/server/edit/refactor.js";
 import { UiButton } from "../components/ui/button.js";
 import { UiDialog } from "../components/ui/dialog.js";

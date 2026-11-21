@@ -1,5 +1,5 @@
 import { Observable } from "rxjs";
-import { HttpBackend, HttpError, type HttpRequest, type HttpResponse } from "@gable/core/http";
+import { HttpBackend, HttpError, type HttpRequest, type HttpResponse } from "@gablejs/core/http";
 
 /** One request the fake received. Answer it with `respond`, `networkError` or `abortError`. */
 export class TestRequest {

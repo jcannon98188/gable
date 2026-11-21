@@ -1,4 +1,4 @@
-import { computed, contentChild, effect, html, inject, input, model, signal } from "@gable/core";
+import { computed, contentChild, effect, html, inject, input, model, signal } from "@gablejs/core";
 import {
   DialogState,
   UiDialogBackdrop,
@@ -8,7 +8,7 @@ import {
   UiDialogTitle,
   UiPortal,
   bindProps,
-} from "@gable/ui-primitives";
+} from "@gablejs/ui-primitives";
 import { cn } from "../lib/cn.js";
 import { UiIcon } from "../lib/icon.js";
 

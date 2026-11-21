@@ -1,6 +1,6 @@
 ---
 kind: ticket
-title: "@gable/editor: collaborative rich text editor (TipTap + own Yjs binding)"
+title: "@gablejs/editor: collaborative rich text editor (TipTap + own Yjs binding)"
 status: resolved
 tags:
   - editor

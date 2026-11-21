@@ -1,4 +1,4 @@
-import { html, input, signal } from "@gable/core";
+import { html, input, signal } from "@gablejs/core";
 
 class Badge {
   static meta = {

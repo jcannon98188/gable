@@ -1,5 +1,5 @@
-import { computed, effect, html, inject, input, model, output, signal } from "@gable/core";
-import { DialogState, UiDialogBackdrop, UiDialogContent, UiDialogTitle, UiPortal } from "@gable/ui-primitives";
+import { computed, effect, html, inject, input, model, output, signal } from "@gablejs/core";
+import { DialogState, UiDialogBackdrop, UiDialogContent, UiDialogTitle, UiPortal } from "@gablejs/ui-primitives";
 import { cn } from "../../lib/ui/cn.js";
 import { useHostClass } from "../../lib/ui/host-class.js";
 

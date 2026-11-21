@@ -1,5 +1,5 @@
-import { computed, html, inject, signal } from "@gable/core";
-import { ReducedMotion, announceOnChange } from "@gable/renderer-pixi";
+import { computed, html, inject, signal } from "@gablejs/core";
+import { ReducedMotion, announceOnChange } from "@gablejs/renderer-pixi";
 
 export class Score {
   static scope = "root";

@@ -1,5 +1,5 @@
-import { html } from "@gable/core";
-import { RouterOutlet } from "@gable/core/router";
+import { html } from "@gablejs/core";
+import { RouterOutlet } from "@gablejs/core/router";
 
 /** The app root: one outlet for the marketing page or the docs. */
 export class App {

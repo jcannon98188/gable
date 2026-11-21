@@ -1,8 +1,8 @@
 name: Release
-# Publishes the lockstep @gable/* packages, create-gable and gable-ui to npm with Changesets.
+# Publishes the lockstep @gablejs/* packages, create-gable and gable-ui to npm with Changesets.
 # On every push to main: if changesets are pending, this opens (or updates) a "Version packages" pull request;
 # when that pull request is merged, the packages whose version is not on npm yet are published.
-# Needs the NPM_TOKEN repository secret: an npm automation token (or granular token) with publish rights on the @gable scope.
+# Needs the NPM_TOKEN repository secret: an npm automation token (or granular token) with publish rights on the @gablejs scope.
 on:
   push:
     branches: [main]

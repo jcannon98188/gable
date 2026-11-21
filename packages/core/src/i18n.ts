@@ -1,4 +1,4 @@
-// `@gable/core/i18n`: the I18n service (locale signal, catalogs, translation) and the `i18n` tag for code.
+// `@gablejs/core/i18n`: the I18n service (locale signal, catalogs, translation) and the `i18n` tag for code.
 // Template markers (`i18n`, `i18n-<attr>`) resolve through this service too; see docs/i18n.md.
 import { computed, signal, untracked, type ReadonlySignal, type WritableSignal } from "./signals.js";
 import { InjectionToken, inject, type Provider } from "./di.js";

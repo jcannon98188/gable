@@ -1,5 +1,5 @@
-import { computed, html, inject } from "@gable/core";
-import { getState, patchState, signalStore, withComputed, withMethods, withState, withStorage } from "@gable/store";
+import { computed, html, inject } from "@gablejs/core";
+import { getState, patchState, signalStore, withComputed, withMethods, withState, withStorage } from "@gablejs/store";
 
 export interface Product {
   sku: string;
@@ -24,7 +24,7 @@ const priceOf = (sku: string) => PRODUCTS.find((p) => p.sku === sku)?.price ?? 0
 export const cents = (n: number) => `${n < 0 ? "-" : ""}$${(Math.abs(n) / 100).toFixed(2)}`;
 
 /**
- * A real `@gable/store` store: state, derived values and methods are separate features. `patchState` is the only way
+ * A real `@gablejs/store` store: state, derived values and methods are separate features. `patchState` is the only way
  * to write. `withStorage` keeps the cart in `sessionStorage` (this tab only), so a reload restores it.
  */
 export class CartStore extends signalStore(

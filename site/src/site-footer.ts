@@ -1,4 +1,4 @@
-import { html } from "@gable/core";
+import { html } from "@gablejs/core";
 import { DocLink } from "./docs/doc-link.js";
 
 export class SiteFooter {

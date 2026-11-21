@@ -2,7 +2,7 @@
 // against the backend through ProjectState. Extract component and New Scenario write source through the edit API (minimal
 // patches, one undo step each). The route dialog lives with the route tree (page-mode.ts) and the binding picker with the
 // Content tab (edit-panel.ts).
-import { computed, effect, html, inject, signal, untracked } from "@gable/core";
+import { computed, effect, html, inject, signal, untracked } from "@gablejs/core";
 import { UiButton } from "../components/ui/button.js";
 import { UiDialog } from "../components/ui/dialog.js";
 import { UiTooltip } from "../components/ui/tooltip.js";
@@ -232,7 +232,7 @@ export class Dialogs {
   installText = computed(() => {
     const c = this.check();
     if (!c) return "";
-    const missing = [!c.agent.found && "@gable/core (the Preview agent's in-app hook, @gable/core/designer)", !c.vite.found && "vite"].filter(Boolean).join(" and ");
+    const missing = [!c.agent.found && "@gablejs/core (the Preview agent's in-app hook, @gablejs/core/designer)", !c.vite.found && "vite"].filter(Boolean).join(" and ");
     return `The project's dependencies are not installed: ${missing} cannot be found. Install and start runs ${this.installCommand()} in the project, then restarts the dev server. The Designer's half of the agent is injected by its Vite plugin; nothing is added to your source.`;
   });
   /** The log tail shows in the connect dialog once an install has run or while the server is failing. */

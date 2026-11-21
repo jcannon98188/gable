@@ -1,6 +1,6 @@
 ---
 kind: ticket
-title: "Service worker support (@gable/service-worker)"
+title: "Service worker support (@gablejs/service-worker)"
 status: resolved
 created: 2026-11-13
 updated: 2026-11-14
@@ -25,4 +25,4 @@ AC evidence (service-worker/115, 2026-11-14): #1 service-worker/108 to 106.8 are
 
 ## Answer
 
-Service worker support shipped as one layered package, @gable/service-worker: core authoring API (routing, caching strategies, versioned precache, lifecycle, typed messages, push and background sync), a default runtime driven by gable.sw.json, app-side services with an update signal, a gableServiceWorker() Vite plugin, a create-gable --service-worker option, docs, and a headless-browser end-to-end test (install, offline, update via activateUpdate()). Decisions in docs/adr/0022. Known gaps recorded in docs/packages/service-worker.md: no push subscription helper, no app-side background sync registration, no precache hash verification, no clients.claim on first activation.
+Service worker support shipped as one layered package, @gablejs/service-worker: core authoring API (routing, caching strategies, versioned precache, lifecycle, typed messages, push and background sync), a default runtime driven by gable.sw.json, app-side services with an update signal, a gableServiceWorker() Vite plugin, a create-gable --service-worker option, docs, and a headless-browser end-to-end test (install, offline, update via activateUpdate()). Decisions in docs/adr/0022. Known gaps recorded in docs/packages/service-worker.md: no push subscription helper, no app-side background sync registration, no precache hash verification, no clients.claim on first activation.

@@ -1,8 +1,8 @@
 // createSceneTestRenderer (canvas/127): an in-memory scene with the real scene tags and Pixi's property semantics, no
 // Pixi and no WebGL. The real Frame, Pointer, Keyboard, Gamepad and CanvasSize services run on top of it, driven by a
 // deterministic frame step and simulated input.
-import { flushSync, type Provider } from "@gable/core";
-import type { Renderer } from "@gable/core/renderer";
+import { flushSync, type Provider } from "@gablejs/core";
+import type { Renderer } from "@gablejs/core/renderer";
 import { A11yMirror, type A11yEntry, type A11yProps } from "../a11y.js";
 import { A11yRecorder, type TabOptions } from "../a11y-testing.js";
 import { CanvasSize } from "../canvas-size.js";

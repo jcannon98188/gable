@@ -1,5 +1,5 @@
-import { computed, effect, html, input, signal } from "@gable/core";
-import { currentScope } from "@gable/core/internal";
+import { computed, effect, html, input, signal } from "@gablejs/core";
+import { currentScope } from "@gablejs/core/internal";
 import type { Awareness } from "y-protocols/awareness";
 import { watchPresence, type PresenceEntry } from "../yjs/awareness.js";
 

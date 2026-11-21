@@ -34,8 +34,8 @@ Use `<particle-container>` when the entities are many, simple (a texture, a posi
 ```
 
 ```ts
-import { html, inject, viewChild } from "@gable/core";
-import { Frame, particles, pixiElements, type ParticleSet } from "@gable/renderer-pixi";
+import { html, inject, viewChild } from "@gablejs/core";
+import { Frame, particles, pixiElements, type ParticleSet } from "@gablejs/renderer-pixi";
 
 class Fireworks {
   static meta = { selector: "game-fireworks", elements: pixiElements, template: html`<particle-container #sparks texture="spark" />` };

@@ -5,9 +5,9 @@ import { describe, expect, it } from "vitest";
 import { gable } from "../index.js";
 import { sampleApp } from "../test-server.js";
 import { gableI18n, type GableI18nOptions } from "./plugin.js";
-import { messageId } from "@gable/core/tooling";
+import { messageId } from "@gablejs/core/tooling";
 
-const APP = `import { html, i18n, signal } from "@gable/core";
+const APP = `import { html, i18n, signal } from "@gablejs/core";
 
 export class App {
   static meta = {
@@ -103,7 +103,7 @@ describe("baked builds", () => {
   it("sets <html lang> per locale (unless disabled) and bakes inject(I18n).t calls with a source map", { timeout: 90_000 }, async () => {
     for (const htmlLang of [true, false]) {
       const app = i18nApp({ locales: ["fr"], bake: { htmlLang, onMissing: "source" } }, { fr: { [messageId("Welcome", "page title")]: "Bienvenue", [messageId("Saved", "")]: "Enregistré" } });
-      const withT = `import { inject, I18n } from "@gable/core";\n${APP}\nexport class Cart { #i18n = inject(I18n); saved = this.#i18n.t\`Saved\`; }\n(globalThis as Record<string, unknown>).cart = Cart;\n`;
+      const withT = `import { inject, I18n } from "@gablejs/core";\n${APP}\nexport class Cart { #i18n = inject(I18n); saved = this.#i18n.t\`Saved\`; }\n(globalThis as Record<string, unknown>).cart = Cart;\n`;
       writeFileSync(join(app.root, "src/app.ts"), withT);
       try {
         await ((await createBuilder({ ...app.config, build: { minify: false, sourcemap: true } })).buildApp());

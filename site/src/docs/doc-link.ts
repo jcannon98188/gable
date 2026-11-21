@@ -1,5 +1,5 @@
-import { computed, inject, input } from "@gable/core";
-import { Router } from "@gable/core/router";
+import { computed, inject, input } from "@gablejs/core";
+import { Router } from "@gablejs/core/router";
 import { withBase } from "./base.js";
 
 interface ClickLike {

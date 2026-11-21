@@ -1,11 +1,11 @@
-# @gable/store
+# @gablejs/store
 
 Signal-based state container for Gable in the style of NgRx SignalStore.
 
 ## Install
 
 ```sh
-npm install @gable/store
+npm install @gablejs/store
 ```
 
 ## Documentation

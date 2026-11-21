@@ -1,9 +1,9 @@
 // The message protocol between the page (the Gable hook), the content script, the service worker relay and the
 // devtools panel. Pure types and guards: nothing here touches `chrome.*` or the DOM.
-import type { DevtoolsEvent, DevtoolsMethods } from "@gable/core/devtools";
+import type { DevtoolsEvent, DevtoolsMethods } from "@gablejs/core/devtools";
 
-export type { BoundaryInfo, BoundaryNode, BoundaryTree, WhyReport } from "@gable/core/devtools";
-export type { ComponentDetail, DevtoolsEvent, DevtoolsMethods, Edge, EditResult, EffectInfo, EffectRun, FlushRecord, HmrEntry, InjectorDetail, InjectorEntry, InjectorNode, InspectorInfo, Preview, RouteNode, RouterInfo, SignalInfo, TreeNode } from "@gable/core/devtools";
+export type { BoundaryInfo, BoundaryNode, BoundaryTree, WhyReport } from "@gablejs/core/devtools";
+export type { ComponentDetail, DevtoolsEvent, DevtoolsMethods, Edge, EditResult, EffectInfo, EffectRun, FlushRecord, HmrEntry, InjectorDetail, InjectorEntry, InjectorNode, InspectorInfo, Preview, RouteNode, RouterInfo, SignalInfo, TreeNode } from "@gablejs/core/devtools";
 
 /** `window.postMessage` marker for messages the page's bridge sends toward the extension. */
 export const FROM_PAGE = "gable-devtools:page";

@@ -1,6 +1,6 @@
 ---
 kind: ticket
-title: "Build the Gable canvas binding (@gable/renderer-pixi)"
+title: "Build the Gable canvas binding (@gablejs/renderer-pixi)"
 status: resolved
 created: 2026-11-12
 updated: 2026-11-13

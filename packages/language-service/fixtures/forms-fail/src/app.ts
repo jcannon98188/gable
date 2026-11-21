@@ -1,5 +1,5 @@
-import { html, model, signal } from "@gable/core";
-import { form } from "@gable/core/forms";
+import { html, model, signal } from "@gablejs/core";
+import { form } from "@gablejs/core/forms";
 
 export class Rating {
   static meta = { selector: "x-rating", template: html`<i></i>` };

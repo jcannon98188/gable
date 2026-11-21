@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { html, signal } from "@gable/core";
-import { mount } from "@gable/testing";
+import { html, signal } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
 import { UiButton } from "./button.js";
 import { UiButtonGroup, UiButtonGroupText } from "./button-group.js";
 

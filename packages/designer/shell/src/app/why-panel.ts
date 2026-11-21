@@ -2,7 +2,7 @@
 // through computeds) and why it last updated: the signal writes the devtools hook recorded behind each run. "Highlight
 // updates" outlines, on the canvas, the elements whose bindings re-run. Everything is the hook's own record; a run no write
 // explains says so instead of guessing.
-import { computed, html, inject } from "@gable/core";
+import { computed, html, inject } from "@gablejs/core";
 import { bindingTitle, dependencyRows, runText } from "../../../src/why.js";
 import { UiButton } from "../components/ui/button.js";
 import { UiSwitch } from "../components/ui/switch.js";

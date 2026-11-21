@@ -1,5 +1,5 @@
-import { html, inject, signal } from "@gable/core";
-import { Frame } from "@gable/renderer-pixi";
+import { html, inject, signal } from "@gablejs/core";
+import { Frame } from "@gablejs/renderer-pixi";
 
 /** Simulation state in a service: the clock and the fixed-step tick count survive scene rebuilds. */
 export class Clock {

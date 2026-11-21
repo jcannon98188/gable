@@ -1,5 +1,5 @@
 {
-  "name": "@gable/designer",
+  "name": "@gablejs/designer",
   "version": "0.0.0",
   "private": true,
   "license": "MIT",
@@ -14,14 +14,14 @@
     "start": "node dist/server/cli.js"
   },
   "dependencies": {
-    "@gable/core": "0.0.0",
-    "@gable/language-service": "0.0.0",
-    "@gable/renderer-dom": "0.0.0",
-    "@gable/template-format": "0.0.0",
+    "@gablejs/core": "0.0.0",
+    "@gablejs/language-service": "0.0.0",
+    "@gablejs/renderer-dom": "0.0.0",
+    "@gablejs/template-format": "0.0.0",
     "clsx": "^2.1.1",
     "lucide": "^1.70.0",
     "tailwind-merge": "^3.7.0",
-    "@gable/ui-primitives": "0.0.0",
+    "@gablejs/ui-primitives": "0.0.0",
     "@typescript/typescript6": "^6.0.2",
     "@tailwindcss/node": "4.3.5",
     "@modelcontextprotocol/sdk": "^1.32.2",
@@ -29,7 +29,7 @@
     "axe-core": "^4.14.0"
   },
   "devDependencies": {
-    "@gable/vite": "0.0.0",
+    "@gablejs/vite": "0.0.0",
     "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^24.0.0",
     "tailwindcss": "^4.3.5",

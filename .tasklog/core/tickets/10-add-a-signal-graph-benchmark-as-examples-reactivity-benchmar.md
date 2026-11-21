@@ -27,7 +27,7 @@ Measures the cost of Gable's signals (on the TC39 polyfill) and the RxJS bridges
 
 ## Implementation plan
 
-1. examples/reactivity-benchmark: plain Node ESM harness (bench.mjs) installing @gable/core from vendor/ tarball via scripts/pack-local.mjs (file: dep + overrides), plus signal-polyfill and rxjs for baselines.
+1. examples/reactivity-benchmark: plain Node ESM harness (bench.mjs) installing @gablejs/core from vendor/ tarball via scripts/pack-local.mjs (file: dep + overrides), plus signal-polyfill and rxjs for baselines.
 2. Scenarios: deep chain, wide fan-out, diamond, dynamic deps, many effects, repeated writes with batched flush, toObservable, toSignal. Each runs on Gable and, where natural, on raw polyfill / RxJS.
 3. Timing: warmup, N samples, median/min, table + optional --json. Correctness check per scenario so we never time a broken graph.
 4. README; run end to end; note anomalies.
@@ -38,4 +38,4 @@ Verified: 'npm run bench' in examples/reactivity-benchmark ran all 14 scenarios 
 
 ## Answer
 
-Added examples/reactivity-benchmark: Node ESM benchmark (src/bench.mjs, harness.mjs, scenarios.mjs) of Gable signals/effects and toObservable/toSignal against the raw signal-polyfill and RxJS across 14 scenarios, with median/min/ns-per-op table and --json. @gable/core installed from vendor/ via npm run pack:local. README documents scenarios and usage. Verified by running the full benchmark and --quick/--json modes; every run asserts its results.
+Added examples/reactivity-benchmark: Node ESM benchmark (src/bench.mjs, harness.mjs, scenarios.mjs) of Gable signals/effects and toObservable/toSignal against the raw signal-polyfill and RxJS across 14 scenarios, with median/min/ns-per-op table and --json. @gablejs/core installed from vendor/ via npm run pack:local. README documents scenarios and usage. Verified by running the full benchmark and --quick/--json modes; every run asserts its results.

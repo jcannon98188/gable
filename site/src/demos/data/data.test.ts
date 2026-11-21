@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { ErrorBoundary, html } from "@gable/core";
-import { mount } from "@gable/testing";
+import { ErrorBoundary, html } from "@gablejs/core";
+import { mount } from "@gablejs/testing";
 import { FormDemo } from "./form-demo.js";
 import { I18nDemo } from "./i18n-demo.js";
 import { CartStore, StoreDemo } from "./store-demo.js";

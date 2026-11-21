@@ -9,11 +9,11 @@
     "noEmit": true,
     "skipLibCheck": true,
     "types": [],
-    "plugins": [{ "name": "@gable/language-service", "rules": { "a11y-img-alt": "off", "a11y-control-name": "off", "a11y-aria-valid": "off", "a11y-click-key": "off", "a11y-tabindex-positive": "off", "a11y-heading-order": "off", "a11y-autofocus": "off" } }],
-    "paths": { "@gable/core": ["../../core/src/index.ts"], "@gable/core/rxjs": ["../../core/src/rxjs.ts"],
-      "@gable/core/forms": ["../../core/src/forms.ts"],
-      "@gable/core/router": ["../../core/src/router.ts"],
-      "@gable/store": ["../../store/src/index.ts"],
-      "@gable/renderer-pixi/elements": ["../../renderer-pixi/src/elements.ts"] }
+    "plugins": [{ "name": "@gablejs/language-service", "rules": { "a11y-img-alt": "off", "a11y-control-name": "off", "a11y-aria-valid": "off", "a11y-click-key": "off", "a11y-tabindex-positive": "off", "a11y-heading-order": "off", "a11y-autofocus": "off" } }],
+    "paths": { "@gablejs/core": ["../../core/src/index.ts"], "@gablejs/core/rxjs": ["../../core/src/rxjs.ts"],
+      "@gablejs/core/forms": ["../../core/src/forms.ts"],
+      "@gablejs/core/router": ["../../core/src/router.ts"],
+      "@gablejs/store": ["../../store/src/index.ts"],
+      "@gablejs/renderer-pixi/elements": ["../../renderer-pixi/src/elements.ts"] }
   }
 }
