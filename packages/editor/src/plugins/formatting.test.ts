@@ -107,18 +107,22 @@ describe("input rules and shortcuts", () => {
     heading.editor.commands.focus();
     type(heading, "## Title");
     expect(heading.editor.getHTML()).toBe("<h2>Title</h2>");
+    heading.destroy();
     const list = make("<p></p>");
     list.editor.commands.focus();
     type(list, "- item");
     expect(list.editor.isActive("bulletList")).toBe(true);
+    list.destroy();
     const bold = make("<p></p>");
     bold.editor.commands.focus();
     type(bold, "**hi**");
     expect(bold.editor.getHTML()).toBe("<p><strong>hi</strong></p>");
+    bold.destroy();
   });
   it("registers the standard keyboard shortcuts", () => {
     const ed = make("<p>x</p>");
     const keys = ed.editor.extensionManager.extensions.flatMap((e) => Object.keys((e.config as { addKeyboardShortcuts?: () => object }).addKeyboardShortcuts?.call({ name: e.name, editor: ed.editor, options: e.options, type: null, parent: undefined } as never) ?? {}));
     expect(keys).toEqual(expect.arrayContaining(["Mod-b", "Mod-i", "Mod-u"]));
+    ed.destroy();
   });
 });

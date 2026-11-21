@@ -13,7 +13,7 @@ const repo = fileURLToPath(new URL("../../..", import.meta.url));
 
 // Everything @gable/* the starters install. Nothing is published, so the CI test packs these from the workspace
 // and installs the starters from the tarballs (see docs/manual-setup.md, "Trying unpublished builds").
-const PACKAGES = ["core", "renderer-dom", "testing", "vite", "language-service", "prettier-plugin", "template-format", "service-worker"];
+const PACKAGES = ["core", "renderer-dom", "testing", "vite", "language-service", "prettier-plugin", "template-format", "service-worker", "renderer-pixi"];
 
 const run = (cmd: string, cwd: string) => {
   try {
