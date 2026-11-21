@@ -56,7 +56,7 @@ export function mergeDependencies(text: string, request: DependencyRequest, loca
   if (localDir && added.some((a) => a.includes("@gablejs/"))) {
     const overrides = { ...manifest.overrides };
     for (const file of files) {
-      const match = /^gable-(.+?)-\d[^/]*\.tgz$/.exec(file);
+      const match = /^gablejs-(.+?)-\d[^/]*\.tgz$/.exec(file);
       if (match) overrides[`@gablejs/${match[1]}`] = spec(file);
     }
     manifest.overrides = Object.fromEntries(Object.entries(overrides).sort(([a], [b]) => a.localeCompare(b)));

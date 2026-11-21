@@ -103,14 +103,14 @@ describe("create-gable", () => {
       for (const n of names) writeFileSync(join(dir, n), "");
       return dir;
     };
-    const all = ["core", "renderer-dom", "testing", "vite", "language-service", "prettier-plugin", "template-format"].map((n) => `gable-${n}-1.2.3.tgz`);
+    const all = ["core", "renderer-dom", "testing", "vite", "language-service", "prettier-plugin", "template-format"].map((n) => `gablejs-${n}-1.2.3.tgz`);
 
     it("points @gablejs/* at the tarballs and overrides every one of them", async () => {
       const dir = fake(...all, "create-gable-1.2.3.tgz");
       const result = await run(["--local", dir, "my-app"]);
       expect(result.code).toBe(0);
       const pkg = JSON.parse(read("my-app", "package.json"));
-      const spec = (n: string) => `file:${dir.split(sep).join("/")}/gable-${n}-1.2.3.tgz`;
+      const spec = (n: string) => `file:${dir.split(sep).join("/")}/gablejs-${n}-1.2.3.tgz`;
       expect(pkg.dependencies["@gablejs/core"]).toBe(spec("core"));
       expect(pkg.devDependencies["@gablejs/vite"]).toBe(spec("vite"));
       expect(pkg.dependencies.rxjs).toBe("^7.8.2");

@@ -43,7 +43,7 @@ export interface ScaffoldOptions {
   localDir?: string;
 }
 
-/** True when `dir` holds a tarball for `name` (`@gablejs/core` is `gable-core-<version>.tgz`). */
+/** True when `dir` holds a tarball for `name` (`@gablejs/core` is `gablejs-core-<version>.tgz`). */
 function tarballFor(files: string[], name: string): string | undefined {
   const prefix = name.replace(/^@/, "").replace("/", "-") + "-";
   return files.find((f) => f.startsWith(prefix) && f.endsWith(".tgz") && /^\d/.test(f.slice(prefix.length)));
@@ -65,7 +65,7 @@ function localizeManifest(text: string, dir: string): string {
   }
   manifest.overrides = Object.fromEntries(
     files.flatMap((file) => {
-      const match = /^gable-(.+?)-\d[^/]*\.tgz$/.exec(file);
+      const match = /^gablejs-(.+?)-\d[^/]*\.tgz$/.exec(file);
       return match ? [[`@gablejs/${match[1]}`, spec(file)]] : [];
     }),
   );
