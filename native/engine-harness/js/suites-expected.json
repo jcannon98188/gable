@@ -15,6 +15,15 @@
     "packages/editor/src/yjs/perf.test.ts > large documents > stays fast per change in a 10000-paragraph document": "timing: per-change wall-clock budget calibrated for V8 (reference ~3 ms local at 10k paragraphs)",
     "packages/testing/src/i18n.test.ts > i18n tag > is a signal that follows the locale and the signals in its holes": "the interim QuickJS-NG adapter is built without Intl",
     "packages/testing/src/i18n.test.ts > template markers > resolve against the catalog, reorder placeholders, and keep following signals": "the interim QuickJS-NG adapter is built without Intl",
-    "packages/ui/src/highlight.test.ts > robustness > is linear on large and adversarial input": "timing: 2 s wall-clock budget per 100k-400k character input, calibrated for V8"
+    "packages/ui/src/highlight.test.ts > robustness > is linear on large and adversarial input": "timing: 2 s wall-clock budget per 100k-400k character input, calibrated for V8",
+    "packages/renderer-pixi/src/conformance.test.ts (file)": "the interim QuickJS-NG adapter is built without Intl, which pixi.js needs at import",
+    "packages/renderer-pixi/src/guide/assets.test.ts (file)": "the interim QuickJS-NG adapter is built without Intl, which pixi.js needs at import",
+    "packages/renderer-pixi/src/hit-tags.test.ts (file)": "the interim QuickJS-NG adapter is built without Intl, which pixi.js needs at import",
+    "packages/renderer-pixi/src/particles.test.ts (file)": "the interim QuickJS-NG adapter is built without Intl, which pixi.js needs at import",
+    "packages/renderer-pixi/src/renderer.test.ts (file)": "the interim QuickJS-NG adapter is built without Intl, which pixi.js needs at import",
+    "packages/renderer-pixi/src/scene-test/assets.test.ts (file)": "the interim QuickJS-NG adapter is built without Intl, which pixi.js needs at import",
+    "packages/renderer-pixi/src/scene-test/fixture.test.ts (file)": "the interim QuickJS-NG adapter is built without Intl, which pixi.js needs at import",
+    "packages/renderer-pixi/src/scene-test/parity.test.ts (file)": "the interim QuickJS-NG adapter is built without Intl, which pixi.js needs at import",
+    "packages/renderer-pixi/src/textures.test.ts (file)": "the interim QuickJS-NG adapter is built without Intl, which pixi.js needs at import"
   }
 }
