@@ -1,7 +1,17 @@
 {
   "name": "@gable/testing",
   "version": "0.0.0",
+  "description": "Test harness for Gable components: mounts into an in-memory renderer, no jsdom or browser needed.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcannon98188/gable.git",
+    "directory": "packages/testing"
+  },
+  "bugs": {
+    "url": "https://github.com/jcannon98188/gable/issues"
+  },
+  "homepage": "https://github.com/jcannon98188/gable/blob/main/docs/packages/testing.md",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -34,5 +44,8 @@
     "axe-core": {
       "optional": true
     }
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

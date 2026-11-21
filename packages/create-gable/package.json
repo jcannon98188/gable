@@ -1,9 +1,18 @@
 {
   "name": "create-gable",
   "version": "0.0.0",
-  "license": "MIT",
-  "type": "module",
   "description": "npm create gable: copies the Gable starter template into a new project directory.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcannon98188/gable.git",
+    "directory": "packages/create-gable"
+  },
+  "bugs": {
+    "url": "https://github.com/jcannon98188/gable/issues"
+  },
+  "homepage": "https://github.com/jcannon98188/gable/blob/main/docs/packages/create-gable.md",
+  "type": "module",
   "sideEffects": false,
   "exports": {
     ".": {
@@ -25,5 +34,8 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

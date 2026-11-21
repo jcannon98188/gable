@@ -1,7 +1,17 @@
 {
   "name": "@gable/template-format",
   "version": "0.0.0",
+  "description": "Formatter for Gable html template literals, with the gable-format CLI.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcannon98188/gable.git",
+    "directory": "packages/template-format"
+  },
+  "bugs": {
+    "url": "https://github.com/jcannon98188/gable/issues"
+  },
+  "homepage": "https://github.com/jcannon98188/gable/blob/main/docs/packages/template-format.md",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -24,5 +34,8 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.6"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

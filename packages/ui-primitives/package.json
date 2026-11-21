@@ -1,7 +1,17 @@
 {
   "name": "@gable/ui-primitives",
   "version": "0.0.0",
+  "description": "Headless, accessible UI primitives under gable-ui: dialogs, tabs, popovers, tooltips, selects, virtual scrolling and more.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcannon98188/gable.git",
+    "directory": "packages/ui-primitives"
+  },
+  "bugs": {
+    "url": "https://github.com/jcannon98188/gable/issues"
+  },
+  "homepage": "https://github.com/jcannon98188/gable/blob/main/docs/packages/ui-primitives.md",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -57,5 +67,8 @@
     "@gable/testing": {
       "optional": true
     }
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

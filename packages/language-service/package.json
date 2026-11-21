@@ -1,9 +1,18 @@
 {
   "name": "@gable/language-service",
   "version": "0.0.0",
-  "license": "MIT",
-  "type": "module",
   "description": "Gable template analyzer: type-checks html templates against component classes. Ships the tsserver plugin (main) and the gable-check CLI.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcannon98188/gable.git",
+    "directory": "packages/language-service"
+  },
+  "bugs": {
+    "url": "https://github.com/jcannon98188/gable/issues"
+  },
+  "homepage": "https://github.com/jcannon98188/gable/blob/main/docs/packages/language-service.md",
+  "type": "module",
   "sideEffects": false,
   "exports": {
     ".": {
@@ -29,5 +38,8 @@
     "@types/node": "^24.0.0",
     "rolldown": "^1.2.16"
   },
-  "main": "./dist/plugin.cjs"
+  "main": "./dist/plugin.cjs",
+  "publishConfig": {
+    "access": "public"
+  }
 }

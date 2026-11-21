@@ -1,7 +1,17 @@
 {
   "name": "@gable/core",
   "version": "0.0.0",
+  "description": "Gable framework core: components, signals, dependency injection, control-flow templates, router, forms, HTTP client and i18n.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcannon98188/gable.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/jcannon98188/gable/issues"
+  },
+  "homepage": "https://github.com/jcannon98188/gable/blob/main/docs/packages/core.md",
   "type": "module",
   "sideEffects": [
     "./dist/hmr.js",
@@ -68,5 +78,8 @@
   },
   "peerDependencies": {
     "rxjs": "^7.8.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -1,7 +1,17 @@
 {
   "name": "@gable/store",
   "version": "0.0.0",
+  "description": "Signal-based state container for Gable in the style of NgRx SignalStore.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcannon98188/gable.git",
+    "directory": "packages/store"
+  },
+  "bugs": {
+    "url": "https://github.com/jcannon98188/gable/issues"
+  },
+  "homepage": "https://github.com/jcannon98188/gable/blob/main/docs/packages/store.md",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -21,5 +31,8 @@
   },
   "peerDependencies": {
     "rxjs": "^7.8.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

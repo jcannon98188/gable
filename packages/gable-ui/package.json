@@ -1,10 +1,18 @@
 {
   "name": "gable-ui",
   "version": "0.0.0",
-  "private": true,
-  "license": "MIT",
-  "type": "module",
   "description": "gable-ui CLI: copies gable-ui component source from a component registry into your project (init, add).",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcannon98188/gable.git",
+    "directory": "packages/gable-ui"
+  },
+  "bugs": {
+    "url": "https://github.com/jcannon98188/gable/issues"
+  },
+  "homepage": "https://github.com/jcannon98188/gable/blob/main/docs/packages/gable-ui.md",
+  "type": "module",
   "sideEffects": false,
   "exports": {
     ".": {
@@ -24,5 +32,8 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

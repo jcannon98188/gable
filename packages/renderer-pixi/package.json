@@ -1,7 +1,17 @@
 {
   "name": "@gable/renderer-pixi",
   "version": "0.0.0",
+  "description": "Gable canvas renderer on PixiJS: scene elements, hit areas, gestures, assets, particles and accessibility mirroring.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcannon98188/gable.git",
+    "directory": "packages/renderer-pixi"
+  },
+  "bugs": {
+    "url": "https://github.com/jcannon98188/gable/issues"
+  },
+  "homepage": "https://github.com/jcannon98188/gable/blob/main/docs/canvas.md",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -41,5 +51,8 @@
     "@gable/testing": {
       "optional": true
     }
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

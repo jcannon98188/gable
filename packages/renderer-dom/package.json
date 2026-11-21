@@ -1,7 +1,17 @@
 {
   "name": "@gable/renderer-dom",
   "version": "0.0.0",
+  "description": "The DOM renderer for Gable: puts a Gable app in a browser.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcannon98188/gable.git",
+    "directory": "packages/renderer-dom"
+  },
+  "bugs": {
+    "url": "https://github.com/jcannon98188/gable/issues"
+  },
+  "homepage": "https://github.com/jcannon98188/gable/blob/main/docs/packages/renderer-dom.md",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -24,5 +34,8 @@
     "@gable/testing": "0.0.0",
     "jsdom": "^27.0.0",
     "vite": "^8.3.6"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

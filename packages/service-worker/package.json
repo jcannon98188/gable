@@ -1,9 +1,18 @@
 {
   "name": "@gable/service-worker",
   "version": "0.0.0",
-  "license": "MIT",
-  "type": "module",
   "description": "Service worker support for Gable apps: a worker authoring API (core), a default declarative worker (runtime) and app-side services.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcannon98188/gable.git",
+    "directory": "packages/service-worker"
+  },
+  "bugs": {
+    "url": "https://github.com/jcannon98188/gable/issues"
+  },
+  "homepage": "https://github.com/jcannon98188/gable/blob/main/docs/packages/service-worker.md",
+  "type": "module",
   "sideEffects": false,
   "exports": {
     ".": {
@@ -33,5 +42,8 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

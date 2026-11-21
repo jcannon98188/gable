@@ -1,7 +1,17 @@
 {
   "name": "@gable/prettier-plugin",
   "version": "0.0.0",
+  "description": "Prettier plugin that formats the html template literals in Gable components.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcannon98188/gable.git",
+    "directory": "packages/prettier-plugin"
+  },
+  "bugs": {
+    "url": "https://github.com/jcannon98188/gable/issues"
+  },
+  "homepage": "https://github.com/jcannon98188/gable/blob/main/docs/packages/prettier-plugin.md",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -24,5 +34,8 @@
   },
   "devDependencies": {
     "prettier": "^3.9.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
