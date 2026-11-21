@@ -1,6 +1,6 @@
 {
   "name": "@gablejs/core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Gable framework core: components, signals, dependency injection, control-flow templates, router, forms, HTTP client and i18n.",
   "license": "MIT",
   "repository": {

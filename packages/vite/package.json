@@ -1,6 +1,6 @@
 {
   "name": "@gablejs/vite",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "The Gable Vite plugins: dev-only HMR accept lines, forced native class fields, fail-fast tsconfig checks, i18n extraction and baking, and the service worker build step.",
   "license": "MIT",
   "repository": {
@@ -39,8 +39,8 @@
     "vite": "^8.0.0"
   },
   "devDependencies": {
-    "@gablejs/core": "0.0.0",
-    "@gablejs/renderer-dom": "0.0.0",
+    "@gablejs/core": "0.1.0",
+    "@gablejs/renderer-dom": "0.1.0",
     "@tailwindcss/vite": "^4.3.4",
     "@types/node": "^24.0.0",
     "tailwindcss": "^4.3.4",

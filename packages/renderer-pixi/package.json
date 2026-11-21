@@ -1,6 +1,6 @@
 {
   "name": "@gablejs/renderer-pixi",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Gable canvas renderer on PixiJS: scene elements, hit areas, gestures, assets, particles and accessibility mirroring.",
   "license": "MIT",
   "repository": {
@@ -43,9 +43,9 @@
     "@gablejs/testing": ">=0.0.0 <1.0.0"
   },
   "devDependencies": {
-    "@gablejs/core": "0.0.0",
+    "@gablejs/core": "0.1.0",
     "pixi.js": "^8.23.0",
-    "@gablejs/testing": "0.0.0"
+    "@gablejs/testing": "0.1.0"
   },
   "peerDependenciesMeta": {
     "@gablejs/testing": {

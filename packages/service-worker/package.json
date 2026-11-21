@@ -1,6 +1,6 @@
 {
   "name": "@gablejs/service-worker",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Service worker support for Gable apps: a worker authoring API (core), a default declarative worker (runtime) and app-side services.",
   "license": "MIT",
   "repository": {
@@ -35,7 +35,7 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@gablejs/core": "0.0.0"
+    "@gablejs/core": "0.1.0"
   },
   "peerDependencies": {
     "rxjs": "^7.8.2"

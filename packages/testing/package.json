@@ -1,6 +1,6 @@
 {
   "name": "@gablejs/testing",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Test harness for Gable components: mounts into an in-memory renderer, no jsdom or browser needed.",
   "license": "MIT",
   "repository": {
@@ -35,7 +35,7 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@gablejs/core": "0.0.0"
+    "@gablejs/core": "0.1.0"
   },
   "peerDependencies": {
     "axe-core": "^4.10.0"

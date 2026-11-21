@@ -1,6 +1,6 @@
 {
   "name": "gable-ui",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "gable-ui CLI: copies gable-ui component source from a component registry into your project (init, add).",
   "license": "MIT",
   "repository": {

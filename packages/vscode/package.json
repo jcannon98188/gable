@@ -42,7 +42,7 @@
     "package": "node build.mjs --package"
   },
   "devDependencies": {
-    "@gablejs/language-service": "0.0.0",
+    "@gablejs/language-service": "0.1.0",
     "@vscode/vsce": "^4.1.0",
     "vscode-oniguruma": "^2.0.1",
     "vscode-textmate": "^9.3.2",
