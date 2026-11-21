@@ -38,9 +38,9 @@
     "golden:update": "node golden/run.mjs --update"
   },
   "peerDependencies": {
-    "@gablejs/core": "~0.0.0",
+    "@gablejs/core": ">=0.0.0 <1.0.0",
     "pixi.js": "^8.0.0",
-    "@gablejs/testing": "~0.0.0"
+    "@gablejs/testing": ">=0.0.0 <1.0.0"
   },
   "devDependencies": {
     "@gablejs/core": "0.0.0",

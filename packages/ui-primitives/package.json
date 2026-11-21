@@ -61,7 +61,7 @@
     "@zag-js/vanilla": "^1.47.0"
   },
   "peerDependencies": {
-    "@gablejs/testing": "0.0.0"
+    "@gablejs/testing": ">=0.0.0 <1.0.0"
   },
   "peerDependenciesMeta": {
     "@gablejs/testing": {
