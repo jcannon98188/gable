@@ -1,6 +1,6 @@
 {
   "name": "@gablejs/language-service",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Gable template analyzer: type-checks html templates against component classes. Ships the tsserver plugin (main) and the gable-check CLI.",
   "license": "MIT",
   "repository": {
@@ -30,8 +30,8 @@
     "build": "tsc -p tsconfig.build.json && node build-plugin.mjs"
   },
   "dependencies": {
-    "@gablejs/core": "0.0.0",
-    "@gablejs/renderer-pixi": "0.0.0",
+    "@gablejs/core": "0.1.0",
+    "@gablejs/renderer-pixi": "0.1.0",
     "@typescript/typescript6": "^6.0.2"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 {
   "name": "@gablejs/editor",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Collaborative rich text editor for Gable: TipTap/ProseMirror with a Yjs binding, every feature a plugin.",
   "license": "MIT",
   "repository": {
@@ -28,8 +28,8 @@
     "demo": "vite --config demo/vite.config.ts"
   },
   "dependencies": {
-    "@gablejs/core": "0.0.0",
-    "@gablejs/ui": "0.0.0",
+    "@gablejs/core": "0.1.0",
+    "@gablejs/ui": "0.1.0",
     "@tiptap/core": "^3.33.0",
     "@tiptap/extension-blockquote": "^3.33.0",
     "@tiptap/extension-bold": "^3.33.0",
@@ -55,8 +55,8 @@
     "lucide": "^1.70.0"
   },
   "devDependencies": {
-    "@gablejs/renderer-dom": "0.0.0",
-    "@gablejs/testing": "0.0.0"
+    "@gablejs/renderer-dom": "0.1.0",
+    "@gablejs/testing": "0.1.0"
   },
   "publishConfig": {
     "access": "public"
